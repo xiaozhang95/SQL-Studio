@@ -8,3 +8,4 @@ sql-web/dist/
 .server.pid
 /.refactor-backup/
 /.test-runtime/
+/.vscode/
