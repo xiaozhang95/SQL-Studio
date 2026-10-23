@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+pnpm-lock.yaml
+*.log
+*.tsbuildinfo
+public
+.agents
+.codex
+.vscode
+.idea

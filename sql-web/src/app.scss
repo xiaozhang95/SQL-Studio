@@ -1,0 +1,706 @@
+:root,
+html[data-theme='light'] {
+  color-scheme: light;
+}
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+// App 与弹窗/抽屉门户共享 Ant Design 变量作用域，所有颜色从当前主题派生。
+.sql-studio-theme {
+  --text: var(--ant-color-text);
+  --layout: var(--ant-color-bg-layout);
+  --surface: var(--ant-color-bg-container);
+  --surface-raised: var(--ant-color-fill-alter);
+  --border: var(--ant-color-border-secondary);
+  --primary: var(--ant-color-primary);
+  --primary-soft: var(--ant-color-primary-bg);
+  --on-primary: var(--ant-color-text-light-solid);
+  --danger: var(--ant-color-error-text);
+  --shadow: var(--ant-box-shadow-tertiary);
+
+  ::selection {
+    background: var(--ant-control-item-bg-active);
+  }
+
+  &,
+  * {
+    scrollbar-color: #7c8a9a transparent;
+    scrollbar-width: thin;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+
+// 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7c8a9a transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #7c8a9a;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+// 工作区布局与必要的 Ant Design 覆盖集中维护。
+html,
+body,
+#root,
+.ant-app {
+  height: 100%;
+}
+body {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+.app-shell {
+  height: 100dvh;
+  min-width: 900px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--layout);
+}
+.topbar {
+  height: 56px;
+  flex: none;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-actions,
+.toolbar-left,
+.result-meta,
+.result-actions,
+.result-panel-actions,
+.structure-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-select {
+  width: 144px;
+}
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.sidebar {
+  width: 272px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.sidebar-top {
+  padding: 16px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.connection-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.connection-picker .ant-select {
+  flex: 1;
+  min-width: 0;
+}
+.connection-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.explorer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 0;
+}
+.explorer > .section-heading,
+.explorer > .ant-input-affix-wrapper {
+  flex: none;
+}
+.object-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin-top: 12px;
+  padding-bottom: 12px;
+}
+.object-tree .ant-tree {
+  background: transparent;
+}
+.object-tree .ant-tree-node-content-wrapper {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.object-tree .ant-tree-iconEle {
+  color: var(--primary);
+  flex: none;
+}
+.object-tree .ant-tree-node-selected .ant-tree-iconEle {
+  color: inherit;
+}
+.object-tree .ant-tree-title {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-empty {
+  flex: 1;
+  padding: 36px 16px;
+  text-align: center;
+}
+.main-area {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  padding: 12px;
+  overflow: hidden;
+}
+.query-workspace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.toolbar-left .database-select {
+  flex: 1 1 150px;
+  min-width: 130px;
+  max-width: 220px;
+}
+.toolbar-left .table-select {
+  flex: 1 1 180px;
+  min-width: 150px;
+  max-width: 260px;
+}
+.editor-panel,
+.results-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.query-tabs {
+  flex: none;
+}
+.query-tabs .ant-tabs-nav {
+  margin: 0;
+  padding: 8px 12px 0;
+  background: var(--surface-raised);
+}
+.query-tabs .ant-tabs-content-holder {
+  display: none;
+}
+.editor-toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.toolbar-left {
+  flex: 1 1 400px;
+  min-width: 410px;
+}
+.toolbar-left > .ant-btn {
+  flex: none;
+}
+.sql-editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.sql-editor > div,
+.sql-editor .cm-editor {
+  height: 100%;
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.sql-editor .cm-gutters {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-right: 1px solid var(--border);
+}
+.sql-editor .cm-editor,
+.result-scroll .cm-editor {
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: inherit;
+}
+.sql-editor .cm-scroller,
+.result-scroll .cm-scroller {
+  // CodeMirror 默认 monospace；继承页面系统字体，不另设字体或字号。
+  font-family: inherit;
+}
+.results-panel {
+  position: relative;
+  height: var(--results-height);
+  flex: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.results-panel.is-resizing {
+  user-select: none;
+}
+.results-resizer {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 8px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  touch-action: none;
+}
+.results-resizer > span {
+  width: 48px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--border);
+}
+.results-resizer:hover,
+.results-resizer:focus-visible,
+.results-panel.is-resizing .results-resizer {
+  background: var(--primary-soft);
+  outline: none;
+}
+.results-resizer:hover > span,
+.results-resizer:focus-visible > span,
+.results-panel.is-resizing .results-resizer > span {
+  background: var(--primary);
+}
+.result-panel-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.result-panel-content[hidden] {
+  display: none;
+}
+.result-panel-actions {
+  flex: none;
+}
+.result-tabs-row {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 12px 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.result-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+.result-meta {
+  min-width: 0;
+  flex: 1;
+}
+.result-scope-tag {
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-actions {
+  flex: none;
+}
+.result-actions .ant-input-affix-wrapper {
+  width: 180px;
+}
+.result-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.result-panel-content > .ant-spin-nested-loading {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.result-panel-content > .ant-spin-nested-loading > .ant-spin-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.column-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.cell-value {
+  display: block;
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table .ant-table-pagination {
+  padding: 0 12px;
+}
+.query-empty {
+  margin: 20px 0;
+}
+.result-alert {
+  padding: 16px;
+}
+.result-alert pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.structure-heading {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.structure-empty {
+  padding: 20px 0;
+}
+.tree-loading {
+  text-align: center;
+  padding: 28px 10px;
+}
+.history-list {
+  margin-top: 16px;
+
+  .ant-collapse-title {
+    min-width: 0;
+  }
+}
+.history-heading,
+.history-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.history-summary {
+  margin-top: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-sql {
+  background: var(--surface-raised);
+  padding: 10px;
+  max-height: 130px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.history-bottom {
+  justify-content: space-between;
+}
+.history-error {
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+.result-meta .ant-tag,
+.column-title > .ant-tag,
+.result-tabs-row .ant-tag,
+.structure-tags .ant-tag {
+  margin-inline-end: 0;
+}
+.connection-dialog-body {
+  display: flex;
+  /* 类型与页签变化不推动弹窗外框，长表单只在右侧滚动。 */
+  height: min(600px, calc(100dvh - 180px));
+  min-height: 0;
+  overflow: hidden;
+}
+.engine-picker {
+  width: 280px;
+  flex: none;
+  padding: 20px 16px;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.engine-picker-heading {
+  padding-bottom: 8px;
+}
+.engine-option {
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  padding: 10px;
+  min-height: 54px;
+}
+.engine-option:hover {
+  background: var(--ant-control-item-bg-hover);
+}
+.engine-option:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.engine-option.is-selected {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.engine-option-label {
+  flex: 1;
+}
+.engine-option > .anticon {
+  color: var(--primary);
+  flex: none;
+}
+.engine-option.is-selected > .anticon {
+  color: inherit;
+}
+.engine-symbol {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+}
+.engine-symbol img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.connection-option .engine-symbol {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 4px;
+}
+.connection-option .engine-symbol img {
+  width: 20px;
+  height: 20px;
+}
+.engine-picker-note {
+  margin-top: auto;
+  padding-top: 20px;
+}
+.connection-settings {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.connection-engine-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+.connection-engine-header > .engine-symbol {
+  width: 44px;
+  height: 44px;
+}
+.connection-engine-header > .ant-tag {
+  margin-left: auto;
+  margin-right: 0;
+}
+.connection-fields {
+  padding-top: 8px;
+}
+.connection-fields .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  gap: 16px;
+}
+.modal-footer,
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-footer {
+  justify-content: space-between;
+}
+.connection-test-result {
+  margin-top: 16px;
+  overflow-wrap: anywhere;
+}
+.test-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.test-success > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 240px;
+  }
+  .topbar {
+    padding-inline: 16px;
+  }
+  .result-actions .ant-input-affix-wrapper {
+    width: 150px;
+  }
+}
+@media (max-width: 760px) {
+  .engine-picker {
+    width: 210px;
+    padding-inline: 12px;
+  }
+  .connection-settings {
+    padding: 20px;
+  }
+  .form-row {
+    grid-template-columns: minmax(0, 1fr) 96px;
+  }
+}
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex: none;
+}
+.empty-state-icon {
+  color: var(--primary);
+}
+.empty-state-icon svg {
+  width: 36px;
+  height: 36px;
+}
+
+// 侧栏和历史 SQL 使用原生填充 token 增强分区，选中文字继承对比色。
+.history-sql {
+  background: var(--ant-color-fill-secondary);
+}
+.engine-picker {
+  gap: 4px;
+}
+.engine-option {
+  padding-block: 6px;
+  min-height: 48px;
+}
+.object-tree .ant-tree-node-selected .ant-tree-title {
+  color: inherit;
+}
+.data-table .ant-table-pagination {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  margin: 0;
+  padding-block: 12px;
+  z-index: 4;
+}
+
+.engine-picker {
+  background: var(--surface);
+}
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover,
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:focus-visible {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-title,
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-iconEle {
+  color: inherit;
+}
+.result-query-tabs .ant-tabs-content-holder {
+  display: none;
+}
+
+.object-tree .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+.result-query-tabs .ant-tabs-nav {
+  background: transparent;
+}
+.connection-settings {
+  padding-block: 20px;
+}

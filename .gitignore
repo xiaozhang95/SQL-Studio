@@ -1,0 +1,10 @@
+sql-server/data/
+sql-server/*.exe
+sql-server/*.test
+sql-web/node_modules/
+sql-web/dist/
+*.log
+.env
+.server.pid
+/.refactor-backup/
+/.test-runtime/

@@ -1,0 +1,121 @@
+package mysql
+
+import (
+	"context"
+	"database/sql"
+	"encoding/hex"
+	"fmt"
+	"strconv"
+	"time"
+
+	"sqldesk/internal/model"
+)
+
+const maxResultBytes = 8 * 1024 * 1024
+
+func (c *Client) Execute(ctx context.Context, connection model.Connection, input model.QueryRequest) (model.QueryResult, error) {
+	db, err := Open(connection, input.Database)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	defer db.Close()
+	return execute(ctx, db, input.SQL, input.Limit, input.AllowWrite)
+}
+
+func execute(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite bool) (result model.QueryResult, err error) {
+	start := time.Now()
+	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
+	result.Columns = []model.ResultColumn{}
+	result.Rows = [][]any{}
+	// 即使语句包含注释、CTE 或函数，默认模式也由数据库的只读事务拒绝持久写入。
+	if !allowWrite {
+		tx, e := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+		if e != nil {
+			return result, e
+		}
+		defer tx.Rollback()
+		return readRows(ctx, tx, statement, limit, start)
+	}
+	if isQuery(statement) {
+		return readRows(ctx, db, statement, limit, start)
+	}
+	r, e := db.ExecContext(ctx, statement)
+	if e != nil {
+		return result, e
+	}
+	result.AffectedRows, _ = r.RowsAffected()
+	if id, e := r.LastInsertId(); e == nil && id != 0 {
+		result.LastInsertID = strconv.FormatInt(id, 10)
+	}
+	return result, nil
+}
+
+type querier interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}
+
+func readRows(ctx context.Context, q querier, statement string, limit int, start time.Time) (model.QueryResult, error) {
+	result := model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}, IsQuery: true}
+	queryCtx, cancel := context.WithCancel(ctx)
+	rows, err := q.QueryContext(queryCtx, statement)
+	if err != nil {
+		cancel()
+		return result, err
+	}
+	// 超出返回上限后先取消查询再关闭游标，避免继续排空整个大结果集。
+	defer func() { cancel(); _ = rows.Close() }()
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return result, err
+	}
+	for _, column := range types {
+		result.Columns = append(result.Columns, model.ResultColumn{Name: column.Name(), Type: column.DatabaseTypeName()})
+	}
+	size := 0
+	for rows.Next() {
+		if len(result.Rows) >= limit {
+			result.Truncated = true
+			break
+		}
+		values := make([]any, len(types))
+		pointers := make([]any, len(types))
+		for i := range values {
+			pointers[i] = &values[i]
+		}
+		if err = rows.Scan(pointers...); err != nil {
+			return result, err
+		}
+		for i, value := range values {
+			switch v := value.(type) {
+			case []byte:
+				switch types[i].DatabaseTypeName() {
+				case "BINARY", "VARBINARY", "BLOB", "MEDIUMBLOB", "LONGBLOB", "TINYBLOB", "BIT", "GEOMETRY":
+					values[i] = "0x" + hex.EncodeToString(v)
+					size += len(v)*2 + 2
+				default:
+					values[i] = string(v)
+					size += len(v)
+				}
+			case int64:
+				values[i] = strconv.FormatInt(v, 10)
+				size += 24
+			case uint64:
+				values[i] = strconv.FormatUint(v, 10)
+				size += 24
+			default:
+				size += len(fmt.Sprint(value))
+			}
+		}
+		if size > maxResultBytes {
+			result.Truncated = true
+			break
+		}
+		result.Rows = append(result.Rows, values)
+	}
+	if err = rows.Err(); err != nil {
+		return result, err
+	}
+	result.RowCount = len(result.Rows)
+	result.DurationMS = time.Since(start).Milliseconds()
+	return result, nil
+}

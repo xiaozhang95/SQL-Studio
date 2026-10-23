@@ -1,0 +1,12 @@
+{
+  "printWidth": 200,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "tabWidth": 2,
+  "endOfLine": "lf",
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+  "importOrder": ["<BUILTIN_MODULES>", "", "<THIRD_PARTY_MODULES>", "", "^@/", "", "^[./]"],
+  "importOrderSafeSideEffects": ["\\.(css|scss)$"],
+  "importOrderCaseSensitive": false
+}

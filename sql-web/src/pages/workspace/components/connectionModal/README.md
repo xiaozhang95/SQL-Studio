@@ -1,0 +1,29 @@
+# 连接弹窗
+
+[组件索引](../README.md) · [源码](index.tsx)
+
+## 参数与回调
+
+open、connection?、onClose、onSaved。open 受控；connection 表示编辑；保存成功回传脱敏连接。
+
+## 行为与边界
+
+调用 useConnectionForm 管理常规/SSL 与校验；左侧使用数据库原有 Logo，右侧显示默认端口。编辑不回显密码，留空保留；保存/测试期间禁止关闭和切类型。
+
+桌面类型侧栏宽 280px，为选中图标和 PolarDB Oracle 兼容名称留出空间，避免末字单独换行；窄视口通过媒体查询收缩。
+
+选中类型仅使用 Ant Design colorPrimary 背景和 colorTextLightSolid 文字，不显示尾部勾选图标，不手写亮暗蓝色。Tag/按钮沿用组件默认样式。弹窗内容区固定为 580px 并受视口高度约束；左右区域独立滚动，类型、常规/SSL 页签和测试反馈变化不推动外框及底部操作栏。
+
+页面私有组件从 `./components/connectionModal` 导入；只服务工作区，不通过聚合出口扩散依赖。
+
+## 当前交互
+
+类型列表缩小垂直间距，左侧使用原生填充 token 与右侧形成区分。信息 Tag 使用蓝色 solid，语义状态使用对应颜色；不使用灰色信息标签。
+
+## 布局修正
+
+本轮统一左右底色，通过原有竖线分隔；本地加密 Tag 移到右侧默认端口 Tag 旁，各数据库/SSL 页签均可看到。所有显示字段均有 placeholder，仍只预填端口。
+
+## 表单高度
+
+内容区为 min(600px, 100dvh - 180px)，右侧上下内边距 20px，为 PostgreSQL 额外初始库字段留足空间。正常视口内容完整时不出现滚动条；窄小窗口、校验错误或较长反馈需要时仍可滚动。hover 使用原生 controlItemBgHover，与对象树一致。placeholder 使用 Ant Design 默认颜色，不做局部覆盖。
