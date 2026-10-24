@@ -1,24 +1,32 @@
-import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, CloseOutlined, DatabaseOutlined, DownloadOutlined, LoadingOutlined, SearchOutlined, TableOutlined } from '@ant-design/icons'
-import { Alert, Button, Empty, Input, Pagination, Table, Tabs, Tag, Tooltip } from 'antd'
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
+  CodeOutlined,
+  DownloadOutlined,
+  FileTextOutlined,
+  LoadingOutlined,
+  ProfileOutlined,
+  SearchOutlined,
+  TableOutlined
+} from '@ant-design/icons'
+import { Alert, Button, Empty, Input, Pagination, Table, Tabs } from 'antd'
 import { useEffect } from 'react'
 
 import { exportCSV } from '@/utils/csv'
 
-import { useResultTableLayout } from '../../hooks/useResultTableLayout'
+import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ResultsDock from '../resultsDock'
 
 type Props = {
-  model: Pick<
-    WorkspaceModel,
-    'result' | 'run' | 'running' | 'resultTabs' | 'selectResult' | 'closeResult' | 'resultSearch' | 'setResultSearch' | 'tablePage' | 'setTablePage' | 'resultsCollapsed' | 'setResultsCollapsed'
-  >
+  model: Pick<WorkspaceModel, 'result' | 'run' | 'running' | 'resultTabs' | 'selectResult' | 'closeResult' | 'resultSearch' | 'setResultSearch' | 'tablePage' | 'setTablePage'>
 }
 
 /** 底部仅展示结果快照；表操作从对象树菜单发起，分页独立于滚动内容。 */
 export default function QueryResults({ model }: Props) {
-  const { result, run, running, resultTabs, selectResult, closeResult, resultSearch, setResultSearch, tablePage, setTablePage, resultsCollapsed, setResultsCollapsed } = model
-  const { viewport, bodyHeight } = useResultTableLayout(run?.id)
+  const { result, run, running, resultTabs, selectResult, closeResult, resultSearch, setResultSearch, tablePage, setTablePage } = model
+  const { viewport, bodyHeight } = useTableViewportLayout(run?.id)
   useEffect(() => {
     const body = viewport.current?.querySelector<HTMLElement>('.ant-table-body')
     if (body) body.scrollTop = 0
@@ -35,19 +43,19 @@ export default function QueryResults({ model }: Props) {
         )
     )
   const columns = [
-    { title: '#', key: 'index', width: 64, render: (_: unknown, row: { key: number }) => row.key + 1 },
+    { title: '#', key: 'index', width: 64, fixed: 'left' as const, render: (_: unknown, row: { key: number }) => row.key + 1 },
     ...(result?.columns || []).map((column, index) => ({
       title: (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <div className="column-title">
           {column.name}
-          {column.type && <Tag color="blue">{column.type}</Tag>}
+          {column.type && <span className="column-type">{column.type.toLowerCase()}</span>}
         </div>
       ),
       key: String(index),
       width: 200,
       render: (_: unknown, row: { cells: unknown[] }) =>
         row.cells[index] === null ? (
-          <Tag color="blue">NULL</Tag>
+          <span className="cell-null">(NULL)</span>
         ) : (
           <span className="cell-value" title={String(row.cells[index])}>
             {String(row.cells[index])}
@@ -58,72 +66,48 @@ export default function QueryResults({ model }: Props) {
   if (!resultTabs.length) return null
   return (
     <ResultsDock
-      collapsed={resultsCollapsed}
-      onCollapsedChange={setResultsCollapsed}
       header={
-        resultTabs.length ? (
-          <Tabs
-            className="result-query-tabs"
-            tabBarGutter={24}
-            tabBarStyle={{ margin: 0 }}
-            style={{ minWidth: 0, flex: 1 }}
-            type="line"
-            activeKey={run?.id}
-            onChange={selectResult}
-            items={resultTabs.map((item, index) => ({
-              key: item.id!,
-              label: (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  {`${item.title || '结果'} ${index + 1}`}
-                  <Button
-                    type="text"
-                    size="small"
-                    aria-label={`关闭结果 ${index + 1}`}
-                    icon={<CloseOutlined />}
-                    onFocus={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      closeResult(item.id!)
-                    }}
-                  />
-                </span>
-              )
-            }))}
-          />
-        ) : (
-          <span>查询结果</span>
-        )
+        <Tabs
+          className="workspace-tabs result-query-tabs"
+          size="small"
+          tabBarGutter={4}
+          type="editable-card"
+          hideAdd
+          activeKey={run?.id}
+          onChange={selectResult}
+          onEdit={(key, action) => {
+            if (action === 'remove') closeResult(String(key))
+          }}
+          items={resultTabs.map((item, index) => ({
+            key: item.id!,
+            icon: item.kind === 'data' ? <TableOutlined /> : item.kind === 'structure' ? <ProfileOutlined /> : item.kind === 'ddl' ? <FileTextOutlined /> : <CodeOutlined />,
+            label: `${item.title || '结果'} ${index + 1}`,
+            closable: true
+          }))}
+        />
       }
     >
       <div className="result-toolbar">
         <div className="result-meta">
           {running ? (
-            <Tag color="processing" icon={<LoadingOutlined spin />}>
-              执行中
-            </Tag>
+            <span className="result-status">
+              <LoadingOutlined spin /> 执行中
+            </span>
           ) : run?.error ? (
-            <Tag color="error" icon={<CloseCircleOutlined />}>
-              失败
-            </Tag>
+            <span className="result-status is-error">
+              <CloseCircleOutlined /> 失败
+            </span>
           ) : result ? (
             <>
-              <Tag color="success" icon={<CheckCircleOutlined />}>
-                成功
-              </Tag>
-              <Tag color="blue" icon={<ClockCircleOutlined />}>
-                {result.durationMs} ms
-              </Tag>
+              <span className="result-status is-success">
+                <CheckCircleOutlined /> 成功
+              </span>
+              <span className="result-status">
+                <ClockCircleOutlined /> {result.durationMs} ms
+              </span>
             </>
           ) : (
-            <Tag color="blue">待执行</Tag>
-          )}
-          {run?.source && (
-            <Tooltip title={`结果来源：${run.source}`}>
-              <Tag color="blue" className="result-scope-tag" icon={<DatabaseOutlined />}>
-                {run.source}
-              </Tag>
-            </Tooltip>
+            <span>待执行</span>
           )}
         </div>
         <div className="result-actions">
@@ -174,7 +158,7 @@ export default function QueryResults({ model }: Props) {
         )}
       </div>
       {result && (
-        <div style={{ flex: 'none', padding: '8px 12px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 'none', padding: '8px 12px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
           <Pagination current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} showSizeChanger={false} showTotal={(total) => `共 ${total} 行`} />
         </div>
       )}

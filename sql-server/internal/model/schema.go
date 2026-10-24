@@ -1,7 +1,6 @@
 package model
 
 type Table struct {
-	Schema  string `json:"schema,omitempty"`
 	Name    string `json:"name"`
 	Type    string `json:"type"`
 	Comment string `json:"comment"`
@@ -9,7 +8,6 @@ type Table struct {
 
 type TableRef struct {
 	Database string
-	Schema   string
 	Name     string
 }
 

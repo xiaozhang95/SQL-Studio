@@ -6,21 +6,19 @@ import { databaseTypeInfo } from '@/constant/database'
 import { executeQuery, getColumns, getConnections, getDDL, deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { HistoryItem, QueryScope, QueryTab } from '@/typings/workspace'
-import { identifier } from '@/utils/sql'
+import { exportSQL, identifier } from '@/utils/sql'
 import { readLocal, saveLocal } from '@/utils/storage'
 
 import { useDatabaseObjects } from '../useDatabaseObjects'
 
-type RunState = { id?: string; title?: string; result?: QueryResult; error?: string; source: string }
-const initialSQL = 'SELECT 1;'
+type RunState = { id?: string; title?: string; kind?: 'query' | 'data' | 'structure' | 'ddl'; result?: QueryResult; error?: string; source: string }
 const newTab = (n: number): QueryTab => ({
   id: crypto.randomUUID(),
   title: `查询 ${n}`,
-  sql: initialSQL,
+  sql: '',
   connectionId: '',
   database: '',
-  table: '',
-  schema: ''
+  table: ''
 })
 
 /** 编排连接、查询范围和执行生命周期；查询结果始终归属发起时的标签。 */
@@ -42,8 +40,7 @@ export const useWorkspace = () => {
       sql: t.sql,
       connectionId: typeof t.connectionId === 'string' ? t.connectionId : '',
       database: typeof t.database === 'string' ? t.database : '',
-      table: typeof t.table === 'string' ? t.table : '',
-      schema: typeof t.schema === 'string' ? t.schema : ''
+      table: typeof t.table === 'string' ? t.table : ''
     }))
   })
   const [activeTab, setActiveTab] = useState(() => {
@@ -54,7 +51,6 @@ export const useWorkspace = () => {
   const [resultSets, setResultSets] = useState<Record<string, RunState[]>>({})
   const [selectedResult, setSelectedResult] = useState<Record<string, string>>({})
   const [running, setRunning] = useState(false)
-  const [resultsCollapsed, setResultsCollapsed] = useState(false)
   const [columns, setColumns] = useState<Column[]>([])
   const [ddl, setDDL] = useState('')
   const [structureError, setStructureError] = useState('')
@@ -71,18 +67,29 @@ export const useWorkspace = () => {
   const request = useRef<AbortController | null>(null)
   const executeRef = useRef<() => void>(() => {})
   const tab = tabs.find((t) => t.id === activeTab) || tabs[0]
-  const { connectionId, database, table: selectedTable, schema: selectedSchema } = tab
+  const { connectionId, database, table: selectedTable } = tab
   const connection = connections.find((c) => c.id === connectionId)
   const engine = databaseTypeInfo(connection?.type)
-  const postgres = engine.protocol === 'postgresql'
-  const objects = useDatabaseObjects(connectionId, database, refresh)
+  // 元数据重新加载后同时校验前台和后台标签，清除已不存在的库。
+  const validateDatabases = useCallback((id: string, databases: string[]) => {
+    setTabs((previous) => {
+      let changed = false
+      const next = previous.map((item) => {
+        if (item.connectionId !== id || !item.database || databases.includes(item.database)) return item
+        changed = true
+        return { ...item, database: '', table: '' }
+      })
+      return changed ? next : previous
+    })
+  }, [])
+  const objects = useDatabaseObjects(connectionId, database, validateDatabases)
   const resultTabs = resultSets[activeTab] || []
   const run = resultTabs.find((item) => item.id === selectedResult[activeTab]) || runs[activeTab]
   const result = run?.result
 
   const applyConnections = useCallback((data: Connection[]) => {
     setConnections(data)
-    setTabs((previous) => previous.map((item) => (data.some((c) => c.id === item.connectionId) ? item : { ...item, connectionId: data[0]?.id || '', database: '', table: '', schema: '' })))
+    setTabs((previous) => previous.map((item) => (data.some((c) => c.id === item.connectionId) ? item : { ...item, connectionId: '', database: '', table: '' })))
   }, [])
   const loadConnections = useCallback(async () => {
     setConnectionLoading(true)
@@ -116,9 +123,9 @@ export const useWorkspace = () => {
   useEffect(() => saveLocal('sqldesk.history', history), [history])
   useEffect(() => () => request.current?.abort(), [])
   useEffect(() => {
-    if (!connectionId || !database || !selectedTable) return
+    if (!objects.connected || !connectionId || !database || !objects.databases.includes(database) || !selectedTable) return
     const controller = new AbortController()
-    Promise.all([getColumns(connectionId, database, selectedTable, controller.signal, selectedSchema), getDDL(connectionId, database, selectedTable, controller.signal, selectedSchema)])
+    Promise.all([getColumns(connectionId, database, selectedTable, controller.signal), getDDL(connectionId, database, selectedTable, controller.signal)])
       .then(([c, d]) => {
         if (!controller.signal.aborted) {
           setColumns(c)
@@ -132,7 +139,7 @@ export const useWorkspace = () => {
         if (!controller.signal.aborted) setStructureLoading(false)
       })
     return () => controller.abort()
-  }, [connectionId, database, selectedTable, selectedSchema, refresh])
+  }, [connectionId, database, selectedTable, refresh, objects.connected, objects.databases])
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -150,29 +157,74 @@ export const useWorkspace = () => {
   function updateSQL(value: string) {
     updateTab({ sql: value })
   }
+  function exportCurrentSQL() {
+    if (!tab.sql.trim()) return
+    try {
+      exportSQL(tab.sql, tab.title)
+    } catch {
+      message.error('SQL 导出失败，请重试')
+    }
+  }
+  function openHistory() {
+    if (!connection) return
+    setHistorySearch('')
+    setHistoryOpen(true)
+  }
   function resetStructure(loading = false) {
     setColumns([])
     setDDL('')
     setStructureError('')
     setStructureLoading(loading)
   }
-  function refreshSchema() {
-    resetStructure(Boolean(selectedTable))
-    setRefresh((n) => n + 1)
+  function refreshSchema(id = connectionId) {
+    if (!id || running) return
+    if (id === connectionId) {
+      resetStructure(Boolean(selectedTable))
+      setRefresh((n) => n + 1)
+    }
+    void objects.refreshConnection(id).catch(() => {})
   }
   function selectConnection(id: string) {
-    if (running) return
-    updateTab({ connectionId: id, database: '', table: '', schema: '' })
+    if (running || objects.snapshots[id]?.status !== 'connected') return
+    updateTab({ connectionId: id, database: '', table: '' })
     resetStructure()
   }
-  function selectObject(db: string, table?: string, schema = '') {
+  function selectObject(db: string, table?: string, id = connectionId) {
+    if (running || objects.snapshots[id]?.status !== 'connected') return
+    if (id !== connectionId || db !== database || (table || '') !== selectedTable) resetStructure(Boolean(table))
+    updateTab({ connectionId: id, database: db, table: table || '' })
+  }
+  function openConnection(id: string) {
+    if (running) return Promise.resolve([])
+    const status = objects.snapshots[id]?.status
+    if (status !== 'connected' && status !== 'loading') {
+      // 打开连接不沿用持久化草稿中的库表；只有用户显式选择才设置查询范围。
+      setTabs((previous) => previous.map((item) => (item.connectionId === id ? { ...item, database: '', table: '' } : item)))
+      if (id === connectionId) resetStructure()
+    }
+    return objects.openConnection(id)
+  }
+  function closeConnection(id: string) {
     if (running) return
-    if (db !== database || (table || '') !== selectedTable || schema !== selectedSchema) resetStructure(Boolean(table))
-    updateTab({ database: db, table: table || '', schema })
+    objects.closeConnection(id)
+    setTabs((previous) => previous.map((item) => (item.connectionId === id ? { ...item, connectionId: '', database: '', table: '' } : item)))
+    if (id === connectionId) resetStructure()
+  }
+  function connectionAction(action: string, id: string) {
+    if (running) return
+    const target = connections.find((item) => item.id === id)
+    if (!target) return
+    if (action === 'open') void openConnection(id).catch(() => {})
+    else if (action === 'close') closeConnection(id)
+    else if (action === 'refresh') refreshSchema(id)
+    else if (action === 'edit') {
+      setEditing(target)
+      setConnectionModal(true)
+    } else if (action === 'delete') deleteConnection(id)
   }
   function selectTab(id: string) {
     const next = tabs.find((item) => item.id === id)
-    if (next && (next.connectionId !== connectionId || next.database !== database || next.table !== selectedTable || next.schema !== selectedSchema)) resetStructure(Boolean(next.table))
+    if (next && (next.connectionId !== connectionId || next.database !== database || next.table !== selectedTable)) resetStructure(Boolean(next.table))
     setActiveTab(id)
     setResultSearch('')
     setTablePage(1)
@@ -194,10 +246,19 @@ export const useWorkspace = () => {
     if (selectedResult[activeTab] === id) setSelectedResult((previous) => ({ ...previous, [activeTab]: remaining.at(-1)?.id || '' }))
     if (!remaining.length) setRuns((previous) => ({ ...previous, [activeTab]: { source: '' } }))
   }
-  async function tableAction(action: string, db: string, table: string, schema = '') {
-    if (running || request.current || !connection) return
-    const scope = { connectionId, database: db, table, schema }
-    const statement = `SELECT * FROM ${identifier(postgres ? schema || 'public' : db, postgres)}.${identifier(table, postgres)} LIMIT 1000;`
+  function databaseAction(action: string, id: string, db: string) {
+    if (running || request.current || objects.snapshots[id]?.status !== 'connected') return
+    const scope = { connectionId: id, database: db, table: '' }
+    if (action === 'new') addTab('', scope)
+    else if (action === 'tables') void executeSQL(`SHOW FULL TABLES FROM ${identifier(db)};`, scope)
+    else if (action === 'select') selectObject(db, undefined, id)
+    else if (action === 'refresh') refreshSchema(id)
+  }
+  async function tableAction(action: string, connectionId: string, db: string, table: string) {
+    const connection = connections.find((item) => item.id === connectionId)
+    if (running || request.current || !connection || objects.snapshots[connectionId]?.status !== 'connected') return
+    const scope = { connectionId, database: db, table }
+    const statement = `SELECT * FROM ${identifier(db)}.${identifier(table)} LIMIT 1000;`
     if (action === 'new') {
       addTab(statement, scope)
       return
@@ -210,13 +271,13 @@ export const useWorkspace = () => {
     const controller = new AbortController()
     request.current = controller
     setRunning(true)
-    setResultsCollapsed(false)
-    const source = `${connection.name} / ${db} / ${schema ? schema + '.' : ''}${table}`
+    const source = `${connection.name} / ${db} / ${table}`
     try {
-      const fields = action === 'ddl' ? [] : await getColumns(connectionId, db, table, controller.signal, schema)
-      const definition = action === 'ddl' ? await getDDL(connectionId, db, table, controller.signal, schema) : undefined
+      const fields = action === 'ddl' ? [] : await getColumns(connectionId, db, table, controller.signal)
+      const definition = action === 'ddl' ? await getDDL(connectionId, db, table, controller.signal) : undefined
       const rows = definition ? [[definition.ddl]] : fields.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
       publishResult(id, {
+        kind: action === 'ddl' ? 'ddl' : 'structure',
         title: `${table} · ${action === 'ddl' ? 'DDL' : '结构'}`,
         source,
         result: {
@@ -231,7 +292,12 @@ export const useWorkspace = () => {
         }
       })
     } catch (error) {
-      publishResult(id, { title: `${table} · ${action === 'ddl' ? 'DDL' : '结构'}`, source, error: controller.signal.aborted ? '请求已取消' : error instanceof Error ? error.message : '结构加载失败' })
+      publishResult(id, {
+        kind: action === 'ddl' ? 'ddl' : 'structure',
+        title: `${table} · ${action === 'ddl' ? 'DDL' : '结构'}`,
+        source,
+        error: controller.signal.aborted ? '请求已取消' : error instanceof Error ? error.message : '结构加载失败'
+      })
     } finally {
       request.current = null
       setRunning(false)
@@ -239,8 +305,9 @@ export const useWorkspace = () => {
   }
   async function executeSQL(statement: string, scope?: QueryScope) {
     const database = scope?.database ?? tab.database
-    const selectedSchema = scope?.schema ?? tab.schema
-    if (!connection || running || request.current) return
+    const targetConnectionId = scope?.connectionId ?? connectionId
+    const connection = connections.find((item) => item.id === targetConnectionId)
+    if (!connection || objects.snapshots[targetConnectionId]?.status !== 'connected' || running || request.current) return
     if (!statement.trim()) {
       message.info('请先输入 SQL 语句')
       return
@@ -249,7 +316,6 @@ export const useWorkspace = () => {
     const controller = new AbortController()
     request.current = controller
     setRunning(true)
-    setResultsCollapsed(false)
     setResultSearch('')
     setTablePage(1)
     const id = activeTab
@@ -260,17 +326,16 @@ export const useWorkspace = () => {
       id: crypto.randomUUID(),
       sql: statement,
       database,
-      schema: selectedSchema,
-      connectionId,
+      connectionId: targetConnectionId,
       connectionName: connection.name,
       time: new Date().toISOString(),
       durationMs: 0,
       ok: false
     }
     try {
-      const output = await executeQuery(connectionId, { database, schema: selectedSchema, sql: statement }, controller.signal)
+      const output = await executeQuery(targetConnectionId, { database, sql: statement }, controller.signal)
       setRuns((prev) => ({ ...prev, [id]: { result: output, source } }))
-      publishResult(id, { result: output, source, title: scope?.table ? `${scope.table} · 数据` : 'SQL 结果' })
+      publishResult(id, { kind: scope?.table ? 'data' : 'query', result: output, source, title: scope?.table ? `${scope.table} · 数据` : 'SQL 结果' })
       item.ok = true
       item.durationMs = output.durationMs
       if (!output.isQuery) {
@@ -280,7 +345,7 @@ export const useWorkspace = () => {
     } catch (e) {
       const error = controller.signal.aborted ? '请求已取消。' : e instanceof Error ? e.message : '查询失败'
       setRuns((prev) => ({ ...prev, [id]: { error, source } }))
-      publishResult(id, { error, source, title: 'SQL 结果' })
+      publishResult(id, { kind: scope?.table ? 'data' : 'query', error, source, title: scope?.table ? `${scope.table} · 数据` : 'SQL 结果' })
       item.error = error
       item.durationMs = Math.round(performance.now() - start)
     } finally {
@@ -290,8 +355,8 @@ export const useWorkspace = () => {
     }
   }
   function runSQL() {
-    if (!connection) {
-      message.info('请先创建并选择数据库连接')
+    if (!connection || !objects.connected) {
+      message.info('请先展开连接并加载数据库结构')
       return
     }
     if (running) return
@@ -305,65 +370,71 @@ export const useWorkspace = () => {
   })
   function addTab(statement?: string, scope?: QueryScope, title?: string) {
     if (running) return
-    const added = { ...newTab(tabs.length + 1), connectionId, database, table: selectedTable, schema: selectedSchema, ...scope }
+    const added = { ...newTab(tabs.length + 1), connectionId, database, table: selectedTable, ...scope }
     if (statement) added.sql = statement
     if (title) added.title = title
     setTabs((prev) => [...prev, added])
     selectTab(added.id)
-    if (added.connectionId !== connectionId || added.database !== database || added.table !== selectedTable || added.schema !== selectedSchema) resetStructure(Boolean(added.table))
+    if (added.connectionId !== connectionId || added.database !== database || added.table !== selectedTable) resetStructure(Boolean(added.table))
   }
-  function deleteConnection() {
-    if (!connection) return
+  function deleteConnection(id: string) {
+    const target = connections.find((item) => item.id === id)
+    if (!target || running) return
     modal.confirm({
-      title: `删除连接「${connection.name}」？`,
+      title: `删除连接「${target.name}」？`,
       content: '删除本机保存的连接信息，数据库中的数据不受影响。',
       okButtonProps: { danger: true },
       onOk: async () => {
-        await removeConnection(connection.id)
-        resetStructure()
+        await removeConnection(id)
+        closeConnection(id)
         await loadConnections()
       }
     })
   }
 
-  const closeTab = (key: string) => {
-    if (running || tabs.length < 2) return
-    const next = tabs.filter((item) => item.id !== key)
+  function closeTabs(key: string, mode: 'current' | 'others' | 'right' = 'current') {
+    if (running) return
+    const targetIndex = tabs.findIndex((item) => item.id === key)
+    if (targetIndex < 0) return
+    const target = tabs[targetIndex]
+    const remaining = tabs.filter((item, index) => (mode === 'others' ? item.id === key : mode === 'right' ? index <= targetIndex : item.id !== key))
+    // 工作区始终保留一个编辑器，关闭最后一页时创建空白查询。
+    const next = remaining.length ? remaining : [{ ...newTab(1), connectionId: target.connectionId, database: target.database }]
+    const retained = new Set(next.map((item) => item.id))
+    const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
     setTabs(next)
-    setResultSets((previous) => {
-      const copy = { ...previous }
-      delete copy[key]
-      return copy
-    })
-    setSelectedResult((previous) => {
-      const copy = { ...previous }
-      delete copy[key]
-      return copy
-    })
-    if (activeTab === key) selectTab(next[0].id)
-    setRuns((previous) => {
-      const copy = { ...previous }
-      delete copy[key]
-      return copy
-    })
+    setResultSets(keep)
+    setSelectedResult(keep)
+    setRuns(keep)
+    if (!retained.has(activeTab)) {
+      const nextActive = retained.has(key) ? target : next[Math.min(targetIndex, next.length - 1)]
+      selectTab(nextActive.id)
+      if (!remaining.length) resetStructure()
+    }
   }
+  const closeTab = (key: string) => closeTabs(key)
+
   const cancelQuery = () => request.current?.abort()
   const onEditorReady = (view: EditorView) => {
     editor.current = view
   }
   const onConnectionSaved = (saved: Connection) => {
-    // 连接类型或凭据改变后，只清理引用该连接的标签范围。
     setConnectionModal(false)
-    setTabs((previous) => previous.map((item) => (item.id === activeTab || item.connectionId === saved.id ? { ...item, connectionId: saved.id, database: '', table: '', schema: '' } : item)))
-    resetStructure()
-    setRefresh((value) => value + 1)
+    objects.closeConnection(saved.id)
+    // 编辑其他连接不改变当前查询；受影响草稿保留 SQL，重新展开后再选择库表。
+    setTabs((previous) => previous.map((item) => (item.connectionId === saved.id || (!editing && item.id === activeTab) ? { ...item, connectionId: saved.id, database: '', table: '' } : item)))
+    if (connectionId === saved.id || !editing) resetStructure()
     void loadConnections()
   }
+
   return {
     resultTabs,
     selectResult,
     closeResult,
     tableAction,
+    databaseAction,
+    connectionAction,
+    openConnection,
     connections,
     connectionId,
     connectionLoading,
@@ -383,11 +454,11 @@ export const useWorkspace = () => {
     selectTab,
     addTab,
     updateSQL,
+    exportCurrentSQL,
     runSQL,
     running,
     updateTab,
     editor,
-    postgres,
     objects,
     selectObject,
     columns,
@@ -396,13 +467,12 @@ export const useWorkspace = () => {
     structureLoading,
     run,
     result,
-    resultsCollapsed,
-    setResultsCollapsed,
     resultSearch,
     setResultSearch,
     tablePage,
     setTablePage,
     history,
+    openHistory,
     setHistory,
     historyOpen,
     setHistoryOpen,
@@ -410,10 +480,10 @@ export const useWorkspace = () => {
     setHistorySearch,
     database,
     selectedTable,
-    selectedSchema,
     refresh,
     refreshSchema,
     closeTab,
+    closeTabs,
     cancelQuery,
     onEditorReady,
     onConnectionSaved

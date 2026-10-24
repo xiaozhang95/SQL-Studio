@@ -4,7 +4,7 @@
 
 ## 职责
 
-创建连接仓库、MySQL/PostgreSQL 驱动及服务，注入 Gin API，组合静态网页和 HTTP 生命周期。
+创建连接仓库、MySQL 驱动及服务，注入 Gin API，组合静态网页和 HTTP 生命周期。
 
 ## 约束与调用
 

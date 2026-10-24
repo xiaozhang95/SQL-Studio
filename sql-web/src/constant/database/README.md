@@ -2,6 +2,6 @@
 
 [源码](index.ts)
 
-databaseTypes / databaseTypeInfo(type?)：六种产品标签、协议、端口、默认用户和样式类。PolarDB Oracle 使用 PostgreSQL 协议。
+databaseTypes / databaseTypeInfo(type?)：仅 MySQL 的标签、端口和样式类。
 
 导入使用 `@/constant/database`，不追加 /index 或扩展名；改契约时同步调用方及本说明。

@@ -1,33 +1,101 @@
-import { ClockCircleOutlined, DatabaseOutlined, HistoryOutlined, SearchOutlined } from '@ant-design/icons'
-import { App as AntApp, Button, Collapse, Drawer, Empty, Input, Tag, Tooltip } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, SearchOutlined } from '@ant-design/icons'
+import { Alert, App as AntApp, Button, Drawer, Empty, Input, Table, Tag, Tooltip, Typography } from 'antd'
+import type { TableColumnsType } from 'antd'
+import { useState } from 'react'
+import type { CSSProperties } from 'react'
 
+import type { HistoryItem } from '@/typings/workspace'
+
+import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 
-type Props = { model: Pick<WorkspaceModel, 'history' | 'setHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'addTab'> }
+type Props = {
+  model: Pick<WorkspaceModel, 'history' | 'setHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'addTab'>
+}
 
-/** 历史默认收起，只展开一条详情；载入操作不会直接执行 SQL。 */
+/** 表格提供执行概览，展开查看完整 SQL；载入只创建查询标签。 */
 export default function QueryHistory({ model }: Props) {
-  const { history, setHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, addTab } = model
+  const { history, setHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, connectionId, connection, addTab } = model
+  // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
+  const connectionHistory = connectionId ? history.filter((item) => item.connectionId === connectionId) : []
   const { modal } = AntApp.useApp()
+  const [page, setPage] = useState(1)
+  const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${connectionId}:${connectionHistory.length}:${historySearch}`)
+  const columns: TableColumnsType<HistoryItem> = [
+    {
+      title: '状态',
+      dataIndex: 'ok',
+      width: 100,
+      filters: [
+        { text: '成功', value: true },
+        { text: '失败', value: false }
+      ],
+      onFilter: (value, item) => item.ok === value,
+      render: (ok: boolean) => (
+        <Tag color={ok ? 'success' : 'error'} icon={ok ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
+          {ok ? '成功' : '失败'}
+        </Tag>
+      )
+    },
+    {
+      title: '执行时间',
+      dataIndex: 'time',
+      width: 180,
+      sorter: (a, b) => Date.parse(a.time) - Date.parse(b.time),
+      render: (time: string) => new Date(time).toLocaleString('zh-CN', { hour12: false })
+    },
+    { title: '连接', dataIndex: 'connectionName', width: 140, ellipsis: true },
+    { title: '数据库', dataIndex: 'database', width: 140, ellipsis: true, render: (database: string) => database || '未选择数据库' },
+    { title: 'SQL', dataIndex: 'sql', width: 280, ellipsis: true, render: (sql: string) => <span title={sql}>{sql.replace(/\s+/g, ' ')}</span> },
+    { title: '耗时', dataIndex: 'durationMs', width: 110, sorter: (a, b) => a.durationMs - b.durationMs, render: (duration: number) => `${duration} ms` },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 124,
+      fixed: 'right',
+      render: (_, item) => {
+        const missing = !connections.some((connection) => connection.id === item.connectionId)
+        return (
+          <Tooltip title={missing ? '原连接已删除' : undefined}>
+            <Button
+              type="link"
+              disabled={running || missing}
+              onClick={() => {
+                addTab(item.sql, { connectionId: item.connectionId, database: item.database, table: '' })
+                setHistoryOpen(false)
+              }}
+            >
+              载入编辑器
+            </Button>
+          </Tooltip>
+        )
+      }
+    }
+  ]
   return (
     <Drawer
       title={
         <span>
-          <HistoryOutlined /> 执行历史
+          <HistoryOutlined /> 执行历史{connection ? ` · ${connection.name}` : ''}
         </span>
       }
       open={historyOpen}
       onClose={() => setHistoryOpen(false)}
-      size={560}
+      size={1080}
+      forceRender
+      styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
         <Button
           type="text"
           danger
-          disabled={!history.length}
+          disabled={!connectionHistory.length}
           onClick={() =>
             modal.confirm({
-              title: '清空本机执行历史？',
-              onOk: () => setHistory([])
+              title: `清空连接「${connection?.name || ''}」的执行历史？`,
+              onOk: () => {
+                setHistory((previous) => previous.filter((item) => item.connectionId !== connectionId))
+                setPage(1)
+              }
             })
           }
         >
@@ -35,58 +103,41 @@ export default function QueryHistory({ model }: Props) {
         </Button>
       }
     >
-      <Input prefix={<SearchOutlined />} placeholder="搜索 SQL / 数据库" aria-label="搜索执行历史" value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} allowClear />
-      {!history.length ? (
-        <Empty image={<HistoryOutlined className="empty-state-icon" />} description="暂无执行历史" />
-      ) : (
-        <Collapse
-          className="history-list"
-          accordion
-          destroyOnHidden
-          items={history
-            .filter((item) => `${item.sql} ${item.database}`.toLowerCase().includes(historySearch.toLowerCase()))
-            .map((item) => ({
-              key: item.id,
-              label: (
-                <div>
-                  <div className="history-heading">
-                    <Tag color={item.ok ? 'success' : 'error'}>{item.ok ? '成功' : '失败'}</Tag>
-                    <span>{new Date(item.time).toLocaleString('zh-CN')}</span>
-                  </div>
-                  <div className="history-summary" title={item.sql}>
-                    {item.sql.replace(/\s+/g, ' ')}
-                  </div>
-                </div>
-              ),
-              children: (
-                <>
-                  <pre className="history-sql">{item.sql}</pre>
-                  <div className="history-bottom">
-                    <Tooltip title={item.connectionName}>
-                      <Tag color="blue" icon={<DatabaseOutlined />}>
-                        {item.database || item.connectionName}
-                      </Tag>
-                    </Tooltip>
-                    <span>
-                      <ClockCircleOutlined /> {item.durationMs} ms
-                    </span>
-                    <Button
-                      type="link"
-                      disabled={running || !connections.some((c) => c.id === item.connectionId)}
-                      onClick={() => {
-                        addTab(item.sql, { connectionId: item.connectionId, database: item.database, schema: item.schema || '', table: '' })
-                        setHistoryOpen(false)
-                      }}
-                    >
-                      载入编辑器
-                    </Button>
-                  </div>
-                  {item.error && <div className="history-error">{item.error}</div>}
-                </>
-              )
-            }))}
+      <Input
+        style={{ flexShrink: 0 }}
+        prefix={<SearchOutlined />}
+        placeholder="搜索 SQL / 数据库"
+        aria-label="搜索执行历史"
+        value={historySearch}
+        onChange={(event) => {
+          setHistorySearch(event.target.value)
+          setPage(1)
+        }}
+        allowClear
+      />
+      <div ref={viewport} className="history-table-viewport" style={{ '--history-body-height': `${bodyHeight}px` } as CSSProperties}>
+        <Table<HistoryItem>
+          className="history-table"
+          rowKey="id"
+          columns={columns}
+          dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database}`.toLowerCase().includes(historySearch.toLowerCase()))}
+          scroll={{ x: 1200, y: bodyHeight || undefined }}
+          pagination={{ current: page, pageSize: 10, showSizeChanger: false, showTotal: (total) => `共 ${total} 条` }}
+          onChange={(pagination) => setPage(pagination.current || 1)}
+          expandable={{
+            columnTitle: <span style={{ whiteSpace: 'nowrap' }}>详情</span>,
+            columnWidth: 72,
+            expandedRowRender: (item) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Typography.Text copyable={{ text: item.sql }}>SQL 语句</Typography.Text>
+                <pre className="history-sql">{item.sql}</pre>
+                {item.error && <Alert type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.error}</div>} />}
+              </div>
+            )
+          }}
+          locale={{ emptyText: <Empty image={<HistoryOutlined className="empty-state-icon" />} description={connectionHistory.length ? '没有匹配的执行记录' : '当前连接暂无执行历史'} /> }}
         />
-      )}
+      </div>
     </Drawer>
   )
 }

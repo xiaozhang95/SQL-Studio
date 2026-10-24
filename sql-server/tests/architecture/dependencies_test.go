@@ -13,10 +13,9 @@ import (
 // 将依赖方向纳入回归检查，防止后续新增接口又直接耦合数据库或文件存储。
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
-		"app":    {"config": true, "connection": true, "httpapi": true, "mysql": true, "postgres": true, "service": true},
+		"app":    {"config": true, "connection": true, "httpapi": true, "mysql": true, "service": true},
 		"config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true},
 		"httpapi": {"service": true, "model": true}, "service": {"model": true}, "model": {},
-		"postgres": {"model": true},
 	}
 	root, err := filepath.Abs("../../internal")
 	if err != nil {
@@ -66,8 +65,8 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if strings.HasPrefix(dependency, "github.com/gin-gonic/") && layer != "httpapi" && layer != "app" {
 				t.Errorf("%s 不得依赖 Gin 框架", relative)
 			}
-			if strings.HasPrefix(dependency, "github.com/jackc/pgx/") && layer != "postgres" {
-				t.Errorf("%s 不得直接依赖 PostgreSQL 驱动", relative)
+			if strings.HasPrefix(dependency, "github.com/jackc/") {
+				t.Errorf("%s 不得引入非 MySQL 驱动", relative)
 			}
 		}
 		return nil

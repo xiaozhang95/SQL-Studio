@@ -1,21 +1,23 @@
-# 数据库对象树
+# 数据库连接树
 
 [组件索引](../README.md) · [源码](index.tsx)
 
 ## 参数与回调
 
-connectionId、database、selectedTable、selectedSchema、databases、tables、loadTables、loading、error、disabled、onSelect、onRefresh。onSelect(database, table?, schema?)。
+model 通过 Pick 消费 connections、当前连接/库/表、objects、running，以及 selectConnection、selectObject、connectionAction、openConnection、databaseAction、tableAction。
 
 ## 行为与边界
 
-不重复发起列表请求。搜索仅匹配已加载的表；树 key 包含库/表/Schema；节点名称省略时悬停可查看完整值。标题和节点不显示数量标签，刷新经 onRefresh 回传。
+一棵树展示连接 → 数据库 → 表/视图。初始连接全部收起，点击箭头或双击连接/数据库节点加载、展开或收起子列表，单击文本仅选择已打开范围；切换当前查询不重挂载树。节点 key 包含节点类型、连接 ID、库、表，同名对象不会跨连接混淆。结构缓存与工具栏选择器共享。
 
-页面私有组件从 `./components/databaseExplorer` 导入；只服务工作区，不通过聚合出口扩散依赖。
+连接加载成功后图标恢复完整亮度、名称使用原生主色；未打开连接使用禁用文字与降低图标透明度，品牌资产不改色。失败显示原因。关闭后隐藏子项，重新展开会重新加载。搜索匹配连接名和已加载的库表，未加载连接仍保留供展开；长名称省略并提供完整 title。
 
-## 当前交互
+连接右键提供打开/关闭、刷新、编辑、删除，加载中可关闭以取消请求。数据库右键提供选择、新建查询、查看表列表、刷新结构；表/视图提供新建查询、查询数据、查询结构、查看 DDL。菜单均有图标，携带完整原始连接/库/表范围，停止冒泡；不依赖先点击选中，执行期间禁用。
 
-表与视图支持右键菜单：新建查询、查询数据、查询结构、查看 DDL。菜单携带原始数据库/表/Schema，不从展示文字推断，也不依赖先点击选中。执行时禁止菜单操作。普通选择只修改范围，不自动切换底部结构面板。
+树体独立滚动，选中态及 hover 使用 Ant Design 原生 primary/controlItemBgHover token。
 
-## 布局修正
+双击通过原生 Tree expandAction=doubleClick 与箭头共用展开、loadData 和加载状态；表/视图叶节点不展开。图标容器统一 flex 居中，品牌图标外层也使用 flex，覆盖原生 inline-block 的基线偏移；图标和文字在 24px 原生选中背景内垂直居中。
 
-选中节点 hover/focus 的局部规则包含树行层级，优先于 Ant Design 原生 nodeHoverColor 规则；只限定选中节点，普通未选中节点保留组件交互。实际数据库/表 hover 均保持白字。
+树节点文字禁止浏览器选择，双击仅执行展开/收起，不产生文本高亮。连接关闭时清空相关查询选择，重新加载后没有旧节点选中。SQL 编辑器、结果和历史 SQL 仍可正常选择复制。
+
+连接节点的 loadData 调用工作区 openConnection，和右键打开共用范围清理；不直接调用对象缓存 hook 打开，避免绕过首次打开不默认选库的规则。

@@ -28,6 +28,11 @@ html[data-theme='dark'] {
     scrollbar-width: thin;
   }
 }
+// 亮色使用原生实色边框与布局背景，避免左右区域被半透明分隔线融在一起。
+html[data-theme='light'] .sql-studio-theme {
+  --border: var(--ant-color-border);
+  --surface-raised: var(--ant-color-bg-layout);
+}
 * {
   box-sizing: border-box;
 }
@@ -89,7 +94,6 @@ body {
 .toolbar-left,
 .result-meta,
 .result-actions,
-.result-panel-actions,
 .structure-tags {
   display: flex;
   align-items: center;
@@ -114,31 +118,18 @@ body {
   background: var(--surface);
   border-right: 1px solid var(--border);
 }
-.sidebar-top {
-  padding: 16px;
-  flex: none;
-  border-bottom: 1px solid var(--border);
-}
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.connection-picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.connection-picker .ant-select {
-  flex: 1;
-  min-width: 0;
-}
 .connection-option {
   display: flex;
   align-items: center;
   gap: 8px;
   max-width: 100%;
+}
+.connection-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .explorer {
   flex: 1;
@@ -147,7 +138,6 @@ body {
   flex-direction: column;
   padding: 12px 12px 0;
 }
-.explorer > .section-heading,
 .explorer > .ant-input-affix-wrapper {
   flex: none;
 }
@@ -161,6 +151,20 @@ body {
 .object-tree .ant-tree {
   background: transparent;
 }
+// 双击树节点只展开/收起，不产生浏览器文字选区；内容区仍允许复制 SQL 和结果。
+.object-tree,
+.workspace-tabs,
+.topbar,
+.editor-toolbar,
+.ant-dropdown-menu {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.topbar input,
+.editor-toolbar input {
+  -webkit-user-select: text;
+  user-select: text;
+}
 .object-tree .ant-tree-node-content-wrapper {
   display: flex;
   align-items: center;
@@ -172,6 +176,15 @@ body {
 .object-tree .ant-tree-iconEle {
   color: var(--primary);
   flex: none;
+}
+.object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.connection-tree-icon {
+  display: flex;
+  align-items: center;
 }
 .object-tree .ant-tree-node-selected .ant-tree-iconEle {
   color: inherit;
@@ -205,15 +218,11 @@ body {
   gap: 10px;
   overflow: hidden;
 }
+.toolbar-left .connection-select,
 .toolbar-left .database-select {
   flex: 1 1 150px;
   min-width: 130px;
   max-width: 220px;
-}
-.toolbar-left .table-select {
-  flex: 1 1 180px;
-  min-width: 150px;
-  max-width: 260px;
 }
 .editor-panel,
 .results-panel {
@@ -229,15 +238,26 @@ body {
   flex-direction: column;
   min-height: 0;
 }
-.query-tabs {
+.workspace-tabs {
   flex: none;
 }
-.query-tabs .ant-tabs-nav {
+.workspace-tabs .ant-tabs-nav {
   margin: 0;
   padding: 8px 12px 0;
   background: var(--surface-raised);
 }
-.query-tabs .ant-tabs-content-holder {
+html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
+  background: var(--ant-color-fill);
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: var(--surface);
+  border-bottom-color: var(--surface);
+}
+.workspace-tabs .ant-tabs-content-holder {
   display: none;
 }
 .editor-toolbar {
@@ -251,8 +271,9 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .toolbar-left {
-  flex: 1 1 400px;
-  min-width: 410px;
+  flex: 1 1 500px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .toolbar-left > .ant-btn {
   flex: none;
@@ -333,22 +354,11 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
-.result-panel-content[hidden] {
-  display: none;
-}
-.result-panel-actions {
-  flex: none;
-}
 .result-tabs-row {
   flex: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 48px;
-  padding: 8px 12px 0;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
+
 .result-toolbar {
   display: flex;
   align-items: center;
@@ -363,13 +373,19 @@ body {
   min-width: 0;
   flex: 1;
 }
-.result-scope-tag {
-  min-width: 0;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.result-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
 }
+.result-status.is-success {
+  color: var(--ant-color-success-text);
+}
+.result-status.is-error {
+  color: var(--ant-color-error-text);
+}
+
 .result-actions {
   flex: none;
 }
@@ -396,6 +412,11 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+}
+.column-type,
+.cell-null {
+  color: var(--ant-color-text-secondary);
+  font-weight: normal;
 }
 .cell-value {
   display: block;
@@ -433,43 +454,29 @@ body {
   text-align: center;
   padding: 28px 10px;
 }
-.history-list {
+.history-table-viewport {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   margin-top: 16px;
-
-  .ant-collapse-title {
-    min-width: 0;
-  }
-}
-.history-heading,
-.history-bottom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.history-summary {
-  margin-top: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.history-table .ant-table-body {
+  height: var(--history-body-height);
 }
 .history-sql {
-  background: var(--surface-raised);
-  padding: 10px;
-  max-height: 130px;
+  font-family: inherit;
+  background: var(--surface);
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 240px;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.history-bottom {
-  justify-content: space-between;
-}
-.history-error {
-  color: var(--danger);
-  overflow-wrap: anywhere;
-}
 .result-meta .ant-tag,
-.column-title > .ant-tag,
-.result-tabs-row .ant-tag,
 .structure-tags .ant-tag {
   margin-inline-end: 0;
 }
@@ -547,13 +554,15 @@ body {
   height: 30px;
   object-fit: contain;
 }
-.connection-option .engine-symbol {
+.connection-option .engine-symbol,
+.connection-tree-icon .engine-symbol {
   width: 20px;
   height: 20px;
   border: 0;
   border-radius: 4px;
 }
-.connection-option .engine-symbol img {
+.connection-option .engine-symbol img,
+.connection-tree-icon .engine-symbol img {
   width: 20px;
   height: 20px;
 }
@@ -641,12 +650,6 @@ body {
   }
 }
 
-.sidebar-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  flex: none;
-}
 .empty-state-icon {
   color: var(--primary);
 }
@@ -655,10 +658,6 @@ body {
   height: 36px;
 }
 
-// 侧栏和历史 SQL 使用原生填充 token 增强分区，选中文字继承对比色。
-.history-sql {
-  background: var(--ant-color-fill-secondary);
-}
 .engine-picker {
   gap: 4px;
 }
@@ -690,17 +689,88 @@ body {
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-iconEle {
   color: inherit;
 }
-.result-query-tabs .ant-tabs-content-holder {
-  display: none;
-}
 
 .object-tree .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
   color: var(--on-primary);
   background: var(--primary);
 }
-.result-query-tabs .ant-tabs-nav {
-  background: transparent;
-}
 .connection-settings {
   padding-block: 20px;
+}
+
+// 查询和结果使用同一套卡片页签布局与主题主色。
+.workspace-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--primary);
+}
+
+// SQL 补全沿用页面字体与主题，移除关键字的 emoji 和匹配下划线。
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete {
+  width: max-content;
+  min-width: 240px;
+  max-width: min(480px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul {
+  min-width: 240px;
+  max-width: 100%;
+  max-height: 240px;
+  height: auto;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px;
+}
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  padding: 6px 10px;
+  min-height: 32px;
+  line-height: 1.5;
+  border-radius: 4px;
+}
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li:hover {
+  background: var(--ant-control-item-bg-hover);
+}
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.sql-editor .cm-completionIcon {
+  display: none;
+}
+.sql-editor .cm-completionMatchedText {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.connection-explorer {
+  padding-top: 16px;
+}
+.connection-tree-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.connection-tree-label.is-connected {
+  color: var(--primary);
+}
+.connection-tree-label.is-closed {
+  color: var(--ant-color-text-disabled);
+}
+.connection-tree-label.is-error,
+.tree-error {
+  color: var(--ant-color-error-text);
+}
+.connection-tree-icon.is-closed,
+.connection-tree-icon.is-error {
+  opacity: 0.45;
+}
+.object-tree .ant-tree-node-selected .connection-tree-label {
+  color: inherit;
+}
+.object-tree .ant-tree-title > .ant-dropdown-trigger {
+  display: block;
 }

@@ -4,7 +4,7 @@
 
 ## 职责
 
-ConnectionRepository/Database 为本层声明的接口；注册表按协议分派，编排连接、结构与 SQL。
+ConnectionRepository/Database 为本层声明的接口；直接注入 MySQL 实现，编排连接、结构与 SQL。
 
 ## 约束与调用
 

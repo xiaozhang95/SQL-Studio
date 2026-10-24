@@ -4,7 +4,7 @@
 
 ## 职责
 
-MySQL、MariaDB、PolarDB MySQL 的连接测试、结构读取、DDL 与 SQL 执行。
+MySQL 的连接测试、结构读取、DDL 与 SQL 执行。
 
 ## 约束与调用
 

@@ -8,7 +8,16 @@ import (
 	"sqldesk/internal/model"
 )
 
-func (s *Service) ListConnections() []model.Connection { return s.connections.List() }
+// 旧的非 MySQL 连接保留在本地文件中，不再作为可用连接返回。
+func (s *Service) ListConnections() []model.Connection {
+	items := []model.Connection{}
+	for _, c := range s.connections.List() {
+		if model.IsMySQL(c.Type) {
+			items = append(items, c)
+		}
+	}
+	return items
+}
 
 func (s *Service) SaveConnection(c model.Connection) (model.Connection, error) {
 	c.Type = model.NormalizeDatabaseType(c.Type)

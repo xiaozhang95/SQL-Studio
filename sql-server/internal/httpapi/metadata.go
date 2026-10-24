@@ -19,7 +19,7 @@ func (h *handler) tables(c *gin.Context) {
 	respond(c, 200, data)
 }
 func (h *handler) columns(c *gin.Context) {
-	data, err := h.service.Columns(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"), c.Query("schema"))
+	data, err := h.service.Columns(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"))
 	if err != nil {
 		fail(c, err)
 		return
@@ -27,7 +27,7 @@ func (h *handler) columns(c *gin.Context) {
 	respond(c, 200, data)
 }
 func (h *handler) ddl(c *gin.Context) {
-	data, err := h.service.DDL(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"), c.Query("schema"))
+	data, err := h.service.DDL(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"))
 	if err != nil {
 		fail(c, err)
 		return

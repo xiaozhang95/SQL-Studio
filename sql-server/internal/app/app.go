@@ -15,7 +15,6 @@ import (
 	"sqldesk/internal/connection"
 	"sqldesk/internal/httpapi"
 	"sqldesk/internal/mysql"
-	"sqldesk/internal/postgres"
 	"sqldesk/internal/service"
 )
 
@@ -26,7 +25,7 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	svc := service.New(repository, service.NewDatabaseRegistry(mysql.NewClient(), postgres.NewClient()))
+	svc := service.New(repository, mysql.NewClient())
 	// 首次初始化走同一业务校验，已有连接保持不变。
 	if len(svc.ListConnections()) == 0 && cfg.InitialConnection != nil {
 		if _, err = svc.SaveConnection(*cfg.InitialConnection); err != nil {

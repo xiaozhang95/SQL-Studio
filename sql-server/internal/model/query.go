@@ -2,7 +2,6 @@ package model
 
 type QueryRequest struct {
 	Database   string `json:"database"`
-	Schema     string `json:"schema,omitempty"`
 	SQL        string `json:"sql"`
 	Limit      int    `json:"limit"`
 	AllowWrite bool   `json:"allowWrite"`

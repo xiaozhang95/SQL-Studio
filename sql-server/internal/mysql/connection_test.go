@@ -6,7 +6,7 @@ import (
 )
 
 func TestCompatibleProfilesAndTLS(t *testing.T) {
-	for _, kind := range []string{"", model.TypeMySQL, model.TypeMariaDB, model.TypePolarDBMySQL} {
+	for _, kind := range []string{"", model.TypeMySQL} {
 		cfg, err := driverConfig(model.Connection{Type: kind, Host: "database.example", Port: 3306, Username: "user", Password: "secret", TLS: true}, "example")
 		if err != nil {
 			t.Fatal(err)

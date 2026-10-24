@@ -75,10 +75,10 @@ func TestGinRouteParametersAndConnectionTypes(t *testing.T) {
 	if routes := router.Routes(); len(routes) != 10 {
 		t.Fatalf("unexpected Gin routes: %d", len(routes))
 	}
-	req := httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(`{"type":"polardb-mysql","tls":true,"name":"cloud","host":"db.example","port":3306,"username":"user","password":"secret"}`))
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(`{"type":"mysql","tls":true,"name":"cloud","host":"db.example","port":3306,"username":"user","password":"secret"}`))
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
-	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"type":"polardb-mysql"`) {
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"type":"mysql"`) {
 		t.Fatal(rec.Body.String())
 	}
 	id := store.List()[0].ID

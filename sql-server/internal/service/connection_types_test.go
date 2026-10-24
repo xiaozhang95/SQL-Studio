@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"sqldesk/internal/connection"
 	"sqldesk/internal/model"
 	"sqldesk/internal/service"
@@ -13,7 +14,7 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 	svc := service.New(repo, &stubDatabase{})
-	for _, kind := range []string{"", model.TypeMySQL, model.TypeMariaDB, model.TypePolarDBMySQL, model.TypePostgreSQL, model.TypePolarDBPostgreSQL, model.TypePolarDBOracle} {
+	for _, kind := range []string{"", model.TypeMySQL} {
 		saved, err := svc.SaveConnection(model.Connection{Type: kind, TLS: true, Name: "test", Host: "localhost", Port: 3306, Username: "root", Password: "secret"})
 		if err != nil {
 			t.Fatal(err)
@@ -29,7 +30,33 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 			t.Fatal("stored connection lost type/TLS/password")
 		}
 	}
-	if _, err := svc.SaveConnection(model.Connection{Type: "sqlserver", Name: "test", Host: "localhost", Port: 1433, Username: "user"}); err == nil {
-		t.Fatal("unknown type accepted")
+	for _, kind := range []string{"mariadb", "polardb-mysql", "postgresql", "polardb-postgresql", "polardb-oracle", "sqlserver"} {
+		c := model.Connection{Type: kind, Name: "test", Host: "localhost", Port: 3306, Username: "user"}
+		if _, err := svc.SaveConnection(c); err == nil {
+			t.Fatalf("removed type accepted: %s", kind)
+		}
+		if _, err := svc.TestConnection(context.Background(), c); err == nil {
+			t.Fatalf("removed type tested: %s", kind)
+		}
+	}
+}
+
+// 收敛支持范围不能删除磁盘中的旧连接，也不能把它冒充 MySQL 返回。
+func TestListConnectionsKeepsUnsupportedRecordsOnDisk(t *testing.T) {
+	repo, err := connection.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := repo.Save(model.Connection{Type: "postgresql", Name: "old", Password: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := service.New(repo, &stubDatabase{})
+	if len(svc.ListConnections()) != 0 {
+		t.Fatal("unsupported connection listed")
+	}
+	preserved, err := repo.Get(old.ID)
+	if err != nil || preserved.Type != "postgresql" || preserved.Password != "secret" {
+		t.Fatal("old connection modified or lost")
 	}
 }

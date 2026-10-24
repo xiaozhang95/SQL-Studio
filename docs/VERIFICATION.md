@@ -155,3 +155,94 @@
 - 删除根目录 start.ps1、stop.ps1、format.ps1，以及 sql-server/check.ps1、format.ps1；同步现行文档为 pnpm、gofmt、go test/vet/build/run 原生命令。结构检查脚本仍被 pnpm lint 使用，保留。
 - 清除旧 .server.pid 标记。backend.log、backend-error.log 被进程占用，删除失败，暂时保留；未停止服务或修改连接数据。
 - node scripts/check-structure.mjs 通过。本轮无业务源码变动，不重复 UI 或数据库集成测试。历史验证记录保留当时的脚本名称。
+
+## 2026-10-23 查询工具栏与执行历史表格
+
+- 导入 SQL 移至运行工具栏右侧，旁边增加导出当前标签完整 SQL；空白 SQL 禁用导出。浏览器实际下载“查询 1.sql”，读取文件确认内容为原始 SELECT 1;。
+- 执行历史改为每页 10 条的 Table，支持状态筛选、时间/耗时排序和展开 SQL 详情。修正详情表头换行：列宽 72px，标题保持单行；展开区移除重复连接信息，完整 SQL 使用主题背景、细边框并提供复制入口，可选 Schema 和失败原因保留。
+- 结果快照保存 query/data/structure/ddl 类型，页签显示对应图标。浏览器运行 SELECT 1 成功，确认 SQL 结果页签图标及工具栏按钮顺序；不访问业务表。
+- 在默认窄视口和 1100×800 视口检查历史表头与展开详情，验证 SQL 搜索空态；亮暗主题均检查并截图，验证后恢复跟随系统及原视口。截图位于 [暗色历史](../artifacts/ui-20261023/history-dark.jpg)、[亮色历史](../artifacts/ui-20261023/history-light.jpg)、[工作区](../artifacts/ui-20261023/workspace-dark.jpg)。
+- 验证：pnpm format、pnpm lint、pnpm build 与 node scripts/check-structure.mjs；构建仍提示前端主包超过 500 kB。本次仅修改前端与说明文档。
+
+## 2026-10-23 简化结果面板
+
+- 移除结果区右侧展开/折叠按钮、折叠状态和拖动/Enter 折叠逻辑；有结果直接显示，没有结果隐藏整个面板。
+- 真实页面执行 SELECT 1，确认结果直接显示且无折叠按钮；拖动高度从 260px 到 330px，再拖至最小 180px，内容不折叠，双击恢复 260px。关闭最后一条结果后面板隐藏。未访问业务表。
+- 亮暗主题均检查；截图：[暗色结果面板](../artifacts/ui-20261023/results-resizable-dark.jpg)、[亮色结果面板](../artifacts/ui-20261023/results-resizable-light.jpg)。验证后恢复跟随系统主题。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 和 git diff --check 通过；构建保留主包体积提示。
+
+## 2026-10-23 MySQL 收敛与工作区细节
+
+- 上下查询页签激活文字统一引用 colorPrimary。浏览器读取最终计算色：暗色均 rgb(22,104,220)，亮色均 rgb(22,119,255)。
+- 结果索引固定左侧，分页右对齐；使用常量查询生成宽表，横向滚动 scrollLeft=634 后索引仍保持 sticky、left=0、x=285。
+- 库右键增加选择数据库、新建查询、查看表列表、刷新结构；表右键菜单增加图标。菜单事件停止冒泡，避免右键动作改变其他查询窗口范围。验证 sys 新建查询仅创建窗口、不执行；information_schema 的 CHARACTER_SETS 结构查询成功。未访问业务表。
+- 新建连接仅展示 MySQL，前后端移除其他产品类型、专属 Schema/初始库字段、协议分派、驱动代码、pgx 依赖、对应集成测试及品牌图片。旧非 MySQL 连接不再返回可用列表，不删除磁盘记录。补充拒绝被移除类型和保留旧记录的服务回归测试。
+- 后端已重启，health 返回 status=ok。pnpm format/lint/build、gofmt、go test -count=1 ./...、go vet ./...、go build ./...、目录与 diff 检查通过；未开启写入临时数据库的集成测试，构建仍有主包体积提示。
+- 截图：[暗色结果](../artifacts/ui-20261023/mysql-results-dark.jpg)、[亮色结果](../artifacts/ui-20261023/mysql-results-light.jpg)、[库菜单](../artifacts/ui-20261023/database-menu-dark.jpg)、[表菜单](../artifacts/ui-20261023/table-menu-dark.jpg)、[MySQL 连接窗口](../artifacts/ui-20261023/mysql-only-connection-dark.jpg)。测试后恢复跟随系统主题及原 SQL 文本。
+
+## 2026-10-23 结果文字与页签统一
+
+- 字段类型改为表头第二行的普通文字，NULL 改为次级文字 `(NULL)`；结果工具栏移除连接/数据库标签，状态和耗时使用图标加文字。结果区实际 Tag 数量为 0。
+- 查询与结果共用 workspace-tabs 和原生 editable-card：亮暗主题实测页签高度均 40px、padding 均 8px 16px、导航 padding 均 8px 12px 0px，背景与激活文字色一致。保留不同操作的结果图标与原生关闭按钮。
+- 浏览器仅执行常量 SELECT/UNION ALL，验证数字、文字、NULL、多结果切换与关闭；关闭最后一个结果后面板隐藏。测试查询已关闭，恢复跟随系统主题；未访问业务表或改写连接。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs、git diff --check 通过。构建保留已有主包体积提示；本轮未修改后端。
+- 截图：[暗色结果](../artifacts/ui-20261023/plain-results-dark.jpg)、[亮色结果](../artifacts/ui-20261023/plain-results-light.jpg)。
+
+## 2026-10-23 按钮文案、历史固定区域与空白查询
+
+- 工具栏按钮文案改为运行、导入、导出。顶部和数据库右键菜单新建查询的编辑器内容实测为空，未生成结果，空白查询禁用导出；原有草稿不改写，表菜单生成 SQL 的行为保留。
+- 执行历史抽屉取消外层滚动，搜索、表头和分页固定，仅 Table body 滚动。表体保持分配高度，少量记录时分页仍位于底部。共用 useTableViewportLayout 测量表头、分页及其边距；结果分页在视口外时不重复扣除。
+- 实际展开 5 条历史详情制造溢出，表体高度 438px、内容高度 900px，滚动前后搜索 top=94、表头 top=137、分页 top=646，抽屉 scrollTop=0；验证搜索无匹配、恢复搜索和收起详情。亮暗主题均检查，测试后关闭新增查询并恢复跟随系统。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 与 git diff --check 通过；保留已有主包体积提示。本轮未修改后端或访问业务表。
+- 截图：[固定历史暗色](../artifacts/ui-20261023/history-fixed-dark.jpg)、[固定历史亮色](../artifacts/ui-20261023/history-fixed-light.jpg)、[空白查询与按钮](../artifacts/ui-20261023/blank-query-toolbar.jpg)。
+
+## 2026-10-23 SQL 补全与查询页签菜单
+
+- 补全列表移除关键字 emoji 和匹配下划线，使用页面字体、主题背景/主色、圆角及阴影；条目 padding=6px 10px，长关键字完整显示。亮暗主题实测，上下键与 Enter 选择 SELECT 正常。
+- 顶部查询页签整块支持右键关闭当前、其他、右侧。实际创建 5 页，关闭第 3 页右侧后保留 1/2/3 并激活 3；关闭后台第 2 页后仍激活 3；在第 1 页关闭其他后保留原 SQL。另用 localhost 独立草稿验证关闭最后一页后保留一个新空白编辑器，其他/右侧菜单禁用。
+- 对象树初始均收起；点击 sys 文本后仍仅 4 个库节点，表选择器不持续加载。点击 sys 箭头后展示 105 个节点；再点击 information_schema 文本时 sys 展开状态保留、information_schema 不展开，打开表下拉才加载其列表。仅请求元数据，未执行 SQL 或访问业务表。
+- 测试后关闭临时查询、恢复原草稿与跟随系统主题。pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs、git diff --check 通过；构建保留已有主包体积提示，本轮未改动后端。
+- 截图：[补全暗色](../artifacts/ui-20261023/completion-dark.jpg)、[补全亮色](../artifacts/ui-20261023/completion-light.jpg)、[页签右键菜单](../artifacts/ui-20261023/query-context-menu-dark.jpg)。
+
+## 2026-10-23 完整连接树与查询范围联动
+
+- 侧栏改为连接 → 数据库 → 表/视图的一棵树；文本仅选择已打开范围，箭头按需加载。结构加载成功后连接图标恢复亮度、文字使用主色；连接菜单提供打开/关闭、刷新、编辑、删除。右侧连接/库/表三级选择，共享按连接隔离的缓存，仅提供结构加载成功的连接。
+- 真实页面展开连接并加载库表元数据，选择 t_category 后右侧连接、库、表同步；未执行业务表查询。原 SQL 草稿保留，亮暗主题均检查，验证后恢复跟随系统。1280px 视口 documentWidth=1280，无额外页面横向溢出。
+- 本机临时隔离服务使用虚拟连接验证：同名 shared/items 分别缓存；当前范围 alpha 时右键 beta 的查询，请求实际为 `/connections/beta/query`，结果为 beta。连接选择器仅包含已打开的 alpha/beta，切连接清空旧库表。
+- 关闭连接后子项隐藏、图标及文字熄灭，选择器失效，SQL 草稿与已有结果保留；重新展开重新请求。模拟首次加载失败后重新打开恢复；12 秒延迟请求在加载中关闭，响应到达后仍保持关闭。编辑和删除弹窗均指向右键目标，测试均取消，未保存或删除真实连接。
+- 长名称在树和连接选择器均实测 text-overflow=ellipsis，分别可用宽度 179/144px、内容宽度 216px；保留完整 title。截图：[暗色完整树](../artifacts/ui-20261023/connections-tree-dark.jpg)、[亮色完整树](../artifacts/ui-20261023/connections-tree-light.jpg)、[连接右键菜单](../artifacts/ui-20261023/connection-menu-dark.jpg)、[长名称](../artifacts/ui-20261023/connections-long-name.jpg)。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 和 git diff --check 通过。构建保留既有主包体积提示；开发浏览器记录到既有 Ant Design Modal maskClosable 弃用提示。本轮未修改后端，关闭连接管理前端元数据生命周期，后端仍按请求释放数据库会话。
+
+## 2026-10-24 精简选择器、树双击与连接历史
+
+- 查询工具栏移除表下拉，仅保留连接、数据库、运行；表仍由树选择和右键操作。执行历史从侧栏底部移至导出之后，未选有效连接时入口禁用。真实页面检查按钮顺序为运行、导入、导出、执行历史，范围下拉仅连接/数据库两个。
+- Tree 使用原生 expandAction=doubleClick，连接和数据库节点双击与箭头共用加载/展开/收起流程；单击文本仍只选范围，表叶节点不展开。实际验证连接和 qianguanguan 库双击加载、再次双击收起、箭头展开、根节点收起后再展开保留子树状态；只加载元数据，未查询业务表。
+- 修复原生图标容器 inline-block 与品牌图标外层的基线偏移；统一 flex 对齐后实测连接、库、表的图标中心与选中背景中心差均为 0px。保留默认行高与字体，颜色覆盖和布局覆盖分开，选中图标继续继承选中态文字色。
+- 隔离测试服务分别生成 A/shared、A/alpha_only、B/beta_only 三条模拟查询历史。B 只显示 1 条 B 记录；回到 A 后显示两个不同数据库的 2 条 A 记录，排除 B。历史使用连接 ID 匹配，搜索、分页和行详情继续有效；清空提示明确当前连接，确认回调仅筛除该连接记录。本轮测试取消清空，未删除真实历史或修改连接。
+- 亮暗主题均检查，恢复跟随系统及原 SQL。截图：[暗色工具栏与树](../artifacts/ui-20261024/toolbar-tree-dark.jpg)、[亮色工具栏与树](../artifacts/ui-20261024/toolbar-tree-light.jpg)、[按连接筛选的历史](../artifacts/ui-20261024/connection-history-dark.jpg)。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs、git diff --check 通过。保留既有构建主包体积提示；本轮无后端修改。
+
+## 2026-10-24 防止操作文字选中与重连恢复范围
+
+- 树节点、查询/结果页签、顶栏、运行工具栏和菜单使用 user-select:none；工具栏搜索输入允许选择。编辑器、结果和历史 SQL 不受该规则影响。亮暗主题下实际双击连接、库及页签，window.getSelection() 均为空；编辑器全选仍返回原文 SELECT 1;，随后取消选择，草稿不变。
+- 关闭连接改为只释放结构缓存、取消请求和清除当前字段缓存，保留全部查询标签的连接/库/表范围、SQL 及结果。关闭期间运行禁用、库选择暂时隐藏；实际关闭远程连接并重新双击打开后，qianguanguan 自动恢复选中，右侧同步恢复。
+- 库列表加载成功且请求代仍有效时，通过 onDatabasesLoaded 调用稳定的 validateDatabases 回调；同时校验该连接的前台/后台查询，库已不存在才清空库/表。字段/DDL 加载也检查库仍存在，防止无效元数据请求；取消或旧代响应不触发范围校验。
+- 本机隔离测试准备两页：前台 shared、后台 alpha_only。模拟断开后 alpha_only 不再返回；重连后 shared 保留并恢复，切到后台查询时数据库为空，原 SELECT preserved_draft; 完整保留。未执行真实业务 SQL、修改凭据或删除真实数据库。
+- 截图：[暗色重连后选中](../artifacts/ui-20261024/reconnect-selected-dark.jpg)、[亮色防选中](../artifacts/ui-20261024/reconnect-selected-light.jpg)。测试后恢复跟随系统。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs、git diff --check 通过；保留既有主包体积提示。本轮仅改前端及文档。
+
+## 2026-10-24 关闭重置、小号查询页签与亮色分隔
+
+- 按最新要求，关闭连接再次清空所有引用该连接的查询的连接/库/表选择，保留 SQL 和结果。实际选中 qianguanguan 后关闭、重新双击加载，树选中列表为空，连接与库选择器均未恢复旧值；SQL 草稿保留。
+- 查询 Tabs 使用原生 size=small，实测高度从标准 40px 变为 32px；多页签、激活与关闭按钮正常。结果页签保留标准尺寸。
+- 亮色专用 token 映射改用 colorBorder 实色边框，surface-raised 使用 colorBgLayout。实际侧栏分隔线为 rgb(217,217,217)，布局背景 rgb(245,245,245)，内容区 rgb(255,255,255)，无透明色；暗色映射保持原值。
+- 截图：[亮色小号页签与分区](../artifacts/ui-20261024/compact-tabs-light.jpg)、[暗色小号页签](../artifacts/ui-20261024/compact-tabs-dark.jpg)。测试后关闭临时查询，保留原 SQL，恢复跟随系统主题；仅请求结构元数据，未执行业务 SQL。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 和 git diff --check 通过，构建保留既有主包体积提示。本轮无后端修改。
+
+## 2026-10-24 取消默认选库与上下页签统一
+
+- 修复持久化查询中旧库范围在双击打开连接后恢复的问题。树箭头、双击、右键打开统一调用工作区 openConnection：未打开连接先清空所有相关查询的库/表，SQL 和结果保留。点击已连接根节点名称同样回到连接范围，清空当前库/表；箭头仅控制已连接节点展开。
+- 实际重新加载页面后双击连接，仅连接节点选中，qianguanguan 未选中，右侧数据库显示选择数据库。再手动选库、双击根节点，也会清除库选择。未访问业务表。
+- 结果 Tabs 增加原生 size=small；上下两组实测高度均 32px、padding 均 4px 8px。亮色导航使用 colorFill 加深背景，非激活页签使用布局底色、激活页签使用白色内容底色；两组共享背景和边框规则，暗色保持主题 token。
+- 仅执行 SELECT 1/2 AS preview_value 常量查询生成两个结果，实际切换快照内容正确。亮暗主题均检查，保存截图：[统一小号页签亮色](../artifacts/ui-20261024/unified-small-tabs-light.jpg)、[统一小号页签暗色](../artifacts/ui-20261024/unified-small-tabs-dark.jpg)。临时查询及其结果已关闭，原 SQL 草稿保留，主题恢复跟随系统。
+- pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 和 git diff --check 通过；构建保留既有主包体积提示。本轮无后端修改。

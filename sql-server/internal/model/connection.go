@@ -6,7 +6,6 @@ type Connection struct {
 	ID          string `json:"id"`
 	Type        string `json:"type"`
 	TLS         bool   `json:"tls"`
-	Database    string `json:"database,omitempty"`
 	Name        string `json:"name"`
 	Host        string `json:"host"`
 	Port        int    `json:"port"`
@@ -15,14 +14,7 @@ type Connection struct {
 	HasPassword bool   `json:"hasPassword"`
 }
 
-const (
-	TypeMySQL             = "mysql"
-	TypeMariaDB           = "mariadb"
-	TypePolarDBMySQL      = "polardb-mysql"
-	TypePostgreSQL        = "postgresql"
-	TypePolarDBPostgreSQL = "polardb-postgresql"
-	TypePolarDBOracle     = "polardb-oracle"
-)
+const TypeMySQL = "mysql"
 
 // 空类型兼容首版存量配置，默认使用 MySQL。
 func NormalizeDatabaseType(value string) string {
@@ -31,22 +23,6 @@ func NormalizeDatabaseType(value string) string {
 	}
 	return value
 }
-func SupportedDatabaseType(value string) bool {
-	return IsMySQL(value) || IsPostgres(value)
-}
+func SupportedDatabaseType(value string) bool { return IsMySQL(value) }
 
-func IsMySQL(value string) bool {
-	switch NormalizeDatabaseType(value) {
-	case TypeMySQL, TypeMariaDB, TypePolarDBMySQL:
-		return true
-	}
-	return false
-}
-
-func IsPostgres(value string) bool {
-	switch value {
-	case TypePostgreSQL, TypePolarDBPostgreSQL, TypePolarDBOracle:
-		return true
-	}
-	return false
-}
+func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }

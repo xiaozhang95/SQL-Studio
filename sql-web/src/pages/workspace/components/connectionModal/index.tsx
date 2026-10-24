@@ -1,7 +1,6 @@
 import { CheckCircleOutlined, LinkOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
-import { databaseTypes } from '@/constant/database'
 import type { Connection } from '@/typings/database'
 
 import { useConnectionForm } from '../../hooks/useConnectionForm'
@@ -10,7 +9,7 @@ import EngineIcon from '../engineIcon'
 type Props = { open: boolean; connection?: Connection; onClose: () => void; onSaved: (connection: Connection) => void }
 
 export default function ConnectionModal({ open, connection, onClose, onSaved }: Props) {
-  const { form, saving, testing, status, section, engine, busy, setStatus, setSection, selectEngine, test, save } = useConnectionForm({ open, connection, onSaved })
+  const { form, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, onSaved })
   return (
     <Modal
       className="connection-dialog"
@@ -53,20 +52,10 @@ export default function ConnectionModal({ open, connection, onClose, onSaved }: 
       <div className="connection-dialog-body">
         <aside className="engine-picker">
           <div className="engine-picker-heading">数据库类型</div>
-          {databaseTypes.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              className={`engine-option ${item.className} ${engine.value === item.value ? 'is-selected' : ''}`}
-              aria-pressed={engine.value === item.value}
-              aria-label={item.label}
-              disabled={busy}
-              onClick={() => selectEngine(item.value)}
-            >
-              <EngineIcon type={item.value} />
-              <span className="engine-option-label">{item.label}</span>
-            </button>
-          ))}
+          <div className="engine-option is-selected" style={{ cursor: 'default' }}>
+            <EngineIcon />
+            <span className="engine-option-label">MySQL</span>
+          </div>
         </aside>
         <div className="connection-settings" style={{ background: 'var(--surface)' }}>
           <div className={`connection-engine-header ${engine.className}`}>
@@ -100,21 +89,12 @@ export default function ConnectionModal({ open, connection, onClose, onSaved }: 
                       </Form.Item>
                       <div className="form-row">
                         <Form.Item name="host" label="主机地址" rules={[{ required: true, whitespace: true, message: '主机地址不能为空，请输入 IP 或域名' }]}>
-                          <Input placeholder={engine.value.startsWith('polardb') ? 'PolarDB 集群连接地址' : '127.0.0.1'} />
+                          <Input placeholder="127.0.0.1" />
                         </Form.Item>
                         <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
                           <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
                         </Form.Item>
                       </div>
-                      <Form.Item
-                        name="database"
-                        label="初始数据库"
-                        hidden={engine.protocol !== 'postgresql'}
-                        tooltip="用于建立首次连接，进入工作区后可以切换数据库。"
-                        rules={engine.protocol === 'postgresql' ? [{ required: true, whitespace: true, message: '请输入数据库名' }] : []}
-                      >
-                        <Input placeholder="请输入初始数据库，例如 postgres" />
-                      </Form.Item>
                       <Form.Item name="username" label="用户名" rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}>
                         <Input autoComplete="username" placeholder="请输入数据库用户名" />
                       </Form.Item>

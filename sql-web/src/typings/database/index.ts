@@ -1,7 +1,6 @@
 export type Connection = {
   type?: DatabaseType
   tls?: boolean
-  database?: string
   id: string
   name: string
   host: string
@@ -12,11 +11,11 @@ export type Connection = {
 }
 
 /** 与后端 model 保持一致的数据库类型与 API 契约。 */
-export type DatabaseType = 'mysql' | 'mariadb' | 'polardb-mysql' | 'postgresql' | 'polardb-postgresql' | 'polardb-oracle'
+export type DatabaseType = 'mysql'
 export type ConnectionInput = Omit<Connection, 'id' | 'hasPassword'> & {
   id?: string
 }
-export type DBTable = { name: string; schema?: string; type: string; comment: string }
+export type DBTable = { name: string; type: string; comment: string }
 export type Column = {
   name: string
   type: string
@@ -36,4 +35,4 @@ export type QueryResult = {
   truncated: boolean
   isQuery: boolean
 }
-export type QueryRequest = { database: string; schema?: string; sql: string }
+export type QueryRequest = { database: string; sql: string }

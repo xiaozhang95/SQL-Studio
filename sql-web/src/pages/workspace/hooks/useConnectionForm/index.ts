@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { databaseTypeInfo } from '@/constant/database'
 import { saveConnection, testConnection } from '@/services/database'
-import type { Connection, ConnectionInput, DatabaseType } from '@/typings/database'
+import type { Connection, ConnectionInput } from '@/typings/database'
 
 type Props = { open: boolean; connection?: Connection; onSaved: (connection: Connection) => void }
 type TestStatus = { type: 'success' | 'error'; message: string }
@@ -26,10 +26,9 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
               ...connection,
               type: connection.type || 'mysql',
               tls: connection.tls || false,
-              password: '',
-              database: connection.database || (databaseTypeInfo(connection.type).protocol === 'postgresql' ? 'postgres' : '')
+              password: ''
             }
-          : { type: 'mysql', tls: false, database: '', name: '', host: '', port: 3306, username: '' }
+          : { type: 'mysql', tls: false, name: '', host: '', port: 3306, username: '' }
       )
     }
   }, [open, connection, form])
@@ -41,12 +40,6 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
       setSection('general')
       throw error
     }
-  }
-  function selectEngine(type: DatabaseType) {
-    const previous = databaseTypeInfo(form.getFieldValue('type'))
-    const next = databaseTypeInfo(type)
-    form.setFieldsValue({ type, ...(form.getFieldValue('port') === previous.port ? { port: next.port } : {}) })
-    setStatus(undefined)
   }
   async function test() {
     try {
@@ -75,5 +68,5 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
     }
   }
 
-  return { form, saving, testing, status, section, engine, busy, setStatus, setSection, selectEngine, test, save }
+  return { form, saving, testing, status, section, engine, busy, setStatus, setSection, test, save }
 }

@@ -1,17 +1,14 @@
-import { DownOutlined, UpOutlined } from '@ant-design/icons'
-import { Button, Tooltip } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { readLocal, saveLocal } from '@/utils/storage'
 
 /** 面板只管理尺寸与交互，执行数据通过 children 注入。 */
-type Props = { header: ReactNode; actions?: ReactNode; children: ReactNode; collapsed: boolean; onCollapsedChange: (collapsed: boolean) => void }
+type Props = { header: ReactNode; children: ReactNode }
 const minimumHeight = 180
 const defaultHeight = 260
-const headerHeight = 48
 
-export default function ResultsDock({ header, actions, children, collapsed, onCollapsedChange }: Props) {
+export default function ResultsDock({ header, children }: Props) {
   const panel = useRef<HTMLElement | null>(null)
   const drag = useRef<{ y: number; height: number } | null>(null)
   const [height, setHeight] = useState(() => {
@@ -41,40 +38,27 @@ export default function ResultsDock({ header, actions, children, collapsed, onCo
   }
 
   return (
-    <section
-      ref={panel}
-      className={`results-panel${collapsed ? ' is-collapsed' : ''}${resizing ? ' is-resizing' : ''}`}
-      aria-label="查询结果面板"
-      style={{ '--results-height': `${collapsed ? headerHeight : visibleHeight}px` } as CSSProperties}
-    >
+    <section ref={panel} className={`results-panel${resizing ? ' is-resizing' : ''}`} aria-label="查询结果面板" style={{ '--results-height': `${visibleHeight}px` } as CSSProperties}>
       <div
         className="results-resizer"
         role="separator"
         aria-label="调整结果面板高度"
         aria-orientation="horizontal"
-        aria-valuemin={collapsed ? headerHeight : minimumHeight}
+        aria-valuemin={minimumHeight}
         aria-valuemax={maximumHeight}
-        aria-valuenow={collapsed ? headerHeight : Math.round(visibleHeight)}
+        aria-valuenow={Math.round(visibleHeight)}
         tabIndex={0}
-        onDoubleClick={() => {
-          resize(defaultHeight)
-          onCollapsedChange(false)
-        }}
+        onDoubleClick={() => resize(defaultHeight)}
         onPointerDown={(event) => {
           if (event.button !== 0) return
           event.preventDefault()
           event.currentTarget.setPointerCapture(event.pointerId)
-          drag.current = { y: event.clientY, height: collapsed ? headerHeight : visibleHeight }
+          drag.current = { y: event.clientY, height: visibleHeight }
           setResizing(true)
         }}
         onPointerMove={(event) => {
           if (!drag.current) return
-          const next = drag.current.height + drag.current.y - event.clientY
-          if (next < minimumHeight / 2) onCollapsedChange(true)
-          else {
-            onCollapsedChange(false)
-            resize(next)
-          }
+          resize(drag.current.height + drag.current.y - event.clientY)
         }}
         onPointerUp={(event) => {
           endDrag()
@@ -83,29 +67,15 @@ export default function ResultsDock({ header, actions, children, collapsed, onCo
         onPointerCancel={endDrag}
         onLostPointerCapture={endDrag}
         onKeyDown={(event) => {
-          if (!['ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'].includes(event.key)) return
+          if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
           event.preventDefault()
-          if (event.key === 'Enter') onCollapsedChange(!collapsed)
-          else {
-            onCollapsedChange(false)
-            resize(event.key === 'Home' ? minimumHeight : event.key === 'End' ? maximumHeight : (collapsed ? minimumHeight : visibleHeight) + (event.key === 'ArrowUp' ? 24 : -24))
-          }
+          resize(event.key === 'Home' ? minimumHeight : event.key === 'End' ? maximumHeight : visibleHeight + (event.key === 'ArrowUp' ? 24 : -24))
         }}
       >
         <span />
       </div>
-      <div className="result-tabs-row">
-        {header}
-        <div className="result-panel-actions">
-          {actions}
-          <Tooltip title={collapsed ? '展开结果面板' : '折叠结果面板'}>
-            <Button type="text" aria-label={collapsed ? '展开结果面板' : '折叠结果面板'} icon={collapsed ? <UpOutlined /> : <DownOutlined />} onClick={() => onCollapsedChange(!collapsed)} />
-          </Tooltip>
-        </div>
-      </div>
-      <div className="result-panel-content" hidden={collapsed}>
-        {children}
-      </div>
+      <div className="result-tabs-row">{header}</div>
+      <div className="result-panel-content">{children}</div>
     </section>
   )
 }

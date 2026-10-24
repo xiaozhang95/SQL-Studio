@@ -10,7 +10,7 @@ open、connection?、onClose、onSaved。open 受控；connection 表示编辑�
 
 调用 useConnectionForm 管理常规/SSL 与校验；左侧使用数据库原有 Logo，右侧显示默认端口。编辑不回显密码，留空保留；保存/测试期间禁止关闭和切类型。
 
-桌面类型侧栏宽 280px，为选中图标和 PolarDB Oracle 兼容名称留出空间，避免末字单独换行；窄视口通过媒体查询收缩。
+桌面类型侧栏宽 280px，仅展示 MySQL，保留类型和表单分区；窄视口通过媒体查询收缩。
 
 选中类型仅使用 Ant Design colorPrimary 背景和 colorTextLightSolid 文字，不显示尾部勾选图标，不手写亮暗蓝色。Tag/按钮沿用组件默认样式。弹窗内容区固定为 580px 并受视口高度约束；左右区域独立滚动，类型、常规/SSL 页签和测试反馈变化不推动外框及底部操作栏。
 
@@ -26,4 +26,4 @@ open、connection?、onClose、onSaved。open 受控；connection 表示编辑�
 
 ## 表单高度
 
-内容区为 min(600px, 100dvh - 180px)，右侧上下内边距 20px，为 PostgreSQL 额外初始库字段留足空间。正常视口内容完整时不出现滚动条；窄小窗口、校验错误或较长反馈需要时仍可滚动。hover 使用原生 controlItemBgHover，与对象树一致。placeholder 使用 Ant Design 默认颜色，不做局部覆盖。
+内容区为 min(600px, 100dvh - 180px)，右侧上下内边距 20px，仅展示 MySQL 常规和 SSL 配置。正常视口内容完整时不出现滚动条；窄小窗口、校验错误或较长反馈需要时仍可滚动。hover 使用原生 controlItemBgHover，与对象树一致。placeholder 使用 Ant Design 默认颜色，不做局部覆盖。
