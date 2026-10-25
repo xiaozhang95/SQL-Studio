@@ -1,3 +1,5 @@
+import type { DatabaseType } from '@/databases/typings'
+
 export type Connection = {
   type?: DatabaseType
   tls?: boolean
@@ -12,7 +14,6 @@ export type Connection = {
 }
 
 /** 与后端 model 保持一致的数据库类型与 API 契约。 */
-export type DatabaseType = 'mysql'
 export type ConnectionInput = Omit<Connection, 'id' | 'hasPassword'> & {
   id?: string
 }

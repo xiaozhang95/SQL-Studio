@@ -12,7 +12,7 @@ func (h *handler) query(c *gin.Context) {
 		fail(c, err)
 		return
 	}
-	result, err := h.service.Query(c.Request.Context(), c.Param("id"), input)
+	result, err := h.queries.Query(c.Request.Context(), c.Param("id"), input)
 	if err != nil {
 		fail(c, err)
 		return

@@ -1,22 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 
-const minimumWidth = 200
-const maximumWidth = 560
-const defaultWidth = 272
+import { sidebarLayout } from '../../constant/layout'
+
+const { minimumWidth, maximumWidth, defaultWidth, minimumMainWidth, keyboardStep } = sidebarLayout
 
 /** 拖动只更新临时宽度，结束时提交布局，避免每个像素都加密保存整个工作区。 */
 export function useSidebarResize(width: number, onWidthChange: (width: number) => void) {
   const panel = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; start: number; current: number } | null>(null)
   const [preview, setPreview] = useState<number | null>(null)
-  const [limit, setLimit] = useState(maximumWidth)
+  const [limit, setLimit] = useState<number>(maximumWidth)
   const clamp = (value: number) => Math.max(minimumWidth, Math.min(value, limit))
   const visibleWidth = clamp(preview ?? width)
   useEffect(() => {
     const parent = panel.current?.parentElement
     if (!parent) return
-    const measure = () => setLimit(Math.max(minimumWidth, Math.min(maximumWidth, parent.clientWidth - 520)))
+    const measure = () => setLimit(Math.max(minimumWidth, Math.min(maximumWidth, parent.clientWidth - minimumMainWidth)))
     const observer = new ResizeObserver(measure)
     observer.observe(parent)
     measure()
@@ -52,7 +52,7 @@ export function useSidebarResize(width: number, onWidthChange: (width: number) =
     onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
       event.preventDefault()
-      onWidthChange(clamp(event.key === 'Home' ? minimumWidth : event.key === 'End' ? limit : visibleWidth + (event.key === 'ArrowRight' ? 24 : -24)))
+      onWidthChange(clamp(event.key === 'Home' ? minimumWidth : event.key === 'End' ? limit : visibleWidth + (event.key === 'ArrowRight' ? keyboardStep : -keyboardStep)))
     }
   }
   return { panel, visibleWidth, minimumWidth, maximumWidth: limit, resizing: preview !== null, resizer }

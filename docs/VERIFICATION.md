@@ -246,3 +246,12 @@
 - 结果 Tabs 增加原生 size=small；上下两组实测高度均 32px、padding 均 4px 8px。亮色导航使用 colorFill 加深背景，非激活页签使用布局底色、激活页签使用白色内容底色；两组共享背景和边框规则，暗色保持主题 token。
 - 仅执行 SELECT 1/2 AS preview_value 常量查询生成两个结果，实际切换快照内容正确。亮暗主题均检查，保存截图：[统一小号页签亮色](../artifacts/ui-20261024/unified-small-tabs-light.jpg)、[统一小号页签暗色](../artifacts/ui-20261024/unified-small-tabs-dark.jpg)。临时查询及其结果已关闭，原 SQL 草稿保留，主题恢复跟随系统。
 - pnpm format、pnpm lint、pnpm build、node scripts/check-structure.mjs 和 git diff --check 通过；构建保留既有主包体积提示。本轮无后端修改。
+
+
+## 2026-10-25 后端模块化单体与原生命令
+
+- 将原 internal/service 拆为 internal/modules/connections、metadata、query；各模块声明最小消费接口、独立规则与测试，由 app 在一个进程内装配同一仓库和 MySQL 客户端。HTTP 分别调用公开入口，查询模块复用进程并发预算；API、凭据格式和数据目录保持兼容。
+- 新增后端规范及 .agents/skills/sql-studio-backend/SKILL.md，AGENTS 和项目 skill 按前后端分派；后端启动统一为 go run ./cmd/sql-studio/main.go，不新增启停/检查包装脚本或部署配置。
+- 移除根 scripts 目录，将结构/文档检查和 SQL 回归归入 sql-web/tests，更新 pnpm lint 与 test:sql。仓库根目录和后端未发现遗留日志/PID；清理此前虚构接口脚本、skill 草稿和本次验证临时文件。历史记录中的旧命令保留当时语境。
+- 通过 gofmt、go test -count=1 ./...（真实集成关闭）、go vet ./...、go build ./...；模块作用域、凭据、超时、取消与并发回归通过。架构检查递归验证模块依赖及 README/doc.go，反向验证确认兄弟模块导入被拒绝，临时探针随后删除。
+- 前端 format/format:check、lint、build、SQL/加密存储共 13 项回归与三个 skill 校验通过；构建保留既有大包提示。本轮无 UI 样式变动，未重复浏览器截图，也未访问真实数据库。

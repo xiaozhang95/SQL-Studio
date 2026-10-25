@@ -1,7 +1,8 @@
 import { App, Form } from 'antd'
 import { useEffect, useState } from 'react'
 
-import { connectionGroupName, databaseTypeInfo, defaultConnectionGroup } from '@/constant/database'
+import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
+import { getDatabaseAdapter } from '@/databases'
 import { saveConnection, testConnection } from '@/services/database'
 import type { Connection, ConnectionInput } from '@/typings/database'
 
@@ -15,7 +16,7 @@ export const useConnectionForm = ({ open, connection, connections, onSaved }: Pr
   const [testing, setTesting] = useState(false)
   const [status, setStatus] = useState<TestStatus>()
   const [section, setSection] = useState('general')
-  const engine = databaseTypeInfo(Form.useWatch('type', form) || connection?.type)
+  const engine = getDatabaseAdapter(Form.useWatch('type', form) || connection?.type).profile
   const busy = saving || testing
   const groups = [
     defaultConnectionGroup,
@@ -29,14 +30,14 @@ export const useConnectionForm = ({ open, connection, connections, onSaved }: Pr
           ? {
               ...connection,
               group: connectionGroupName(connection.group),
-              type: connection.type || 'mysql',
+              type: connection.type || engine.value,
               tls: connection.tls || false,
               password: ''
             }
-          : { type: 'mysql', tls: false, name: '', group: defaultConnectionGroup, host: '', port: 3306, username: '' }
+          : { type: engine.value, tls: false, name: '', group: defaultConnectionGroup, host: '', port: engine.port, username: '' }
       )
     }
-  }, [open, connection, form])
+  }, [open, connection, form, engine])
   async function values() {
     try {
       const value = await form.validateFields()

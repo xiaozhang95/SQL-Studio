@@ -17,7 +17,7 @@ import { Dropdown, Empty, Input, Tree } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import { useEffect, useRef } from 'react'
 
-import { connectionGroupName } from '@/constant/database'
+import { connectionGroupName } from '@/constant/connectionGroup'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import EngineIcon from '../engineIcon'

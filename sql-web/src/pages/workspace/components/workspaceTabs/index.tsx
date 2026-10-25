@@ -2,6 +2,8 @@ import { CloseCircleOutlined, CloseOutlined, CodeOutlined, FileTextOutlined, Loa
 import { Dropdown, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
+import { appearance } from '@/constant/appearance'
+
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 
 type Props = {
@@ -18,7 +20,7 @@ export default function WorkspaceTabs({ model, children }: Props) {
       className="workspace-tabs page-tabs"
       tabBarGutter={0}
       type="editable-card"
-      size="small"
+      size={appearance.navigationSize}
       hideAdd
       destroyOnHidden
       activeKey={activeTab}

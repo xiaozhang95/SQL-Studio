@@ -283,12 +283,6 @@ body {
   padding-top: 0;
 }
 
-.toolbar-left .connection-select,
-.toolbar-left .database-select {
-  flex: 1 1 150px;
-  min-width: 130px;
-  max-width: 220px;
-}
 .editor-panel,
 .results-panel {
   background: var(--surface);

@@ -2,7 +2,7 @@
 
 [源码](index.ts)
 
-DatabaseType、Connection/ConnectionInput、DBTable、Column、QueryRequest、QueryResult 与服务端契约一致。行数据为二维数组，密码只用于输入。
+Connection/ConnectionInput、DBTable、Column、QueryRequest、QueryResult 与服务端 API 契约一致。DatabaseType 引用 [数据库能力契约](../../databases/typings/README.md) 中的枚举推导类型，不重复定义。行数据为二维数组，密码只用于输入。
 
 Connection.group 为可选分组名称，与连接配置一起保存；省略或空值兼容旧连接，统一归入“默认分组”。
 

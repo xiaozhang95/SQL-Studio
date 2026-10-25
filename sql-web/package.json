@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:sql": "node --test tests/mysql.test.mjs",
     "test:storage": "node --test tests/encrypted-storage.test.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "lint": "pnpm typecheck && oxlint && node ../scripts/check-structure.mjs --frontend",
+    "lint": "pnpm typecheck && oxlint && node --test tests/structure.test.mjs",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

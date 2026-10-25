@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
+import { appearance, ComponentSize } from '@/constant/appearance'
 import type { HistoryItem } from '@/typings/workspace'
 
 import { tablePaginationDefaults } from '../../constant/tablePagination'
@@ -61,7 +62,7 @@ export default function QueryHistory({ model }: Props) {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
         return (
           <Tooltip title={missing ? '原连接已删除' : undefined}>
-            <Button type="link" size="small" disabled={running || missing} onClick={() => loadHistory(item)}>
+            <Button type="link" size={ComponentSize.Small} disabled={running || missing} onClick={() => loadHistory(item)}>
               载入编辑器
             </Button>
           </Tooltip>
@@ -114,7 +115,7 @@ export default function QueryHistory({ model }: Props) {
       />
       <div ref={viewport} className="history-table-viewport" style={{ '--history-body-height': `${bodyHeight}px` } as CSSProperties}>
         <Table<HistoryItem>
-          size="small"
+          size={appearance.tableSize}
           className="history-table"
           rowKey="id"
           columns={columns}

@@ -14,8 +14,10 @@ import (
 	"sqldesk/internal/connection"
 	"sqldesk/internal/httpapi"
 	"sqldesk/internal/model"
+	"sqldesk/internal/modules/connections"
+	"sqldesk/internal/modules/metadata"
+	"sqldesk/internal/modules/query"
 	"sqldesk/internal/mysql"
-	"sqldesk/internal/service"
 )
 
 // Opt in explicitly. All writes are confined to a fresh, random test database.
@@ -98,7 +100,7 @@ func TestMySQLIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := httpapi.New(service.New(store, client))
+	handler := httpapi.New(httpapi.Services{Connections: connections.New(store, client), Metadata: metadata.New(store, client), Queries: query.New(store, client)})
 	for _, path := range []string{"databases", "tables?database=" + schema, "columns?database=" + schema + "&table=sample", "ddl?database=" + schema + "&table=sample"} {
 		req := httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections/"+saved.ID+"/"+path, nil)
 		rec := httptest.NewRecorder()

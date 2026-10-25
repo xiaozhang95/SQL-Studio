@@ -1,6 +1,8 @@
 import { DatabaseOutlined } from '@ant-design/icons'
 import { Select } from 'antd'
+import type { CSSProperties } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
@@ -15,6 +17,7 @@ type Props = {
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
+const selectorStyle = { flex: '1 1 150px', minWidth: 130, maxWidth: appearance.selectWidth } satisfies CSSProperties
 
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect }: Props) {
@@ -23,6 +26,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
     <>
       <Select
         className="connection-select"
+        style={selectorStyle}
         aria-label="选择连接"
         showSearch
         optionFilterProp="searchText"
@@ -45,6 +49,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       />
       <Select
         className="database-select"
+        style={selectorStyle}
         aria-label="选择数据库"
         prefix={objects.connected && scope.database ? undefined : <DatabaseOutlined />}
         showSearch

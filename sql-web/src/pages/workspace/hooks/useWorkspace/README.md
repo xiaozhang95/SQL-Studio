@@ -12,7 +12,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 选连接后提供当前连接的数据库补全；选库自动 loadTables 并共用对象缓存，补全表/视图及已加载字段，defaultSchema/defaultTable 与当前页一致。异步数据按连接隔离，范围变化只切换消费方；关闭/刷新取消旧代请求，迟到结果不能重新打开连接。数据库成功加载时只校验保存范围是否仍有效，不自动执行 SQL。
 
-完整草稿或选区由 splitSQLStatements 完整扫描，再顺序调用现有只读单语句接口。整批固定页 ID、连接/库、运行锁与 AbortController；每条独立保存结果和历史。失败或取消停止后续发送，保留已完成结果并提示未执行数量；请求不传 limit/allowWrite，不声称此前执行被回滚。
+完整草稿或选区由目标数据库适配器 splitStatements 完整扫描，再顺序调用现有只读单语句接口；表数据语句同样通过适配器 tableDataSQL 生成，工作区不维护具体引号规则。整批固定页 ID、连接/库、运行锁与 AbortController；每条独立保存结果和历史。失败或取消停止后续发送，保留已完成结果并提示未执行数量；请求不传 limit/allowWrite，不声称此前执行被回滚。
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果 Select 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 

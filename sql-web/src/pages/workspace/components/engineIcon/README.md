@@ -6,6 +6,8 @@
 
 type? 为 DatabaseType，省略按 MySQL 处理；variant? 默认为 icon，连接类型与表单头部使用 logo（40px）；connected? 默认为 true，连接根节点必须传入实际结构加载状态。
 
+图标地址和产品样式类读取 getDatabaseAdapter(type).profile，组件只渲染受控状态；不直接导入 MySQL 图片或在此维护产品分派。
+
 ## 行为与边界
 
 按用户最新参考图使用白色海豚剪影与圆角底板。connected=true 使用 Ant Design success 底色；尚未打开、已关闭或加载失败为灰色底板。图形保持白色，不改变节点文字。树及连接下拉图标为 20px，类型与表单头部为 40px；连接图标不撑高原生选择器。折叠不改变连接状态。数据库、表和视图继续使用原生语义图标，不按子结构加载状态置灰。

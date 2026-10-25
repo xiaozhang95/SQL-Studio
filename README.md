@@ -27,9 +27,9 @@
 
 ## 开发入口与规范
 
-[前端源码索引](sql-web/src/README.md) · [后端包索引](sql-server/internal/README.md) · [项目 skill](.agents/skills/sql-studio/SKILL.md) · [AGENTS 指引](AGENTS.md)
+[前端源码索引](sql-web/src/README.md) · [后端包索引](sql-server/internal/README.md) · [前端 skill](.agents/skills/sql-studio-frontend/SKILL.md) · [后端 skill](.agents/skills/sql-studio-backend/SKILL.md) · [AGENTS 指引](AGENTS.md)
 
-组件、自定义 hook 和普通模块采用独立目录、源码入口与 README；后端按 Go 包维护说明和注释。`pnpm lint` 包含前端结构/链接检查，后端架构测试校验依赖及包文档；整体归档可运行 `node scripts/check-structure.mjs`。
+组件、自定义 hook 和普通模块采用独立目录、源码入口与 README；后端按业务模块维护入口、接口、README 和包注释，app 在同一进程装配。在 `sql-web` 执行 `pnpm lint` 检查前端结构及本地文档链接，在 `sql-server` 执行 `go test ./...` 校验后端行为、包依赖及文档。
 
 ## 目录
 
@@ -48,7 +48,7 @@ C:\Users\Lenovo\Desktop\sql
 │  ├─ internal/app/           # 应用装配、HTTP 生命周期
 │  ├─ internal/config/        # 环境变量与启动参数
 │  ├─ internal/httpapi/       # 路由、请求响应、同源校验
-│  ├─ internal/service/       # 业务规则、查询限制与超时
+│  ├─ internal/modules/       # connections、metadata、query 独立业务模块
 │  ├─ internal/model/         # 连接、结构、SQL 数据契约
 │  ├─ internal/mysql/         # MySQL 连接、结构读取与执行
 │  ├─ internal/connection/    # 本地加密连接仓库
@@ -79,18 +79,15 @@ MySQL 保持 WSL 中已启动状态。当前仅支持 MySQL，可在连接窗口
 
 ## 启动
 
-前后端在两个终端分别启动，使用原生命令，不再提供 PowerShell 启停包装脚本。
+前后端在两个终端分别从仓库根目录进入对应目录，使用原生命令；不提供启停包装脚本或后台日志文件。
 
-
-
-```powershell
+```sh
 # 终端 1
-cd C:\Users\Lenovo\Desktop\sql\sql-server
-$env:SQLDESK_MYSQL_PASSWORD = '00000000'
-go run ./cmd/sql-studio
+cd sql-server
+go run ./cmd/sql-studio/main.go
 
 # 终端 2
-cd C:\Users\Lenovo\Desktop\sql\sql-web
+cd sql-web
 pnpm dev
 ```
 
@@ -165,7 +162,7 @@ Remove-Item Env:SQLDESK_INTEGRATION
 
 - **连接被拒绝**：检查 WSL MySQL 是否启动、3306 是否可从 Windows 访问；若 localhost 转发不可用，可在连接管理中填写 WSL 地址，并检查 MySQL 监听和账户来源权限。
 - **Access denied**：在连接管理中核对用户名/密码及 MySQL 授权。编辑连接不会回显已保存密码，留空保留旧密码。
-- **后端未连接**：检查 8080 端口和 `backend-error.log`；Vite 的 `/api` 代理目标为该端口。
+- **后端未连接**：检查 8080 端口和启动终端输出；Vite 的 `/api` 代理目标为该端口。
 - **端口占用**：在对应终端按 Ctrl+C 停止原服务，不要同时运行两套后端。
 - **只读查询拒绝写入**：当前前端不提供写入模式，对持久表的修改会由数据库拒绝。
 - **结果被截断**：调高返回上限或用 WHERE / LIMIT 收窄查询；分页和 CSV 都只能处理服务已返回的数据。

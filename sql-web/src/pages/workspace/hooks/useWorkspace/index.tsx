@@ -2,12 +2,14 @@ import type { EditorView, ViewUpdate } from '@codemirror/view'
 import { App as AntApp } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { connectionGroupName, databaseTypeInfo } from '@/constant/database'
+import { connectionGroupName } from '@/constant/connectionGroup'
+import { getDatabaseAdapter } from '@/databases'
 import { executeQuery, getConnections, deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
-import { exportSQL, identifier, splitSQLStatements, stripHistoryMarkers } from '@/utils/sql'
+import { exportSQL } from '@/utils/sqlExport'
 
+import { sidebarLayout } from '../../constant/layout'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useQueryHistory } from '../useQueryHistory'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
@@ -32,7 +34,7 @@ export const useWorkspace = () => {
   const [editorLayouts, setEditorLayouts] = useState<Record<string, EditorLayout>>({})
   const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
   const [resultHeight, setResultHeight] = useState(260)
-  const [sidebarWidth, setSidebarWidth] = useState(272)
+  const [sidebarWidth, setSidebarWidth] = useState<number>(sidebarLayout.defaultWidth)
   const [restoringConnections, setRestoringConnections] = useState<string[] | null>(null)
   const [runningTabId, setRunningTabId] = useState('')
   const running = Boolean(runningTabId)
@@ -49,7 +51,8 @@ export const useWorkspace = () => {
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, table: selectedTable } = tab
   const connection = connections.find((item) => item.id === connectionId)
-  const engine = databaseTypeInfo(connection?.type)
+  const adapter = getDatabaseAdapter(connection?.type)
+  const engine = adapter.profile
   const historyStore = useQueryHistory(tab.kind === 'query' ? connectionId : '')
   const { history, appendHistory, clearHistory } = historyStore
   const validateDatabases = useCallback((id: string, databases: string[]) => {
@@ -102,7 +105,7 @@ export const useWorkspace = () => {
     setEditorLayouts(saved.editorLayouts)
     setExplorer(saved.explorer)
     setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(180, saved.resultHeight) : 260)
-    setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : 272)
+    setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : sidebarLayout.defaultWidth)
     setRestoringConnections(saved.openedConnections)
   })
   const workspaceReady = storage.ready && historyStore.ready
@@ -234,7 +237,7 @@ export const useWorkspace = () => {
     const view = editor.current
     const current = view?.state.doc.toString() ?? tab.sql
     // 仅追加到当前 SQL 页，不替换草稿、不改变库范围，也不自动执行历史语句。
-    const insert = `${current.trim() ? (current.endsWith('\n') ? '\n' : '\n\n') : ''}-- 历史记录\n${stripHistoryMarkers(item.sql)}`
+    const insert = `${current.trim() ? (current.endsWith('\n') ? '\n' : '\n\n') : ''}-- 历史记录\n${adapter.cleanHistory(item.sql)}`
     if (view) {
       view.dispatch({ changes: { from: current.length, insert }, selection: { anchor: current.length + insert.length }, scrollIntoView: true })
       requestAnimationFrame(() => view.focus())
@@ -363,7 +366,7 @@ export const useWorkspace = () => {
     const target = connections.find((item) => item.id === targetConnectionId)
     if (running || request.current || !target || objects.snapshots[targetConnectionId]?.status !== 'connected') return
     const scope = { connectionId: targetConnectionId, database: db, table }
-    const statement = `SELECT * FROM ${identifier(db)}.${identifier(table)} LIMIT 1000;`
+    const statement = getDatabaseAdapter(target.type).tableDataSQL(db, table)
     if (action === 'new') {
       addTab(statement, scope)
       return
@@ -407,7 +410,7 @@ export const useWorkspace = () => {
     if (!target || objects.snapshots[target.id]?.status !== 'connected' || running || request.current) return
     let statements: string[]
     try {
-      statements = splitSQLStatements(statement)
+      statements = getDatabaseAdapter(target.type).splitStatements(statement)
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'SQL 解析失败')
       return

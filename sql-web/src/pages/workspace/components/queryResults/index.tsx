@@ -2,6 +2,7 @@ import { ClockCircleOutlined, DownloadOutlined, EyeOutlined, LoadingOutlined, Se
 import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
 import { useEffect } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import { exportCSV } from '@/utils/csv'
 
 import { tablePaginationDefaults } from '../../constant/tablePagination'
@@ -119,7 +120,7 @@ export default function QueryResults({ model }: Props) {
           <>
             {result.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
             <Table
-              size="small"
+              size={appearance.tableSize}
               className="data-table"
               columns={columns}
               dataSource={rows.slice((tablePage - 1) * 50, tablePage * 50)}

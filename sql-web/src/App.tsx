@@ -1,6 +1,7 @@
 import { App as AntApp, ConfigProvider, theme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 
+import { appearance } from '@/constant/appearance'
 import { useThemePreference } from '@/hooks/useThemePreference'
 import Workspace from '@/pages/workspace'
 
@@ -10,10 +11,11 @@ export default function App() {
   return (
     <ConfigProvider
       locale={zhCN}
+      componentSize={appearance.controlSize}
       tag={{ variant: 'solid' }}
       theme={{
         algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: { borderRadius: 0 },
+        token: { borderRadius: appearance.borderRadius },
         cssVar: { key: 'sql-studio-theme' }
       }}
     >

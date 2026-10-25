@@ -54,7 +54,7 @@ export default function ConnectionModal({ open, connection, connections, onClose
           <div className="engine-picker-heading">数据库类型</div>
           <div className="engine-option is-selected" style={{ cursor: 'default' }}>
             <EngineIcon type={engine.value} variant="logo" />
-            <span className="engine-option-label">MySQL</span>
+            <span className="engine-option-label">{engine.label}</span>
           </div>
         </aside>
         <div className="connection-settings" style={{ background: 'var(--surface)' }}>

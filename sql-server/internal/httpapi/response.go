@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/service"
+	"sqldesk/internal/modules/query"
 )
 
 const maxRequestBytes = 1024 * 1024
@@ -23,7 +23,7 @@ func fail(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		status = http.StatusNotFound
-	case errors.Is(err, service.ErrBusy):
+	case errors.Is(err, query.ErrBusy):
 		status = http.StatusTooManyRequests
 	}
 	respond(c, status, gin.H{"error": err.Error()})

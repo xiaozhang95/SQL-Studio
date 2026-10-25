@@ -6,13 +6,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/service"
+	"sqldesk/internal/modules/connections"
+	"sqldesk/internal/modules/metadata"
+	"sqldesk/internal/modules/query"
 )
 
-type handler struct{ service *service.Service }
+// Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
+type Services struct {
+	Connections *connections.Service
+	Metadata    *metadata.Service
+	Queries     *query.Service
+}
 
-func New(svc *service.Service) *gin.Engine {
-	h := &handler{service: svc}
+type handler struct {
+	connections *connections.Service
+	metadata    *metadata.Service
+	queries     *query.Service
+}
+
+func New(services Services) *gin.Engine {
+	h := &handler{connections: services.Connections, metadata: services.Metadata, queries: services.Queries}
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)
 	router.Use(gin.Recovery(), localOnly)

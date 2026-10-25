@@ -11,8 +11,10 @@ import (
 
 	"sqldesk/internal/connection"
 	"sqldesk/internal/model"
+	"sqldesk/internal/modules/connections"
+	"sqldesk/internal/modules/metadata"
+	"sqldesk/internal/modules/query"
 	"sqldesk/internal/mysql"
-	"sqldesk/internal/service"
 )
 
 func TestConnectionGroupRoundTrip(t *testing.T) {
@@ -21,7 +23,7 @@ func TestConnectionGroupRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := New(service.New(store, mysql.NewClient()))
+	handler := New(testServices(store))
 	save := func(input model.Connection) model.Connection {
 		t.Helper()
 		body, err := json.Marshal(input)
@@ -47,7 +49,7 @@ func TestConnectionGroupRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler = New(service.New(store, mysql.NewClient()))
+	handler = New(testServices(store))
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
 	var listed []model.Connection
@@ -85,7 +87,7 @@ func TestLegacyConnectionsBelongToDefaultGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	New(service.New(store, mysql.NewClient())).ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
+	New(testServices(store)).ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
 	var listed []model.Connection
 	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &listed) != nil || len(listed) != 2 {
 		t.Fatal("legacy connections were lost")
@@ -106,7 +108,7 @@ func TestRejectCrossSiteRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := New(service.New(store, mysql.NewClient()))
+	handler := New(testServices(store))
 	for _, test := range []struct {
 		host, origin, fetch string
 		want                int
@@ -133,7 +135,7 @@ func TestConnectionAPIDoesNotExposePasswords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := New(service.New(store, mysql.NewClient()))
+	handler := New(testServices(store))
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(`{"name":"test","host":"localhost","port":3306,"username":"root","password":"private-secret"}`))
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
@@ -162,7 +164,7 @@ func TestGinRouteParametersAndConnectionTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	router := New(service.New(store, mysql.NewClient()))
+	router := New(testServices(store))
 	if routes := router.Routes(); len(routes) != 10 {
 		t.Fatalf("unexpected Gin routes: %d", len(routes))
 	}
@@ -185,4 +187,9 @@ func TestGinRouteParametersAndConnectionTypes(t *testing.T) {
 	if rec.Code != 400 {
 		t.Fatal("unknown database type accepted")
 	}
+}
+
+func testServices(store *connection.Store) Services {
+	client := mysql.NewClient()
+	return Services{Connections: connections.New(store, client), Metadata: metadata.New(store, client), Queries: query.New(store, client)}
 }

@@ -17,7 +17,7 @@ type Config struct {
 	InitialConnection *model.Connection
 }
 
-// Load 将相对目录解析为绝对路径；启动脚本以 sql-server 为工作目录，兼容已有数据位置。
+// Load 将相对目录解析为绝对路径；原生命令以 sql-server 为工作目录，兼容已有数据位置。
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080"}
 	var err error

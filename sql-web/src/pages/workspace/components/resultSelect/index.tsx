@@ -1,6 +1,7 @@
 import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, TableOutlined } from '@ant-design/icons'
 import { Select } from 'antd'
 
+import { appearance } from '@/constant/appearance'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
 type Props = { run: RunState; running: boolean; resultIndex: number; onChange: (index: number) => void }
@@ -18,7 +19,7 @@ export default function ResultSelect({ run, running, resultIndex, onChange }: Pr
       aria-label="选择语句结果"
       className={`statement-result-select ${status}`}
       classNames={{ prefix: 'statement-result-prefix', content: 'statement-result-content', suffix: 'statement-result-suffix', popup: { root: 'result-select-popup' } }}
-      style={{ width: 220 }}
+      style={{ width: appearance.selectWidth }}
       prefix={running ? <LoadingOutlined spin /> : selected?.error ? <CloseCircleOutlined /> : selected?.result ? <CheckCircleOutlined /> : <TableOutlined />}
       value={index}
       placeholder={pending}

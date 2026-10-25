@@ -1,11 +1,14 @@
 # 前端源码
 
+开发前阅读并遵守 [前端开发规范](../../docs/FRONTEND_STANDARDS.md)。全局控件约定统一使用 appearance；数据库能力通过 databases 入口分派，页面和公共组件不承载引擎专属实现。
+
 进入后恢复本机加密工作区快照，没有记录时默认无查询标签；无查询标签时隐藏编辑器与执行工具栏，空白区展示操作提示，对象浏览结果独立展示；对象树双击库展开并展示结构，双击表加载数据。连接表单的 label 与输入框左右排列。未选中树节点使用主题正文色，只有连接根节点按是否打开区分正常/灰色，折叠不置灰；库表图标始终正常。树高亮与查询下拉范围相互独立，连接根节点、选择器和弹窗统一使用白色海豚状态图标（成功绿/未连接灰），选中行保留上下留白。
 
 - [页面](pages/README.md)：工作区与页面私有组件/hooks。
 - [公共 hooks](hooks/README.md)：主题。
 - [配置](constant/README.md)、[契约](typings/README.md)、[服务](services/README.md)、[工具](utils/README.md)。
-- [品牌资产](assets/databases/README.md)。
+- [数据库图标资产](assets/databases/README.md)。
+- [数据库实现与适配器](databases/README.md)。
 
 App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。全局与页面样式使用 SCSS，颜色引用 Ant Design 原生 token，不手写主题主色；入口加载 antd/dist/reset.css 和 app.scss。SQL 编辑器继承页面系统字体，不指定新字体/字号。信息 Tag 使用蓝色 solid，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
 

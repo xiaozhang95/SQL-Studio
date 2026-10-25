@@ -1,5 +1,7 @@
 # SQL 页面编辑器
 
+补全配置由 useSQLCompletion 按当前连接组织元数据，并调用数据库适配器 completion 构造；组件不导入具体 MySQL 方言。局部 contextSQL 只保留本区域右键菜单的选区快照。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 仅在 kind=query 的主页面内展示，页面导航与关闭行为由 workspaceTabs 管理。本组件负责连接/库选择器、运行/取消、导入/导出、历史工具栏和 CodeMirror。

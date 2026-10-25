@@ -7,7 +7,7 @@ import (
 )
 
 func (h *handler) listConnections(c *gin.Context) {
-	respond(c, 200, h.service.ListConnections())
+	respond(c, 200, h.connections.ListConnections())
 }
 func (h *handler) saveConnection(c *gin.Context) {
 	var input model.Connection
@@ -15,7 +15,7 @@ func (h *handler) saveConnection(c *gin.Context) {
 		fail(c, err)
 		return
 	}
-	saved, err := h.service.SaveConnection(input)
+	saved, err := h.connections.SaveConnection(input)
 	if err != nil {
 		fail(c, err)
 		return
@@ -23,7 +23,7 @@ func (h *handler) saveConnection(c *gin.Context) {
 	respond(c, 200, saved)
 }
 func (h *handler) deleteConnection(c *gin.Context) {
-	if err := h.service.DeleteConnection(c.Param("id")); err != nil {
+	if err := h.connections.DeleteConnection(c.Param("id")); err != nil {
 		fail(c, err)
 		return
 	}
@@ -35,7 +35,7 @@ func (h *handler) testConnection(c *gin.Context) {
 		fail(c, err)
 		return
 	}
-	version, err := h.service.TestConnection(c.Request.Context(), input)
+	version, err := h.connections.TestConnection(c.Request.Context(), input)
 	if err != nil {
 		fail(c, err)
 		return

@@ -13,9 +13,10 @@ import (
 // 将依赖方向纳入回归检查，防止后续新增接口又直接耦合数据库或文件存储。
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
-		"app":    {"config": true, "connection": true, "httpapi": true, "mysql": true, "service": true},
+		"app":    {"config": true, "connection": true, "httpapi": true, "mysql": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
 		"config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true},
-		"httpapi": {"service": true, "model": true}, "service": {"model": true}, "model": {},
+		"httpapi":             {"modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
+		"modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
 	}
 	root, err := filepath.Abs("../../internal")
 	if err != nil {
@@ -32,7 +33,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		layer := strings.Split(filepath.ToSlash(relative), "/")[0]
+		layer := filepath.ToSlash(filepath.Dir(relative))
 		dependencies, ok := allowed[layer]
 		if !ok {
 			t.Errorf("新包 %s 需要先声明依赖边界", layer)
@@ -48,7 +49,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 				return err
 			}
 			if strings.HasPrefix(dependency, "sqldesk/internal/") {
-				target := strings.Split(strings.TrimPrefix(dependency, "sqldesk/internal/"), "/")[0]
+				target := strings.TrimPrefix(dependency, "sqldesk/internal/")
 				if !dependencies[target] {
 					t.Errorf("%s 不得依赖 %s", relative, dependency)
 				}
@@ -59,7 +60,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if (dependency == "database/sql" || strings.HasPrefix(dependency, "github.com/go-sql-driver/")) && layer != "mysql" {
 				t.Errorf("%s 不得直接依赖 SQL 驱动", relative)
 			}
-			if dependency == "os" && (layer == "service" || layer == "httpapi") {
+			if (dependency == "os" || strings.HasPrefix(dependency, "os/")) && (strings.HasPrefix(layer, "modules/") || layer == "httpapi") {
 				t.Errorf("%s 不得直接读取系统配置或文件", relative)
 			}
 			if strings.HasPrefix(dependency, "github.com/gin-gonic/") && layer != "httpapi" && layer != "app" {

@@ -1,11 +1,11 @@
 import { DownloadOutlined, HistoryOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import { MySQL, sql } from '@codemirror/lang-sql'
 import CodeMirror from '@uiw/react-codemirror'
 import { Alert, Button, Dropdown, Upload } from 'antd'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import type { ThemeMode } from '@/typings/theme'
 
+import { useSQLCompletion } from '../../hooks/useSQLCompletion'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ScopeSelects from '../scopeSelects'
@@ -43,32 +43,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, undefined, title))
   const [contextSQL, setContextSQL] = useState('')
 
-  const selectedTable = tab.table
-  const currentSnapshot = objects.snapshots[tab.connectionId]
-  const extensions = useMemo(
-    () => [
-      sql({
-        dialect: MySQL,
-        upperCaseKeywords: true,
-        defaultSchema: tab.database || undefined,
-        defaultTable: selectedTable || undefined,
-        schema: objects.connected
-          ? Object.fromEntries(
-              objects.databases.map((database) => [
-                database,
-                Object.fromEntries(
-                  (objects.tables[database] || []).map((table) => {
-                    const structure = currentSnapshot?.structures[JSON.stringify([database, table.name])]
-                    return [table.name, structure?.columns.map((column) => column.name) || (database === tab.database && table.name === selectedTable ? columns.map((column) => column.name) : [])]
-                  })
-                )
-              ])
-            )
-          : {}
-      })
-    ],
-    [objects.connected, objects.databases, objects.tables, currentSnapshot, tab.database, selectedTable, columns]
-  )
+  const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
   return (
     <section className="editor-panel">
       <div className="editor-toolbar">

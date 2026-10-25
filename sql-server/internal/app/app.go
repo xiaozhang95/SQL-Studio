@@ -14,8 +14,10 @@ import (
 	"sqldesk/internal/config"
 	"sqldesk/internal/connection"
 	"sqldesk/internal/httpapi"
+	"sqldesk/internal/modules/connections"
+	"sqldesk/internal/modules/metadata"
+	"sqldesk/internal/modules/query"
 	"sqldesk/internal/mysql"
-	"sqldesk/internal/service"
 )
 
 type App struct{ server *http.Server }
@@ -25,14 +27,19 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	svc := service.New(repository, mysql.NewClient())
+	client := mysql.NewClient()
+	connectionService := connections.New(repository, client)
 	// 首次初始化走同一业务校验，已有连接保持不变。
-	if len(svc.ListConnections()) == 0 && cfg.InitialConnection != nil {
-		if _, err = svc.SaveConnection(*cfg.InitialConnection); err != nil {
+	if len(connectionService.ListConnections()) == 0 && cfg.InitialConnection != nil {
+		if _, err = connectionService.SaveConnection(*cfg.InitialConnection); err != nil {
 			return nil, err
 		}
 	}
-	router := httpapi.New(svc)
+	router := httpapi.New(httpapi.Services{
+		Connections: connectionService,
+		Metadata:    metadata.New(repository, client),
+		Queries:     query.New(repository, client),
+	})
 	web := http.FileServer(http.Dir(cfg.WebDir))
 	router.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {

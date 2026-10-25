@@ -6,6 +6,6 @@
 - [Gin HTTP 接口](httpapi/README.md)
 - [跨层业务契约](model/README.md)
 - [MySQL 协议驱动](mysql/README.md)
-- [业务策略与接口](service/README.md)
+- [独立业务模块](modules/README.md)：连接管理、对象结构、SQL 查询。
 
-app 负责装配，httpapi → service → model；基础设施只依赖 model。每个实际包有 README 和包注释，不按前端组件方式机械创建 Go 子目录。
+app 负责装配，httpapi → modules 的公开入口 → model；基础设施实现模块消费的接口，只依赖 model。模块之间不直接导入，单进程运行、单一启动入口。每个实际包有 README 和包注释，功能使用独立包，保留 Go 原生职责文件组织。

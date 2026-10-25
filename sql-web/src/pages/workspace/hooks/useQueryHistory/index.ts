@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { getDatabaseAdapter } from '@/databases'
 import type { HistoryItem } from '@/typings/workspace'
 import { readEncrypted, writeEncrypted } from '@/utils/encryptedStorage'
-import { stripHistoryMarkers } from '@/utils/sql'
 import { readLocal } from '@/utils/storage'
 
 type Histories = Record<string, HistoryItem[]>
 let restored: Promise<Histories> | undefined
+// 当前支持范围为 MySQL，旧历史未保存引擎字段，沿用默认适配器读取。
+const cleanHistory = getDatabaseAdapter().cleanHistory
 
 async function restoreHistories(): Promise<Histories> {
   const stored = await readEncrypted<Histories | null>('history', null)
@@ -16,7 +18,7 @@ async function restoreHistories(): Promise<Histories> {
       Object.values(stored).some((records) => !Array.isArray(records) || records.some((item) => !item || typeof item.sql !== 'string' || typeof item.connectionId !== 'string'))
     )
       throw new Error('本地执行历史格式不受支持')
-    return Object.fromEntries(Object.entries(stored).map(([id, records]) => [id, records.map((item) => ({ ...item, sql: stripHistoryMarkers(item.sql) }))]))
+    return Object.fromEntries(Object.entries(stored).map(([id, records]) => [id, records.map((item) => ({ ...item, sql: cleanHistory(item.sql) }))]))
   }
   const keys = Object.keys(localStorage).filter((key) => key === 'sqldesk.history' || key.startsWith('sqldesk.history.'))
   const migrated: Histories = {}
@@ -29,7 +31,7 @@ async function restoreHistories(): Promise<Histories> {
       if (!list.some((record) => record.id === item.id))
         list.push({
           id: item.id,
-          sql: stripHistoryMarkers(item.sql),
+          sql: cleanHistory(item.sql),
           database: item.database,
           connectionId: item.connectionId,
           connectionName: item.connectionName,
@@ -95,7 +97,7 @@ export function useQueryHistory(connectionId: string) {
   }, [ready, available, histories])
   const appendHistory = useCallback((item: HistoryItem) => {
     if (!item.connectionId) return
-    setHistories((previous) => ({ ...previous, [item.connectionId]: [{ ...item, sql: stripHistoryMarkers(item.sql) }, ...(previous[item.connectionId] || [])].slice(0, 50) }))
+    setHistories((previous) => ({ ...previous, [item.connectionId]: [{ ...item, sql: cleanHistory(item.sql) }, ...(previous[item.connectionId] || [])].slice(0, 50) }))
   }, [])
   const clearHistory = useCallback((id: string) => {
     if (id) setHistories((previous) => ({ ...previous, [id]: [] }))

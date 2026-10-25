@@ -1,48 +1,36 @@
 # SQL Studio 后端
 
-[包索引](internal/README.md) · [项目规范 skill](../.agents/skills/sql-studio/SKILL.md)
+[包索引](internal/README.md) · [后端规范](../docs/BACKEND_STANDARDS.md) · [后端 skill](../.agents/skills/sql-studio-backend/SKILL.md)
 
-每个实际 Go 包维护同目录 README 与包注释。架构测试约束 Gin、数据库驱动的依赖方向，并检查包文档；沿用 Go 的 connection/metadata/query 职责文件，不机械套用前端 index 目录规则。
+Go + Gin 模块化单体：一个 Go module、进程和 HTTP 服务，连接管理、数据库对象、SQL 查询为独立业务模块。每个模块维护自己的入口、最小消费接口、规则、README、包注释和测试；模块之间不直接导入，app 在进程内注入具体实现。
 
-Go + Gin 服务，数据库访问使用 `database/sql` + MySQL 驱动。完整启动和 API 说明见 [根目录 README](../README.md)、[API 文档](../docs/API.md) 和 [数据库支持范围](../docs/DATABASES.md)。
-
-项目已按职责分层：`cmd/sql-studio` 为启动入口；`internal/app` 装配服务；`internal/config` 处理配置；`internal/httpapi` 负责 Gin 路由和中间件；`internal/service` 负责业务规则；`internal/model` 定义数据契约；`internal/mysql` 执行数据库操作；`internal/connection` 保存加密连接。完整文件职责、调用方向和扩展规范见 [后端架构](../docs/BACKEND_ARCHITECTURE.md)。
+`cmd/sql-studio/main.go` 为唯一启动入口；`internal/app` 装配模块和生命周期；`internal/httpapi` 负责路由、参数与响应；`internal/modules` 按业务拆分；`internal/model` 是共享契约；`internal/mysql` 实现 MySQL；`internal/connection` 负责加密连接仓库；`internal/config` 读取环境变量。依赖与请求边界见 [架构说明](../docs/BACKEND_ARCHITECTURE.md)，HTTP 契约见 [API](../docs/API.md)。
 
 ## 启动
 
-```powershell
-cd C:\Users\Lenovo\Desktop\sql\sql-server
-$env:SQLDESK_MYSQL_PASSWORD = '00000000'
-go run ./cmd/sql-studio
+从仓库进入后端目录，使用原生命令：
+
+```sh
+cd sql-server
+go run ./cmd/sql-studio/main.go
 ```
 
-请从后端根目录启动，沿用 `data/` 中的已有连接和密钥。直接执行 `go run ./cmd/sql-studio`。退出信号触发 HTTP 服务停止接收请求，并给予在途请求 5 秒结束时间。
+服务监听 `127.0.0.1:8080`，日志直接输出终端，Ctrl+C 退出并给予在途请求 5 秒结束时间。当前不提供启停脚本、后台 PID、日志文件和部署配置。
 
-## 格式化
-
-在当前后端目录的 PowerShell 中执行：
-
-```powershell
-cd C:\Users\Lenovo\Desktop\sql\sql-server
-gofmt -w .         # gofmt 格式化所有 Go 源码与测试
-gofmt -l .  # 只列出未格式化文件，输出应为空
-```
-
-使用标准 `gofmt`，Go 文件为 Tab 缩进和 LF 换行。`.vscode/settings.json` 指定 Go 扩展和保存时格式化，根目录 `.editorconfig` 提供文本规范。
+始终从后端根目录启动，默认使用已有 `data/` 连接与密钥，网页目录为 `../sql-web/dist`。没有保存连接时可在网页创建；可选首次初始化环境变量及数据库范围见 [数据库支持](../docs/DATABASES.md)。现有配置和密钥不因启动参数而覆盖，不删除运行数据。
 
 ## 检查
 
-```powershell
+在 `sql-server` 直接执行：
+
+```sh
+gofmt -w .
+gofmt -l .
 go test -count=1 ./...
 go vet ./...
 go build ./...
-# 等价于：格式检查 + go test ./... + go vet ./... + go build ./...
-
-# 使用真实 MySQL 的独立临时库回归
-$env:SQLDESK_MYSQL_PASSWORD = '00000000'
-$env:SQLDESK_INTEGRATION = '1'
-go test -count=1 ./...
-
 ```
 
-各包单元测试与实现同目录，真实集成测试位于 `tests/integration`，默认跳过，设置对应集成测试环境变量为 1 才启用。测试库创建与清理范围见根目录 README。检查使用 go build ./...，不覆盖当前运行的二进制；集成验证后自行清除对应环境变量。重构保留现有 HTTP 契约、凭据保存格式和数据目录。
+`gofmt -l .` 应无输出。普通测试只用临时目录和替身；架构测试独立约束模块导入方向及递归包文档，不依赖 Node。`go build ./...` 不覆盖当前运行的二进制。不保留检查包装脚本，有效回归归入 Go 测试。
+
+真实 MySQL 测试位于 `tests/integration`，默认跳过；需要时在终端设置 `SQLDESK_INTEGRATION=1` 及实际连接环境变量，再运行 `go test -count=1 ./...`。它只操作随机创建的 `sqldesk_test_<随机ID>` 临时库，结束清理；运行后移除本次设置的环境变量。重构不改变 HTTP 契约、凭据格式和数据目录。

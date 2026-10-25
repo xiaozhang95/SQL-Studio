@@ -1,5 +1,7 @@
 # 开发约定
 
+前端维护首先遵守用户确认的 [前端开发规范](FRONTEND_STANDARDS.md)。Ant Design 原生默认、统一控件配置、单一功能入口/README、TypeScript 契约和数据库引擎隔离，以该文件为准。
+
 ## 前端目录职责
 
 参考本机 `C:\Users\Lenovo\Desktop\ghspace\ghspace-polardb-web` 的分层方向，保留 Vite + React 技术栈。
@@ -22,7 +24,10 @@
 | `sql-web/src/pages/workspace/hooks/useWorkspace/` | 工作区业务编排；区域组件用 Pick 限定消费字段 |
 | `sql-web/src/pages/workspace/hooks/useConnectionForm/` | 连接表单默认值、测试、保存和错误 |
 | `sql-web/src/hooks/useThemePreference/` | 用户偏好、系统主题订阅、首帧配色 |
-| `sql-web/src/constant/database/index.ts` | MySQL 类型、标签与默认端口 |
+| `sql-web/src/databases/index.ts` | 数据库契约注册与统一调用入口 |
+| `sql-web/src/databases/mysql/` | MySQL 配置、SQL 方法、历史标记及补全扩展 |
+| `sql-web/src/constant/appearance/index.ts` | 统一尺寸枚举和已确认的外观约定 |
+| `sql-web/src/constant/connectionGroup/index.ts` | 默认分组及名称规范化 |
 | `sql-web/src/typings/workspace/index.ts` | 查询标签、执行历史等页面内部状态类型 |
 | `sql-web/src/app.scss` | 全局基础样式、Ant Design 覆盖、工作区布局与编辑器字体继承 |
 | `sql-web/src/services/database/index.ts` | 连接管理、元数据和 SQL 执行 API；URL 与请求参数集中维护 |
@@ -35,7 +40,7 @@
 
 入口 main.tsx 已引入 antd/dist/reset.css，随后引入全局 app.scss；全部原生组件样式覆盖集中于 app.scss，通过 Sass 编译。界面保留系统及 Ant Design 默认字体，不指定新的字体族、字号和字重；SQL/DDL CodeMirror 的 scroller 从页面继承字体，覆盖库内 monospace。保留 Ant Design 默认文字、placeholder 和图标颜色；主题使用 defaultAlgorithm / darkAlgorithm，主色、背景和边框直接引用 Ant Design CSS token，不手写蓝色调色板。主题偏好支持跟随系统并保存。
 
-工作区固定为视口高度，左侧对象树保持固定，右侧 SQL 编辑区填充剩余空间，有结果时直接展示底部可伸缩面板，不提供折叠按钮，库表树和结果独立滚动。WorkspaceTab 独立保存查询的连接、database、table；运行按钮旁的选择器只修改当前标签，左侧树单独管理选中高亮，二者互不联动。切标签恢复独立查询范围，新标签继承当前查询范围。切换连接或数据库时清理旧表选择，切标签恢复只读。MySQL 表身份由数据库和表名组成，生成 SQL 使用反引号转义。
+工作区固定为视口高度，左侧对象树支持拖动调整宽度并加密保存，右侧 SQL 编辑区填充剩余空间，有结果时直接展示底部可伸缩面板，不提供折叠按钮，库表树和结果独立滚动。WorkspaceTab 独立保存查询的连接、database、table；运行按钮旁的选择器只修改当前标签，左侧树单独管理选中高亮，二者互不联动。切标签恢复独立查询范围，新标签继承当前查询范围。切换连接或数据库时清理旧表选择，切标签恢复只读。数据库专属的引号规则及查询生成经适配器调用，不写入页面组件。
 
 界面结构参考 [前端 design 原图](../sql-web/design/数据库连接弹窗-重设计.png)。连接弹窗按类型侧栏、表单、独立操作栏分区，必填字段使用标准校验；常规中保留名称、主机/端口、用户名与密码。只显示一处本地加密标签，证书说明放在 SSL 页签。
 
@@ -49,7 +54,7 @@ Tag 仅用于有辨识意义的状态，避免为数量重复加标签。顶栏�
 
 连接类型选中态仅使用 colorPrimary 背景和 colorTextLightSolid 文字，无尾部勾选；对象树选中节点同样引用原生 primary token，避免浅色背景。内容区固定高度并受视口约束，右侧表单独立滚动，页签和数据库类型切换时保持外框与操作栏位置。
 
-Switch 轨道与按钮背景沿用组件算法，信息 Tag 采用蓝色 solid，不把文字颜色强行套到背景。项目边界与同步要求见 [项目 skill](../.agents/skills/sql-studio/SKILL.md)；归档规则与本地文档链接由 `node scripts/check-structure.mjs` 检查。
+Switch 轨道与按钮背景沿用组件算法，信息 Tag 采用蓝色 solid，不把文字颜色强行套到背景。项目边界与同步要求见 [项目 skill](../.agents/skills/sql-studio/SKILL.md)；归档规则与本地文档链接由 `cd sql-web && node --test tests/structure.test.mjs` 检查。
 
 `.prettierrc` 对齐参考项目的核心设置：
 
@@ -71,7 +76,7 @@ pnpm build
 
 ## 后端格式规则
 
-后端已完成包分层，入口为 `cmd/sql-studio`，职责和依赖方向见 [后端架构与维护规范](BACKEND_ARCHITECTURE.md)。新增代码须进入所属层，并由架构测试约束导入方向。
+后端遵守 [后端开发规范](BACKEND_STANDARDS.md)，采用模块化单体：connections、metadata、query 独立业务模块，由 app 在单进程中装配；入口为 `cmd/sql-studio/main.go`。职责和依赖方向见 [后端架构与维护规范](BACKEND_ARCHITECTURE.md)，新增包由原生 Go 架构测试约束导入方向和文档。
 
 Gin 只进入 HTTP 与应用装配层，MySQL 驱动只进入 mysql 基础设施包。数据库支持与 TLS 边界见 [数据库支持](DATABASES.md)。
 
@@ -130,7 +135,7 @@ go build ./...
 
 执行历史载入不新建标签，在当前 SQL 页草稿末尾追加空行、`-- 历史记录` 注释与完整历史 SQL，不改变连接/库、不自动执行。编辑器右键提供“运行选中 SQL”，固定菜单打开时的选区快照；无选区、未连接或执行中禁用。补全浮层沿用系统 Select 的背景、边框、阴影、选中态和 32px 行高，保留系统字号与键盘操作。
 
-多语句由 utils/sql 按 MySQL 引号、转义及注释边界切分，useWorkspace 持有批次运行锁、取消信号和固定目标顺序执行；接口和驱动保持单语句、默认只读及单请求限制。每条独立保存结果和历史，失败/取消停止后续请求；结果工具栏用 Select 切换该批结果，重复运行替换整批。回归检查从根目录运行 `node --test scripts/test-sql-statements.mjs`（Node 24）。
+多语句由目标数据库适配器调用 databases/mysql/statements 按 MySQL 引号、转义及注释边界切分，useWorkspace 持有批次运行锁、取消信号和固定目标顺序执行；接口和驱动保持单语句、默认只读及单请求限制。每条独立保存结果和历史，失败/取消停止后续请求；结果工具栏用 Select 切换该批结果，重复运行替换整批。回归检查从根目录运行 `cd sql-web && node --test tests/mysql.test.mjs`（Node 24）。
 
 工作区本地保存使用 utils/encryptedStorage 的 AES-GCM + IndexedDB，密钥 extractable=false，不硬编码、不导出。useWorkspacePersistence 先恢复再允许保存，白名单包含页签/SQL/结果/布局，不含连接密码；历史也加密，并在迁移提交后清理旧明文。恢复只重连元数据，不自动执行 SQL；运行中刷新显示中断提示。顶部 Tab 和结果 Select 依据各页选中结果同步成功/失败颜色；成功和失败选项的选中/hover 背景使用各自语义 token。
 

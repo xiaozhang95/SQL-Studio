@@ -8,7 +8,7 @@
 
 ## 约束与调用
 
-只调用 service，不直接开数据库或读文件；路径/字段契约见根目录 docs/API.md。
+`New(services Services) *gin.Engine` 接收 app 装配的 Connections、Metadata、Queries 三个业务模块，只调用公开方法，不直接开数据库或读文件，也不在每次请求时重建查询模块；路径/字段契约见根目录 docs/API.md。连接、结构、SQL 路由分别使用所属模块；`query.ErrBusy` 映射为 429。
 
 连接新增/更新和列表透传可选 group 字段。TestConnectionGroupRoundTrip 使用临时目录验证 API 保存、重启读取、更换及清空分组，同时检查编辑空密码保留原凭据。
 
