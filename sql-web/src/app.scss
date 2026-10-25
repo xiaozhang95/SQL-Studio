@@ -7,6 +7,7 @@ html[data-theme='dark'] {
 }
 // App 与弹窗/抽屉门户共享 Ant Design 变量作用域，所有颜色从当前主题派生。
 .sql-studio-theme {
+  --workspace-inset: 12px;
   --text: var(--ant-color-text);
   --layout: var(--ant-color-bg-layout);
   --surface: var(--ant-color-bg-container);
@@ -54,7 +55,7 @@ body {
 }
 *::-webkit-scrollbar-thumb {
   background: #7c8a9a;
-  border-radius: 4px;
+  border-radius: 0;
 }
 *::-webkit-scrollbar-corner {
   background: transparent;
@@ -83,7 +84,7 @@ body {
 .topbar {
   height: 56px;
   flex: none;
-  padding: 0 20px;
+  padding: 0 var(--workspace-inset);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -109,7 +110,7 @@ body {
   overflow: hidden;
 }
 .sidebar {
-  width: 272px;
+  position: relative;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -117,6 +118,26 @@ body {
   overflow: hidden;
   background: var(--surface);
   border-right: 1px solid var(--border);
+}
+.sidebar-resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 5px;
+  z-index: 3;
+  cursor: col-resize;
+  touch-action: none;
+}
+.sidebar-resizer:hover,
+.sidebar-resizer:focus-visible,
+.sidebar.is-resizing .sidebar-resizer {
+  background: var(--ant-control-item-bg-hover);
+  outline: none;
+}
+.workspace:has(.sidebar.is-resizing),
+.workspace:has(.sidebar.is-resizing) * {
+  cursor: col-resize;
+  user-select: none;
 }
 .connection-option {
   display: flex;
@@ -136,7 +157,7 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 12px 12px 0;
+  padding: var(--workspace-inset) var(--workspace-inset) 0;
 }
 .explorer > .ant-input-affix-wrapper {
   flex: none;
@@ -150,6 +171,21 @@ body {
 }
 .object-tree .ant-tree {
   background: transparent;
+}
+.object-tree .ant-tree .ant-tree-treenode {
+  align-items: center;
+  padding-block: 0;
+  margin-bottom: 2px;
+}
+.object-tree .ant-tree .ant-tree-switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  background: transparent;
+}
+.object-tree .ant-tree .ant-tree-switcher::before {
+  display: none;
 }
 // 双击树节点只展开/收起，不产生浏览器文字选区；内容区仍允许复制 SQL 和结果。
 .object-tree,
@@ -168,14 +204,25 @@ body {
 .object-tree .ant-tree-node-content-wrapper {
   display: flex;
   align-items: center;
+  min-height: 28px;
+  padding-block: 2px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .object-tree .ant-tree-iconEle {
-  color: var(--primary);
+  color: var(--text);
   flex: none;
+  margin-inline-end: 8px;
+}
+.object-tree .is-closed .ant-tree-iconEle,
+.object-tree .is-error .ant-tree-iconEle {
+  color: var(--ant-color-text-disabled);
+}
+.connection-tree-icon.is-closed,
+.connection-tree-icon.is-error {
+  color: var(--ant-color-text-disabled);
 }
 .object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle {
   display: inline-flex;
@@ -185,6 +232,11 @@ body {
 .connection-tree-icon {
   display: flex;
   align-items: center;
+}
+.connection-tree-icon .engine-symbol {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
 }
 .object-tree .ant-tree-node-selected .ant-tree-iconEle {
   color: inherit;
@@ -206,7 +258,6 @@ body {
   min-width: 0;
   min-height: 0;
   display: flex;
-  padding: 12px;
   overflow: hidden;
 }
 .query-workspace {
@@ -215,9 +266,23 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   overflow: hidden;
 }
+.workspace-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--surface);
+}
+.results-panel.is-standalone {
+  height: auto;
+  flex: 1;
+  border-top: 0;
+  padding-top: 0;
+}
+
 .toolbar-left .connection-select,
 .toolbar-left .database-select {
   flex: 1 1 150px;
@@ -226,11 +291,8 @@ body {
 }
 .editor-panel,
 .results-panel {
-  border: 1px solid var(--border);
-  border-radius: 8px;
   background: var(--surface);
   overflow: hidden;
-  box-shadow: var(--shadow);
 }
 .editor-panel {
   flex: 1;
@@ -239,26 +301,61 @@ body {
   min-height: 0;
 }
 .workspace-tabs {
-  flex: none;
+  flex: 1;
+  min-height: 0;
+}
+.workspace-page {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.workspace-tabs .ant-tabs-body,
+.workspace-tabs .ant-tabs-content {
+  height: 100%;
 }
 .workspace-tabs .ant-tabs-nav {
   margin: 0;
-  padding: 8px 12px 0;
+  padding: 0;
   background: var(--surface-raised);
-}
-html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
-  background: var(--ant-color-fill);
 }
 .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  background: var(--surface-raised);
-  border-color: var(--border);
+  min-width: 128px;
+  max-width: 240px;
+  margin: 0;
+  padding-inline: 12px;
+  border: 0;
+  border-inline-end: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  transition: background 0.2s;
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:hover {
+  background: var(--ant-control-item-bg-hover);
 }
 .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
   background: var(--surface);
   border-bottom-color: var(--surface);
+  box-shadow: inset 0 2px var(--primary);
 }
-.workspace-tabs .ant-tabs-content-holder {
-  display: none;
+.workspace-tabs .ant-tabs-tab-btn {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-tabs .ant-tabs-tab-remove {
+  flex: none;
+  margin-inline-start: 12px;
+}
+.workspace-tabs .ant-tabs-tab-remove:hover {
+  background: var(--ant-control-item-bg-hover);
+}
+.workspace-tabs .ant-tabs-body-holder {
+  min-height: 0;
+  overflow: hidden;
 }
 .editor-toolbar {
   flex: none;
@@ -267,7 +364,7 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 12px;
+  padding: var(--workspace-inset);
   border-bottom: 1px solid var(--border);
 }
 .toolbar-left {
@@ -314,6 +411,8 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  border-top: 1px solid var(--border);
+  padding-top: 5px;
 }
 .results-panel.is-resizing {
   user-select: none;
@@ -322,7 +421,7 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   position: absolute;
   inset-inline: 0;
   top: 0;
-  height: 8px;
+  height: 5px;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -332,20 +431,20 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
 }
 .results-resizer > span {
   width: 48px;
-  height: 3px;
-  border-radius: 3px;
+  height: 2px;
+  border-radius: 0;
   background: var(--border);
 }
 .results-resizer:hover,
 .results-resizer:focus-visible,
 .results-panel.is-resizing .results-resizer {
-  background: var(--primary-soft);
+  background: var(--ant-control-item-bg-hover);
   outline: none;
 }
 .results-resizer:hover > span,
 .results-resizer:focus-visible > span,
 .results-panel.is-resizing .results-resizer > span {
-  background: var(--primary);
+  background: var(--ant-color-text-secondary);
 }
 .result-panel-content {
   display: flex;
@@ -354,10 +453,6 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   flex-direction: column;
   overflow: hidden;
 }
-.result-tabs-row {
-  flex: none;
-  min-width: 0;
-}
 
 .result-toolbar {
   display: flex;
@@ -365,7 +460,7 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 8px 12px;
+  padding: 8px var(--workspace-inset);
   border-bottom: 1px solid var(--border);
   flex: none;
 }
@@ -411,7 +506,15 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 2px;
+}
+.database-object-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.database-object-name > .anticon {
+  flex: none;
 }
 .column-type,
 .cell-null {
@@ -425,8 +528,16 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.data-table .ant-table-pagination {
-  padding: 0 12px;
+.table-pagination.ant-pagination,
+.ant-table-wrapper .ant-table-pagination.table-pagination {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+  width: 100%;
+  margin: 0;
+  padding: 8px var(--workspace-inset);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 .query-empty {
   margin: 20px 0;
@@ -470,7 +581,7 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   margin: 0;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   max-height: 240px;
   overflow: auto;
   white-space: pre-wrap;
@@ -509,7 +620,7 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   gap: 10px;
   text-align: left;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: inherit;
   padding: 10px;
@@ -540,31 +651,33 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
 }
 .engine-symbol {
   flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   display: inline-grid;
   place-items: center;
-  background: #fff;
-  border: 1px solid var(--border);
+  background: var(--ant-color-success);
+  border: 0;
 }
 .engine-symbol img {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 80%;
+  height: 80%;
   object-fit: contain;
 }
-.connection-option .engine-symbol,
-.connection-tree-icon .engine-symbol {
+.engine-symbol.is-closed {
+  // 禁用色带透明度，先落到 surface 上，避免选中蓝底把灰色图标染蓝。
+  background: linear-gradient(var(--ant-color-text-disabled), var(--ant-color-text-disabled)), var(--surface);
+}
+.connection-option .engine-symbol {
   width: 20px;
   height: 20px;
   border: 0;
   border-radius: 4px;
 }
-.connection-option .engine-symbol img,
-.connection-tree-icon .engine-symbol img {
-  width: 20px;
-  height: 20px;
+.engine-symbol.is-logo {
+  width: 40px;
+  height: 40px;
 }
 .engine-picker-note {
   margin-top: auto;
@@ -583,10 +696,6 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   gap: 12px;
   padding-bottom: 16px;
 }
-.connection-engine-header > .engine-symbol {
-  width: 44px;
-  height: 44px;
-}
 .connection-engine-header > .ant-tag {
   margin-left: auto;
   margin-right: 0;
@@ -596,11 +705,6 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
 }
 .connection-fields .ant-form-item:last-child {
   margin-bottom: 0;
-}
-.form-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px;
-  gap: 16px;
 }
 .modal-footer,
 .modal-actions {
@@ -627,12 +731,6 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   white-space: nowrap;
 }
 @media (max-width: 1100px) {
-  .sidebar {
-    width: 240px;
-  }
-  .topbar {
-    padding-inline: 16px;
-  }
   .result-actions .ant-input-affix-wrapper {
     width: 150px;
   }
@@ -644,9 +742,6 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   }
   .connection-settings {
     padding: 20px;
-  }
-  .form-row {
-    grid-template-columns: minmax(0, 1fr) 96px;
   }
 }
 
@@ -702,40 +797,116 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
 .workspace-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: var(--primary);
 }
+.page-tabs .ant-tabs-tab-active {
+  --result-tab-color: var(--primary);
+}
+.page-tabs .ant-tabs-tab:has(.result-tab-label.is-success) {
+  --result-tab-color: var(--ant-color-success-text);
+}
+.page-tabs .ant-tabs-tab:has(.result-tab-label.is-error) {
+  --result-tab-color: var(--ant-color-error-text);
+}
+.page-tabs .ant-tabs-tab:has(.result-tab-label) .ant-tabs-tab-btn {
+  color: var(--result-tab-color, var(--text));
+}
+.page-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  box-shadow: inset 0 2px var(--result-tab-color, var(--primary));
+}
 
-// SQL 补全沿用页面字体与主题，移除关键字的 emoji 和匹配下划线。
+.statement-result-select.is-success,
+.result-select-popup .result-option.is-success {
+  --result-state-color: var(--ant-color-success-text);
+  --result-state-bg: var(--ant-color-success-bg);
+  --result-state-shadow: var(--ant-color-success-bg-hover);
+}
+.statement-result-select.is-error,
+.result-select-popup .result-option.is-error {
+  --result-state-color: var(--ant-color-error-text);
+  --result-state-bg: var(--ant-color-error-bg);
+  --result-state-shadow: var(--ant-color-error-bg-hover);
+}
+.statement-result-select.ant-select {
+  border-color: var(--result-state-color);
+}
+.statement-result-select.ant-select-focused {
+  box-shadow: 0 0 0 2px var(--result-state-shadow);
+}
+.statement-result-select .statement-result-content,
+.statement-result-select .statement-result-prefix,
+.statement-result-select .statement-result-suffix,
+.result-select-popup .result-option {
+  color: var(--result-state-color);
+}
+.statement-result-select.ant-select:not(.ant-select-disabled) .ant-select-content.statement-result-content {
+  opacity: 1;
+}
+.statement-result-label.is-success {
+  color: var(--ant-color-success-text);
+}
+.statement-result-label.is-error {
+  color: var(--ant-color-error-text);
+}
+.statement-result-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.statement-result-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-select-popup.ant-select-dropdown .ant-select-item-option.result-option.ant-select-item-option-selected,
+.result-select-popup.ant-select-dropdown .ant-select-item-option.result-option.ant-select-item-option-active {
+  background: var(--result-state-bg);
+  color: var(--result-state-color);
+}
+.result-select-popup .result-option .ant-select-item-option-state {
+  color: var(--result-state-color);
+}
+
+// 补全采用与系统 Select 相同的浮层、行高和选中态，不使用编辑器自带的蓝色主题。
 .sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete {
   width: max-content;
-  min-width: 240px;
-  max-width: min(480px, calc(100vw - 32px));
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  min-width: 220px;
+  max-width: min(400px, calc(100vw - 32px));
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 0;
+  background: var(--ant-color-bg-elevated);
   color: var(--text);
-  box-shadow: var(--shadow);
+  box-shadow: var(--ant-box-shadow-secondary);
   overflow: hidden;
 }
 .sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul {
-  min-width: 240px;
+  min-width: 220px;
   max-width: 100%;
   max-height: 240px;
   height: auto;
   font-family: inherit;
-  font-size: inherit;
+  font-size: var(--ant-font-size);
   padding: 4px;
 }
 .sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li {
-  padding: 6px 10px;
+  padding: 5px 12px;
   min-height: 32px;
-  line-height: 1.5;
-  border-radius: 4px;
+  line-height: var(--ant-line-height);
+  border-radius: 0;
 }
 .sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li:hover {
   background: var(--ant-control-item-bg-hover);
 }
-.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
-  background: var(--primary);
-  color: var(--on-primary);
+.sql-editor .cm-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected='true'] {
+  background: var(--ant-control-item-bg-active);
+  color: var(--ant-color-text);
+}
+.sql-editor .cm-completionLabel,
+.sql-editor .cm-completionDetail {
+  font-style: normal;
+}
+.sql-editor .cm-completionDetail {
+  color: var(--ant-color-text-description);
 }
 .sql-editor .cm-completionIcon {
   display: none;
@@ -754,19 +925,11 @@ html[data-theme='light'] .workspace-tabs .ant-tabs-nav {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.connection-tree-label.is-connected {
-  color: var(--primary);
+.connection-tree-label {
+  color: inherit;
 }
-.connection-tree-label.is-closed {
-  color: var(--ant-color-text-disabled);
-}
-.connection-tree-label.is-error,
 .tree-error {
   color: var(--ant-color-error-text);
-}
-.connection-tree-icon.is-closed,
-.connection-tree-icon.is-error {
-  opacity: 0.45;
 }
 .object-tree .ant-tree-node-selected .connection-tree-label {
   color: inherit;

@@ -1,31 +1,25 @@
-import {
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  CloseCircleOutlined,
-  CodeOutlined,
-  DownloadOutlined,
-  FileTextOutlined,
-  LoadingOutlined,
-  ProfileOutlined,
-  SearchOutlined,
-  TableOutlined
-} from '@ant-design/icons'
-import { Alert, Button, Empty, Input, Pagination, Table, Tabs } from 'antd'
+import { ClockCircleOutlined, DownloadOutlined, EyeOutlined, LoadingOutlined, SearchOutlined, StopOutlined, TableOutlined } from '@ant-design/icons'
+import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
 import { useEffect } from 'react'
 
 import { exportCSV } from '@/utils/csv'
 
+import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ResultsDock from '../resultsDock'
+import ResultSelect from '../resultSelect'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'result' | 'run' | 'running' | 'resultTabs' | 'selectResult' | 'closeResult' | 'resultSearch' | 'setResultSearch' | 'tablePage' | 'setTablePage'>
+  model: Pick<
+    WorkspaceModel,
+    'result' | 'run' | 'activeRunning' | 'tab' | 'cancelQuery' | 'resultSearch' | 'setResultSearch' | 'tablePage' | 'setTablePage' | 'resultIndex' | 'selectResult' | 'resultHeight' | 'setResultHeight'
+  >
 }
 
-/** 底部仅展示结果快照；表操作从对象树菜单发起，分页独立于滚动内容。 */
+/** 展示当前页面的最新结果；表操作从对象树菜单发起，分页独立于滚动内容。 */
 export default function QueryResults({ model }: Props) {
-  const { result, run, running, resultTabs, selectResult, closeResult, resultSearch, setResultSearch, tablePage, setTablePage } = model
+  const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
   const { viewport, bodyHeight } = useTableViewportLayout(run?.id)
   useEffect(() => {
     const body = viewport.current?.querySelector<HTMLElement>('.ant-table-body')
@@ -57,60 +51,36 @@ export default function QueryResults({ model }: Props) {
         row.cells[index] === null ? (
           <span className="cell-null">(NULL)</span>
         ) : (
-          <span className="cell-value" title={String(row.cells[index])}>
-            {String(row.cells[index])}
+          <span className={run?.kind === 'structure' && column.name === '表名' ? 'database-object-name' : undefined}>
+            {run?.kind === 'structure' &&
+              column.name === '表名' &&
+              (String(row.cells[result?.columns.findIndex((item) => item.name === '类型') ?? -1]).includes('VIEW') ? <EyeOutlined /> : <TableOutlined />)}
+            <span className="cell-value" title={String(row.cells[index])}>
+              {String(row.cells[index])}
+            </span>
           </span>
         )
     }))
   ]
-  if (!resultTabs.length) return null
+  if (!run) return null
   return (
-    <ResultsDock
-      header={
-        <Tabs
-          className="workspace-tabs result-query-tabs"
-          size="small"
-          tabBarGutter={4}
-          type="editable-card"
-          hideAdd
-          activeKey={run?.id}
-          onChange={selectResult}
-          onEdit={(key, action) => {
-            if (action === 'remove') closeResult(String(key))
-          }}
-          items={resultTabs.map((item, index) => ({
-            key: item.id!,
-            icon: item.kind === 'data' ? <TableOutlined /> : item.kind === 'structure' ? <ProfileOutlined /> : item.kind === 'ddl' ? <FileTextOutlined /> : <CodeOutlined />,
-            label: `${item.title || '结果'} ${index + 1}`,
-            closable: true
-          }))}
-        />
-      }
-    >
+    <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
+      {run.interrupted && <Alert type="warning" banner title="上次执行因页面刷新中断，已完成结果保留；未自动继续执行。" />}
       <div className="result-toolbar">
         <div className="result-meta">
-          {running ? (
+          <ResultSelect run={run} running={activeRunning} resultIndex={resultIndex} onChange={selectResult} />
+          {!activeRunning && !run.error && result && (
             <span className="result-status">
-              <LoadingOutlined spin /> 执行中
+              <ClockCircleOutlined /> {result.durationMs} ms
             </span>
-          ) : run?.error ? (
-            <span className="result-status is-error">
-              <CloseCircleOutlined /> 失败
-            </span>
-          ) : result ? (
-            <>
-              <span className="result-status is-success">
-                <CheckCircleOutlined /> 成功
-              </span>
-              <span className="result-status">
-                <ClockCircleOutlined /> {result.durationMs} ms
-              </span>
-            </>
-          ) : (
-            <span>待执行</span>
           )}
         </div>
         <div className="result-actions">
+          {tab.kind !== 'query' && activeRunning && (
+            <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
+              取消
+            </Button>
+          )}
           <Input
             prefix={<SearchOutlined />}
             placeholder="筛选当前结果"
@@ -139,12 +109,17 @@ export default function QueryResults({ model }: Props) {
         </div>
       </div>
       <div ref={viewport} className="result-scroll" tabIndex={0} aria-label="结果数据滚动区域" style={{ overflow: 'hidden', minWidth: 0 }}>
-        {run?.error ? (
+        {activeRunning ? (
+          <div className="tree-loading">
+            <LoadingOutlined spin /> 正在加载结果
+          </div>
+        ) : run?.error ? (
           <Alert style={{ margin: 16 }} type="error" showIcon title="SQL 执行失败" description={<pre style={{ whiteSpace: 'pre-wrap' }}>{run.error}</pre>} />
         ) : result ? (
           <>
             {result.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
             <Table
+              size="small"
               className="data-table"
               columns={columns}
               dataSource={rows.slice((tablePage - 1) * 50, tablePage * 50)}
@@ -157,11 +132,7 @@ export default function QueryResults({ model }: Props) {
           <Empty className="query-empty" image={<TableOutlined className="empty-state-icon" />} description="暂无结果" />
         )}
       </div>
-      {result && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 'none', padding: '8px 12px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
-          <Pagination current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} showSizeChanger={false} showTotal={(total) => `共 ${total} 行`} />
-        </div>
-      )}
+      {result && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} />}
     </ResultsDock>
   )
 }

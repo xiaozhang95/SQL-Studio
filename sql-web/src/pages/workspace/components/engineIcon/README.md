@@ -1,13 +1,13 @@
-# 数据库品牌图标
+# 数据库状态图标
 
 [组件索引](../README.md) · [源码](index.tsx)
 
 ## 参数与回调
 
-type? 为 DatabaseType；省略按 MySQL 处理。
+type? 为 DatabaseType，省略按 MySQL 处理；variant? 默认为 icon，连接类型与表单头部使用 logo（40px）；connected? 默认为 true，连接根节点必须传入实际结构加载状态。
 
 ## 行为与边界
 
-展示 assets/databases 中未改色的品牌资源。当前仅保留 MySQL 原有图标。图标为装饰，名称由相邻文字提供。来源见资产 README。
+按用户最新参考图使用白色海豚剪影与圆角底板。connected=true 使用 Ant Design success 底色；尚未打开、已关闭或加载失败为灰色底板。图形保持白色，不改变节点文字。树及连接下拉图标为 20px，类型与表单头部为 40px；连接图标不撑高原生选择器。折叠不改变连接状态。数据库、表和视图继续使用原生语义图标，不按子结构加载状态置灰。
 
-页面私有组件从 `./components/engineIcon` 导入；只服务工作区，不通过聚合出口扩散依赖。
+图标为装饰，名称由相邻文字提供；资源归属与来源见 [资产说明](../../../../assets/databases/README.md)。页面私有组件从目录导入，不通过聚合出口扩散依赖。

@@ -1,14 +1,14 @@
 import { App, Form } from 'antd'
 import { useEffect, useState } from 'react'
 
-import { databaseTypeInfo } from '@/constant/database'
+import { connectionGroupName, databaseTypeInfo, defaultConnectionGroup } from '@/constant/database'
 import { saveConnection, testConnection } from '@/services/database'
 import type { Connection, ConnectionInput } from '@/typings/database'
 
-type Props = { open: boolean; connection?: Connection; onSaved: (connection: Connection) => void }
+type Props = { open: boolean; connection?: Connection; connections: Connection[]; onSaved: (connection: Connection) => void }
 type TestStatus = { type: 'success' | 'error'; message: string }
 /** 表单不回显已保存密码；空密码由后端按连接 ID 保留原凭据。 */
-export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
+export const useConnectionForm = ({ open, connection, connections, onSaved }: Props) => {
   const [form] = Form.useForm<ConnectionInput>()
   const { message } = App.useApp()
   const [saving, setSaving] = useState(false)
@@ -17,6 +17,10 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
   const [section, setSection] = useState('general')
   const engine = databaseTypeInfo(Form.useWatch('type', form) || connection?.type)
   const busy = saving || testing
+  const groups = [
+    defaultConnectionGroup,
+    ...[...new Set(connections.map((item) => connectionGroupName(item.group)))].filter((group) => group !== defaultConnectionGroup).sort((a, b) => a.localeCompare(b, 'zh-CN'))
+  ]
   useEffect(() => {
     if (open) {
       form.resetFields()
@@ -24,18 +28,19 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
         connection
           ? {
               ...connection,
+              group: connectionGroupName(connection.group),
               type: connection.type || 'mysql',
               tls: connection.tls || false,
               password: ''
             }
-          : { type: 'mysql', tls: false, name: '', host: '', port: 3306, username: '' }
+          : { type: 'mysql', tls: false, name: '', group: defaultConnectionGroup, host: '', port: 3306, username: '' }
       )
     }
   }, [open, connection, form])
   async function values() {
     try {
       const value = await form.validateFields()
-      return { ...value, id: connection?.id }
+      return { ...value, group: connectionGroupName(value.group), id: connection?.id }
     } catch (error) {
       setSection('general')
       throw error
@@ -68,5 +73,5 @@ export const useConnectionForm = ({ open, connection, onSaved }: Props) => {
     }
   }
 
-  return { form, saving, testing, status, section, engine, busy, setStatus, setSection, test, save }
+  return { form, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save }
 }

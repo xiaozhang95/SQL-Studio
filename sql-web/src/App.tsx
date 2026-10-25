@@ -13,6 +13,7 @@ export default function App() {
       tag={{ variant: 'solid' }}
       theme={{
         algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: { borderRadius: 0 },
         cssVar: { key: 'sql-studio-theme' }
       }}
     >

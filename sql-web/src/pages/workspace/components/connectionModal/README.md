@@ -4,7 +4,7 @@
 
 ## 参数与回调
 
-open、connection?、onClose、onSaved。open 受控；connection 表示编辑；保存成功回传脱敏连接。
+open、connection?、connections、onClose、onSaved。open 受控；connection 表示编辑；connections 提供已有连接分组；保存成功回传脱敏连接。
 
 ## 行为与边界
 
@@ -22,8 +22,12 @@ open、connection?、onClose、onSaved。open 受控；connection 表示编辑�
 
 ## 布局修正
 
-本轮统一左右底色，通过原有竖线分隔；本地加密 Tag 移到右侧默认端口 Tag 旁，各数据库/SSL 页签均可看到。所有显示字段均有 placeholder，仍只预填端口。
+本轮统一左右底色，通过原有竖线分隔；本地加密 Tag 移到右侧默认端口 Tag 旁，各数据库/SSL 页签均可看到。所有显示字段均有 placeholder，连接参数只预填端口，分组预选“默认分组”。
 
 ## 表单高度
 
+常规与 SSL 表单采用 horizontal 布局：label 固定 96px、右对齐，输入区域自适应。名称、分组、主机、端口、用户名和密码各占一行。分组为 AutoComplete，可输入新名称或选择已有分组，支持搜索和清空；新建预选“默认分组”，留空也归入默认分组。已有连接可通过右键“编辑连接”更换分组，保存后由左侧树按组展示。
+
 内容区为 min(600px, 100dvh - 180px)，右侧上下内边距 20px，仅展示 MySQL 常规和 SSL 配置。正常视口内容完整时不出现滚动条；窄小窗口、校验错误或较长反馈需要时仍可滚动。hover 使用原生 controlItemBgHover，与对象树一致。placeholder 使用 Ant Design 默认颜色，不做局部覆盖。
+
+数据库类型项与表单头部均使用 engine.value 显式传入的 logo 变体；按用户最新参考图统一为 40px 成功色底板与白色海豚剪影。

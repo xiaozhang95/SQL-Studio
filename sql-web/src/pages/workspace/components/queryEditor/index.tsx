@@ -1,7 +1,8 @@
-import { CloseCircleOutlined, CloseOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, PlayCircleOutlined, RightOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { DownloadOutlined, HistoryOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import { MySQL, sql } from '@codemirror/lang-sql'
 import CodeMirror from '@uiw/react-codemirror'
-import { Alert, Button, Dropdown, Tabs, Upload } from 'antd'
+import { Alert, Button, Dropdown, Upload } from 'antd'
+import { useMemo, useState } from 'react'
 
 import type { ThemeMode } from '@/typings/theme'
 
@@ -13,21 +14,22 @@ type Props = {
   themeMode: ThemeMode
   model: Pick<
     WorkspaceModel,
-    | 'tabs'
     | 'activeTab'
     | 'running'
-    | 'selectTab'
-    | 'closeTab'
-    | 'closeTabs'
+    | 'activeRunning'
     | 'cancelQuery'
     | 'tab'
     | 'updateSQL'
     | 'runSQL'
+    | 'getSelectedSQL'
+    | 'runSelectedSQL'
     | 'objects'
     | 'selectObject'
     | 'connections'
     | 'selectConnection'
     | 'onEditorReady'
+    | 'onEditorUpdate'
+    | 'rememberEditor'
     | 'columns'
     | 'addTab'
     | 'exportCurrentSQL'
@@ -37,65 +39,45 @@ type Props = {
 
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
-  const { tabs, activeTab, running, selectTab, closeTab, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
+  const { activeTab, running, activeRunning, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
   const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, undefined, title))
+  const [contextSQL, setContextSQL] = useState('')
 
   const selectedTable = tab.table
+  const currentSnapshot = objects.snapshots[tab.connectionId]
+  const extensions = useMemo(
+    () => [
+      sql({
+        dialect: MySQL,
+        upperCaseKeywords: true,
+        defaultSchema: tab.database || undefined,
+        defaultTable: selectedTable || undefined,
+        schema: objects.connected
+          ? Object.fromEntries(
+              objects.databases.map((database) => [
+                database,
+                Object.fromEntries(
+                  (objects.tables[database] || []).map((table) => {
+                    const structure = currentSnapshot?.structures[JSON.stringify([database, table.name])]
+                    return [table.name, structure?.columns.map((column) => column.name) || (database === tab.database && table.name === selectedTable ? columns.map((column) => column.name) : [])]
+                  })
+                )
+              ])
+            )
+          : {}
+      })
+    ],
+    [objects.connected, objects.databases, objects.tables, currentSnapshot, tab.database, selectedTable, columns]
+  )
   return (
     <section className="editor-panel">
-      <Tabs
-        className="workspace-tabs query-tabs"
-        tabBarGutter={4}
-        type="editable-card"
-        size="small"
-        hideAdd
-        activeKey={activeTab}
-        onChange={selectTab}
-        onEdit={(key, action) => {
-          if (action === 'remove') closeTab(String(key))
-        }}
-        renderTabBar={(props, DefaultTabBar) => (
-          <DefaultTabBar {...props}>
-            {(node) => {
-              const key = String(node.key)
-              const index = tabs.findIndex((item) => item.id === key)
-              return (
-                <Dropdown
-                  key={key}
-                  trigger={['contextMenu']}
-                  disabled={running}
-                  menu={{
-                    items: [
-                      { key: 'current', label: '关闭当前', icon: <CloseOutlined /> },
-                      { key: 'others', label: '关闭其他', icon: <CloseCircleOutlined />, disabled: tabs.length < 2 },
-                      { key: 'right', label: '关闭右侧', icon: <RightOutlined />, disabled: index === tabs.length - 1 }
-                    ],
-                    onClick: ({ key: action, domEvent }) => {
-                      domEvent.stopPropagation()
-                      if (action === 'current' || action === 'others' || action === 'right') model.closeTabs(key, action)
-                    }
-                  }}
-                >
-                  {node}
-                </Dropdown>
-              )
-            }}
-          </DefaultTabBar>
-        )}
-        items={tabs.map((t) => ({
-          key: t.id,
-          icon: <CodeOutlined />,
-          label: t.title,
-          closable: tabs.length > 1 && !running
-        }))}
-      />
       <div className="editor-toolbar">
         <div className="toolbar-left">
           <ScopeSelects scope={tab} connections={connections} objects={objects} disabled={running} onConnection={selectConnection} onSelect={selectObject} />
           <Button type="primary" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running}>
             运行
           </Button>
-          {running && (
+          {activeRunning && (
             <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
               取消
             </Button>
@@ -117,25 +99,30 @@ export default function QueryEditor({ model, themeMode }: Props) {
       </div>
       {objects.error && <Alert type="error" title="连接加载失败" description={objects.error} />}
       {objects.tableError && <Alert type="error" title="表列表加载失败" description={objects.tableError} />}
-      <div className="sql-editor">
-        <CodeMirror
-          key={activeTab}
-          value={tab.sql}
-          height="100%"
-          theme={themeMode}
-          extensions={[
-            sql({
-              dialect: MySQL,
-              upperCaseKeywords: true,
-              schema: selectedTable ? { [selectedTable]: columns.map((c) => c.name) } : {}
-            })
-          ]}
-          onCreateEditor={onEditorReady}
-          onChange={updateSQL}
-          basicSetup={{ foldGutter: false, autocompletion: true }}
-          aria-label="SQL 编辑器"
-        />
-      </div>
+      <Dropdown
+        trigger={['contextMenu']}
+        menu={{
+          items: [{ key: 'run-selection', label: '运行选中 SQL', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running }],
+          onClick: ({ key }) => {
+            if (key === 'run-selection') model.runSelectedSQL(contextSQL)
+          }
+        }}
+      >
+        <div className="sql-editor" onContextMenuCapture={() => setContextSQL(model.getSelectedSQL() ?? '')} onScrollCapture={model.rememberEditor}>
+          <CodeMirror
+            key={activeTab}
+            value={tab.sql}
+            height="100%"
+            theme={themeMode}
+            extensions={extensions}
+            onCreateEditor={onEditorReady}
+            onUpdate={model.onEditorUpdate}
+            onChange={updateSQL}
+            basicSetup={{ foldGutter: false, autocompletion: true }}
+            aria-label="SQL 编辑器"
+          />
+        </div>
+      </Dropdown>
     </section>
   )
 }

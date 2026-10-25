@@ -1,13 +1,13 @@
-import mysqlLogo from '@/assets/databases/mysql-icon.png'
+import mysqlDolphin from '@/assets/databases/mysql-dolphin.svg'
 import { databaseTypeInfo } from '@/constant/database'
 import type { DatabaseType } from '@/typings/database'
 
-/** 仅展示数据库原有品牌资源，不用通用图标替代或修改品牌颜色。 */
-export default function EngineIcon({ type }: { type?: DatabaseType }) {
+/** 按当前参考图展示海豚状态图标：白色剪影不变，仅底色反映连接状态。 */
+export default function EngineIcon({ type, variant = 'icon', connected = true }: { type?: DatabaseType; variant?: 'icon' | 'logo'; connected?: boolean }) {
   const engine = databaseTypeInfo(type)
   return (
-    <span className={`engine-symbol ${engine.className}`} aria-hidden="true">
-      <img src={mysqlLogo} alt="" />
+    <span className={`engine-symbol ${engine.className} ${connected ? 'is-connected' : 'is-closed'}${variant === 'logo' ? ' is-logo' : ''}`} aria-hidden="true">
+      <img src={mysqlDolphin} alt="" />
     </span>
   )
 }

@@ -1,27 +1,21 @@
-import type { EditorView } from '@codemirror/view'
+import type { EditorView, ViewUpdate } from '@codemirror/view'
 import { App as AntApp } from 'antd'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { databaseTypeInfo } from '@/constant/database'
-import { executeQuery, getColumns, getConnections, getDDL, deleteConnection as removeConnection } from '@/services/database'
-import type { Column, Connection, QueryResult } from '@/typings/database'
-import type { HistoryItem, QueryScope, QueryTab } from '@/typings/workspace'
-import { exportSQL, identifier } from '@/utils/sql'
-import { readLocal, saveLocal } from '@/utils/storage'
+import { connectionGroupName, databaseTypeInfo } from '@/constant/database'
+import { executeQuery, getConnections, deleteConnection as removeConnection } from '@/services/database'
+import type { Column, Connection } from '@/typings/database'
+import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
+import { exportSQL, identifier, splitSQLStatements, stripHistoryMarkers } from '@/utils/sql'
 
 import { useDatabaseObjects } from '../useDatabaseObjects'
+import { useQueryHistory } from '../useQueryHistory'
+import { useWorkspacePersistence } from '../useWorkspacePersistence'
 
-type RunState = { id?: string; title?: string; kind?: 'query' | 'data' | 'structure' | 'ddl'; result?: QueryResult; error?: string; source: string }
-const newTab = (n: number): QueryTab => ({
-  id: crypto.randomUUID(),
-  title: `查询 ${n}`,
-  sql: '',
-  connectionId: '',
-  database: '',
-  table: ''
-})
+const emptyScope: QueryScope = { connectionId: '', database: '', table: '' }
+const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query', sql: '' }
 
-/** 编排连接、查询范围和执行生命周期；查询结果始终归属发起时的标签。 */
+/** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
 export const useWorkspace = () => {
   const { message, modal } = AntApp.useApp()
   const [connections, setConnections] = useState<Connection[]>([])
@@ -30,75 +24,127 @@ export const useWorkspace = () => {
   const [refresh, setRefresh] = useState(0)
   const [connectionModal, setConnectionModal] = useState(false)
   const [editing, setEditing] = useState<Connection>()
-  const [tabs, setTabs] = useState<QueryTab[]>(() => {
-    // 旧版草稿缺少范围字段时补齐，不能因升级丢失用户 SQL。
-    const saved = readLocal<QueryTab[]>('sqldesk.tabs', [])
-    if (!Array.isArray(saved) || !saved.length || !saved.every((t) => t && typeof t.sql === 'string' && typeof t.id === 'string' && t.id && typeof t.title === 'string')) return [newTab(1)]
-    return saved.map((t) => ({
-      id: t.id,
-      title: t.title,
-      sql: t.sql,
-      connectionId: typeof t.connectionId === 'string' ? t.connectionId : '',
-      database: typeof t.database === 'string' ? t.database : '',
-      table: typeof t.table === 'string' ? t.table : ''
-    }))
-  })
-  const [activeTab, setActiveTab] = useState(() => {
-    const saved = readLocal<string>('sqldesk.activeTab', '')
-    return tabs.some((item) => item.id === saved) ? saved : tabs[0].id
-  })
+  const [tabs, setTabs] = useState<WorkspaceTab[]>([])
+  const [activeTab, setActiveTab] = useState('')
+  const activeTabRef = useRef('')
   const [runs, setRuns] = useState<Record<string, RunState>>({})
-  const [resultSets, setResultSets] = useState<Record<string, RunState[]>>({})
-  const [selectedResult, setSelectedResult] = useState<Record<string, string>>({})
-  const [running, setRunning] = useState(false)
+  const [resultViews, setResultViews] = useState<Record<string, ResultView>>({})
+  const [editorLayouts, setEditorLayouts] = useState<Record<string, EditorLayout>>({})
+  const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
+  const [resultHeight, setResultHeight] = useState(260)
+  const [sidebarWidth, setSidebarWidth] = useState(272)
+  const [restoringConnections, setRestoringConnections] = useState<string[] | null>(null)
+  const [runningTabId, setRunningTabId] = useState('')
+  const running = Boolean(runningTabId)
+  const activeRunning = Boolean(runningTabId && runningTabId === activeTab)
   const [columns, setColumns] = useState<Column[]>([])
   const [ddl, setDDL] = useState('')
   const [structureError, setStructureError] = useState('')
   const [structureLoading, setStructureLoading] = useState(false)
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const data = readLocal<HistoryItem[]>('sqldesk.history', [])
-    return Array.isArray(data) ? data : []
-  })
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historySearch, setHistorySearch] = useState('')
-  const [resultSearch, setResultSearch] = useState('')
-  const [tablePage, setTablePage] = useState(1)
   const editor = useRef<EditorView | null>(null)
   const request = useRef<AbortController | null>(null)
   const executeRef = useRef<() => void>(() => {})
-  const tab = tabs.find((t) => t.id === activeTab) || tabs[0]
+  const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, table: selectedTable } = tab
-  const connection = connections.find((c) => c.id === connectionId)
+  const connection = connections.find((item) => item.id === connectionId)
   const engine = databaseTypeInfo(connection?.type)
-  // 元数据重新加载后同时校验前台和后台标签，清除已不存在的库。
+  const historyStore = useQueryHistory(tab.kind === 'query' ? connectionId : '')
+  const { history, appendHistory, clearHistory } = historyStore
   const validateDatabases = useCallback((id: string, databases: string[]) => {
-    setTabs((previous) => {
-      let changed = false
-      const next = previous.map((item) => {
-        if (item.connectionId !== id || !item.database || databases.includes(item.database)) return item
-        changed = true
-        return { ...item, database: '', table: '' }
-      })
-      return changed ? next : previous
-    })
+    setTabs((previous) =>
+      previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', table: '' } : item))
+    )
   }, [])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases)
-  const resultTabs = resultSets[activeTab] || []
-  const run = resultTabs.find((item) => item.id === selectedResult[activeTab]) || runs[activeTab]
+  const { loadStructure, loadTables, openConnection: openObjectsConnection } = objects
+  useEffect(() => {
+    if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
+  }, [tab.kind, objects.connected, database, connectionId, loadTables])
+  const resultIndex = resultViews[activeTab]?.resultIndex || 0
+  const batch = runs[activeTab]
+  const statementRun = batch?.statements?.[resultIndex]
+  const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, id: `${batch.id}:${resultIndex}` } : batch
   const result = run?.result
+  const resultSearch = resultViews[activeTab]?.search || ''
+  const tablePage = resultViews[activeTab]?.page || 1
+  const openedKey = JSON.stringify(Object.keys(objects.snapshots).sort())
+  const openedConnections = useMemo(() => JSON.parse(openedKey) as string[], [openedKey])
+  const snapshot = useMemo<WorkspaceSnapshot>(
+    () => ({
+      version: 1,
+      tabs,
+      activeTab,
+      runs,
+      resultViews,
+      editorLayouts,
+      explorer,
+      resultHeight,
+      sidebarWidth,
+      openedConnections: restoringConnections || openedConnections,
+      runningTabId
+    }),
+    [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, restoringConnections, openedConnections, runningTabId]
+  )
+  const storage = useWorkspacePersistence(snapshot, (saved) => {
+    const restoredRuns = { ...saved.runs }
+    if (saved.runningTabId && restoredRuns[saved.runningTabId]) {
+      const interrupted = restoredRuns[saved.runningTabId]
+      restoredRuns[saved.runningTabId] = { ...interrupted, interrupted: true, error: interrupted.result ? interrupted.error : '页面刷新中断了上次执行，请手动重新运行。' }
+    }
+    setTabs(saved.tabs)
+    const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
+    setActiveTab(active)
+    activeTabRef.current = active
+    setRuns(restoredRuns)
+    setResultViews(saved.resultViews)
+    setEditorLayouts(saved.editorLayouts)
+    setExplorer(saved.explorer)
+    setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(180, saved.resultHeight) : 260)
+    setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : 272)
+    setRestoringConnections(saved.openedConnections)
+  })
+  const workspaceReady = storage.ready && historyStore.ready
+  const storageError = storage.error || historyStore.error
+  const saving = storage.saving || historyStore.saving
+  useEffect(() => {
+    if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
+    let stale = false
+    const ids = restoringConnections.filter((id) => connections.some((connection) => connection.id === id))
+    void Promise.resolve().then(() => {
+      if (stale) return
+      setRestoringConnections(null)
+      for (const id of ids) {
+        void openObjectsConnection(id)
+          .then(async () => {
+            const databases = explorer.expanded.map((key) => JSON.parse(key) as string[]).filter(([type, owner]) => type === 'database' && owner === id)
+            await Promise.allSettled(databases.map(([, , db]) => loadTables(db, id)))
+          })
+          .catch(() => {})
+      }
+      setTabs((previous) => previous.map((item) => (item.kind === 'query' && !connections.some((connection) => connection.id === item.connectionId) ? { ...item, ...emptyScope } : item)))
+    })
+    return () => {
+      stale = true
+    }
+  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, explorer.expanded])
+
+  function updateExplorer(patch: Partial<ExplorerLayout>) {
+    setExplorer((previous) => ({ ...previous, ...patch }))
+  }
 
   const applyConnections = useCallback((data: Connection[]) => {
     setConnections(data)
-    setTabs((previous) => previous.map((item) => (data.some((c) => c.id === item.connectionId) ? item : { ...item, connectionId: '', database: '', table: '' })))
+    setTabs((previous) => previous.map((item) => (item.kind !== 'query' || data.some((value) => value.id === item.connectionId) ? item : { ...item, ...emptyScope })))
   }, [])
   const loadConnections = useCallback(async () => {
     setConnectionLoading(true)
     setConnectionError('')
     try {
-      const data = await getConnections()
-      applyConnections(data)
-    } catch (e) {
-      setConnectionError(e instanceof Error ? e.message : '连接列表加载失败')
+      applyConnections(await getConnections())
+    } catch (error) {
+      setConnectionError(error instanceof Error ? error.message : '连接列表加载失败')
     } finally {
       setConnectionLoading(false)
     }
@@ -107,39 +153,37 @@ export const useWorkspace = () => {
     const controller = new AbortController()
     getConnections(controller.signal)
       .then((data) => {
-        if (controller.signal.aborted) return
-        applyConnections(data)
+        if (!controller.signal.aborted) applyConnections(data)
       })
-      .catch((e) => {
-        if (!controller.signal.aborted) setConnectionError(e.message)
+      .catch((error) => {
+        if (!controller.signal.aborted) setConnectionError(error.message)
       })
       .finally(() => {
         if (!controller.signal.aborted) setConnectionLoading(false)
       })
     return () => controller.abort()
   }, [applyConnections])
-  useEffect(() => saveLocal('sqldesk.tabs', tabs), [tabs])
-  useEffect(() => saveLocal('sqldesk.activeTab', activeTab), [activeTab])
-  useEffect(() => saveLocal('sqldesk.history', history), [history])
   useEffect(() => () => request.current?.abort(), [])
   useEffect(() => {
-    if (!objects.connected || !connectionId || !database || !objects.databases.includes(database) || !selectedTable) return
-    const controller = new AbortController()
-    Promise.all([getColumns(connectionId, database, selectedTable, controller.signal), getDDL(connectionId, database, selectedTable, controller.signal)])
-      .then(([c, d]) => {
-        if (!controller.signal.aborted) {
-          setColumns(c)
-          setDDL(d.ddl)
+    if (tab.kind !== 'query' || !objects.connected || !connectionId || !database || !objects.databases.includes(database) || !selectedTable) return
+    let stale = false
+    loadStructure(database, selectedTable, connectionId)
+      .then((structure) => {
+        if (!stale) {
+          setColumns(structure.columns)
+          setDDL(structure.ddl)
         }
       })
-      .catch((e) => {
-        if (!controller.signal.aborted) setStructureError(e.message)
+      .catch((error) => {
+        if (!stale) setStructureError(error.message)
       })
       .finally(() => {
-        if (!controller.signal.aborted) setStructureLoading(false)
+        if (!stale) setStructureLoading(false)
       })
-    return () => controller.abort()
-  }, [connectionId, database, selectedTable, refresh, objects.connected, objects.databases])
+    return () => {
+      stale = true
+    }
+  }, [activeTab, tab.kind, connectionId, database, selectedTable, refresh, objects.connected, objects.databases, loadStructure])
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -151,12 +195,27 @@ export const useWorkspace = () => {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  function updateTab(patch: Partial<QueryTab>) {
-    setTabs((prev) => prev.map((t) => (t.id === activeTab ? { ...t, ...patch } : t)))
+  function resetStructure(loading = false) {
+    setColumns([])
+    setDDL('')
+    setStructureError('')
+    setStructureLoading(loading)
   }
-  function updateSQL(value: string) {
-    updateTab({ sql: value })
+  function setResultSearch(search: string) {
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search, page: 1, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
   }
+  function setTablePage(page: number) {
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search: previous[activeTab]?.search || '', page, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
+  }
+  function selectResult(index: number) {
+    if (activeRunning || !batch?.statements?.[index]) return
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', page: 1, resultIndex: index } }))
+  }
+  function updateTab(patch: Partial<QueryScope> & { sql?: string }) {
+    if (!tab.id || tab.kind !== 'query') return
+    setTabs((previous) => previous.map((item) => (item.id === activeTab ? { ...item, ...patch } : item)))
+  }
+  const updateSQL = (sql: string) => updateTab({ sql })
   function exportCurrentSQL() {
     if (!tab.sql.trim()) return
     try {
@@ -166,23 +225,56 @@ export const useWorkspace = () => {
     }
   }
   function openHistory() {
-    if (!connection) return
+    if (tab.kind !== 'query' || !connection) return
     setHistorySearch('')
     setHistoryOpen(true)
   }
-  function resetStructure(loading = false) {
-    setColumns([])
-    setDDL('')
-    setStructureError('')
-    setStructureLoading(loading)
+  function loadHistory(item: HistoryItem) {
+    if (running || request.current || tab.kind !== 'query' || !tab.id || item.connectionId !== connectionId) return
+    const view = editor.current
+    const current = view?.state.doc.toString() ?? tab.sql
+    // 仅追加到当前 SQL 页，不替换草稿、不改变库范围，也不自动执行历史语句。
+    const insert = `${current.trim() ? (current.endsWith('\n') ? '\n' : '\n\n') : ''}-- 历史记录\n${stripHistoryMarkers(item.sql)}`
+    if (view) {
+      view.dispatch({ changes: { from: current.length, insert }, selection: { anchor: current.length + insert.length }, scrollIntoView: true })
+      requestAnimationFrame(() => view.focus())
+    } else updateSQL(current + insert)
+    setHistoryOpen(false)
   }
-  function refreshSchema(id = connectionId) {
-    if (!id || running) return
-    if (id === connectionId) {
-      resetStructure(Boolean(selectedTable))
-      setRefresh((n) => n + 1)
-    }
-    void objects.refreshConnection(id).catch(() => {})
+  function selectTab(id: string) {
+    const next = tabs.find((item) => item.id === id)
+    activeTabRef.current = id
+    editor.current = null
+    setActiveTab(id)
+    resetStructure(next?.kind === 'query' && Boolean(next.table))
+    setHistoryOpen(false)
+    setHistorySearch('')
+  }
+  function createPage(kind: WorkspacePageKind, scope: QueryScope, title: string, sql = '') {
+    const added: WorkspaceTab = { ...scope, id: crypto.randomUUID(), kind, title, sql }
+    setTabs((previous) => [...previous, added])
+    selectTab(added.id)
+    return added.id
+  }
+  function addTab(statement = '', scope?: QueryScope, title?: string) {
+    if (running || request.current) return
+    return createPage('query', scope || { connectionId, database, table: selectedTable }, title || `查询 ${tabs.filter((item) => item.kind === 'query').length + 1}`, statement)
+  }
+  function publishResult(id: string, value: RunState) {
+    setRuns((previous) => ({ ...previous, [id]: { ...value, id: crypto.randomUUID() } }))
+  }
+  function startRun(id: string, value: RunState) {
+    const controller = new AbortController()
+    request.current = controller
+    setRunningTabId(id)
+    publishResult(id, value)
+    setResultViews((previous) => ({ ...previous, [id]: { search: '', page: 1, resultIndex: 0 } }))
+    return controller
+  }
+  function finishRun(controller: AbortController) {
+    if (request.current !== controller) return
+    request.current = null
+    setRunningTabId('')
   }
   function selectConnection(id: string) {
     if (running || objects.snapshots[id]?.status !== 'connected') return
@@ -195,20 +287,25 @@ export const useWorkspace = () => {
     updateTab({ connectionId: id, database: db, table: table || '' })
   }
   function openConnection(id: string) {
-    if (running) return Promise.resolve([])
-    const status = objects.snapshots[id]?.status
-    if (status !== 'connected' && status !== 'loading') {
-      // 打开连接不沿用持久化草稿中的库表；只有用户显式选择才设置查询范围。
-      setTabs((previous) => previous.map((item) => (item.connectionId === id ? { ...item, database: '', table: '' } : item)))
-      if (id === connectionId) resetStructure()
+    return running ? Promise.resolve([]) : objects.openConnection(id)
+  }
+  function refreshSchema(id = connectionId) {
+    if (!id || running) return
+    if (id === connectionId) {
+      resetStructure(Boolean(selectedTable))
+      setRefresh((value) => value + 1)
     }
-    return objects.openConnection(id)
+    void objects.refreshConnection(id).catch(() => {})
   }
   function closeConnection(id: string) {
     if (running) return
     objects.closeConnection(id)
-    setTabs((previous) => previous.map((item) => (item.connectionId === id ? { ...item, connectionId: '', database: '', table: '' } : item)))
-    if (id === connectionId) resetStructure()
+    // 结果页保留不可变来源；仅清理可执行 SQL 页的失效范围。
+    setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === id ? { ...item, ...emptyScope } : item)))
+    if (id === connectionId) {
+      resetStructure()
+      setHistoryOpen(false)
+    }
   }
   function connectionAction(action: string, id: string) {
     if (running) return
@@ -222,66 +319,74 @@ export const useWorkspace = () => {
       setConnectionModal(true)
     } else if (action === 'delete') deleteConnection(id)
   }
-  function selectTab(id: string) {
-    const next = tabs.find((item) => item.id === id)
-    if (next && (next.connectionId !== connectionId || next.database !== database || next.table !== selectedTable)) resetStructure(Boolean(next.table))
-    setActiveTab(id)
-    setResultSearch('')
-    setTablePage(1)
-  }
-  // 结果采用不可变快照，菜单目标和发起查询标签均固定，不能被后续选择覆盖。
-  function publishResult(tabId: string, value: RunState) {
-    const snapshot = { ...value, id: crypto.randomUUID() }
-    setResultSets((previous) => ({ ...previous, [tabId]: [...(previous[tabId] || []), snapshot] }))
-    setSelectedResult((previous) => ({ ...previous, [tabId]: snapshot.id }))
-  }
-  function selectResult(id: string) {
-    setSelectedResult((previous) => ({ ...previous, [activeTab]: id }))
-    setResultSearch('')
-    setTablePage(1)
-  }
-  function closeResult(id: string) {
-    const remaining = resultTabs.filter((item) => item.id !== id)
-    setResultSets((previous) => ({ ...previous, [activeTab]: remaining }))
-    if (selectedResult[activeTab] === id) setSelectedResult((previous) => ({ ...previous, [activeTab]: remaining.at(-1)?.id || '' }))
-    if (!remaining.length) setRuns((previous) => ({ ...previous, [activeTab]: { source: '' } }))
-  }
-  function databaseAction(action: string, id: string, db: string) {
+  async function databaseAction(action: string, id: string, db: string) {
     if (running || request.current || objects.snapshots[id]?.status !== 'connected') return
     const scope = { connectionId: id, database: db, table: '' }
-    if (action === 'new') addTab('', scope)
-    else if (action === 'tables') void executeSQL(`SHOW FULL TABLES FROM ${identifier(db)};`, scope)
-    else if (action === 'select') selectObject(db, undefined, id)
-    else if (action === 'refresh') refreshSchema(id)
+    if (action === 'new') {
+      addTab('', scope)
+      return
+    }
+    if (action === 'refresh') {
+      refreshSchema(id)
+      return
+    }
+    if (action !== 'tables') return
+    const title = `${db} · 结构`
+    const tabId = createPage('structure', scope, title)
+    const source = `${connections.find((item) => item.id === id)?.name || ''} / ${db}`
+    const controller = startRun(tabId, { kind: 'structure', title, source })
+    try {
+      const tables = await objects.loadTables(db, id)
+      if (controller.signal.aborted) throw new Error('请求已取消')
+      publishResult(tabId, {
+        kind: 'structure',
+        title,
+        source,
+        result: {
+          columns: ['表名', '类型', '注释'].map((name) => ({ name, type: '' })),
+          rows: tables.map((table) => [table.name, table.type, table.comment]),
+          rowCount: tables.length,
+          affectedRows: 0,
+          lastInsertId: '',
+          durationMs: 0,
+          truncated: false,
+          isQuery: true
+        }
+      })
+    } catch (error) {
+      publishResult(tabId, { kind: 'structure', title, source, error: error instanceof Error ? error.message : '数据库结构加载失败' })
+    } finally {
+      finishRun(controller)
+    }
   }
-  async function tableAction(action: string, connectionId: string, db: string, table: string) {
-    const connection = connections.find((item) => item.id === connectionId)
-    if (running || request.current || !connection || objects.snapshots[connectionId]?.status !== 'connected') return
-    const scope = { connectionId, database: db, table }
+  async function tableAction(action: string, targetConnectionId: string, db: string, table: string) {
+    const target = connections.find((item) => item.id === targetConnectionId)
+    if (running || request.current || !target || objects.snapshots[targetConnectionId]?.status !== 'connected') return
+    const scope = { connectionId: targetConnectionId, database: db, table }
     const statement = `SELECT * FROM ${identifier(db)}.${identifier(table)} LIMIT 1000;`
     if (action === 'new') {
       addTab(statement, scope)
       return
     }
+    if (action !== 'data' && action !== 'structure' && action !== 'ddl') return
+    const title = `${table} · ${action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构'}`
+    const tabId = createPage(action, scope, title)
     if (action === 'data') {
-      void executeSQL(statement, scope)
+      void executeSQL(statement, scope, tabId, 'data')
       return
     }
-    const id = activeTab
-    const controller = new AbortController()
-    request.current = controller
-    setRunning(true)
-    const source = `${connection.name} / ${db} / ${table}`
+    const source = `${target.name} / ${db} / ${table}`
+    const controller = startRun(tabId, { kind: action, title, source })
     try {
-      const fields = action === 'ddl' ? [] : await getColumns(connectionId, db, table, controller.signal)
-      const definition = action === 'ddl' ? await getDDL(connectionId, db, table, controller.signal) : undefined
-      const rows = definition ? [[definition.ddl]] : fields.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
-      publishResult(id, {
-        kind: action === 'ddl' ? 'ddl' : 'structure',
-        title: `${table} · ${action === 'ddl' ? 'DDL' : '结构'}`,
+      const structure = await objects.loadStructure(db, table, targetConnectionId)
+      if (controller.signal.aborted) throw new Error('请求已取消')
+      const rows = action === 'ddl' ? [[structure.ddl]] : structure.columns.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
+      publishResult(tabId, {
+        kind: action,
+        title,
         source,
         result: {
-          columns: (definition ? ['DDL'] : ['字段名', '类型', '允许 NULL', '索引', '默认值', '额外属性', '注释']).map((name) => ({ name, type: '' })),
+          columns: (action === 'ddl' ? ['DDL'] : ['字段名', '类型', '允许 NULL', '索引', '默认值', '额外属性', '注释']).map((name) => ({ name, type: '' })),
           rows,
           rowCount: rows.length,
           affectedRows: 0,
@@ -292,91 +397,93 @@ export const useWorkspace = () => {
         }
       })
     } catch (error) {
-      publishResult(id, {
-        kind: action === 'ddl' ? 'ddl' : 'structure',
-        title: `${table} · ${action === 'ddl' ? 'DDL' : '结构'}`,
-        source,
-        error: controller.signal.aborted ? '请求已取消' : error instanceof Error ? error.message : '结构加载失败'
-      })
+      publishResult(tabId, { kind: action, title, source, error: controller.signal.aborted ? '请求已取消' : error instanceof Error ? error.message : '结构加载失败' })
     } finally {
-      request.current = null
-      setRunning(false)
+      finishRun(controller)
     }
   }
-  async function executeSQL(statement: string, scope?: QueryScope) {
-    const database = scope?.database ?? tab.database
-    const targetConnectionId = scope?.connectionId ?? connectionId
-    const connection = connections.find((item) => item.id === targetConnectionId)
-    if (!connection || objects.snapshots[targetConnectionId]?.status !== 'connected' || running || request.current) return
-    if (!statement.trim()) {
+  async function executeSQL(statement: string, scope: QueryScope, tabId: string, kind: WorkspacePageKind = 'query') {
+    const target = connections.find((item) => item.id === scope.connectionId)
+    if (!target || objects.snapshots[target.id]?.status !== 'connected' || running || request.current) return
+    let statements: string[]
+    try {
+      statements = splitSQLStatements(statement)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'SQL 解析失败')
+      return
+    }
+    if (!statements.length) {
       message.info('请先输入 SQL 语句')
       return
     }
-    // 固定本次请求的标签和范围，切换标签后也不能把结果写到其他窗口。
-    const controller = new AbortController()
-    request.current = controller
-    setRunning(true)
-    setResultSearch('')
-    setTablePage(1)
-    const id = activeTab
-    const source = `${connection.name} / ${database || '未选择数据库'}`
-    setRuns((prev) => ({ ...prev, [id]: { source } }))
-    const start = performance.now()
-    const item: HistoryItem = {
-      id: crypto.randomUUID(),
-      sql: statement,
-      database,
-      connectionId: targetConnectionId,
-      connectionName: connection.name,
-      time: new Date().toISOString(),
-      durationMs: 0,
-      ok: false
-    }
+    const source = `${target.name} / ${scope.database || '未选择数据库'}`
+    const title = kind === 'data' ? `${scope.table} · 数据` : 'SQL 结果'
+    const controller = startRun(tabId, { source, kind, title, statementCount: statements.length })
+    const completed: StatementRun[] = []
     try {
-      const output = await executeQuery(targetConnectionId, { database, sql: statement }, controller.signal)
-      setRuns((prev) => ({ ...prev, [id]: { result: output, source } }))
-      publishResult(id, { kind: scope?.table ? 'data' : 'query', result: output, source, title: scope?.table ? `${scope.table} · 数据` : 'SQL 结果' })
-      item.ok = true
-      item.durationMs = output.durationMs
-      if (!output.isQuery) {
-        message.success(`执行成功，影响 ${output.affectedRows} 行`)
-        refreshSchema()
+      // 驱动继续保持单语句；整批固定目标范围、取消信号和运行锁，逐条保留结果与历史。
+      for (const [index, sql] of statements.entries()) {
+        const start = performance.now()
+        const item: HistoryItem = {
+          id: crypto.randomUUID(),
+          sql,
+          database: scope.database,
+          connectionId: target.id,
+          connectionName: target.name,
+          time: new Date().toISOString(),
+          durationMs: 0,
+          ok: false
+        }
+        const entry: StatementRun = { sql }
+        try {
+          if (controller.signal.aborted) throw new Error('请求已取消')
+          entry.result = await executeQuery(target.id, { database: scope.database, sql }, controller.signal)
+          if (controller.signal.aborted) throw new Error('请求已取消')
+          item.ok = true
+          item.durationMs = entry.result.durationMs
+          if (!entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
+        } catch (error) {
+          entry.result = undefined
+          const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
+          const remaining = statements.length - index - 1
+          entry.error = `${reason}${remaining ? `\n后续 ${remaining} 条语句未执行。` : ''}`
+          item.error = reason
+          item.durationMs = Math.round(performance.now() - start)
+        }
+        completed.push(entry)
+        appendHistory(item)
+        publishResult(tabId, { kind, result: entry.result, error: entry.error, source, title, statements: [...completed], statementCount: statements.length })
+        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
+        if (entry.error) break
       }
-    } catch (e) {
-      const error = controller.signal.aborted ? '请求已取消。' : e instanceof Error ? e.message : '查询失败'
-      setRuns((prev) => ({ ...prev, [id]: { error, source } }))
-      publishResult(id, { kind: scope?.table ? 'data' : 'query', error, source, title: scope?.table ? `${scope.table} · 数据` : 'SQL 结果' })
-      item.error = error
-      item.durationMs = Math.round(performance.now() - start)
     } finally {
-      setHistory((prev) => [item, ...prev].slice(0, 50))
-      request.current = null
-      setRunning(false)
+      finishRun(controller)
     }
   }
-  function runSQL() {
+  function executeCurrentSQL(statement: string) {
+    if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id) return
     if (!connection || !objects.connected) {
       message.info('请先展开连接并加载数据库结构')
       return
     }
-    if (running) return
+    if (running || request.current) return
+    void executeSQL(statement, { connectionId, database, table: selectedTable }, tab.id)
+  }
+  function getSelectedSQL() {
     const state = editor.current?.state
     const selection = state?.selection.main
-    const statement = state && selection && !selection.empty ? state.sliceDoc(selection.from, selection.to) : tab.sql
-    void executeSQL(statement)
+    return state && selection && !selection.empty ? state.sliceDoc(selection.from, selection.to) : null
+  }
+  function runSelectedSQL(statement: string) {
+    // 菜单使用打开时的选区快照，避免菜单拿走焦点后误执行整个草稿。
+    if (statement.trim()) executeCurrentSQL(statement)
+  }
+  function runSQL() {
+    executeCurrentSQL(getSelectedSQL() ?? tab.sql)
   }
   useEffect(() => {
     executeRef.current = runSQL
   })
-  function addTab(statement?: string, scope?: QueryScope, title?: string) {
-    if (running) return
-    const added = { ...newTab(tabs.length + 1), connectionId, database, table: selectedTable, ...scope }
-    if (statement) added.sql = statement
-    if (title) added.title = title
-    setTabs((prev) => [...prev, added])
-    selectTab(added.id)
-    if (added.connectionId !== connectionId || added.database !== database || added.table !== selectedTable) resetStructure(Boolean(added.table))
-  }
   function deleteConnection(id: string) {
     const target = connections.find((item) => item.id === id)
     if (!target || running) return
@@ -391,46 +498,80 @@ export const useWorkspace = () => {
       }
     })
   }
-
   function closeTabs(key: string, mode: 'current' | 'others' | 'right' = 'current') {
-    if (running) return
-    const targetIndex = tabs.findIndex((item) => item.id === key)
-    if (targetIndex < 0) return
-    const target = tabs[targetIndex]
-    const remaining = tabs.filter((item, index) => (mode === 'others' ? item.id === key : mode === 'right' ? index <= targetIndex : item.id !== key))
-    // 工作区始终保留一个编辑器，关闭最后一页时创建空白查询。
-    const next = remaining.length ? remaining : [{ ...newTab(1), connectionId: target.connectionId, database: target.database }]
-    const retained = new Set(next.map((item) => item.id))
+    if (running || request.current) return
+    const index = tabs.findIndex((item) => item.id === key)
+    if (index < 0) return
+    const remaining = tabs.filter((item, position) => (mode === 'others' ? item.id === key : mode === 'right' ? position <= index : item.id !== key))
+    const retained = new Set(remaining.map((item) => item.id))
     const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
-    setTabs(next)
-    setResultSets(keep)
-    setSelectedResult(keep)
+    setTabs(remaining)
     setRuns(keep)
-    if (!retained.has(activeTab)) {
-      const nextActive = retained.has(key) ? target : next[Math.min(targetIndex, next.length - 1)]
-      selectTab(nextActive.id)
-      if (!remaining.length) resetStructure()
-    }
+    setResultViews(keep)
+    setEditorLayouts(keep)
+    if (!retained.has(activeTab)) selectTab(remaining[Math.min(index, remaining.length - 1)]?.id || '')
   }
   const closeTab = (key: string) => closeTabs(key)
-
   const cancelQuery = () => request.current?.abort()
   const onEditorReady = (view: EditorView) => {
     editor.current = view
+    const saved = editorLayouts[activeTab]
+    if (saved) {
+      const length = view.state.doc.length
+      view.dispatch({ selection: { anchor: Math.min(saved.anchor, length), head: Math.min(saved.head, length) } })
+      requestAnimationFrame(() => {
+        view.scrollDOM.scrollTop = saved.top
+        view.scrollDOM.scrollLeft = saved.left
+      })
+    }
+  }
+  function rememberEditor() {
+    const view = editor.current
+    const id = activeTabRef.current
+    if (!view || !id) return
+    const { anchor, head } = view.state.selection.main
+    const next = { anchor, head, top: view.scrollDOM.scrollTop, left: view.scrollDOM.scrollLeft }
+    setEditorLayouts((previous) => {
+      const saved = previous[id]
+      return saved && Object.keys(next).every((key) => saved[key as keyof EditorLayout] === next[key as keyof EditorLayout]) ? previous : { ...previous, [id]: next }
+    })
+  }
+  function onEditorUpdate(update: ViewUpdate) {
+    if (update.view === editor.current && (update.selectionSet || update.docChanged)) rememberEditor()
   }
   const onConnectionSaved = (saved: Connection) => {
     setConnectionModal(false)
+    const key = JSON.stringify(['group', connectionGroupName(saved.group)])
+    setExplorer((previous) => ({ ...previous, expanded: [...new Set([...previous.expanded, key])] }))
     objects.closeConnection(saved.id)
-    // 编辑其他连接不改变当前查询；受影响草稿保留 SQL，重新展开后再选择库表。
-    setTabs((previous) => previous.map((item) => (item.connectionId === saved.id || (!editing && item.id === activeTab) ? { ...item, connectionId: saved.id, database: '', table: '' } : item)))
+    setTabs((previous) =>
+      previous.map((item) => (item.kind === 'query' && (item.connectionId === saved.id || (!editing && item.id === activeTab)) ? { ...item, connectionId: saved.id, database: '', table: '' } : item))
+    )
     if (connectionId === saved.id || !editing) resetStructure()
     void loadConnections()
   }
-
   return {
-    resultTabs,
-    selectResult,
-    closeResult,
+    workspaceReady,
+    storageError,
+    saving,
+    explorer,
+    updateExplorer,
+    resultHeight,
+    setResultHeight,
+    sidebarWidth,
+    setSidebarWidth,
+    tabs,
+    activeTab,
+    tab,
+    runs,
+    resultViews,
+    running,
+    runningTabId,
+    activeRunning,
+    selectTab,
+    addTab,
+    closeTab,
+    closeTabs,
     tableAction,
     databaseAction,
     connectionAction,
@@ -448,15 +589,11 @@ export const useWorkspace = () => {
     deleteConnection,
     setConnectionModal,
     setEditing,
-    tabs,
-    activeTab,
-    tab,
-    selectTab,
-    addTab,
     updateSQL,
     exportCurrentSQL,
     runSQL,
-    running,
+    getSelectedSQL,
+    runSelectedSQL,
     updateTab,
     editor,
     objects,
@@ -467,13 +604,16 @@ export const useWorkspace = () => {
     structureLoading,
     run,
     result,
+    resultIndex,
+    selectResult,
     resultSearch,
     setResultSearch,
     tablePage,
     setTablePage,
     history,
+    clearHistory,
     openHistory,
-    setHistory,
+    loadHistory,
     historyOpen,
     setHistoryOpen,
     historySearch,
@@ -482,10 +622,10 @@ export const useWorkspace = () => {
     selectedTable,
     refresh,
     refreshSchema,
-    closeTab,
-    closeTabs,
     cancelQuery,
     onEditorReady,
+    onEditorUpdate,
+    rememberEditor,
     onConnectionSaved
   }
 }

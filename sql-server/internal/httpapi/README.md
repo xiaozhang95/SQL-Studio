@@ -10,4 +10,8 @@
 
 只调用 service，不直接开数据库或读文件；路径/字段契约见根目录 docs/API.md。
 
+连接新增/更新和列表透传可选 group 字段。TestConnectionGroupRoundTrip 使用临时目录验证 API 保存、重启读取、更换及清空分组，同时检查编辑空密码保留原凭据。
+
+缺少或空 group 统一为“默认分组”；TestLegacyConnectionsBelongToDefaultGroup 验证旧配置归类、密码脱敏以及读取不改写文件。
+
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。

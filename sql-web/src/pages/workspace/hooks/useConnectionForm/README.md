@@ -4,9 +4,9 @@
 
 ## 调用与返回
 
-`({ open, connection?, onSaved })`
+`({ open, connection?, connections, onSaved })`
 
-返回 form、engine、busy/saving/testing、section、status、测试/保存回调及面板状态设置器。
+返回 form、groups、engine、busy/saving/testing、section、status、测试/保存回调及面板状态设置器。groups 固定包含首项“默认分组”，其他项从 connections 提取，去除首尾空白、去重并排序。
 
 ## 生命周期与边界
 
@@ -16,4 +16,6 @@
 
 ## 当前交互
 
-新建表单仅预填数据库类型对应端口，其余输入为空；不自动填入名称、主机或账号。编辑已有连接继续回显脱敏信息，空密码保留旧凭据。
+新建表单预填数据库类型对应端口及“默认分组”；不自动填入名称、主机或账号。编辑已有连接继续回显脱敏信息，缺少分组的旧连接回显默认分组，空密码保留旧凭据。
+
+group 可自由输入或选择已有值，提交前去除首尾空白；清空后保存仍归入默认分组。不因仅输入或取消表单而创建分组。

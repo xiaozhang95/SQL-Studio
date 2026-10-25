@@ -13,6 +13,7 @@ func (s *Service) ListConnections() []model.Connection {
 	items := []model.Connection{}
 	for _, c := range s.connections.List() {
 		if model.IsMySQL(c.Type) {
+			c.Group = model.NormalizeConnectionGroup(c.Group)
 			items = append(items, c)
 		}
 	}
@@ -21,6 +22,7 @@ func (s *Service) ListConnections() []model.Connection {
 
 func (s *Service) SaveConnection(c model.Connection) (model.Connection, error) {
 	c.Type = model.NormalizeDatabaseType(c.Type)
+	c.Group = model.NormalizeConnectionGroup(c.Group)
 	if err := validateConnection(c); err != nil {
 		return model.Connection{}, err
 	}

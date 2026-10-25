@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getDatabases, getTables } from '@/services/database'
-import type { DBTable } from '@/typings/database'
+import { getColumns, getDatabases, getDDL, getTables } from '@/services/database'
+import type { Column, DBTable } from '@/typings/database'
+
+type TableStructure = { columns: Column[]; ddl: string }
 
 type Snapshot = {
   status: 'loading' | 'connected' | 'error'
@@ -10,6 +12,7 @@ type Snapshot = {
   loadingTables: string[]
   error: string
   tableErrors: Record<string, string>
+  structures: Record<string, TableStructure>
 }
 type Session = {
   controller: AbortController
@@ -17,6 +20,8 @@ type Session = {
   opening?: Promise<string[]>
   tables: Record<string, DBTable[]>
   pending: Map<string, Promise<DBTable[]>>
+  structures: Record<string, TableStructure>
+  pendingStructures: Map<string, Promise<TableStructure>>
 }
 
 /** 各连接分别维护结构缓存；关闭或刷新时取消旧代请求，避免迟到响应重新点亮节点。 */
@@ -49,10 +54,10 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       if (existing?.databases) return Promise.resolve(existing.databases)
       if (existing?.opening) return existing.opening
       existing?.controller.abort()
-      const session: Session = { controller: new AbortController(), tables: {}, pending: new Map() }
+      const session: Session = { controller: new AbortController(), tables: {}, pending: new Map(), structures: {}, pendingStructures: new Map() }
       sessions.current.set(id, session)
       const valid = () => sessions.current.get(id) === session && !session.controller.signal.aborted
-      setSnapshots((previous) => ({ ...previous, [id]: { status: 'loading', databases: [], tables: {}, loadingTables: [], error: '', tableErrors: {} } }))
+      setSnapshots((previous) => ({ ...previous, [id]: { status: 'loading', databases: [], tables: {}, loadingTables: [], error: '', tableErrors: {}, structures: {} } }))
       const task = getDatabases(id, session.controller.signal)
         .then((databases) => {
           if (valid()) {
@@ -115,12 +120,36 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
     [connectionId]
   )
 
+  const loadStructure = useCallback(
+    (database: string, table: string, id = connectionId): Promise<TableStructure> => {
+      const session = sessions.current.get(id)
+      if (!session?.databases || session.controller.signal.aborted) return Promise.reject(new Error('请先打开连接'))
+      const key = JSON.stringify([database, table])
+      if (session.structures[key]) return Promise.resolve(session.structures[key])
+      const pending = session.pendingStructures.get(key)
+      if (pending) return pending
+      const task = Promise.all([getColumns(id, database, table, session.controller.signal), getDDL(id, database, table, session.controller.signal)])
+        .then(([columns, definition]) => {
+          const structure = { columns, ddl: definition.ddl }
+          if (sessions.current.get(id) !== session || session.controller.signal.aborted) throw new Error('连接已关闭')
+          session.structures[key] = structure
+          setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], structures: { ...previous[id].structures, [key]: structure } } }))
+          return structure
+        })
+        .finally(() => session.pendingStructures.delete(key))
+      session.pendingStructures.set(key, task)
+      return task
+    },
+    [connectionId]
+  )
+
   return {
     snapshots,
     openConnection,
     closeConnection,
     refreshConnection,
     loadTables,
+    loadStructure,
     connected: current?.status === 'connected',
     databases: current?.databases || [],
     tables: current?.tables || {},

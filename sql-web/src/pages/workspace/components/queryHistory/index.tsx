@@ -6,18 +6,22 @@ import type { CSSProperties } from 'react'
 
 import type { HistoryItem } from '@/typings/workspace'
 
+import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'history' | 'setHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'addTab'>
+  model: Pick<
+    WorkspaceModel,
+    'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'loadHistory'
+  >
 }
 
-/** 表格提供执行概览，展开查看完整 SQL；载入只创建查询标签。 */
+/** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
 export default function QueryHistory({ model }: Props) {
-  const { history, setHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, connectionId, connection, addTab } = model
+  const { history, clearHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, connectionId, connection, loadHistory } = model
   // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
-  const connectionHistory = connectionId ? history.filter((item) => item.connectionId === connectionId) : []
+  const connectionHistory = history
   const { modal } = AntApp.useApp()
   const [page, setPage] = useState(1)
   const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${connectionId}:${connectionHistory.length}:${historySearch}`)
@@ -57,14 +61,7 @@ export default function QueryHistory({ model }: Props) {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
         return (
           <Tooltip title={missing ? '原连接已删除' : undefined}>
-            <Button
-              type="link"
-              disabled={running || missing}
-              onClick={() => {
-                addTab(item.sql, { connectionId: item.connectionId, database: item.database, table: '' })
-                setHistoryOpen(false)
-              }}
-            >
+            <Button type="link" size="small" disabled={running || missing} onClick={() => loadHistory(item)}>
               载入编辑器
             </Button>
           </Tooltip>
@@ -93,7 +90,7 @@ export default function QueryHistory({ model }: Props) {
             modal.confirm({
               title: `清空连接「${connection?.name || ''}」的执行历史？`,
               onOk: () => {
-                setHistory((previous) => previous.filter((item) => item.connectionId !== connectionId))
+                clearHistory(connectionId)
                 setPage(1)
               }
             })
@@ -117,12 +114,13 @@ export default function QueryHistory({ model }: Props) {
       />
       <div ref={viewport} className="history-table-viewport" style={{ '--history-body-height': `${bodyHeight}px` } as CSSProperties}>
         <Table<HistoryItem>
+          size="small"
           className="history-table"
           rowKey="id"
           columns={columns}
           dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database}`.toLowerCase().includes(historySearch.toLowerCase()))}
           scroll={{ x: 1200, y: bodyHeight || undefined }}
-          pagination={{ current: page, pageSize: 10, showSizeChanger: false, showTotal: (total) => `共 ${total} 条` }}
+          pagination={{ ...tablePaginationDefaults, current: page, pageSize: 10 }}
           onChange={(pagination) => setPage(pagination.current || 1)}
           expandable={{
             columnTitle: <span style={{ whiteSpace: 'nowrap' }}>详情</span>,

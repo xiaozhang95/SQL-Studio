@@ -8,6 +8,8 @@
 - [数据库品牌图标](engineIcon/README.md)
 - [当前查询连接与数据库选择器](scopeSelects/README.md)
 - [查询编辑与执行工具栏](queryEditor/README.md)
+- [主区域页面标签](workspaceTabs/README.md)
 - [结果、字段与 DDL](queryResults/README.md)
+- [结果与状态选择器](resultSelect/README.md)
 - [执行历史抽屉](queryHistory/README.md)
 - [底部可伸缩面板](resultsDock/README.md)

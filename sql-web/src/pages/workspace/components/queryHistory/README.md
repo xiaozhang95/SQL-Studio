@@ -2,14 +2,12 @@
 
 [组件索引](../README.md) · [源码](index.tsx)
 
-## 参数与回调
+model 提供当前连接 history、clearHistory、historyOpen/setHistoryOpen、搜索值、connections、connectionId、connection、running、loadHistory。useQueryHistory 按当前 SQL 页面的 connectionId 读取独立存储，每连接最多 50 条；左侧树选择不影响历史。
 
-model 提供 history/setHistory、historyOpen/setHistoryOpen、搜索值、connections、connectionId、connection、running、addTab。
+仅 SQL 查询页工具栏提供入口，独立结果页不展示。连接变化时按 key 重挂载，隔离分页、筛选和详情展开；打开时清空搜索。同一连接跨库记录均可见，不按显示名称筛选。清空确认后调用 clearHistory(connectionId)，只清空此连接。
 
-## 行为与边界
+Table 采用原生 small、8px 单元格内边距、小号载入按钮，每页 10 条；支持状态筛选、时间/耗时排序，SQL/数据库搜索。详情默认收起，可复制完整 SQL 和错误。抽屉搜索、表头与分页固定，useTableViewportLayout 只允许表体滚动；长 SQL 不推动分页，横向滚动和固定操作列保留。
 
-最多 50 条，由 useWorkspace 持久化；入口在查询工具栏导出之后，仅展示当前查询连接 ID 的记录，同连接跨库记录均可见，不按库名或连接显示名称筛选。抽屉内使用 Ant Design Table，每页 10 条，展示状态、时间、连接、数据库、SQL、耗时和载入操作；支持状态筛选、时间/耗时排序。行详情默认收起，展开显示可复制的完整 SQL、错误，不重复连接/数据库。详情列固定 72px，标题保持单行；SQL 使用主题背景和边框，不使用大面积灰底。标题显示连接名称，入口不显示数量标签，搜索仍按 SQL/数据库匹配，长单元格省略，表格横向滚动且操作列固定在右侧。抽屉外层不滚动，顶部搜索、表头及底部分页固定；useTableViewportLayout 分配表体可用高度，仅表体滚动，展开长 SQL 不推动搜索和分页。
+分页使用 tablePaginationDefaults，与查询结果统一原生默认尺寸、32px 页码、“共 X 条”文案和底栏间距/分隔线，不再随 small Table 自动缩小。保留原生 Table 对筛选、排序后总数与当前页的管理。
 
-载入创建独立标签并恢复连接/库；连接已删除时禁用载入。清空前确认，仅移除当前连接的记录，保留其他连接历史；SQL 不在组件内自动执行。连接 ID 变化时重挂载抽屉，分页、筛选与展开状态隔离；打开入口重置搜索。
-
-页面私有组件从 `./components/queryHistory` 导入；只服务工作区，不通过聚合出口扩散依赖。
+载入调用 loadHistory，直接在当前 SQL 页末尾追加 `-- 历史记录` 注释和 SQL；已有内容保留，空内容同样标注来源。不新增标签、不修改当前连接/库、不自动执行；连接已删除或正在执行时禁用载入。

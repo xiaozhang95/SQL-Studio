@@ -1,14 +1,105 @@
 package httpapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"sqldesk/internal/connection"
+	"sqldesk/internal/model"
 	"sqldesk/internal/mysql"
 	"sqldesk/internal/service"
 )
+
+func TestConnectionGroupRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	store, err := connection.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(service.New(store, mysql.NewClient()))
+	save := func(input model.Connection) model.Connection {
+		t.Helper()
+		body, err := json.Marshal(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(string(body))))
+		var saved model.Connection
+		if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &saved) != nil {
+			t.Fatalf("save failed: %s", rec.Body.String())
+		}
+		if saved.Password != "" {
+			t.Fatal("group edit exposed credentials")
+		}
+		return saved
+	}
+	saved := save(model.Connection{Name: "grouped", Group: "  开发 / 🧪 \"测试\"  ", Host: "localhost", Port: 3306, Username: "user", Password: "group-test-secret"})
+	if saved.Group != "开发 / 🧪 \"测试\"" {
+		t.Fatalf("group was not trimmed: %q", saved.Group)
+	}
+	store, err = connection.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler = New(service.New(store, mysql.NewClient()))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
+	var listed []model.Connection
+	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &listed) != nil || len(listed) != 1 || listed[0].Group != saved.Group {
+		t.Fatal("group was lost after reopening the store")
+	}
+	for _, group := range []string{"生产环境", " \t "} {
+		want := strings.TrimSpace(group)
+		if want == "" {
+			want = model.DefaultConnectionGroup
+		}
+		saved.Group = group
+		saved = save(saved)
+		loaded, err := store.Get(saved.ID)
+		if err != nil || loaded.Group != want || saved.Group != want || loaded.Password != "group-test-secret" {
+			t.Fatal("moving or clearing group lost metadata or credentials")
+		}
+	}
+}
+
+func TestLegacyConnectionsBelongToDefaultGroup(t *testing.T) {
+	dir := t.TempDir()
+	store, err := connection.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, group := range []string{"", " \t "} {
+		if _, err := store.Save(model.Connection{Name: "legacy", Group: group, Password: "legacy-secret"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	filename := filepath.Join(dir, "connections.json")
+	before, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	New(service.New(store, mysql.NewClient())).ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
+	var listed []model.Connection
+	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &listed) != nil || len(listed) != 2 {
+		t.Fatal("legacy connections were lost")
+	}
+	for _, item := range listed {
+		if item.Group != model.DefaultConnectionGroup || item.Password != "" {
+			t.Fatal("legacy connection did not use default group or exposed credentials")
+		}
+	}
+	after, err := os.ReadFile(filename)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatal("listing legacy groups rewrote the existing configuration")
+	}
+}
 
 func TestRejectCrossSiteRequests(t *testing.T) {
 	store, err := connection.Open(t.TempDir())

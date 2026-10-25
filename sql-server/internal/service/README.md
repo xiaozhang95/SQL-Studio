@@ -10,4 +10,6 @@ ConnectionRepository/Database 为本层声明的接口；直接注入 MySQL 实�
 
 查询默认 1000 行/最大 5000 行、30 秒、4 并发，元数据 10 秒；不依赖 Gin、SQL 驱动或文件系统。
 
+保存及列出连接时统一 Group，去除首尾空白，缺少字段或空值归入“默认分组”；自定义分组保持，不影响连接身份、数据库范围与空密码保留策略。列表兼容旧配置时不重写磁盘文件。
+
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。

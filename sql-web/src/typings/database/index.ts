@@ -3,6 +3,7 @@ export type Connection = {
   tls?: boolean
   id: string
   name: string
+  group?: string
   host: string
   port: number
   username: string

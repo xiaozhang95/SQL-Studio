@@ -1,15 +1,15 @@
 import { CheckCircleOutlined, LinkOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
 import type { Connection } from '@/typings/database'
 
 import { useConnectionForm } from '../../hooks/useConnectionForm'
 import EngineIcon from '../engineIcon'
 
-type Props = { open: boolean; connection?: Connection; onClose: () => void; onSaved: (connection: Connection) => void }
+type Props = { open: boolean; connection?: Connection; connections: Connection[]; onClose: () => void; onSaved: (connection: Connection) => void }
 
-export default function ConnectionModal({ open, connection, onClose, onSaved }: Props) {
-  const { form, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, onSaved })
+export default function ConnectionModal({ open, connection, connections, onClose, onSaved }: Props) {
+  const { form, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, connections, onSaved })
   return (
     <Modal
       className="connection-dialog"
@@ -53,13 +53,13 @@ export default function ConnectionModal({ open, connection, onClose, onSaved }: 
         <aside className="engine-picker">
           <div className="engine-picker-heading">数据库类型</div>
           <div className="engine-option is-selected" style={{ cursor: 'default' }}>
-            <EngineIcon />
+            <EngineIcon type={engine.value} variant="logo" />
             <span className="engine-option-label">MySQL</span>
           </div>
         </aside>
         <div className="connection-settings" style={{ background: 'var(--surface)' }}>
           <div className={`connection-engine-header ${engine.className}`}>
-            <EngineIcon type={engine.value} />
+            <EngineIcon type={engine.value} variant="logo" />
             <strong>{engine.label}</strong>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Tag color="blue">默认端口 {engine.port}</Tag>
@@ -70,7 +70,7 @@ export default function ConnectionModal({ open, connection, onClose, onSaved }: 
               </Tooltip>
             </div>
           </div>
-          <Form form={form} layout="vertical" disabled={busy} onValuesChange={() => setStatus(undefined)}>
+          <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: 'auto' }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
             <Form.Item name="type" hidden>
               <Input />
             </Form.Item>
@@ -87,14 +87,20 @@ export default function ConnectionModal({ open, connection, onClose, onSaved }: 
                       <Form.Item name="name" label="连接名称" rules={[{ required: true, whitespace: true, message: '请输入连接名称' }]}>
                         <Input placeholder="例如：本地开发库" />
                       </Form.Item>
-                      <div className="form-row">
-                        <Form.Item name="host" label="主机地址" rules={[{ required: true, whitespace: true, message: '主机地址不能为空，请输入 IP 或域名' }]}>
-                          <Input placeholder="127.0.0.1" />
-                        </Form.Item>
-                        <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
-                          <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
-                        </Form.Item>
-                      </div>
+                      <Form.Item name="group" label="连接分组">
+                        <AutoComplete
+                          placeholder="输入或选择分组，留空归入默认分组"
+                          options={groups.map((group) => ({ value: group }))}
+                          filterOption={(input, option) => Boolean(option?.value.toLowerCase().includes(input.toLowerCase()))}
+                          allowClear
+                        />
+                      </Form.Item>
+                      <Form.Item name="host" label="主机地址" rules={[{ required: true, whitespace: true, message: '主机地址不能为空，请输入 IP 或域名' }]}>
+                        <Input placeholder="127.0.0.1" />
+                      </Form.Item>
+                      <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
+                        <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
+                      </Form.Item>
                       <Form.Item name="username" label="用户名" rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}>
                         <Input autoComplete="username" placeholder="请输入数据库用户名" />
                       </Form.Item>

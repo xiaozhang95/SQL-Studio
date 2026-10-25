@@ -6,7 +6,7 @@
 
 `(connectionId: string, database: string, onDatabasesLoaded: (id: string, databases: string[]) => void)`；参数只确定当前查询消费的范围，不自动发起连接。
 
-返回 snapshots（按连接 ID 的 loading/connected/error、库列表、表缓存和错误）、openConnection、closeConnection、refreshConnection、loadTables(database, connectionId?)，以及当前范围的 connected、databases、tables、currentTables、loading、tablesLoading、error、tableError。
+返回 snapshots（按连接 ID 的 loading/connected/error、库列表、表缓存、structures 和错误）、openConnection、closeConnection、refreshConnection、loadTables(database, connectionId?)、loadStructure(database, table, connectionId?)，以及当前范围的 connected、databases、tables、currentTables、loading、tablesLoading、error、tableError。
 
 ## 生命周期与边界
 
@@ -15,3 +15,7 @@
 loadTables 仅访问已打开连接；按连接/库缓存和去重，树箭头或双击连接/库节点时触发，选择文本本身不请求列表。关闭/刷新连接会取消并废弃该连接的所有旧代请求，迟到响应不能重新点亮节点或回填缓存；卸载取消全部请求。关闭不删除本机保存的连接，也不发送数据库写入。
 
 onDatabasesLoaded 仅在当前请求代有效且库列表成功返回时触发，用于工作区校验草稿范围；调用方提供稳定回调。关闭由工作区清空相关查询范围，缓存 hook 只管理元数据和请求。
+
+loadStructure 将字段和 DDL 作为一份结构缓存，按连接与 JSON 编码的库表身份去重；structures 保存已完成的结构数据，失败不缓存，允许重试；不参与库/表图标颜色判断。范围变化时消费方废弃旧范围结果，共享请求可继续完成；关闭或刷新连接统一取消共享请求并清缓存，旧代结果不能回填。
+
+查询页选择库也会调用 loadTables 供表/视图补全，与树的展开请求共享缓存和并发去重；不改变树选中或展开。加密工作区恢复时，仅按保存的打开连接 ID 重建元数据会话，不持久化数据库会话或自动执行 SQL。

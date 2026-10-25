@@ -16,7 +16,7 @@ type Props = {
   onSelect: (database: string, table?: string) => void
 }
 
-/** 仅提供已加载连接和库；表选择保留在左侧树，和树共享同一份范围。 */
+/** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect }: Props) {
   const loaded = connections.filter((connection) => objects.snapshots[connection.id]?.status === 'connected')
   return (
@@ -46,15 +46,26 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       <Select
         className="database-select"
         aria-label="选择数据库"
-        prefix={<DatabaseOutlined />}
+        prefix={objects.connected && scope.database ? undefined : <DatabaseOutlined />}
         showSearch
-        optionFilterProp="label"
+        optionFilterProp="searchText"
         allowClear
         placeholder="选择数据库"
         value={objects.connected ? scope.database || undefined : undefined}
         disabled={disabled || !objects.connected}
         onChange={(value) => onSelect(value || '')}
-        options={objects.databases.map((name) => ({ value: name, label: name }))}
+        options={objects.databases.map((name) => ({
+          value: name,
+          searchText: name,
+          label: (
+            <span className="connection-option">
+              <DatabaseOutlined />
+              <span className="connection-option-name" title={name}>
+                {name}
+              </span>
+            </span>
+          )
+        }))}
       />
     </>
   )

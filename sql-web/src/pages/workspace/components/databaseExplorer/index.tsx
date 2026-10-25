@@ -1,5 +1,4 @@
 import {
-  CheckCircleOutlined,
   CloseOutlined,
   CodeOutlined,
   DatabaseOutlined,
@@ -7,6 +6,7 @@ import {
   EditOutlined,
   EyeOutlined,
   FileTextOutlined,
+  FolderOutlined,
   LinkOutlined,
   ProfileOutlined,
   ReloadOutlined,
@@ -15,43 +15,36 @@ import {
 } from '@ant-design/icons'
 import { Dropdown, Empty, Input, Tree } from 'antd'
 import type { DataNode } from 'antd/es/tree'
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
+
+import { connectionGroupName } from '@/constant/database'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import EngineIcon from '../engineIcon'
 
 type Props = {
-  model: Pick<
-    WorkspaceModel,
-    | 'connections'
-    | 'connectionId'
-    | 'connectionAction'
-    | 'openConnection'
-    | 'databaseAction'
-    | 'tableAction'
-    | 'objects'
-    | 'database'
-    | 'selectedTable'
-    | 'selectConnection'
-    | 'selectObject'
-    | 'running'
-  >
+  model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'objects' | 'running' | 'explorer' | 'updateExplorer'>
 }
 const nodeKey = (...parts: string[]) => JSON.stringify(parts)
 
 /** 连接、数据库和表共用一棵树；所有菜单携带完整连接范围，避免误用当前查询的连接。 */
 export default function DatabaseExplorer({ model }: Props) {
-  const { connections, connectionId, connectionAction, databaseAction, tableAction, objects, database, selectedTable, selectConnection, selectObject, running } = model
-  const [expanded, setExpanded] = useState<string[]>([])
-  const [search, setSearch] = useState('')
+  const { connections, connectionAction, databaseAction, tableAction, objects, running } = model
+  const { explorer, updateExplorer } = model
+  const { expanded, selected, search } = explorer
+  const scroll = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (scroll.current) scroll.current.scrollTop = explorer.top
+  }, [explorer.top, objects.snapshots])
+  // 树的高亮只属于对象浏览器，不读取或修改任何查询标签的范围。
   const matches = (value: string) => value.toLowerCase().includes(search.toLowerCase())
   const loadedKeys: string[] = []
-  const nodes: DataNode[] = connections.flatMap((connection): DataNode[] => {
+  const connectionNodes: DataNode[] = connections.flatMap((connection): DataNode[] => {
     const id = connection.id
     const state = objects.snapshots[id]
     const connected = state?.status === 'connected'
     const status = connected ? 'is-connected' : state?.status === 'error' ? 'is-error' : 'is-closed'
-    const connectionMatches = matches(connection.name)
+    const connectionMatches = matches(connection.name) || matches(connectionGroupName(connection.group))
     if (connected) loadedKeys.push(nodeKey('connection', id))
     const children: DataNode[] | undefined = connected
       ? state.databases
@@ -93,14 +86,13 @@ export default function DatabaseExplorer({ model }: Props) {
                   disabled={running}
                   menu={{
                     items: [
-                      { key: 'select', label: '选择数据库', icon: <CheckCircleOutlined /> },
                       { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
                       { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
                       { key: 'refresh', label: '刷新数据库结构', icon: <ReloadOutlined /> }
                     ],
                     onClick: ({ key, domEvent }) => {
                       domEvent.stopPropagation()
-                      databaseAction(key, id, db)
+                      void databaseAction(key, id, db)
                     }
                   }}
                 >
@@ -173,7 +165,7 @@ export default function DatabaseExplorer({ model }: Props) {
         ),
         icon: (
           <span className={`connection-tree-icon ${status}`}>
-            <EngineIcon type={connection.type} />
+            <EngineIcon type={connection.type} connected={connected} />
           </span>
         ),
         isLeaf: false,
@@ -181,23 +173,41 @@ export default function DatabaseExplorer({ model }: Props) {
       }
     ]
   })
+  const nodes: DataNode[] = []
+  const groups = new Map<string, DataNode>()
+  const connectionsById = new Map(connections.map((connection) => [connection.id, connection]))
+  for (const node of connectionNodes) {
+    const [, id] = JSON.parse(String(node.key)) as string[]
+    const name = connectionGroupName(connectionsById.get(id)?.group)
+    let group = groups.get(name)
+    if (!group) {
+      group = { key: nodeKey('group', name), title: <span title={name}>{name}</span>, icon: <FolderOutlined />, selectable: false, children: [] }
+      groups.set(name, group)
+      nodes.push(group)
+      loadedKeys.push(String(group.key))
+    }
+    group.children!.push(node)
+  }
   const expandedKeys = expanded.filter((key) => {
     const [type, id] = JSON.parse(key) as string[]
+    if (type === 'group') return groups.has(id)
     return connections.some((connection) => connection.id === id) && (type === 'connection' ? Boolean(objects.snapshots[id]) : objects.snapshots[id]?.status === 'connected')
   })
-  const selectedKey =
-    connectionId && objects.connected
-      ? selectedTable
-        ? nodeKey('table', connectionId, database, selectedTable)
-        : database
-          ? nodeKey('database', connectionId, database)
-          : nodeKey('connection', connectionId)
-      : undefined
+  // 搜索时展开分组以显示匹配连接，不覆盖用户保存的折叠状态。
+  if (search.trim()) for (const group of groups.values()) if (!expandedKeys.includes(String(group.key))) expandedKeys.push(String(group.key))
+  const selectedKeys = selected.filter((key) => {
+    const [type, id, db, table] = JSON.parse(key) as string[]
+    const state = objects.snapshots[id]
+    if (!connections.some((connection) => connection.id === id)) return false
+    if (type === 'connection') return true
+    if (state?.status !== 'connected' || !state.databases.includes(db)) return false
+    return type === 'database' || Boolean(state.tables[db]?.some((item) => item.name === table))
+  })
 
   return (
     <div className="explorer connection-explorer">
-      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
-      <div className="object-tree">
+      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => updateExplorer({ search: event.target.value })} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
+      <div className="object-tree" ref={scroll} onScroll={(event) => updateExplorer({ top: event.currentTarget.scrollTop })}>
         {!connections.length ? (
           <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
         ) : (
@@ -209,19 +219,22 @@ export default function DatabaseExplorer({ model }: Props) {
             disabled={running}
             treeData={nodes}
             expandedKeys={expandedKeys}
-            onExpand={(keys) => setExpanded(keys.map(String))}
+            onExpand={(keys) => updateExplorer({ expanded: keys.map(String) })}
             loadedKeys={loadedKeys}
-            selectedKeys={selectedKey ? [selectedKey] : []}
+            selectedKeys={selectedKeys}
             loadData={async (node) => {
               const [type, id, db] = JSON.parse(String(node.key)) as string[]
               if (type === 'connection') await model.openConnection(id).catch(() => {})
               else if (type === 'database') await objects.loadTables(db, id).catch(() => {})
             }}
+            onDoubleClick={(_, node) => {
+              if (running) return
+              const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
+              if (type === 'database') void databaseAction('tables', id, db)
+              else if (type === 'table') void tableAction('data', id, db, table)
+            }}
             onSelect={(keys) => {
-              if (!keys.length) return
-              const [type, id, db, table] = JSON.parse(String(keys[0])) as string[]
-              if (type === 'connection') selectConnection(id)
-              else if (type === 'database' || type === 'table') selectObject(db, table, id)
+              if (keys.length) updateExplorer({ selected: keys.map(String) })
             }}
           />
         )}
