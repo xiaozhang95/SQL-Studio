@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"sqldesk/internal/config"
-	"sqldesk/internal/connection"
-	"sqldesk/internal/model"
+	"sql-studio/internal/config"
+	"sql-studio/internal/connection"
+	"sql-studio/internal/model"
 )
 
 func TestBootstrapKeepsExistingCredentialsAndServesWeb(t *testing.T) {

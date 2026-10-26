@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {

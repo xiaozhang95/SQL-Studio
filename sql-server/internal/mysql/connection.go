@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 // Client 每次请求使用独立连接，避免不同查询之间共享会话状态。

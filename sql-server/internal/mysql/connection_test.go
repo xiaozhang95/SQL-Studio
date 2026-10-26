@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 	"testing"
 )
 

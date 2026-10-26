@@ -4,7 +4,7 @@
 
 ## 前端目录职责
 
-参考本机 `C:\Users\Lenovo\Desktop\ghspace\ghspace-polardb-web` 的分层方向，保留 Vite + React 技术栈。
+项目使用 Vite + React 技术栈，按功能与职责分层。
 
 | 目录/文件 | 职责 |
 | --- | --- |
@@ -56,7 +56,7 @@ Tag 仅用于有辨识意义的状态，避免为数量重复加标签。顶栏�
 
 Switch 轨道与按钮背景沿用组件算法，信息 Tag 采用蓝色 solid，不把文字颜色强行套到背景。项目边界与同步要求见 [项目 skill](../.agents/skills/sql-studio/SKILL.md)；归档规则与本地文档链接由 `cd sql-web && node --test tests/structure.test.mjs` 检查。
 
-`.prettierrc` 对齐参考项目的核心设置：
+`.prettierrc` 定义本项目的格式规则：
 
 - `printWidth: 200`。
 - 单引号、不加分号、无尾逗号。
@@ -93,7 +93,7 @@ go build ./...
 
 ## 编辑器与统一入口
 
-根目录 `.editorconfig` 统一换行、缩进和编码；Go 使用 Tab，TS/TSX/CSS/JSON 使用两个空格，PowerShell 使用四个空格。Markdown 保留有语义的行尾空格。
+编辑器的编码、换行和缩进由本机配置管理；前端格式由 Prettier 统一，Go 使用 gofmt。
 
 根目录与各子项目的 `.vscode/settings.json` 支持整体打开仓库或单独打开前/后端时的保存格式化。推荐扩展列表位于根目录 `.vscode/extensions.json`；配置已写入，扩展安装由本机编辑器管理。
 
@@ -152,3 +152,9 @@ go build ./...
 表右键转储 SQL 文件支持仅结构、结构和数据；不自动执行导出 SQL。数据读取超过 5000 行或 8 MiB 则提示失败，不生成部分文件；并发修改下不保证一致快照。
 
 数据页支持新增行，默认值与自增由数据库处理，必填字段需填写；点击统一保存才发送 INSERT，放弃或移除未提交行不访问数据库。
+
+用户配置由 Go 保存到用户主目录/.sql-studio/state（SQLDESK_STATE_DIR 可覆盖）。workspace.json 为布局/页签/草稿/结果/树状态，history.json 按连接保存历史，appearance.json 保存主题。信封 schemaVersion=1/revision/updatedAt/data/extensions，业务工作区 data.version=1；新增功能新增分区或 extensions。未知版本和损坏拒绝覆盖，CAS防旧窗口覆盖。缺失配置使用默认值，浏览器旧记录不再读取或双写；恢复不执行SQL。JSON可读且可能含查询和结果，0700目录/0600文件（Windows由用户ACL保护）；连接密码仍在原加密连接仓库，不进入配置。
+
+完整配置协议和迁移规范见 [用户状态](USER_STATE.md)。
+
+项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。

@@ -6,9 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/modules/connections"
-	"sqldesk/internal/modules/metadata"
-	"sqldesk/internal/modules/query"
+	"sql-studio/internal/modules/connections"
+	"sql-studio/internal/modules/metadata"
+	"sql-studio/internal/modules/query"
+	"sql-studio/internal/modules/settings"
 )
 
 // Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
@@ -16,16 +17,18 @@ type Services struct {
 	Connections *connections.Service
 	Metadata    *metadata.Service
 	Queries     *query.Service
+	Settings    *settings.Service
 }
 
 type handler struct {
 	connections *connections.Service
 	metadata    *metadata.Service
 	queries     *query.Service
+	settings    *settings.Service
 }
 
 func New(services Services) *gin.Engine {
-	h := &handler{connections: services.Connections, metadata: services.Metadata, queries: services.Queries}
+	h := &handler{connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)
 	router.Use(gin.Recovery(), localOnly)
@@ -33,6 +36,8 @@ func New(services Services) *gin.Engine {
 	api.GET("/health", func(c *gin.Context) {
 		respond(c, http.StatusOK, gin.H{"status": "ok", "service": "SQL Studio", "framework": "gin"})
 	})
+	api.GET("/state/:section", h.readState)
+	api.PUT("/state/:section", h.writeState)
 	api.GET("/connections", h.listConnections)
 	api.POST("/connections", h.saveConnection)
 	api.DELETE("/connections/:id", h.deleteConnection)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 // Repository 的 Get 只供服务端读取凭据；List 和 Save 返回脱敏信息。

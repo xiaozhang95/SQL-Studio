@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { readState, writeState } from '@/services/userState'
 import type { WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
-import { readEncrypted, writeEncrypted } from '@/utils/encryptedStorage'
-import { readLocal } from '@/utils/storage'
 
 let restored: Promise<WorkspaceSnapshot | null> | undefined
 
@@ -39,32 +38,18 @@ function validate(snapshot: WorkspaceSnapshot) {
 }
 
 async function restoreSnapshot() {
-  let saved = await readEncrypted<WorkspaceSnapshot | null>('workspace', null)
-  if (!saved) {
-    const legacy = readLocal<WorkspaceTab[]>('sqldesk.tabs', [])
-    const tabs = Array.isArray(legacy)
-      ? legacy
-          .filter((tab) => tab && validTab({ ...tab, kind: tab.kind || 'query' }))
-          .map((tab): WorkspaceTab => ({ id: tab.id, title: tab.title, sql: tab.sql, kind: tab.kind || 'query', connectionId: tab.connectionId, database: tab.database, table: tab.table }))
-      : []
-    saved = {
-      version: 1,
-      tabs,
-      activeTab: readLocal('sqldesk.activeTab', tabs[0]?.id || ''),
-      runs: {},
-      resultViews: {},
-      editorLayouts: {},
-      explorer: { expanded: [], selected: [], search: '', top: 0 },
-      resultHeight: readLocal('sqldesk.resultHeight', 260),
-      openedConnections: [],
-      runningTabId: ''
-    }
-    await writeEncrypted('workspace', saved)
-    if (tabs.length) {
-      localStorage.removeItem('sqldesk.tabs')
-      localStorage.removeItem('sqldesk.activeTab')
-    }
-  }
+  const saved = await readState<WorkspaceSnapshot>('workspace', async () => ({
+    version: 1,
+    tabs: [],
+    activeTab: '',
+    runs: {},
+    resultViews: {},
+    editorLayouts: {},
+    explorer: { expanded: [], selected: [], search: '', top: 0 },
+    resultHeight: 260,
+    openedConnections: [],
+    runningTabId: ''
+  }))
   return validate(saved)
 }
 
@@ -103,20 +88,23 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   useEffect(() => {
     if (!ready || !available.current) return
     const version = ++revision.current
-    void writeEncrypted('workspace', snapshot)
-      .then(() => {
-        restored = Promise.resolve(snapshot)
-        if (version === revision.current) {
-          setSavedSnapshot(snapshot)
-          setError('')
-        }
-        localStorage.removeItem('sqldesk.resultHeight')
-      })
-      .catch((reason) => {
-        if (version === revision.current) {
-          setError(reason instanceof Error ? reason.message : '本地加密保存失败')
-        }
-      })
+    const timer = window.setTimeout(() => {
+      void writeState('workspace', snapshot)
+        .then(() => {
+          restored = Promise.resolve(snapshot)
+          if (version === revision.current) {
+            setSavedSnapshot(snapshot)
+            setError('')
+          }
+          localStorage.removeItem('sqldesk.resultHeight')
+        })
+        .catch((reason) => {
+          if (version === revision.current) {
+            setError(reason instanceof Error ? reason.message : '本机配置保存失败')
+          }
+        })
+    }, 300)
+    return () => window.clearTimeout(timer)
   }, [ready, snapshot])
   return { ready, saving: ready && savedSnapshot !== snapshot && !error, error }
 }

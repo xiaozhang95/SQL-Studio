@@ -13,10 +13,10 @@ import (
 // 将依赖方向纳入回归检查，防止后续新增接口又直接耦合数据库或文件存储。
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
-		"app":    {"config": true, "connection": true, "httpapi": true, "mysql": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
+		"app":    {"statefile": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
 		"config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true},
-		"httpapi":             {"modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
-		"modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
+		"httpapi":   {"modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
+		"statefile": {"model": true}, "modules/settings": {"model": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
 	}
 	root, err := filepath.Abs("../../internal")
 	if err != nil {
@@ -48,8 +48,8 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(dependency, "sqldesk/internal/") {
-				target := strings.TrimPrefix(dependency, "sqldesk/internal/")
+			if strings.HasPrefix(dependency, "sql-studio/internal/") {
+				target := strings.TrimPrefix(dependency, "sql-studio/internal/")
 				if !dependencies[target] {
 					t.Errorf("%s 不得依赖 %s", relative, dependency)
 				}

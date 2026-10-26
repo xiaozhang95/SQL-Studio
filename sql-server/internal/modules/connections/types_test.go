@@ -2,9 +2,9 @@ package connections_test
 
 import (
 	"context"
-	"sqldesk/internal/connection"
-	"sqldesk/internal/model"
-	"sqldesk/internal/modules/connections"
+	"sql-studio/internal/connection"
+	"sql-studio/internal/model"
+	"sql-studio/internal/modules/connections"
 	"testing"
 )
 

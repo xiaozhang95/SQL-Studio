@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 type Store struct {

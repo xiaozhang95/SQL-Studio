@@ -1,4 +1,4 @@
-module sqldesk
+module sql-studio
 
 go 1.26.0
 

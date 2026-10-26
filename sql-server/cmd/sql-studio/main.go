@@ -9,8 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/app"
-	"sqldesk/internal/config"
+	"sql-studio/internal/app"
+	"sql-studio/internal/config"
 )
 
 // 启动入口只加载配置、装配应用和处理退出信号，具体业务均在 internal 中。

@@ -3,7 +3,7 @@ package metadata
 import (
 	"context"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 func (s *Service) Databases(ctx context.Context, id string) ([]string, error) {

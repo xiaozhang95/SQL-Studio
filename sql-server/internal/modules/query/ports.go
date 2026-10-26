@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 type Connections interface {

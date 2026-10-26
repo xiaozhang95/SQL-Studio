@@ -16,7 +16,7 @@ pnpm dev
 
 检查命令：`pnpm lint`（类型检查 + Oxlint + 模块文档检查）、`pnpm format:check`、`pnpm build`。修改后运行 `pnpm format` 统一格式，import 会自动分组排序。具体规则在 `.prettierrc`，构建产物、依赖、锁文件和静态资源在 `.prettierignore` 排除。
 
-目录参照 `ghspace-polardb-web` 的职责组织：`pages/workspace` 放 SQL 工作区及私有组件，`services` 放数据库 API，`typings` 放共享契约，`utils` 放通用工具。`App.tsx` 通过主题 hook 组装页面，`@/` 指向 `src/`。查询标签与执行记录类型位于 `typings/workspace/index.ts`。
+目录按职责组织：`pages/workspace` 放 SQL 工作区及私有组件，`services` 放数据库 API，`typings` 放共享契约，`utils` 放通用工具。`App.tsx` 通过主题 hook 组装页面，`@/` 指向 `src/`。查询标签与执行记录类型位于 `typings/workspace/index.ts`。
 
 构建版建议从根目录运行 `pnpm build 后在 sql-server 执行 go run ./cmd/sql-studio`，由 Go 同时提供网页和 API；单独 `pnpm preview` 仅用于静态页面预览，没有 API 代理。
 
@@ -26,7 +26,7 @@ pnpm dev
 
 亮暗主题使用 defaultAlgorithm / darkAlgorithm，SCSS 从 sql-studio-theme 作用域中的 Ant Design 原生 CSS token 读取主色、背景、边框，不另设蓝色。普通文字使用黑/白，信息 Tag 使用蓝色 solid，按钮/Switch 保持默认变体。右上角可选择亮色、暗黑或跟随系统，偏好保存在 sqldesk.theme。
 
-底部 `resultsDock/index.tsx` 独立管理结果高度：默认 260px，拖动/双击和键盘上下键、Home/End 调整；有结果直接展示，无结果隐藏，不提供折叠按钮。ResizeObserver 约束最大高度，为编辑器保留空间，高度由工作区受控，与 SQL、查询范围、结果及视图状态一起加密保存在本机 IndexedDB。
+底部 `resultsDock/index.tsx` 独立管理结果高度：默认 260px，拖动/双击和键盘上下键、Home/End 调整；有结果直接展示，无结果隐藏，不提供折叠按钮。ResizeObserver 约束最大高度，为编辑器保留空间，高度由工作区受控，与 SQL、查询范围、结果及视图状态一起通过 Go 保存到用户目录配置。
 
 连接产品配置位于 `databases/mysql/profile/index.ts`，MySQL 的 SQL、补全等专属实现分属同一引擎目录，外部通过 getDatabaseAdapter 调用。仅保留 MySQL，默认端口 3306；分组默认选中“默认分组”，名称/主机/账号不预填。连接弹窗含常规、SSL 设置和可保留的测试结果。页面外框固定，左侧对象树、右侧结果内部滚动，SQL 编辑器保持可见。支持范围见 [数据库连接说明](../docs/DATABASES.md)。
 
@@ -40,4 +40,4 @@ Sass 使用 JavaScript 编译器；pnpm-workspace.yaml 关闭可选 @parcel/watc
 
 执行历史位于查询工具栏导出之后，只显示当前查询连接的记录；清空只影响该连接，同连接跨库记录可见。连接 ID 切换后重置分页/筛选/展开，打开时清空搜索。
 
-本地记录使用 AES-GCM 加密，浏览器生成不可导出密钥；刷新恢复页签、SQL、结果、历史和布局，不自动执行 SQL。旧明文记录在迁移提交后移除。补全按当前 SQL 页连接提供库名，选库自动加载表/视图；结果 Select 和顶部 Tab 随所选结果同步成功/失败颜色。存储回归运行 `pnpm test:storage`，说明见 [测试](tests/README.md)。
+界面状态由 Go 用户目录分区 JSON 保存，带版本号与 CAS 修订；缺失配置直接初始化默认值。刷新恢复页签、SQL、结果、历史和布局，不自动执行 SQL。补全按当前 SQL 页连接提供库名，选库自动加载表/视图；结果 Select 和顶部 Tab 随所选结果同步成功/失败颜色。存储回归运行 `pnpm test:storage`，说明见 [测试](tests/README.md)。

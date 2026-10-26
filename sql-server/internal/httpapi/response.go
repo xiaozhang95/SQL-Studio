@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/modules/query"
+	"sql-studio/internal/modules/query"
 )
 
 const maxRequestBytes = 1024 * 1024

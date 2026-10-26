@@ -1,5 +1,5 @@
-# 主题偏好
+# 外观偏好
 
-[源码](index.ts)
+useThemePreference 返回 preference、setPreference、mode、error。preference为system/light/dark，mode随系统变化。读取Go appearance分区，缺失时读取旧localStorage迁移；恢复成功后才保存，不再写浏览器。文件损坏或请求失败显示配置错误，不自动覆盖。首次可先用旧主题避免闪烁，后端返回后切换为保存值；保存错误交由Workspace显示。
 
-返回 preference、setPreference、mode。保存 system/light/dark，监听系统配色并在首帧前更新 data-theme。ConfigProvider 仅选择默认主题算法和 CSS 变量作用域，不覆盖默认文字、placeholder 或图标颜色。必要的组件覆盖统一在 src/app.scss；保留原生颜色。
+当前缺失外观配置使用system，不读取localStorage。

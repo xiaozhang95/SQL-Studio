@@ -6,18 +6,21 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"path/filepath"
+	"sql-studio/internal/modules/settings"
+	"sql-studio/internal/statefile"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/config"
-	"sqldesk/internal/connection"
-	"sqldesk/internal/httpapi"
-	"sqldesk/internal/modules/connections"
-	"sqldesk/internal/modules/metadata"
-	"sqldesk/internal/modules/query"
-	"sqldesk/internal/mysql"
+	"sql-studio/internal/config"
+	"sql-studio/internal/connection"
+	"sql-studio/internal/httpapi"
+	"sql-studio/internal/modules/connections"
+	"sql-studio/internal/modules/metadata"
+	"sql-studio/internal/modules/query"
+	"sql-studio/internal/mysql"
 )
 
 type App struct{ server *http.Server }
@@ -35,8 +38,17 @@ func New(cfg config.Config) (*App, error) {
 			return nil, err
 		}
 	}
+	stateDir := cfg.StateDir
+	if stateDir == "" {
+		stateDir = filepath.Join(cfg.DataDir, "state")
+	}
+	stateStore, err := statefile.Open(stateDir)
+	if err != nil {
+		return nil, err
+	}
 	router := httpapi.New(httpapi.Services{
 		Connections: connectionService,
+		Settings:    settings.New(stateStore),
 		Metadata:    metadata.New(repository, client),
 		Queries:     query.New(repository, client),
 	})

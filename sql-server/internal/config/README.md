@@ -11,3 +11,7 @@
 下层通过参数接收配置，不在 handler 或业务模块 中重复读取环境变量。
 
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
+
+StateDir/SQLDESK_STATE_DIR 默认 os.UserHomeDir()/.sql-studio/state，允许覆盖，与原连接数据目录分离。
+
+项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。

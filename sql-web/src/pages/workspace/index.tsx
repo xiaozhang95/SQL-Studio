@@ -1,5 +1,5 @@
 import { CodeOutlined, MoonOutlined, PlusOutlined, SunOutlined } from '@ant-design/icons'
-import { Alert, Button, Empty, Select, Spin, Typography } from 'antd'
+import { Alert, Button, Empty, Select, Spin } from 'antd'
 
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
@@ -9,14 +9,16 @@ import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
+import SaveStatus from './components/saveStatus'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
 import { useWorkspace } from './hooks/useWorkspace'
 
-type Props = { themeMode: ThemeMode; themePreference: ThemePreference; onThemeChange: (preference: ThemePreference) => void }
+type Props = { themeReady: boolean; themeSaving: boolean; themeError?: string; themeMode: ThemeMode; themePreference: ThemePreference; onThemeChange: (preference: ThemePreference) => void }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ themeMode, themePreference, onThemeChange }: Props) {
+export default function Workspace({ themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
   const model = useWorkspace()
+  const storageError = model.storageError || themeError
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -37,11 +39,10 @@ export default function Workspace({ themeMode, themePreference, onThemeChange }:
           </Button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Typography.Text type={model.storageError ? 'danger' : 'secondary'} role="status" aria-label="工作区保存状态">
-            {!model.workspaceReady ? '正在恢复…' : model.storageError ? '本地保存不可用' : model.saving ? '正在保存…' : '已加密保存'}
-          </Typography.Text>
+          <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />
           <Select
             aria-label="界面主题"
+            disabled={!themeReady}
             className="theme-select"
             value={themePreference}
             onChange={onThemeChange}
@@ -54,7 +55,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange }:
           />
         </div>
       </header>
-      {model.storageError && <Alert type="warning" banner title="本地加密保存不可用，当前页面仍可使用。" description={model.storageError} />}
+      {storageError && <Alert key={storageError} closable type="warning" banner title="本机配置保存不可用，当前页面仍可使用。" description={storageError} />}
       {!model.workspaceReady ? (
         <div className="workspace-empty">
           <Spin description="正在恢复工作区…" />

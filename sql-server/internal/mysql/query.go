@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 const maxResultBytes = 8 * 1024 * 1024

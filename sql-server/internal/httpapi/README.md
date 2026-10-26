@@ -17,3 +17,5 @@
 module_routes_test.go 使用真实业务模块和测试数据库接口验证双连接同名对象的路由归属、字段解码、精确数值透传、未知字段/多 JSON/超限请求拒绝、缺失连接 404 及并发超限 429，不访问真实数据库。
 
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
+
+GET/PUT /api/state/:section 调用 settings。PUT 限32MiB，CAS冲突409，沿用本机同源保护。

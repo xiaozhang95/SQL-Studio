@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 // 旧的非 MySQL 连接保留在本地文件中，不再作为可用连接返回。

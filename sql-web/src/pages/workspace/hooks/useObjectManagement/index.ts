@@ -250,9 +250,9 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
         const inserts = adapter.dumpData(target.database, target.table, data, columns)
         output =
           output.replace('仅包含对象结构，不包含数据', '包含对象结构和数据') +
-          "\nSET @sqloom_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n" +
+          "\nSET @sql_studio_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n" +
           inserts +
-          'SET SESSION sql_mode = @sqloom_old_sql_mode;\n'
+          'SET SESSION sql_mode = @sql_studio_old_sql_mode;\n'
       }
       if (!controller.signal.aborted) exportSQL(output, target.table + (includeData ? '-structure-data' : '-structure'))
     } catch (reason) {

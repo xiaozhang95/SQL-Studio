@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"sqldesk/internal/connection"
-	"sqldesk/internal/model"
-	"sqldesk/internal/modules/connections"
+	"sql-studio/internal/connection"
+	"sql-studio/internal/model"
+	"sql-studio/internal/modules/connections"
 )
 
 type stubDatabase struct {

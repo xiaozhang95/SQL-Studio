@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 type Config struct {
 	Address           string
 	DataDir           string
+	StateDir          string
 	WebDir            string
 	InitialConnection *model.Connection
 }
@@ -22,6 +23,14 @@ func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080"}
 	var err error
 	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", "data")
+	if err != nil {
+		return cfg, err
+	}
+	home, homeErr := os.UserHomeDir()
+	if homeErr != nil {
+		return cfg, homeErr
+	}
+	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", defaultStateDirectory(home))
 	if err != nil {
 		return cfg, err
 	}
@@ -56,4 +65,17 @@ func resolveDirectory(key, fallback string) (string, error) {
 		return "", fmt.Errorf("解析 %s 目录失败: %w", key, err)
 	}
 	return path, nil
+}
+
+// 新安装使用新名称，已有旧目录继续读取，不移动或覆盖用户配置。
+func defaultStateDirectory(home string) string {
+	current := filepath.Join(home, ".sql-studio", "state")
+	if _, err := os.Stat(current); !os.IsNotExist(err) {
+		return current
+	}
+	legacy := filepath.Join(home, ".sqloom", "state")
+	if _, err := os.Stat(legacy); !os.IsNotExist(err) {
+		return legacy
+	}
+	return current
 }

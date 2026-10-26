@@ -68,3 +68,5 @@
 超时为 30 秒，limit 默认 1,000，最高 5,000；达到结果行数或约 8 MiB 字段内容时 `truncated: true`。API 拒绝跨源请求；本地工具不提供开放 CORS。
 
 前端库表右键管理现使用既有 `/connections/{id}/query`，仅在对象表单确认保存时显式传 `allowWrite:true`。普通 SQL 编辑器不传此值。对象表单的 SHOW COLLATION 等只读元数据可传 limit=5000，仍遵守并发、超时、字节和单语句限制。无新增 HTTP 路由。
+
+GET /api/state/:section 返回 {schemaVersion:1,revision,updatedAt,data,extensions?}，缺失分区 revision=0,data=null。PUT 同路径提交 {revision,data}，data须对象、最多32MiB，返回更新信封；修订冲突409，损坏/未知版本拒绝覆盖。分区匹配 ^[a-z][a-z0-9-]{0,47}$。

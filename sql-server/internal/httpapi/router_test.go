@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"sqldesk/internal/connection"
-	"sqldesk/internal/model"
-	"sqldesk/internal/modules/connections"
-	"sqldesk/internal/modules/metadata"
-	"sqldesk/internal/modules/query"
-	"sqldesk/internal/mysql"
+	"sql-studio/internal/connection"
+	"sql-studio/internal/model"
+	"sql-studio/internal/modules/connections"
+	"sql-studio/internal/modules/metadata"
+	"sql-studio/internal/modules/query"
+	"sql-studio/internal/mysql"
 )
 
 func TestConnectionGroupRoundTrip(t *testing.T) {
@@ -165,7 +165,7 @@ func TestGinRouteParametersAndConnectionTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 	router := New(testServices(store))
-	if routes := router.Routes(); len(routes) != 10 {
+	if routes := router.Routes(); len(routes) != 12 {
 		t.Fatalf("unexpected Gin routes: %d", len(routes))
 	}
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(`{"type":"mysql","tls":true,"name":"cloud","host":"db.example","port":3306,"username":"user","password":"secret"}`))

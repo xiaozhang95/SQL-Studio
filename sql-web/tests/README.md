@@ -12,3 +12,5 @@
 - `pnpm test:objects`：库表操作 SQL 目标转义、默认值/SQL mode、类型与表达式注入拒绝、特殊字段保护及差异 ALTER；无数据库访问。
 
 数据编辑回归：`node --test tests/data-editing.test.mjs`，覆盖精确主键、联合主键、NULL/空字符串、标识符/值注入边界及生成列限制，不访问真实数据库。
+
+用户配置回归：node --test tests/user-state.test.mjs，覆盖服务端优先、旧记录迁移、串行修订及冲突，不访问真实用户文件。

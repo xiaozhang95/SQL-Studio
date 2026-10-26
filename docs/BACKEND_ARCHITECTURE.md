@@ -36,3 +36,7 @@ config.Load 读取 SQLDESK_DATA_DIR、SQLDESK_WEB_DIR、SQLDESK_MYSQL_*。从 sq
 包内实现与单元测试同目录，跨层测试位于 tests；每个实际包有 README 与 doc.go。修改实现、调用方、契约和相关说明同步维护。
 
 在 sql-server 执行 gofmt -w .、go test -count=1 ./...、go vet ./...、go build ./...。Go 架构测试递归校验每个实际包的依赖、README 与 doc.go，后端无需 Node 或包装脚本。真实 MySQL 集成参数见 [后端 README](../sql-server/README.md)，只使用自动生成的临时库。验证历史见 [验证记录](VERIFICATION.md)。
+
+新增 settings→model、statefile→model，app装配两者，httpapi→settings。用户配置默认主目录/.sql-studio/state，单Go进程拥有目录，CAS防窗口覆盖。
+
+项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。

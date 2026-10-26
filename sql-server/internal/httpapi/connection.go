@@ -3,7 +3,7 @@ package httpapi
 import (
 	"github.com/gin-gonic/gin"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 func (h *handler) listConnections(c *gin.Context) {

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"sqldesk/internal/model"
-	"sqldesk/internal/modules/metadata"
+	"sql-studio/internal/model"
+	"sql-studio/internal/modules/metadata"
 )
 
 type repository struct{}

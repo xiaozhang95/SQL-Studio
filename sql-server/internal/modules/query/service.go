@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 // Query 在业务层统一限流、行数与超时，避免 HTTP 以外的调用绕过相同约束。

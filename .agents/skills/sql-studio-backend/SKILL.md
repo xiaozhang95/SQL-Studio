@@ -1,9 +1,9 @@
 ---
 name: sql-studio-backend
-description: 开发和维护 SQLoom 的 Go Gin 模块化单体后端；用于连接管理、数据库对象、SQL 查询、MySQL 引擎、API、存储、模块重构及后端脚本日志清理，不用于纯前端任务。
+description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用于连接管理、数据库对象、SQL 查询、MySQL 引擎、API、存储、模块重构及后端脚本日志清理，不用于纯前端任务。
 ---
 
-# SQLoom 后端开发
+# SQL Studio 后端开发
 
 适用于本仓库 `sql-server`。先读[后端规范](../../../docs/BACKEND_STANDARDS.md)、[架构](../../../docs/BACKEND_ARCHITECTURE.md)、[包索引](../../../sql-server/internal/README.md)，再读目标包 README；用户最新要求优先。
 

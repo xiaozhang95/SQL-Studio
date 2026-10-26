@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
+import { readState, writeState } from '@/services/userState'
 import type { HistoryItem } from '@/typings/workspace'
-import { readEncrypted, writeEncrypted } from '@/utils/encryptedStorage'
-import { readLocal } from '@/utils/storage'
 
 type Histories = Record<string, HistoryItem[]>
 let restored: Promise<Histories> | undefined
@@ -11,45 +10,18 @@ let restored: Promise<Histories> | undefined
 const cleanHistory = getDatabaseAdapter().cleanHistory
 
 async function restoreHistories(): Promise<Histories> {
-  const stored = await readEncrypted<Histories | null>('history', null)
-  if (stored) {
-    if (
-      typeof stored !== 'object' ||
-      Object.values(stored).some((records) => !Array.isArray(records) || records.some((item) => !item || typeof item.sql !== 'string' || typeof item.connectionId !== 'string'))
-    )
-      throw new Error('本地执行历史格式不受支持')
-    return Object.fromEntries(Object.entries(stored).map(([id, records]) => [id, records.map((item) => ({ ...item, sql: cleanHistory(item.sql) }))]))
-  }
-  const keys = Object.keys(localStorage).filter((key) => key === 'sqldesk.history' || key.startsWith('sqldesk.history.'))
-  const migrated: Histories = {}
-  for (const key of keys) {
-    const records = readLocal<HistoryItem[]>(key, [])
-    if (!Array.isArray(records)) continue
-    for (const item of records) {
-      if (!item || typeof item.connectionId !== 'string' || typeof item.sql !== 'string') continue
-      const list = (migrated[item.connectionId] ||= [])
-      if (!list.some((record) => record.id === item.id))
-        list.push({
-          id: item.id,
-          sql: cleanHistory(item.sql),
-          database: item.database,
-          connectionId: item.connectionId,
-          connectionName: item.connectionName,
-          time: item.time,
-          durationMs: item.durationMs,
-          ok: item.ok,
-          error: item.error
-        })
-    }
-  }
-  for (const id of Object.keys(migrated)) migrated[id] = migrated[id].sort((a, b) => Date.parse(b.time) - Date.parse(a.time)).slice(0, 50)
-  await writeEncrypted('history', migrated)
-  // 已确认加密记录提交后才清理旧明文，不因失败丢失旧历史。
-  keys.forEach((key) => localStorage.removeItem(key))
-  return migrated
+  const stored = await readState<Histories>('history', async () => ({}))
+  if (
+    !stored ||
+    typeof stored !== 'object' ||
+    Array.isArray(stored) ||
+    Object.values(stored).some((records) => !Array.isArray(records) || records.some((item) => !item || typeof item.sql !== 'string' || typeof item.connectionId !== 'string'))
+  )
+    throw new Error('执行历史格式不受支持')
+  return Object.fromEntries(Object.entries(stored).map(([id, records]) => [id, records.map((item) => ({ ...item, sql: cleanHistory(item.sql) }))]))
 }
 
-/** 当前 SQL 页仅消费自己的记录；所有持久化内容均为加密数据。 */
+/** 当前 SQL 页仅消费自己的记录；持久化由 Go 用户目录配置管理。 */
 export function useQueryHistory(connectionId: string) {
   const [histories, setHistories] = useState<Histories>({})
   const [ready, setReady] = useState(false)
@@ -65,7 +37,7 @@ export function useQueryHistory(connectionId: string) {
       .catch((reason) => {
         if (!stale) {
           setAvailable(false)
-          setError(reason instanceof Error ? reason.message : '无法恢复加密历史')
+          setError(reason instanceof Error ? reason.message : '无法恢复执行历史')
         }
       })
       .finally(() => {
@@ -78,21 +50,24 @@ export function useQueryHistory(connectionId: string) {
   useEffect(() => {
     if (!ready || !available) return
     let stale = false
-    void writeEncrypted('history', histories)
-      .then(() => {
-        restored = Promise.resolve(histories)
-        if (!stale) {
-          setSavedHistories(histories)
-          setError('')
-        }
-      })
-      .catch((reason) => {
-        if (!stale) {
-          setError(reason instanceof Error ? reason.message : '历史加密保存失败')
-        }
-      })
+    const timer = window.setTimeout(() => {
+      void writeState('history', histories)
+        .then(() => {
+          restored = Promise.resolve(histories)
+          if (!stale) {
+            setSavedHistories(histories)
+            setError('')
+          }
+        })
+        .catch((reason) => {
+          if (!stale) {
+            setError(reason instanceof Error ? reason.message : '历史保存失败')
+          }
+        })
+    }, 200)
     return () => {
       stale = true
+      window.clearTimeout(timer)
     }
   }, [ready, available, histories])
   const appendHistory = useCallback((item: HistoryItem) => {

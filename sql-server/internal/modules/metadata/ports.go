@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 // Connections 仅允许按显式连接 ID 取得元数据请求所需的凭据。

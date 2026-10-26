@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"sqldesk/internal/model"
+	"sql-studio/internal/model"
 )
 
 func TestEncryptedStoreRoundTrip(t *testing.T) {

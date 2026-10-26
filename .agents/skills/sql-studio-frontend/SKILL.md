@@ -1,9 +1,9 @@
 ---
 name: sql-studio-frontend
-description: 开发和维护 SQLoom 的 Vite React TypeScript Ant Design 前端；用于 UI、组件与 hooks、样式、数据库前端适配、图标资产清理及相关重构，不用于纯后端任务。
+description: 开发和维护 SQL Studio 的 Vite React TypeScript Ant Design 前端；用于 UI、组件与 hooks、样式、数据库前端适配、图标资产清理及相关重构，不用于纯后端任务。
 ---
 
-# SQLoom 前端开发
+# SQL Studio 前端开发
 
 适用于本仓库 `sql-web`。先读[前端开发规范](../../../docs/FRONTEND_STANDARDS.md)、[源码索引](../../../sql-web/src/README.md)，再读实际模块 README。用户最新要求优先；保留 Vite + React + TypeScript + Ant Design，包管理使用 pnpm。
 

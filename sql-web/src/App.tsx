@@ -7,7 +7,7 @@ import Workspace from '@/pages/workspace'
 
 /** 动态弹框使用 AntApp 上下文，确保亮暗主题一致。 */
 export default function App() {
-  const { preference, setPreference, mode } = useThemePreference()
+  const { preference, setPreference, mode, error, ready, saving } = useThemePreference()
   return (
     <ConfigProvider
       locale={zhCN}
@@ -20,7 +20,7 @@ export default function App() {
       }}
     >
       <AntApp>
-        <Workspace themeMode={mode} themePreference={preference} onThemeChange={setPreference} />
+        <Workspace themeReady={ready} themeSaving={saving} themeError={error} themeMode={mode} themePreference={preference} onThemeChange={setPreference} />
       </AntApp>
     </ConfigProvider>
   )

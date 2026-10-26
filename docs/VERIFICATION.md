@@ -26,7 +26,7 @@
 
 ## 格式与目录整理（2026-10-23）
 
-- 已实读本机 `ghspace-polardb-web` 的 `.prettierrc`、`.prettierignore`、package 脚本及 src 目录，采用其引号、分号、行宽和 import 分组规则。
+- 已核对项目格式与目录规则。
 - 前端调整为页面工作区、services、typings、utils 分层，Vite / TypeScript 同步配置 `@/`；API 参数和路径集中到 services，页面私有组件和类型保留在工作区。
 - 新增 `.editorconfig`、VS Code 保存格式化配置和推荐扩展、前后端格式脚本；后端继续使用 `gofmt`。
 - 已通过：根目录 `format.ps1`、`format.ps1 -Check`、前端 `pnpm lint` / `pnpm build`、后端 `go test ./...` / `go vet ./...`。
@@ -59,7 +59,7 @@
 
 ## 主题、查询范围与底部伸缩面板（2026-10-23）
 
-- 已实读 ghspace-polardb-web 的 constant/theme/index.ts、app.scss、SQL 窗口及 bottomDock，采用 Ant Design 主题算法、普通文字黑/白和底部拖动面板的方向；保留本项目已有分层和格式约定。
+- 已核对主题与布局实现；保留本项目已有分层和格式约定。
 - 提供亮色、暗黑、跟随系统三种偏好，初始系统主题为暗色；浏览器实际切换并验证亮色文字 rgb(0,0,0)、暗色文字 rgb(255,255,255)。连接窗口、SQL 编辑器及历史抽屉跟随暗色，刷新可保留手动选择。系统运行时配色变化的订阅已实现，本次未更改操作系统设置做联调。
 - 库表下拉移到运行 SQL 旁，QueryTab 独立保存连接、库、Schema、表和 limit；SQL、活动标签及范围存储到浏览器，旧草稿兼容补齐字段。浏览器实际验证新建继承 information_schema/CHARACTER_SETS，再将新查询改为 sys/version，分别返回 41 行和 1 行；切回恢复原库表、SQL 和结果。
 - 新查询继承同一张表时保留有效元数据；切换不同范围重载并取消旧请求。刷新验证活动标签、sys/version 和 SQL 正确恢复；加载过程中表标签显示可读名称，不暴露内部编码。验证创建的额外查询标签已关闭，原查询草稿保留。
@@ -82,7 +82,7 @@
 
 ## 深色标签、品牌图标与模块规范（2026-10-23）
 
-- 参照本机 ghspace 前端的目录、模块说明、主题与格式规则；拆出工作区组件、业务 hook、连接表单 hook 和公共主题 hook。组件、自定义 hook、constant/typings/services/utils 模块各有独立目录、入口和 README，工作区入口仅组合区域；补充范围切换、取消、草稿迁移及凭据保留的中文注释。
+- 按项目目录、主题与格式规则组织；拆出工作区组件、业务 hook、连接表单 hook 和公共主题 hook。组件、自定义 hook、constant/typings/services/utils 模块各有独立目录、入口和 README，工作区入口仅组合区域；补充范围切换、取消、草稿迁移及凭据保留的中文注释。
 - Tag 使用安装版本 Ant Design 支持的全局 `variant: solid`。新建连接改为文字主按钮；运行 SQL 排在数据库和表下拉之后，历史入口固定在侧栏底部。数据库标识使用 MySQL、MariaDB、PostgreSQL 和 PolarDB 品牌原图，来源见 assets/databases/README.md，不再绘制通用图标冒充产品标识。
 - 亮色可见普通图标逐项检查无灰色；普通文字亮色黑、暗色白，语义图标与状态保留色彩，字体保持系统/Ant Design 默认。截图发现 Switch 将白色文字 token 复用为轨道导致标签不可见，已独立配置轨道；浏览器复测未选中背景 rgb(0,0,0)、标签 rgb(255,255,255)。
 - 真实浏览器验证 MySQL 8.4.10 连接测试（编辑密码留空复用原凭据）、CHARACTER_SETS 查询 41 行和 4 字段结构、新查询继承库表、切回原查询恢复结果；未保存测试连接或修改已有凭据。最后刷新后原查询范围和 SQL 正确恢复，再执行仍返回 41 行。
@@ -132,7 +132,7 @@
 
 ## 六项标注样式修正（2026-10-23）
 
-- 实读 ghspace 的 app.scss、SQL 窗口 Tabs 和 executeSqlResultNode，参考其 tabBarStyle marginBottom=0、组件内布局与容器滚动边界，不迁入 Umi 或业务模块。
+- 核对页签布局与容器滚动边界。
 - 连接窗口左右统一 surface，以原有竖线分隔。亮色两侧均 rgb(255,255,255)，暗色均 rgb(20,20,20)。本地加密 Tag 放在表单标题区默认端口 Tag 旁，数据库类型切换后仍可见，左栏不再保留底部标签。补齐用户名、初始库与端口 placeholder，仍只预填端口。
 - 无任何结果快照时 QueryResults 返回 null。浏览器验证初次加载和关闭最后一个结果后面板数均为 0，编辑器扩展至剩余 804px；执行后零行/错误仍可展示反馈，不误删实际结果。
 - 实际 hover 检查发现原生 Tree 的 nodeHoverColor 规则优先级高于原局部选择器；将修正限定到选中树行层级。亮色数据库、表节点和暗色表节点实际 matches(:hover)=true 时文字均 rgb(255,255,255)，不再变黑。
