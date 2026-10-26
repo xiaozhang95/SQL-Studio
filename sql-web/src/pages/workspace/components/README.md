@@ -10,6 +10,15 @@
 - [查询编辑与执行工具栏](queryEditor/README.md)
 - [主区域页面标签](workspaceTabs/README.md)
 - [结果、字段与 DDL](queryResults/README.md)
-- [结果与状态选择器](resultSelect/README.md)
+- [结果与状态标签](resultTabs/README.md)
 - [执行历史抽屉](queryHistory/README.md)
 - [底部可伸缩面板](resultsDock/README.md)
+
+- [逐条执行消息](queryMessages/README.md)
+- [批次执行摘要](querySummary/README.md)
+- [只读 SQL 高亮与复制](sqlPreview/README.md)
+
+- [库表管理弹窗](objectManagementModal/README.md)：可视化库表编辑、名称确认与 SQL 预览。
+
+- [对象管理共享表单](objectManagementForm/README.md)：弹窗与页面复用的库表字段展示。
+- [表设计标签页](tableDesigner/README.md)：新建表/设计表固定在右侧主工作区，保存与预览工具栏。

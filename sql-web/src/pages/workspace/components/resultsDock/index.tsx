@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 
+import { resultPanelLayout } from '../../constant/layout'
+
 /** 面板只管理尺寸与交互，执行数据通过 children 注入。 */
 type Props = { children: ReactNode; resizable: boolean; height: number; onHeightChange: (height: number) => void }
-const minimumHeight = 180
-const defaultHeight = 260
+const { minimumHeight, defaultHeight, editorReservedHeight, keyboardStep } = resultPanelLayout
 
 export default function ResultsDock({ children, resizable, height, onHeightChange }: Props) {
   const panel = useRef<HTMLElement | null>(null)
   const drag = useRef<{ y: number; height: number } | null>(null)
-  const [maximumHeight, setMaximumHeight] = useState(defaultHeight)
+  const [maximumHeight, setMaximumHeight] = useState<number>(defaultHeight)
   const [resizing, setResizing] = useState(false)
-  const visibleHeight = Math.min(height, maximumHeight)
+  const visibleHeight = Math.max(minimumHeight, Math.min(height, maximumHeight))
 
   useEffect(() => {
     if (!resizable) return
@@ -19,7 +20,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
     if (!parent) return
     const observer = new ResizeObserver(() => {
       // 给编辑器及其工具栏保留空间，窗口缩小时同步收紧拖动边界。
-      setMaximumHeight(Math.max(minimumHeight, parent.clientHeight - 280))
+      setMaximumHeight(Math.max(minimumHeight, parent.clientHeight - editorReservedHeight))
     })
     observer.observe(parent)
     return () => observer.disconnect()
@@ -68,7 +69,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
           onKeyDown={(event) => {
             if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
             event.preventDefault()
-            resize(event.key === 'Home' ? minimumHeight : event.key === 'End' ? maximumHeight : visibleHeight + (event.key === 'ArrowUp' ? 24 : -24))
+            resize(event.key === 'Home' ? minimumHeight : event.key === 'End' ? maximumHeight : visibleHeight + (event.key === 'ArrowUp' ? keyboardStep : -keyboardStep))
           }}
         >
           <span />

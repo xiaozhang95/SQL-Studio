@@ -14,7 +14,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 完整草稿或选区由目标数据库适配器 splitStatements 完整扫描，再顺序调用现有只读单语句接口；表数据语句同样通过适配器 tableDataSQL 生成，工作区不维护具体引号规则。整批固定页 ID、连接/库、运行锁与 AbortController；每条独立保存结果和历史。失败或取消停止后续发送，保留已完成结果并提示未执行数量；请求不传 limit/allowWrite，不声称此前执行被回滚。
 
-RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果 Select 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
+RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 
 ## 本地恢复
 
@@ -29,3 +29,11 @@ sidebarWidth/setSidebarWidth 管理左侧对象栏偏好宽度，纳入同一加
 useQueryHistory 加密保存各连接最多 50 条记录。入口仅位于 SQL 页，打开时重置搜索，QueryHistory 以连接 ID 重挂载。loadHistory 清理记录里旧的来源标记后，追加到当前编辑器末尾并标注一行 -- 历史记录，不新增页、不切库、不执行；CodeMirror 事务保留撤销。来源标记不进入历史 SQL，重复执行仍保留各次执行信息。
 
 右键打开时捕获选区快照，runSelectedSQL 不回退到整页；工具栏和 Ctrl+Enter 优先执行选区，无选区则完整草稿。导入本地 SQL 新建查询而不执行，exportCurrentSQL 原样导出完整草稿。onEditorReady/onEditorUpdate/rememberEditor 负责恢复并保存编辑位置。
+
+executeSQL 在单语句执行开始记录批次 startedAt，按完成语句更新 durationMs，最后一条或失败记录 endedAt；失败语句也保留请求耗时供消息/摘要展示。不新增后端请求，不改变失败/取消停止及结果归属边界。
+
+objectManagement 编排库表表单和写入；objectBusy 与普通查询共用界面锁，但不把 allowWrite 传给普通查询。对象操作后刷新发起连接元数据，创建库/表展开目标库，删库/表只清理关联查询范围，重命名更新查询页表范围，保留 SQL 草稿及原输出快照，不自动执行结果页查询。表刷新重新加载所属连接/库元数据，不创建新查询或执行 SELECT。
+
+对象表单打开期间也占用界面运行锁，Ctrl+Enter 不会执行背景 SQL；表单取消后恢复原查询范围与结果。
+
+新建表、设计表创建 table-create/table-design 主标签，不再打开对象弹窗。同一连接/库/表的设计入口复用已有设计页，新建草稿独立编号。designerBusy/Dirty 按页面 ID 保存状态；只在加载/保存时锁定操作，停留在表单本身不锁定其他页面。关闭当前、其他、右侧均检查即将移除的未保存设计草稿。保存后 tableDesignerCommitted 将新建页转为该表设计页并保持当前标签选择；页面切换和恢复不自动执行 DDL。

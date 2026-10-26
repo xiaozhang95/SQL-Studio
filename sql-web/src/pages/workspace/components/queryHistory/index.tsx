@@ -1,17 +1,20 @@
 import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, SearchOutlined } from '@ant-design/icons'
-import { Alert, App as AntApp, Button, Drawer, Empty, Input, Table, Tag, Tooltip, Typography } from 'antd'
+import { Alert, App as AntApp, Button, Drawer, Empty, Input, Table, Tag, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import { appearance, ComponentSize } from '@/constant/appearance'
+import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
 import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
+import SQLPreview from '../sqlPreview'
 
 type Props = {
+  themeMode: ThemeMode
   model: Pick<
     WorkspaceModel,
     'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'loadHistory'
@@ -19,7 +22,7 @@ type Props = {
 }
 
 /** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
-export default function QueryHistory({ model }: Props) {
+export default function QueryHistory({ model, themeMode }: Props) {
   const { history, clearHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, connectionId, connection, loadHistory } = model
   // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
   const connectionHistory = history
@@ -51,7 +54,12 @@ export default function QueryHistory({ model }: Props) {
     },
     { title: '连接', dataIndex: 'connectionName', width: 140, ellipsis: true },
     { title: '数据库', dataIndex: 'database', width: 140, ellipsis: true, render: (database: string) => database || '未选择数据库' },
-    { title: 'SQL', dataIndex: 'sql', width: 280, ellipsis: true, render: (sql: string) => <span title={sql}>{sql.replace(/\s+/g, ' ')}</span> },
+    {
+      title: 'SQL',
+      dataIndex: 'sql',
+      width: 280,
+      render: (sql: string, item) => <SQLPreview compact singleLine sql={sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} maxHeight="32px" />
+    },
     { title: '耗时', dataIndex: 'durationMs', width: 110, sorter: (a, b) => a.durationMs - b.durationMs, render: (duration: number) => `${duration} ms` },
     {
       title: '操作',
@@ -128,8 +136,7 @@ export default function QueryHistory({ model }: Props) {
             columnWidth: 72,
             expandedRowRender: (item) => (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Typography.Text copyable={{ text: item.sql }}>SQL 语句</Typography.Text>
-                <pre className="history-sql">{item.sql}</pre>
+                <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} maxHeight="240px" />
                 {item.error && <Alert type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.error}</div>} />}
               </div>
             )

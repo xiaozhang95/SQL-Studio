@@ -1,13 +1,16 @@
 import {
+  ClearOutlined,
   CloseOutlined,
   CodeOutlined,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
+  ExportOutlined,
   EyeOutlined,
   FileTextOutlined,
   FolderOutlined,
   LinkOutlined,
+  PlusOutlined,
   ProfileOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -57,14 +60,25 @@ export default function DatabaseExplorer({ model }: Props) {
                 key: nodeKey('table', id, db, table.name),
                 title: (
                   <Dropdown
+                    onOpenChange={(open) => {
+                      if (open) updateExplorer({ selected: [nodeKey('table', id, db, table.name)] })
+                    }}
                     trigger={['contextMenu']}
                     disabled={running}
                     menu={{
                       items: [
                         { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-                        { key: 'data', label: '查询数据', icon: <TableOutlined /> },
+                        { key: 'data', label: '打开表', icon: <TableOutlined /> },
+                        { key: 'design', label: '设计表', icon: <EditOutlined />, disabled: table.type.includes('VIEW') },
+                        { key: 'create', label: '新建表', icon: <PlusOutlined /> },
                         { key: 'structure', label: '查询结构', icon: <ProfileOutlined /> },
-                        { key: 'ddl', label: '查看 DDL', icon: <FileTextOutlined /> }
+                        { key: 'ddl', label: '查看 DDL', icon: <FileTextOutlined /> },
+                        { type: 'divider' },
+                        { key: 'delete', label: table.type.includes('VIEW') ? '删除视图' : '删除表', icon: <DeleteOutlined />, danger: true },
+                        { key: 'truncate', label: '清空表', icon: <ClearOutlined />, danger: true, disabled: table.type.includes('VIEW') },
+                        { key: 'rename', label: '重命名', icon: <EditOutlined /> },
+                        { key: 'export', label: '转储 SQL 文件', icon: <ExportOutlined />, children: [{ key: 'dump', label: '仅结构', icon: <FileTextOutlined /> }] },
+                        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
                       ],
                       onClick: ({ key, domEvent }) => {
                         domEvent.stopPropagation()
@@ -82,11 +96,19 @@ export default function DatabaseExplorer({ model }: Props) {
               key: nodeKey('database', id, db),
               title: (
                 <Dropdown
+                  onOpenChange={(open) => {
+                    if (open) updateExplorer({ selected: [nodeKey('database', id, db)] })
+                  }}
                   trigger={['contextMenu']}
                   disabled={running}
                   menu={{
                     items: [
                       { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+                      { key: 'edit', label: '编辑数据库', icon: <EditOutlined /> },
+                      { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },
+                      { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
+                      { type: 'divider' },
+                      { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
                       { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
                       { key: 'refresh', label: '刷新数据库结构', icon: <ReloadOutlined /> }
                     ],
@@ -148,6 +170,7 @@ export default function DatabaseExplorer({ model }: Props) {
               items: [
                 connected || state?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
                 { key: 'refresh', label: '刷新连接', icon: <ReloadOutlined />, disabled: !connected },
+                { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
                 { type: 'divider' },
                 { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
                 { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true }

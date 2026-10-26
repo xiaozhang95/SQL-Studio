@@ -5,9 +5,11 @@ import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
 import ConnectionModal from './components/connectionModal'
 import ConnectionSidebar from './components/connectionSidebar'
+import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
+import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
 import { useWorkspace } from './hooks/useWorkspace'
 
@@ -63,10 +65,26 @@ export default function Workspace({ themeMode, themePreference, onThemeChange }:
           <main className="main-area">
             <div className="query-workspace">
               {model.tabs.length > 0 ? (
-                <WorkspaceTabs model={model}>
+                <WorkspaceTabs
+                  model={model}
+                  renderDesigner={(page) => (
+                    <TableDesigner
+                      key={page.id}
+                      page={page}
+                      connections={model.connections}
+                      themeMode={themeMode}
+                      available={model.objects.snapshots[page.connectionId]?.status === 'connected'}
+                      blocked={model.isTableDesignerBlocked(page)}
+                      onBusyChange={model.setTableDesignerBusy}
+                      onDirtyChange={model.setTableDesignerDirty}
+                      onCommitted={model.tableDesignerCommitted}
+                      onChanged={model.onObjectChanged}
+                    />
+                  )}
+                >
                   <div className="workspace-page">
                     {model.tab.kind === 'query' && <QueryEditor model={model} themeMode={themeMode} />}
-                    <QueryResults model={model} />
+                    <QueryResults model={model} themeMode={themeMode} />
                   </div>
                 </WorkspaceTabs>
               ) : (
@@ -78,8 +96,9 @@ export default function Workspace({ themeMode, themePreference, onThemeChange }:
           </main>
         </div>
       )}
+      <ObjectManagementModal manager={model.objectManagement} themeMode={themeMode} />
       <ConnectionModal open={model.connectionModal} connection={model.editing} connections={model.connections} onClose={() => model.setConnectionModal(false)} onSaved={model.onConnectionSaved} />
-      <QueryHistory key={model.connectionId} model={model} />
+      <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
     </div>
   )
 }

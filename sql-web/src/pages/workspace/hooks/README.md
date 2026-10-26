@@ -13,3 +13,7 @@
 - [结果表格尺寸](useTableViewportLayout/README.md)：分配表头/表体高度，保证双向滚动条不被分页遮挡。
 
 - [导入 SQL](useSQLImport/README.md)：本地读取文件并创建独立查询，不自动执行。
+
+- [useObjectManagement](useObjectManagement/README.md)：库表可视化表单、显式写入、取消和刷新。
+
+- [useTableDesigner](useTableDesigner/README.md)：独立表设计页草稿、提交、重载及状态回报。

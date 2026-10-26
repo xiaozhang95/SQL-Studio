@@ -2,9 +2,9 @@ import type { QueryResult } from '../database'
 
 /** 每个查询窗口独立保存范围，避免切换标签时串库。 */
 export type QueryScope = { connectionId: string; database: string; table: string }
-export type WorkspacePageKind = 'query' | 'data' | 'structure' | 'ddl'
+export type WorkspacePageKind = 'query' | 'data' | 'structure' | 'ddl' | 'table-create' | 'table-design'
 export type WorkspaceTab = QueryScope & { id: string; title: string; kind: WorkspacePageKind; sql: string }
-export type StatementRun = { sql: string; result?: QueryResult; error?: string }
+export type StatementRun = { sql: string; result?: QueryResult; error?: string; durationMs?: number }
 export type RunState = {
   id?: string
   title?: string
@@ -14,6 +14,9 @@ export type RunState = {
   source: string
   statements?: StatementRun[]
   statementCount?: number
+  startedAt?: string
+  endedAt?: string
+  durationMs?: number
   interrupted?: boolean
 }
 export type ResultView = { search: string; page: number; resultIndex: number }

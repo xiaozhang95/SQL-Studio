@@ -15,7 +15,7 @@ function validTab(tab: WorkspaceTab) {
     typeof tab.connectionId === 'string' &&
     typeof tab.database === 'string' &&
     typeof tab.table === 'string' &&
-    ['query', 'data', 'structure', 'ddl'].includes(tab.kind)
+    ['query', 'data', 'structure', 'ddl', 'table-create', 'table-design'].includes(tab.kind)
   )
 }
 
