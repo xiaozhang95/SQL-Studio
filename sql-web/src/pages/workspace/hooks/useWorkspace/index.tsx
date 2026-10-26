@@ -7,7 +7,7 @@ import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
 import { executeQuery, getConnections, deleteConnection as removeConnection } from '@/services/database'
-import type { Column, Connection } from '@/typings/database'
+import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
 
@@ -287,7 +287,11 @@ export const useWorkspace = () => {
     } else updateSQL(current + insert)
     setHistoryOpen(false)
   }
-  function selectTab(id: string) {
+  function selectTab(id: string, discard = false) {
+    if (id !== activeTab && tab.kind === 'data' && designerDirty[activeTab] && !discard) {
+      modal.confirm({ title: '放弃当前表的未保存修改？', okText: '放弃并切换', cancelText: '继续编辑', onOk: () => selectTab(id, true) })
+      return
+    }
     const next = tabs.find((item) => item.id === id)
     activeTabRef.current = id
     editor.current = null
@@ -318,6 +322,22 @@ export const useWorkspace = () => {
   }
   function publishResult(id: string, value: RunState) {
     setRuns((previous) => ({ ...previous, [id]: { ...value, id: crypto.randomUUID() } }))
+  }
+  function replaceTableResult(id: string, result: QueryResult) {
+    setRuns((previous) => {
+      const run = previous[id]
+      if (!run || run.kind !== 'data') return previous
+      return {
+        ...previous,
+        [id]: {
+          ...run,
+          id: crypto.randomUUID(),
+          result,
+          error: undefined,
+          statements: run.statements?.map((statement, index) => (index === 0 ? { ...statement, result, error: undefined } : statement))
+        }
+      }
+    })
   }
   function startRun(id: string, value: RunState) {
     const controller = new AbortController()
@@ -399,7 +419,7 @@ export const useWorkspace = () => {
       setConnectionModal(true)
     } else if (action === 'delete') deleteConnection(id)
   }
-  async function databaseAction(action: string, id: string, db: string) {
+  async function databaseAction(action: string, id: string, db: string, reuseTabId?: string) {
     if (running || request.current || objects.snapshots[id]?.status !== 'connected') return
     const scope = { connectionId: id, database: db, table: '' }
     const actions: Partial<Record<string, ObjectAction>> = {
@@ -431,7 +451,7 @@ export const useWorkspace = () => {
     }
     if (action !== 'tables') return
     const title = `${db} · 结构`
-    const tabId = createPage('structure', scope, title)
+    const tabId = reuseTabId || createPage('structure', scope, title)
     const source = `${connections.find((item) => item.id === id)?.name || ''} / ${db}`
     const controller = startRun(tabId, { kind: 'structure', title, source })
     try {
@@ -458,7 +478,7 @@ export const useWorkspace = () => {
       finishRun(controller)
     }
   }
-  async function tableAction(action: string, targetConnectionId: string, db: string, table: string) {
+  async function tableAction(action: string, targetConnectionId: string, db: string, table: string, reuseTabId?: string) {
     const target = connections.find((item) => item.id === targetConnectionId)
     if (running || request.current || !target || objects.snapshots[targetConnectionId]?.status !== 'connected') return
     const scope = {
@@ -483,8 +503,8 @@ export const useWorkspace = () => {
       void objectManagement.open(objectAction, scope)
       return
     }
-    if (action === 'dump') {
-      void objectManagement.dump(scope)
+    if (action === 'dump' || action === 'dump-data') {
+      void objectManagement.dump(scope, action === 'dump-data')
       return
     }
     if (action === 'refresh') {
@@ -502,7 +522,7 @@ export const useWorkspace = () => {
     }
     if (action !== 'data' && action !== 'structure' && action !== 'ddl') return
     const title = `${table} · ${action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构'}`
-    const tabId = createPage(action, scope, title)
+    const tabId = reuseTabId || createPage(action, scope, title)
     if (action === 'data') {
       void executeSQL(statement, scope, tabId, 'data')
       return
@@ -552,7 +572,7 @@ export const useWorkspace = () => {
     const title = kind === 'data' ? `${scope.table} · 数据` : 'SQL 结果'
     const startedAt = new Date().toISOString()
     const batchStart = performance.now()
-    const controller = startRun(tabId, { source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
+    const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
     const completed: StatementRun[] = []
     try {
       // 驱动继续保持单语句；整批固定目标范围、取消信号和运行锁，逐条保留结果与历史。
@@ -588,6 +608,7 @@ export const useWorkspace = () => {
         completed.push(entry)
         appendHistory(item)
         publishResult(tabId, {
+          scope: { ...scope },
           kind,
           result: entry.result,
           error: entry.error,
@@ -605,6 +626,21 @@ export const useWorkspace = () => {
     } finally {
       finishRun(controller)
     }
+  }
+  const refreshScope = tab.kind === 'query' ? batch?.scope : tab
+  const canRefreshResult = Boolean(run && refreshScope && objects.snapshots[refreshScope.connectionId]?.status === 'connected' && (tab.kind !== 'query' || statementRun?.sql))
+  async function refreshResult() {
+    if (running || !canRefreshResult || !refreshScope) return
+    if (tab.kind === 'query') {
+      if (statementRun?.sql) void executeSQL(statementRun.sql, refreshScope, tab.id)
+      return
+    }
+    if (tab.kind === 'data') {
+      void executeSQL(getDatabaseAdapter(connection?.type).tableDataSQL(tab.database, tab.table), tab, tab.id, 'data')
+      return
+    }
+    if (tab.kind === 'ddl' || (tab.kind === 'structure' && tab.table)) void tableAction(tab.kind, tab.connectionId, tab.database, tab.table, tab.id)
+    else if (tab.kind === 'structure') void databaseAction('tables', tab.connectionId, tab.database, tab.id)
   }
   function executeCurrentSQL(statement: string) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id) return
@@ -659,12 +695,12 @@ export const useWorkspace = () => {
       setEditorLayouts(keep)
       setDesignerBusy(keep)
       setDesignerDirty(keep)
-      if (!retained.has(activeTab)) selectTab(remaining[Math.min(index, remaining.length - 1)]?.id || '')
+      if (!retained.has(activeTab)) selectTab(remaining[Math.min(index, remaining.length - 1)]?.id || '', true)
     }
     const retained = new Set(remaining.map((page) => page.id))
     const unsaved = tabs.filter((page) => !retained.has(page.id) && designerDirty[page.id])
     if (unsaved.length)
-      modal.confirm({ title: '关闭未保存的表设计页？', content: unsaved.map((page) => page.title).join('、') + ' 的修改将被放弃。', okText: '放弃并关闭', cancelText: '继续编辑', onOk: complete })
+      modal.confirm({ title: '关闭有未保存修改的页面？', content: unsaved.map((page) => page.title).join('、') + ' 的修改将被放弃。', okText: '放弃并关闭', cancelText: '继续编辑', onOk: complete })
     else complete()
   }
 
@@ -731,6 +767,9 @@ export const useWorkspace = () => {
     closeTabs,
     designerDirty,
     setTableDesignerBusy,
+    replaceTableResult,
+    refreshResult,
+    canRefreshResult,
     setTableDesignerDirty,
     tableDesignerCommitted,
     isTableDesignerBlocked,

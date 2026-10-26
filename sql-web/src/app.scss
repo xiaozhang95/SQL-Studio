@@ -206,7 +206,8 @@ body {
   user-select: text;
 }
 .object-tree .ant-tree-node-content-wrapper {
-  padding-inline: 0;
+  // 给选中背景内的图标与文字保留左右留白，所有状态保持对齐。
+  padding-inline: 8px;
   display: flex;
   align-items: center;
   min-height: 28px;
@@ -922,4 +923,28 @@ body {
 }
 .object-tree .ant-tree-title > .ant-dropdown-trigger {
   display: block;
+}
+
+// 右键命中区域包含节点图标、文字及行内空白，左键保留树箭头的原生展开交互。
+.object-context-target {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 24px;
+  overflow: hidden;
+  > .anticon,
+  > .connection-tree-icon {
+    flex: none;
+  }
+  > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// 叶节点不展示折叠箭头，不为不存在的按钮保留整格空白。
+.object-tree .ant-tree .ant-tree-switcher-noop {
+  width: 8px;
+  flex-basis: 8px;
 }

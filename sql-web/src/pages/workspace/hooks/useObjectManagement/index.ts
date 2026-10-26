@@ -230,7 +230,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     }
     if (reopen && !controller.signal.aborted) await open(ObjectAction.EditTable, reopen)
   }
-  async function dump(target: ObjectTarget) {
+  async function dump(target: ObjectTarget, includeData = false) {
     if (blocked || request.current) return
     const connection = connections.find((value) => value.id === target.connectionId)
     if (!connection) return
@@ -239,9 +239,24 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     onBusyChange(true)
     try {
       const result = await getDDL(connection.id, target.database, target.table, controller.signal)
-      if (!controller.signal.aborted) exportSQL(getDatabaseAdapter(connection.type).objects.dump(target.database, target.table, result.ddl), target.table + '-structure')
+      const adapter = getDatabaseAdapter(connection.type).objects
+      let output = adapter.dump(target.database, target.table, result.ddl)
+      if (includeData) {
+        if (target.view) throw new Error('视图仅支持结构转储')
+        const [columns, data] = await Promise.all([
+          getColumns(connection.id, target.database, target.table, controller.signal),
+          executeQuery(connection.id, { database: target.database, sql: adapter.dumpQuerySQL(target.database, target.table), limit: 5000 }, controller.signal)
+        ])
+        const inserts = adapter.dumpData(target.database, target.table, data, columns)
+        output =
+          output.replace('仅包含对象结构，不包含数据', '包含对象结构和数据') +
+          "\nSET @sqloom_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n" +
+          inserts +
+          'SET SESSION sql_mode = @sqloom_old_sql_mode;\n'
+      }
+      if (!controller.signal.aborted) exportSQL(output, target.table + (includeData ? '-structure-data' : '-structure'))
     } catch (reason) {
-      if (!controller.signal.aborted) message.error(reason instanceof Error ? reason.message : '结构转储失败')
+      if (!controller.signal.aborted) message.error(reason instanceof Error ? reason.message : 'SQL 转储失败')
     } finally {
       release(controller)
     }

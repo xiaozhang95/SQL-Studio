@@ -1,4 +1,17 @@
-import { ClockCircleOutlined, DownloadOutlined, EyeOutlined, LoadingOutlined, SearchOutlined, StopOutlined, TableOutlined } from '@ant-design/icons'
+import {
+  ClockCircleOutlined,
+  CloseOutlined,
+  DownloadOutlined,
+  EyeOutlined,
+  LoadingOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  SearchOutlined,
+  StopOutlined,
+  TableOutlined,
+  UndoOutlined
+} from '@ant-design/icons'
 import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
 import { useEffect, useState } from 'react'
 
@@ -7,9 +20,12 @@ import type { ThemeMode } from '@/typings/theme'
 import { exportCSV } from '@/utils/csv'
 
 import { tablePaginationDefaults } from '../../constant/tablePagination'
+import { useDataEditing } from '../../hooks/useDataEditing'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { statementOutputs } from '../../utils/queryOutput'
+import DataCellEditor from '../dataCellEditor'
+import NewRowCell from '../newRowCell'
 import QueryMessages from '../queryMessages'
 import QuerySummary from '../querySummary'
 import ResultsDock from '../resultsDock'
@@ -20,6 +36,13 @@ type Props = {
   themeMode: ThemeMode
   model: Pick<
     WorkspaceModel,
+    | 'setTableDesignerDirty'
+    | 'refreshResult'
+    | 'canRefreshResult'
+    | 'running'
+    | 'setTableDesignerBusy'
+    | 'replaceTableResult'
+    | 'objects'
     | 'connections'
     | 'result'
     | 'run'
@@ -40,6 +63,16 @@ type Props = {
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，分页独立于滚动内容。 */
 export default function QueryResults({ model, themeMode }: Props) {
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
+  const editingBlocked = model.running || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
+  const editing = useDataEditing({
+    tab,
+    connection: model.connections.find((item) => item.id === tab.connectionId),
+    result,
+    blocked: editingBlocked,
+    onBusyChange: model.setTableDesignerBusy,
+    onDirtyChange: model.setTableDesignerDirty,
+    onResult: model.replaceTableResult
+  })
   const [view, setView] = useState<'messages' | 'summary' | null>(null)
   const hasResults = run ? statementOutputs(run).length > 0 : false
   const showingResult = view === null && hasResults
@@ -51,7 +84,7 @@ export default function QueryResults({ model, themeMode }: Props) {
     if (body) body.scrollTop = 0
   }, [run?.id, tablePage, resultSearch, view, viewport])
   const rows = (result?.rows || [])
-    .map((cells, index) => ({ key: index, cells }))
+    .map((cells, index) => ({ key: index, cells: cells.map((value, column) => editing.display(index, column, value)) }))
     .filter(
       ({ cells }) =>
         !resultSearch ||
@@ -61,8 +94,16 @@ export default function QueryResults({ model, themeMode }: Props) {
             .includes(resultSearch.toLowerCase())
         )
     )
+  rows.unshift(...editing.newRows.map((row) => ({ key: row.key, cells: row.cells })))
   const columns = [
-    { title: '#', key: 'index', width: 64, fixed: 'left' as const, render: (_: unknown, row: { key: number }) => row.key + 1 },
+    {
+      title: '#',
+      key: 'index',
+      width: 64,
+      fixed: 'left' as const,
+      render: (_: unknown, row: { key: number }) =>
+        row.key < 0 ? <Button type="text" size="small" icon={<CloseOutlined />} aria-label="移除新增行" disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1
+    },
     ...(result?.columns || []).map((column, index) => ({
       title: (
         <div className="column-title">
@@ -71,10 +112,26 @@ export default function QueryResults({ model, themeMode }: Props) {
         </div>
       ),
       key: String(index),
+      onCell: (row: { key: number }) => ({
+        style: editing.isDirty(row.key, index) ? { background: 'var(--ant-color-warning-bg)' } : undefined,
+        onDoubleClick: () => {
+          if (tab.kind === 'data' && row.key >= 0) void editing.begin(row.key, index)
+        }
+      }),
       width: run?.kind === 'ddl' ? undefined : 200,
-      render: (_: unknown, row: { cells: unknown[] }) =>
-        run?.kind === 'ddl' && typeof row.cells[index] === 'string' ? (
-          <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} maxHeight="none" />
+      render: (_: unknown, row: { key: number; cells: unknown[] }) =>
+        row.key < 0 ? (
+          <NewRowCell
+            value={row.cells[index]}
+            column={editing.newColumn(row.key, index)}
+            editable={editing.canInsert(editing.newColumn(row.key, index))}
+            disabled={editingBlocked}
+            onChange={(value) => editing.changeNew(row.key, index, value)}
+          />
+        ) : editing.cell?.row === row.key && editing.cell.column === index ? (
+          <DataCellEditor editor={editing} disabled={editingBlocked} />
+        ) : run?.kind === 'ddl' && typeof row.cells[index] === 'string' ? (
+          <SQLPreview compact sql={row.cells[index] === undefined ? '(默认)' : String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} maxHeight="none" />
         ) : row.cells[index] === null ? (
           <span className="cell-null">(NULL)</span>
         ) : (
@@ -82,8 +139,8 @@ export default function QueryResults({ model, themeMode }: Props) {
             {run?.kind === 'structure' &&
               column.name === '表名' &&
               (String(row.cells[result?.columns.findIndex((item) => item.name === '类型') ?? -1]).includes('VIEW') ? <EyeOutlined /> : <TableOutlined />)}
-            <span className="cell-value" title={String(row.cells[index])}>
-              {String(row.cells[index])}
+            <span className="cell-value" title={row.cells[index] === undefined ? '使用默认值' : String(row.cells[index])}>
+              {row.cells[index] === undefined ? '(默认)' : String(row.cells[index])}
             </span>
           </span>
         )
@@ -108,13 +165,38 @@ export default function QueryResults({ model, themeMode }: Props) {
       {(showingResult || (activeRunning && tab.kind !== 'query')) && (
         <div className="result-toolbar">
           <div className="result-meta">
-            {!activeRunning && !run.error && result && (
-              <span className="result-status">
-                <ClockCircleOutlined /> {result.durationMs} ms
-              </span>
+            {tab.kind === 'data' && (
+              <>
+                <Button
+                  icon={<PlusOutlined />}
+                  disabled={editingBlocked}
+                  onClick={() => {
+                    setResultSearch('')
+                    setTablePage(1)
+                    void editing.addRow()
+                  }}
+                >
+                  新增行
+                </Button>
+                <Button icon={<SaveOutlined />} type="primary" loading={editing.saving} disabled={editingBlocked || !editing.dirty} onClick={() => void editing.save()}>
+                  保存
+                </Button>
+                <Button icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel}>
+                  放弃修改
+                </Button>
+              </>
             )}
           </div>
           <div className="result-actions">
+            <Button
+              icon={<ReloadOutlined />}
+              loading={activeRunning}
+              disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
+              title={editing.dirty ? '请先保存或放弃修改' : '刷新当前结果'}
+              onClick={model.refreshResult}
+            >
+              刷新
+            </Button>
             {tab.kind !== 'query' && activeRunning && (
               <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
                 取消

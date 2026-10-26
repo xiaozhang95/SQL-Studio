@@ -2,6 +2,7 @@ import type { Column, QueryResult } from '@/typings/database'
 
 import type { CollationOption, DatabaseObjectAdapter, FieldDefinition, ObjectFormValues, ObjectTarget } from '../../typings/objectManagement'
 import { ObjectAction } from '../../typings/objectManagement/index.ts'
+import { dumpData } from '../dataDump/index.ts'
 import { identifier } from '../query/index.ts'
 
 const fieldTypes = ['BIGINT', 'INT', 'SMALLINT', 'TINYINT', 'DECIMAL(10,2)', 'DOUBLE', 'VARCHAR(255)', 'CHAR(36)', 'TEXT', 'LONGTEXT', 'DATE', 'DATETIME', 'TIMESTAMP', 'TIME', 'JSON', 'BLOB'] as const
@@ -176,6 +177,8 @@ export const mysqlObjects: DatabaseObjectAdapter = {
     if (action === ObjectAction.DropDatabase) return `DROP DATABASE ${name(target.database)};`
     return tableSQL(action, target, values, original, mode)
   },
+  dumpQuerySQL: (database, table) => `SELECT * FROM ${name(database)}.${name(table)};`,
+  dumpData,
   dump: (database, table, ddl) =>
     `-- ${database.replace(/[\r\n]/g, ' ')} / ${table.replace(/[\r\n]/g, ' ')}\n-- 仅包含对象结构，不包含数据\nUSE ${name(database)};\n${ddl.trim().replace(/;+$/, '')};\n`
 }

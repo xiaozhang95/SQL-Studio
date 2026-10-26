@@ -21,11 +21,7 @@ export default function SQLPreview({ sql, themeMode, databaseType, compact = fal
     }
   }
   const extensions = useMemo(() => [getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} }), ...(singleLine ? [] : [EditorView.lineWrapping])], [databaseType, singleLine])
-  const copyButton = (
-    <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制 SQL" title="复制 SQL" style={{ flex: 'none' }}>
-      {compact ? undefined : '复制 SQL'}
-    </Button>
-  )
+  const copyButton = <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制 SQL" title="复制 SQL" style={{ flex: 'none' }}></Button>
   const editor = (
     <CodeMirror
       value={singleLine ? sql.split(/\r?\n/, 1)[0] : sql}

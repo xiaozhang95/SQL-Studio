@@ -11,3 +11,5 @@ useObjectManagement 接收 connections、blocked（普通查询运行锁）、on
 dump 仅取该对象 DDL 并下载结构 SQL，不写数据库、不导出表数据。表单和加载状态不持久化，不自动恢复写入。与 useWorkspace 组合，显示由 objectManagementModal 承担。
 
 可选 initial 提供页面首次打开操作，等待连接可用后初始化；keepOpen=true 用于表设计页，提交成功不销毁表单，刷新后重新打开 EditTable；onDirtyChange 回报用户修改及成功重载后的清理。dirty 标识只在本页存活，reload 重读当前对象。页面模式保存前比对原始 DDL，防止长时间停留后静默覆盖已改变结构；MySQL 忽略仅自增计数的变化。StrictMode 重放及卸载清理先释放旧请求引用，迟到请求不能覆盖新页。
+
+dump(target, includeData=false) 支持结构和数据，数据只读获取，超出 5000 行或 8 MiB 拒绝下载，避免不完整文件；生成列跳过，视图仅结构。读取与 DDL 不是事务快照，导出期间应避免并发改结构或数据。

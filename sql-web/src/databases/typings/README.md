@@ -9,3 +9,7 @@ DatabaseProfile 约束只读类型、标签、说明、样式类、端口、图�
 所有方法均不发起数据库请求。参数和返回值见各数据库功能 README；前后端请求响应仍由 typings/database 维护。
 
 - [对象管理契约](objectManagement/README.md)：库表表单、目标范围与引擎能力。
+
+DatabaseAdapter.updateCellSQL 根据显式库表、字段元数据和原结果生成单行更新，拒绝不完整主键或不支持字段。
+
+DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。

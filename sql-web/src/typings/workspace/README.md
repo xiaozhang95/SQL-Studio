@@ -11,3 +11,5 @@ WorkspaceSnapshot.sidebarWidth 为可选对象栏宽度，用于兼容旧快照�
 StatementRun.durationMs 为可选语句请求耗时（失败时仍记录）；RunState.startedAt/endedAt 为可选 ISO 时间，durationMs 为前端批次运行耗时。成功语句显示后端 QueryResult.durationMs，失败显示语句请求耗时；旧快照没有字段时显示未记录。只记录实际执行，不为未执行语句创建输出，刷新中断不伪造结束时间。
 
 WorkspacePageKind 增加 table-create/table-design，复用页面的连接/库/表范围。表设计草稿不放在 sql 字段或运行结果中，由各设计页组件独立持有；快照只保存这些页面的描述和范围，恢复不执行写入。
+
+RunState.scope 可选记录实际执行范围，用于刷新。旧快照缺少该字段时 SQL 刷新禁用。

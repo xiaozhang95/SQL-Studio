@@ -6,6 +6,7 @@ export type WorkspacePageKind = 'query' | 'data' | 'structure' | 'ddl' | 'table-
 export type WorkspaceTab = QueryScope & { id: string; title: string; kind: WorkspacePageKind; sql: string }
 export type StatementRun = { sql: string; result?: QueryResult; error?: string; durationMs?: number }
 export type RunState = {
+  scope?: QueryScope
   id?: string
   title?: string
   kind?: WorkspacePageKind

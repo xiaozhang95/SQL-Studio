@@ -17,8 +17,9 @@ import {
   TableOutlined
 } from '@ant-design/icons'
 import { Dropdown, Empty, Input, Tree } from 'antd'
+import type { DropdownProps, MenuProps } from 'antd'
 import type { DataNode } from 'antd/es/tree'
-import { useEffect, useRef } from 'react'
+import { isValidElement, useEffect, useRef, useState } from 'react'
 
 import { connectionGroupName } from '@/constant/connectionGroup'
 
@@ -28,6 +29,10 @@ import EngineIcon from '../engineIcon'
 type Props = {
   model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'objects' | 'running' | 'explorer' | 'updateExplorer'>
 }
+// 节点保留声明式菜单；实际触发交给 Tree，包含图标及整行内容空白。
+function ObjectTreeTitle({ children }: Pick<DropdownProps, 'children' | 'menu'>) {
+  return <>{children}</>
+}
 const nodeKey = (...parts: string[]) => JSON.stringify(parts)
 
 /** 连接、数据库和表共用一棵树；所有菜单携带完整连接范围，避免误用当前查询的连接。 */
@@ -35,6 +40,7 @@ export default function DatabaseExplorer({ model }: Props) {
   const { connections, connectionAction, databaseAction, tableAction, objects, running } = model
   const { explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
+  const [contextMenu, setContextMenu] = useState<MenuProps>()
   const scroll = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (scroll.current) scroll.current.scrollTop = explorer.top
@@ -59,12 +65,7 @@ export default function DatabaseExplorer({ model }: Props) {
               .map((table) => ({
                 key: nodeKey('table', id, db, table.name),
                 title: (
-                  <Dropdown
-                    onOpenChange={(open) => {
-                      if (open) updateExplorer({ selected: [nodeKey('table', id, db, table.name)] })
-                    }}
-                    trigger={['contextMenu']}
-                    disabled={running}
+                  <ObjectTreeTitle
                     menu={{
                       items: [
                         { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
@@ -77,7 +78,15 @@ export default function DatabaseExplorer({ model }: Props) {
                         { key: 'delete', label: table.type.includes('VIEW') ? '删除视图' : '删除表', icon: <DeleteOutlined />, danger: true },
                         { key: 'truncate', label: '清空表', icon: <ClearOutlined />, danger: true, disabled: table.type.includes('VIEW') },
                         { key: 'rename', label: '重命名', icon: <EditOutlined /> },
-                        { key: 'export', label: '转储 SQL 文件', icon: <ExportOutlined />, children: [{ key: 'dump', label: '仅结构', icon: <FileTextOutlined /> }] },
+                        {
+                          key: 'export',
+                          label: '转储 SQL 文件',
+                          icon: <ExportOutlined />,
+                          children: [
+                            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
+                            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined />, disabled: table.type.includes('VIEW') }
+                          ]
+                        },
                         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
                       ],
                       onClick: ({ key, domEvent }) => {
@@ -86,21 +95,18 @@ export default function DatabaseExplorer({ model }: Props) {
                       }
                     }}
                   >
-                    <span title={table.comment || table.name}>{table.name}</span>
-                  </Dropdown>
+                    <span className="object-context-target" title={table.comment || table.name}>
+                      {table.type.includes('VIEW') ? <EyeOutlined /> : <TableOutlined />}
+                      <span>{table.name}</span>
+                    </span>
+                  </ObjectTreeTitle>
                 ),
-                icon: table.type.includes('VIEW') ? <EyeOutlined /> : <TableOutlined />,
                 isLeaf: true
               }))
             return {
               key: nodeKey('database', id, db),
               title: (
-                <Dropdown
-                  onOpenChange={(open) => {
-                    if (open) updateExplorer({ selected: [nodeKey('database', id, db)] })
-                  }}
-                  trigger={['contextMenu']}
-                  disabled={running}
+                <ObjectTreeTitle
                   menu={{
                     items: [
                       { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
@@ -110,7 +116,7 @@ export default function DatabaseExplorer({ model }: Props) {
                       { type: 'divider' },
                       { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
                       { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
-                      { key: 'refresh', label: '刷新数据库结构', icon: <ReloadOutlined /> }
+                      { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
                     ],
                     onClick: ({ key, domEvent }) => {
                       domEvent.stopPropagation()
@@ -118,10 +124,12 @@ export default function DatabaseExplorer({ model }: Props) {
                     }
                   }}
                 >
-                  <span title={db}>{db}</span>
-                </Dropdown>
+                  <span className="object-context-target" title={db}>
+                    <DatabaseOutlined />
+                    <span>{db}</span>
+                  </span>
+                </ObjectTreeTitle>
               ),
-              icon: <DatabaseOutlined />,
               isLeaf: false,
               children: state.tableErrors[db]
                 ? [
@@ -163,9 +171,7 @@ export default function DatabaseExplorer({ model }: Props) {
         key: nodeKey('connection', id),
         className: `connection-tree-node ${status}`,
         title: (
-          <Dropdown
-            trigger={['contextMenu']}
-            disabled={running}
+          <ObjectTreeTitle
             menu={{
               items: [
                 connected || state?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
@@ -181,15 +187,13 @@ export default function DatabaseExplorer({ model }: Props) {
               }
             }}
           >
-            <span className={`connection-tree-label ${status}`} title={`${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`}>
-              {connection.name}
+            <span className={`connection-tree-label object-context-target ${status}`} title={`${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`}>
+              <span className={`connection-tree-icon ${status}`}>
+                <EngineIcon type={connection.type} connected={connected} />
+              </span>
+              <span>{connection.name}</span>
             </span>
-          </Dropdown>
-        ),
-        icon: (
-          <span className={`connection-tree-icon ${status}`}>
-            <EngineIcon type={connection.type} connected={connected} />
-          </span>
+          </ObjectTreeTitle>
         ),
         isLeaf: false,
         children
@@ -204,7 +208,18 @@ export default function DatabaseExplorer({ model }: Props) {
     const name = connectionGroupName(connectionsById.get(id)?.group)
     let group = groups.get(name)
     if (!group) {
-      group = { key: nodeKey('group', name), title: <span title={name}>{name}</span>, icon: <FolderOutlined />, selectable: false, children: [] }
+      group = {
+        key: nodeKey('group', name),
+        title: (
+          <span className="object-context-target" title={name}>
+            <FolderOutlined />
+            <span>{name}</span>
+          </span>
+        ),
+        icon: <FolderOutlined />,
+        selectable: false,
+        children: []
+      }
       groups.set(name, group)
       nodes.push(group)
       loadedKeys.push(String(group.key))
@@ -234,32 +249,59 @@ export default function DatabaseExplorer({ model }: Props) {
         {!connections.length ? (
           <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
         ) : (
-          <Tree
-            aria-label="数据库连接树"
-            showIcon
-            blockNode
-            expandAction="doubleClick"
+          <Dropdown
+            trigger={['contextMenu']}
             disabled={running}
-            treeData={nodes}
-            expandedKeys={expandedKeys}
-            onExpand={(keys) => updateExplorer({ expanded: keys.map(String) })}
-            loadedKeys={loadedKeys}
-            selectedKeys={selectedKeys}
-            loadData={async (node) => {
-              const [type, id, db] = JSON.parse(String(node.key)) as string[]
-              if (type === 'connection') await model.openConnection(id).catch(() => {})
-              else if (type === 'database') await objects.loadTables(db, id).catch(() => {})
+            open={Boolean(contextMenu) && !running}
+            onOpenChange={(open) => {
+              if (!open) setContextMenu(undefined)
             }}
-            onDoubleClick={(_, node) => {
-              if (running) return
-              const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
-              if (type === 'database') void databaseAction('tables', id, db)
-              else if (type === 'table') void tableAction('data', id, db, table)
-            }}
-            onSelect={(keys) => {
-              if (keys.length) updateExplorer({ selected: keys.map(String) })
-            }}
-          />
+            menu={contextMenu}
+          >
+            <div onContextMenuCapture={() => setContextMenu(undefined)}>
+              <Tree
+                aria-label="数据库连接树"
+                showIcon={false}
+                blockNode
+                expandAction="doubleClick"
+                disabled={running}
+                treeData={nodes}
+                expandedKeys={expandedKeys}
+                onExpand={(keys) => updateExplorer({ expanded: keys.map(String) })}
+                loadedKeys={loadedKeys}
+                selectedKeys={selectedKeys}
+                loadData={async (node) => {
+                  const [type, id, db] = JSON.parse(String(node.key)) as string[]
+                  if (type === 'connection') await model.openConnection(id).catch(() => {})
+                  else if (type === 'database') await objects.loadTables(db, id).catch(() => {})
+                }}
+                onDoubleClick={(_, node) => {
+                  if (running) return
+                  const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
+                  if (type === 'database') void databaseAction('tables', id, db)
+                  else if (type === 'table') void tableAction('data', id, db, table)
+                }}
+                onRightClick={({ node }) => {
+                  if (running || !isValidElement<DropdownProps>(node.title) || node.title.type !== ObjectTreeTitle || !node.title.props.menu) {
+                    setContextMenu(undefined)
+                    return
+                  }
+                  updateExplorer({ selected: [String(node.key)] })
+                  const menu = node.title.props.menu
+                  setContextMenu({
+                    ...menu,
+                    onClick: (info) => {
+                      setContextMenu(undefined)
+                      menu.onClick?.(info)
+                    }
+                  })
+                }}
+                onSelect={(keys) => {
+                  if (keys.length) updateExplorer({ selected: keys.map(String) })
+                }}
+              />
+            </div>
+          </Dropdown>
         )}
       </div>
     </div>

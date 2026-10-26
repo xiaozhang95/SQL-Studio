@@ -37,3 +37,7 @@ objectManagement 编排库表表单和写入；objectBusy 与普通查询共用�
 对象表单打开期间也占用界面运行锁，Ctrl+Enter 不会执行背景 SQL；表单取消后恢复原查询范围与结果。
 
 新建表、设计表创建 table-create/table-design 主标签，不再打开对象弹窗。同一连接/库/表的设计入口复用已有设计页，新建草稿独立编号。designerBusy/Dirty 按页面 ID 保存状态；只在加载/保存时锁定操作，停留在表单本身不锁定其他页面。关闭当前、其他、右侧均检查即将移除的未保存设计草稿。保存后 tableDesignerCommitted 将新建页转为该表设计页并保持当前标签选择；页面切换和恢复不自动执行 DDL。
+
+replaceTableResult(id,result) 只更新对应 data 页及其首条输出；单元格请求复用按页 busy 锁，不修改其他页或查询的默认只读状态。
+
+refreshResult 固定已执行查询 scope 和当前选中 SQL，不使用后来改变的选择器或草稿；刷新替换原页。旧 SQL 结果缺少 scope 时需重新运行后才能刷新。元数据页刷新复用原页。

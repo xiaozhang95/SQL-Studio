@@ -42,5 +42,7 @@ export interface DatabaseObjectAdapter {
   fields: (columns: Column[], ddl?: string) => FieldDefinition[]
   defaultField: () => FieldDefinition
   sql: (action: ObjectAction, target: ObjectTarget, values: ObjectFormValues, original: FieldDefinition[], sqlMode: string) => string
+  dumpQuerySQL: (database: string, table: string) => string
+  dumpData: (database: string, table: string, result: QueryResult, columns: Column[]) => string
   dump: (database: string, table: string, ddl: string) => string
 }

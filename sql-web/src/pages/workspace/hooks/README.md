@@ -17,3 +17,5 @@
 - [useObjectManagement](useObjectManagement/README.md)：库表可视化表单、显式写入、取消和刷新。
 
 - [useTableDesigner](useTableDesigner/README.md)：独立表设计页草稿、提交、重载及状态回报。
+
+- [useDataEditing](useDataEditing/README.md)：表数据单元格显式保存、主键和原值冲突校验。

@@ -1,5 +1,7 @@
 import type { sql } from '@codemirror/lang-sql'
 
+import type { Column, QueryResult } from '@/typings/database'
+
 import type { DatabaseObjectAdapter } from './objectManagement'
 
 /** 与服务端数据库类型保持一致；常量对象兼容 erasableSyntaxOnly。 */
@@ -22,6 +24,9 @@ export interface SQLCompletionContext {
 }
 
 export interface DatabaseAdapter {
+  canInsertColumn: (column: Column) => boolean
+  insertRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, values: unknown[]) => string
+  updateCellSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) => string
   readonly profile: DatabaseProfile
   readonly objects: DatabaseObjectAdapter
   splitStatements: (script: string) => string[]

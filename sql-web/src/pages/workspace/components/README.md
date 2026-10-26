@@ -22,3 +22,7 @@
 
 - [对象管理共享表单](objectManagementForm/README.md)：弹窗与页面复用的库表字段展示。
 - [表设计标签页](tableDesigner/README.md)：新建表/设计表固定在右侧主工作区，保存与预览工具栏。
+
+- [dataCellEditor](dataCellEditor/README.md)：数据页双击后的单元格输入与保存/取消。
+
+- [newRowCell](newRowCell/README.md)：新增行常驻输入表单。

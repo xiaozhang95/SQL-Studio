@@ -9,3 +9,5 @@ compact?:boolean 默认 false。摘要传 true 时只显示高亮 SQL 与同排�
 maxHeight?:string 默认 160px，控制只读编辑器最大高度；历史列表传 32px、详情传 240px，DDL 传 none，由结果表体统一纵向滚动。文本 aria-label 为 SQL 文本，适用于已执行 SQL 和只读 DDL。
 
 singleLine?:boolean 默认 false；历史列表传 true，仅预览 SQL 首行、不启用软换行并隐藏横向滚动条，悬停可查看原 SQL。复制永远读取 sql 原值，详情与 DDL 不折叠换行。
+
+所有变体复制按钮统一只显示 CopyOutlined 图标，title/aria-label 仍为复制 SQL。
