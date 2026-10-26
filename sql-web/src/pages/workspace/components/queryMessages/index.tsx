@@ -15,7 +15,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
       {statements.map((item, index) => (
         <section key={index} aria-label={`语句 ${index + 1} 执行消息`}>
           <Typography.Text type="secondary">语句 {index + 1}</Typography.Text>
-          {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>此结果未记录执行 SQL</div>}
+          {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>此结果未记录执行语句</div>}
           <Typography.Paragraph type={item.error ? 'danger' : 'success'} style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
             {item.error || (item.result?.isQuery ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`)}
           </Typography.Paragraph>

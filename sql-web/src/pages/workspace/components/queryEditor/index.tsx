@@ -77,7 +77,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
       <Dropdown
         trigger={['contextMenu']}
         menu={{
-          items: [{ key: 'run-selection', label: '运行选中 SQL', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running }],
+          items: [{ key: 'run-selection', label: '运行选中内容', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running }],
           onClick: ({ key }) => {
             if (key === 'run-selection') model.runSelectedSQL(contextSQL)
           }

@@ -29,7 +29,7 @@ export default function ObjectManagementModal({ manager, themeMode }: Props) {
             取消
           </Button>
           <Button disabled={!ready || saving} onClick={manager.preview}>
-            预览 SQL
+            预览
           </Button>
           <Button type="primary" danger={destructive} disabled={!ready || loading} loading={saving} onClick={manager.save}>
             {destructive ? manager.title : '保存'}

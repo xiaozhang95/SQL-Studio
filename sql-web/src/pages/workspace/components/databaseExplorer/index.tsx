@@ -80,7 +80,7 @@ export default function DatabaseExplorer({ model }: Props) {
                         { key: 'rename', label: '重命名', icon: <EditOutlined /> },
                         {
                           key: 'export',
-                          label: '转储 SQL 文件',
+                          label: '转储文件',
                           icon: <ExportOutlined />,
                           children: [
                             { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },

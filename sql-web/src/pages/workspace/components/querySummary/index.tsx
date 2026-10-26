@@ -20,7 +20,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
       title: '查询',
       dataIndex: 'sql',
       width: 500,
-      render: (sql: string) => (sql ? <SQLPreview compact sql={sql} themeMode={themeMode} databaseType={databaseType} /> : <Typography.Text type="secondary">未记录 SQL</Typography.Text>)
+      render: (sql: string) => (sql ? <SQLPreview compact sql={sql} themeMode={themeMode} databaseType={databaseType} /> : <Typography.Text type="secondary">未记录语句</Typography.Text>)
     },
     {
       title: '消息',

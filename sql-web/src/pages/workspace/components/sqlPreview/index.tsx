@@ -15,13 +15,13 @@ export default function SQLPreview({ sql, themeMode, databaseType, compact = fal
   const copySQL = async () => {
     try {
       await navigator.clipboard.writeText(sql)
-      message.success('SQL 已复制')
+      message.success('已复制')
     } catch {
-      message.error('复制失败，请选中 SQL 后手动复制')
+      message.error('复制失败，请选中文本后手动复制')
     }
   }
   const extensions = useMemo(() => [getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} }), ...(singleLine ? [] : [EditorView.lineWrapping])], [databaseType, singleLine])
-  const copyButton = <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制 SQL" title="复制 SQL" style={{ flex: 'none' }}></Button>
+  const copyButton = <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制" title="复制" style={{ flex: 'none' }}></Button>
   const editor = (
     <CodeMirror
       value={singleLine ? sql.split(/\r?\n/, 1)[0] : sql}

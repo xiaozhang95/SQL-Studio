@@ -26,3 +26,5 @@
 - [dataCellEditor](dataCellEditor/README.md)：数据页双击后的单元格输入与保存/取消。
 
 - [newRowCell](newRowCell/README.md)：新增行常驻输入表单。
+
+操作文案采用简短动作：预览、复制、运行选中内容、转储文件；语句结果提示使用“执行语句”，文件格式与技术错误说明按需保留 SQL。

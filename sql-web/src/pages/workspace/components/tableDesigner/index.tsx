@@ -19,7 +19,7 @@ export default function TableDesigner({ themeMode, available, ...options }: Prop
             保存
           </Button>
           <Button disabled={!manager.ready || manager.loading || manager.saving || options.blocked} onClick={manager.preview}>
-            预览 SQL
+            预览
           </Button>
           <Button icon={<ReloadOutlined />} disabled={manager.loading || manager.saving || options.blocked} onClick={manager.reload}>
             重新加载
