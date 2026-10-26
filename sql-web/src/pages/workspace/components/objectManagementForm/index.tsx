@@ -8,6 +8,7 @@ import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
+import ObjectScopeSelects from '../objectScopeSelects'
 import SQLPreview from '../sqlPreview'
 
 type FormManager = Pick<
@@ -26,11 +27,10 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
   const targetName = dialog?.target.table || dialog?.target.database || ''
   return (
     <>
-      {showScope && dialog && (
-        <Typography.Paragraph type="secondary">
-          {dialog.connection.name} / {dialog.target.database}
-          {dialog.target.table ? ' / ' + dialog.target.table : ''}
-        </Typography.Paragraph>
+      {showScope && dialog && action !== ObjectAction.RenameTable && (
+        <div style={{ marginBottom: 16 }}>
+          <ObjectScopeSelects connection={dialog.connection} database={dialog.target.database} table={dialog.target.table} view={dialog.target.view} />
+        </div>
       )}
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
       {destructive && (
@@ -63,19 +63,25 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
         ) : (
           <Form.Item
             name="name"
+            hidden={action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
             label={databaseForm ? '数据库名称' : '表名称'}
             rules={[
               { required: true, whitespace: true, message: '请输入名称' },
               { max: 64, message: '名称最多 64 个字符' }
             ]}
           >
-            <Input disabled={loading || saving || !ready || action === ObjectAction.EditDatabase || action === ObjectAction.EditTable} autoComplete="off" />
+            <Input
+              disabled={loading || saving || !ready || action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
+              autoComplete="off"
+              placeholder={databaseForm ? '请输入数据库名称' : '请输入表名称'}
+            />
           </Form.Item>
         )}
         {databaseForm && (
           <>
             <Form.Item name="charset" label="字符集" rules={[{ required: true }]}>
               <Select
+                placeholder="请选择字符集"
                 showSearch
                 options={Array.from(new Set(collations.map((value) => value.charset))).map((value) => ({ value, label: value }))}
                 onChange={(value) => {
@@ -85,7 +91,7 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
               />
             </Form.Item>
             <Form.Item name="collation" label="排序规则" rules={[{ required: true }]}>
-              <Select showSearch options={collations.filter((value) => value.charset === charset).map((value) => ({ value: value.name, label: value.name }))} />
+              <Select placeholder="请选择排序规则" showSearch options={collations.filter((value) => value.charset === charset).map((value) => ({ value: value.name, label: value.name }))} />
             </Form.Item>
             {action === ObjectAction.EditDatabase && <Typography.Paragraph type="secondary">修改库默认字符集和排序规则，不转换已有表的数据或字段。</Typography.Paragraph>}
           </>
@@ -108,7 +114,7 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
                   width: 160,
                   render: (_, row) => (
                     <>
-                      {item(row, 'name', <Input disabled={locked(row)} />, true)}
+                      {item(row, 'name', <Input placeholder="请输入字段名" disabled={locked(row)} />, true)}
                       <Form.Item hidden name={[row.name, 'originalName']}>
                         <Input />
                       </Form.Item>
@@ -118,7 +124,11 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
                     </>
                   )
                 },
-                { title: '类型', width: 180, render: (_, row) => item(row, 'type', <AutoComplete disabled={locked(row)} options={manager.fieldTypes.map((value) => ({ value }))} />, true) },
+                {
+                  title: '类型',
+                  width: 180,
+                  render: (_, row) => item(row, 'type', <AutoComplete placeholder="选择或输入字段类型" disabled={locked(row)} options={manager.fieldTypes.map((value) => ({ value }))} />, true)
+                },
                 ...(['nullable', 'primary', 'autoIncrement'] as const).map((key) => ({
                   title: { nullable: '允许 NULL', primary: '主键', autoIncrement: '自增' }[key],
                   width: 85,
@@ -147,6 +157,7 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
                       row,
                       'defaultMode',
                       <Select
+                        placeholder="请选择默认值类型"
                         disabled={locked(row)}
                         options={[
                           { value: 'none', label: '无默认值' },
@@ -157,8 +168,8 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
                       />
                     )
                 },
-                { title: '默认值', width: 160, render: (_, row) => item(row, 'defaultValue', <Input disabled={locked(row)} />) },
-                { title: '注释', width: 160, render: (_, row) => item(row, 'comment', <Input disabled={locked(row)} />) },
+                { title: '默认值', width: 160, render: (_, row) => item(row, 'defaultValue', <Input placeholder="请输入默认值" disabled={locked(row)} />) },
+                { title: '注释', width: 160, render: (_, row) => item(row, 'comment', <Input placeholder="请输入注释（可选）" disabled={locked(row)} />) },
                 {
                   title: '',
                   width: 48,

@@ -6,6 +6,7 @@ import type { ThemeMode } from '@/typings/theme'
 import { useTableDesigner } from '../../hooks/useTableDesigner'
 import type { TableDesignerOptions } from '../../hooks/useTableDesigner'
 import ObjectManagementForm from '../objectManagementForm'
+import ObjectScopeSelects from '../objectScopeSelects'
 
 type Props = TableDesignerOptions & { themeMode: ThemeMode; available: boolean }
 export default function TableDesigner({ themeMode, available, ...options }: Props) {
@@ -14,6 +15,7 @@ export default function TableDesigner({ themeMode, available, ...options }: Prop
   return (
     <section className="workspace-page" aria-label="表设计工作区">
       <div className="editor-toolbar">
+        <ObjectScopeSelects connection={connection || manager.dialog?.connection} database={options.page.database} table={options.page.table} connected={available} />
         <Space wrap>
           <Button type="primary" icon={<SaveOutlined />} loading={manager.saving} disabled={!manager.ready || manager.loading || options.blocked} onClick={manager.save}>
             保存
@@ -24,12 +26,8 @@ export default function TableDesigner({ themeMode, available, ...options }: Prop
           <Button icon={<ReloadOutlined />} disabled={manager.loading || manager.saving || options.blocked} onClick={manager.reload}>
             重新加载
           </Button>
+          {manager.dirty && <Typography.Text type="secondary">未保存</Typography.Text>}
         </Space>
-        <Typography.Text type="secondary">
-          {connection?.name || manager.dialog?.connection.name || '连接不可用'} / {options.page.database}
-          {options.page.table ? ' / ' + options.page.table : ''}
-          {manager.dirty ? ' · 未保存' : ''}
-        </Typography.Text>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 12 }}>
         {!available && <Alert type="warning" showIcon title="连接未打开，请重新打开连接后保存。" style={{ marginBottom: 12 }} />}

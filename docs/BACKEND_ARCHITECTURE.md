@@ -40,3 +40,5 @@ config.Load 读取 SQLDESK_DATA_DIR、SQLDESK_WEB_DIR、SQLDESK_MYSQL_*。从 sq
 新增 settings→model、statefile→model，app装配两者，httpapi→settings。用户配置默认主目录/.sql-studio/state，单Go进程拥有目录，CAS防窗口覆盖。
 
 项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。
+
+AI：app装配 modules/ai 与 deepseek。ai仅依赖model和消费接口，读取statefile配置、校验显式连接；deepseek仅依赖model/标准库，通过官方HTTPS传输。HTTP调用ai公开入口，不执行生成SQL。

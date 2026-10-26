@@ -5,3 +5,5 @@
 - [主题类型](theme/README.md)
 
 每个实际模块单独目录并保留源码入口与 README。
+
+- [AI 契约](ai/README.md)：SQL 上下文和模型响应。

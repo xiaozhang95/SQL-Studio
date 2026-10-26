@@ -11,13 +11,14 @@ import type { HistoryItem } from '@/typings/workspace'
 import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
+import EngineIcon from '../engineIcon'
 import SQLPreview from '../sqlPreview'
 
 type Props = {
   themeMode: ThemeMode
   model: Pick<
     WorkspaceModel,
-    'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'loadHistory'
+    'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'loadHistory' | 'objects'
   >
 }
 
@@ -81,8 +82,18 @@ export default function QueryHistory({ model, themeMode }: Props) {
   return (
     <Drawer
       title={
-        <span>
-          <HistoryOutlined /> 执行历史{connection ? ` · ${connection.name}` : ''}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, maxWidth: '100%' }}>
+          <HistoryOutlined />
+          <span style={{ flexShrink: 0 }}>执行历史</span>
+          {connection && (
+            <>
+              <span>·</span>
+              <EngineIcon type={connection.type} connected={model.objects.snapshots[connection.id]?.status === 'connected'} />
+              <span title={connection.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {connection.name}
+              </span>
+            </>
+          )}
         </span>
       }
       open={historyOpen}

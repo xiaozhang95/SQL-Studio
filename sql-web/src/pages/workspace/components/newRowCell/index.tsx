@@ -17,6 +17,7 @@ export default function NewRowCell({ value, column, editable, disabled, onChange
       />
       <Select
         size="small"
+        placeholder="请选择值类型"
         aria-label={(column?.name ?? '字段') + ' 值类型'}
         style={{ width: '100%' }}
         disabled={disabled || !editable}

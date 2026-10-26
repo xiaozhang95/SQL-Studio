@@ -16,7 +16,9 @@ import (
 
 	"sql-studio/internal/config"
 	"sql-studio/internal/connection"
+	"sql-studio/internal/deepseek"
 	"sql-studio/internal/httpapi"
+	"sql-studio/internal/modules/ai"
 	"sql-studio/internal/modules/connections"
 	"sql-studio/internal/modules/metadata"
 	"sql-studio/internal/modules/query"
@@ -48,6 +50,7 @@ func New(cfg config.Config) (*App, error) {
 	}
 	router := httpapi.New(httpapi.Services{
 		Connections: connectionService,
+		AI:          ai.New(stateStore, repository, deepseek.New()),
 		Settings:    settings.New(stateStore),
 		Metadata:    metadata.New(repository, client),
 		Queries:     query.New(repository, client),

@@ -19,3 +19,9 @@ module_routes_test.go 使用真实业务模块和测试数据库接口验证双�
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
 
 GET/PUT /api/state/:section 调用 settings。PUT 限32MiB，CAS冲突409，沿用本机同源保护。
+
+POST /api/ai/assist 调用 AI 模块；严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
+
+POST /api/ai/models 接收provider和可选apiKey，通过AI模块获取真实可用模型；缺省Key从后端读取，响应仅id/name。
+
+DELETE /api/ai/config 接收{revision}移除AI配置，冲突409，不改其他配置分区。

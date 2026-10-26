@@ -1,14 +1,16 @@
-import { DownloadOutlined, HistoryOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import CodeMirror from '@uiw/react-codemirror'
-import { Alert, Button, Dropdown, Upload } from 'antd'
-import { useState } from 'react'
+import { Alert, Button, Dropdown, theme, Upload } from 'antd'
+import { useMemo, useState } from 'react'
 
 import type { ThemeMode } from '@/typings/theme'
 
+import { useAISQL } from '../../hooks/useAISQL'
 import { useSQLCompletion } from '../../hooks/useSQLCompletion'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ScopeSelects from '../scopeSelects'
+import SQLOptimization from '../sqlOptimization'
 
 type Props = {
   themeMode: ThemeMode
@@ -42,8 +44,11 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const { activeTab, running, activeRunning, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
   const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, undefined, title))
   const [contextSQL, setContextSQL] = useState('')
+  const { token } = theme.useToken()
 
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
+  const ai = useAISQL(tab, objects, running)
+  const editorExtensions = useMemo(() => [...extensions, ...ai.extensions], [extensions, ai.extensions])
   return (
     <section className="editor-panel">
       <div className="editor-toolbar">
@@ -52,6 +57,11 @@ export default function QueryEditor({ model, themeMode }: Props) {
           <Button type="primary" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running}>
             运行
           </Button>
+          {ai.configured && (
+            <Button icon={<BulbOutlined />} disabled={!tab.sql.trim() || running} onClick={() => void ai.optimize()}>
+              优化
+            </Button>
+          )}
           {activeRunning && (
             <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
               取消
@@ -72,30 +82,41 @@ export default function QueryEditor({ model, themeMode }: Props) {
           </Button>
         </div>
       </div>
+      <SQLOptimization model={ai} themeMode={themeMode} />
       {objects.error && <Alert type="error" title="连接加载失败" description={objects.error} />}
       {objects.tableError && <Alert type="error" title="表列表加载失败" description={objects.tableError} />}
       <Dropdown
         trigger={['contextMenu']}
         menu={{
-          items: [{ key: 'run-selection', label: '运行选中内容', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running }],
+          items: [
+            { key: 'run-selection', label: '运行', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running },
+            ...(ai.configured && contextSQL.trim() ? [{ key: 'optimize-selection', label: '优化', icon: <BulbOutlined />, disabled: running }] : [])
+          ],
           onClick: ({ key }) => {
             if (key === 'run-selection') model.runSelectedSQL(contextSQL)
+            if (key === 'optimize-selection') void ai.optimize(true, contextSQL)
           }
         }}
       >
-        <div className="sql-editor" onContextMenuCapture={() => setContextSQL(model.getSelectedSQL() ?? '')} onScrollCapture={model.rememberEditor}>
+        <div className="sql-editor" style={{ position: 'relative' }} onContextMenuCapture={() => setContextSQL(model.getSelectedSQL() ?? '')} onScrollCapture={model.rememberEditor}>
           <CodeMirror
             key={activeTab}
             value={tab.sql}
             height="100%"
             theme={themeMode}
-            extensions={extensions}
-            onCreateEditor={onEditorReady}
+            extensions={editorExtensions}
+            onCreateEditor={(view) => {
+              ai.onEditorReady(view)
+              onEditorReady(view)
+            }}
             onUpdate={model.onEditorUpdate}
             onChange={updateSQL}
             basicSetup={{ foldGutter: false, autocompletion: true }}
             aria-label="SQL 编辑器"
           />
+          {ai.enabled && ai.completionLoading && (
+            <LoadingOutlined spin aria-label="AI 正在续写" role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: token.colorTextSecondary }} />
+          )}
         </div>
       </Dropdown>
     </section>

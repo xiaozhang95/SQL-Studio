@@ -11,3 +11,5 @@ maxHeight?:string 默认 160px，控制只读编辑器最大高度；历史列�
 singleLine?:boolean 默认 false；历史列表传 true，仅预览 首行、不启用软换行并隐藏横向滚动条，悬停可查看原 SQL。复制永远读取 sql 原值，详情与 DDL 不折叠换行。
 
 所有变体复制按钮统一只显示 CopyOutlined 图标，title/aria-label 统一为复制。
+
+title?:string默认SQL，可自定义唯一标题。panel?:boolean默认false，为true时使用原生small Card承载标题及复制按钮，正文无额外内边距；height?:string默认未设置，可固定只读编辑器高度。原有compact和默认展示不变。

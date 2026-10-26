@@ -82,7 +82,7 @@ body {
   background: var(--layout);
 }
 .topbar {
-  height: 56px;
+  min-height: 56px;
   flex: none;
   padding: 0 var(--workspace-inset);
   display: flex;
@@ -99,6 +99,19 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.topbar-actions {
+  gap: var(--workspace-inset);
+}
+.topbar-primary-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: calc(var(--sidebar-width) - var(--workspace-inset));
+  padding: 10px var(--workspace-inset) 10px 0;
 }
 .theme-select {
   width: 144px;
@@ -947,4 +960,11 @@ body {
 .object-tree .ant-tree .ant-tree-switcher-noop {
   width: 8px;
   flex-basis: 8px;
+}
+
+// AI 建议仅作为 CodeMirror 装饰展示，接受后才写入 SQL。
+.sql-editor .ai-ghost {
+  color: var(--ant-color-text-quaternary);
+  white-space: pre-wrap;
+  pointer-events: none;
 }

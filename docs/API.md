@@ -70,3 +70,19 @@
 前端库表右键管理现使用既有 `/connections/{id}/query`，仅在对象表单确认保存时显式传 `allowWrite:true`。普通 SQL 编辑器不传此值。对象表单的 SHOW COLLATION 等只读元数据可传 limit=5000，仍遵守并发、超时、字节和单语句限制。无新增 HTTP 路由。
 
 GET /api/state/:section 返回 {schemaVersion:1,revision,updatedAt,data,extensions?}，缺失分区 revision=0,data=null。PUT 同路径提交 {revision,data}，data须对象、最多32MiB，返回更新信封；修订冲突409，损坏/未知版本拒绝覆盖。分区匹配 ^[a-z][a-z0-9-]{0,47}$。
+
+### AI 配置
+
+GET /api/state/ai 返回 data: {provider: "deepseek", configured: boolean}，尚未配置时 data 为 null。PUT /api/state/ai 接收 {revision, data: {provider: "deepseek", apiKey: string}}；空 Key 保留已保存值，首次必须填写。响应不含 apiKey，修订冲突返回 409。本接口只保存配置，不请求 DeepSeek。
+
+### SQL AI
+
+POST /api/ai/assist：{action:"complete"|"optimize", connectionId, database, tables:[{name,columns:string[]}], sql?, prefix?, suffix?}。complete 返回 {completion?}，optimize 返回 {sql,explanation?}；空续写允许返回 {}。输入SQL合计48KB、12表/每表128字段；续写12秒、优化30秒，4并发，超限429。Key仅后端读取，官方所选模型（旧配置默认Flash）的非思考JSON输出，不自动执行SQL。错误不包含上游响应正文和凭据。
+
+### AI 模型与续写配置
+
+AI配置分区增加model:string、completionEnabled:boolean；旧记录默认开启续写、空模型由DeepSeek客户端兼容默认Flash。PUT保存选择的官方模型ID，未传字段保留旧值；响应仍不含Key。POST /api/ai/models 接收{provider:"deepseek",apiKey?:string}，不传Key则使用已保存值；返回[{id,name}]，真实调用官方GET /models，10秒超时，满并发429。续写开关关闭时后端拒绝complete请求。
+
+AI续写上下文增加document?:string（草稿开头最多16000字符/后端64KB限制，保留注释）、table?:string、tables[].comment。后端根据connectionId补充connection:{name,type}后发给模型，不包含连接凭据。prefix/suffix继续原样保留光标附近SQL和注释。
+
+DELETE /api/ai/config 接收{revision:number}，清空DeepSeek Key/模型并关闭续写；返回脱敏配置和新修订号，旧修订冲突409。保留修订信息防止旧窗口恢复已移除Key，可重新填写Key配置。

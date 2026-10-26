@@ -60,7 +60,9 @@ export default function QueryResults({ model, themeMode }: Props) {
     onDirtyChange: model.setTableDesignerDirty,
     onResult: model.replaceTableResult
   })
-  const [view, setView] = useState<'messages' | 'summary' | null>(null)
+  const [selectedView, setSelectedView] = useState<{ pageId: string; runId?: string; view: 'messages' | 'summary' } | null>(null)
+  // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
+  const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
   const hasResults = run ? statementOutputs(run).length > 0 : false
   const showingResult = view === null && hasResults
   const activeKey = view ?? (hasResults ? String(resultIndex) : 'messages')
@@ -142,10 +144,10 @@ export default function QueryResults({ model, themeMode }: Props) {
         running={activeRunning}
         activeKey={activeKey}
         onChange={(key) => {
-          if (key === 'messages' || key === 'summary') setView(key)
+          if (key === 'messages' || key === 'summary') setSelectedView({ pageId: tab.id, runId: run.id, view: key })
           else {
             selectResult(Number(key))
-            setView(null)
+            setSelectedView(null)
           }
         }}
       />

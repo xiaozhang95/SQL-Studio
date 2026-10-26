@@ -19,6 +19,7 @@ export default function DataCellEditor({ editor, disabled }: { editor: ReturnTyp
       <Space orientation="vertical" size={4} style={{ width: '100%' }} onDoubleClick={(event) => event.stopPropagation()}>
         <Input.TextArea
           aria-label="单元格内容"
+          placeholder={cell.isNull ? 'NULL' : '请输入内容（可留空）'}
           autoFocus
           autoSize={{ minRows: 1, maxRows: 6 }}
           value={cell.value}

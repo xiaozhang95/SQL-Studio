@@ -4,7 +4,7 @@
 
 QueryResults 接收 model（当前页 run/result、连接信息、运行状态、筛选、分页、结果索引与高度及其回调）和 themeMode:ThemeMode。没有 run 返回 null。query 页输出与编辑器上下共存且可拖动高度，data/structure/ddl 页输出铺满可用区域。
 
-[输出导航](../resultTabs/README.md) 将“消息 / 摘要 / 结果 1 / 结果 2……”置于一层，结果项不再内嵌 SQL 标签；默认展示最后完成结果，执行开始且没有输出时展示消息。消息/摘要视图选择只保存在组件内，跨主页面切换后回到结果；结果索引仍由 selectResult 控制并加密保存。查看消息/摘要不修改结果索引或筛选分页；选择另一条结果调用 selectResult 重置筛选分页。
+[输出导航](../resultTabs/README.md) 将“消息 / 摘要 / 结果 1 / 结果 2……”置于一层，结果项不再内嵌 SQL 标签；默认展示最后完成结果，执行开始且没有输出时展示消息。消息/摘要视图选择只归属当前页面的当前输出版本；重新运行或刷新产生新输出时，旧选择立即失效，回到最后完成结果。结果索引仍由 selectResult 控制并加密保存。查看消息/摘要不修改结果索引或筛选分页；选择另一条结果调用 selectResult 重置筛选分页。
 
 [消息](../queryMessages/README.md) 按实际执行顺序列出 SQL、状态和耗时；[摘要](../querySummary/README.md) 汇总成功/失败数量、起止时间及运行时间，支持仅显示错误。二者的执行 SQL 经 [sqlPreview](../sqlPreview/README.md) 只读高亮和复制，不用编辑器草稿冒充。旧记录缺少 SQL 或耗时时明确提示未记录。
 

@@ -30,3 +30,11 @@
 操作文案采用简短动作：预览、复制、运行选中内容、转储文件；语句结果提示使用“执行语句”，文件格式与技术错误说明按需保留 SQL。
 
 - [saveStatus](saveStatus/README.md)：配置恢复、保存、成功与失败状态。
+
+- [AI 配置](aiSettings/README.md)：顶部模型与 API Key 弹窗。
+
+- [SQL 优化预览](sqlOptimization/README.md)：原文、建议和说明。
+
+- [AI 服务商图标](aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
+
+- [对象范围下拉框](objectScopeSelects/README.md)：对象管理共用的固定连接/库/表展示。
