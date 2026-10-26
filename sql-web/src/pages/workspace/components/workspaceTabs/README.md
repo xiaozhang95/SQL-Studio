@@ -13,3 +13,5 @@ model 提供 tabs/activeTab、runs/resultViews、运行状态和切换/关闭回
 Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度，content 层的 100% 仅作用于直属主页面容器，避免编辑器和结果区塌缩。
 
 model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设计页面。table-create/table-design 使用设计图标，Tab 星号标记未保存；隐藏时保留已访问的组件实例，不提前加载未访问页。其他页面继续切换销毁展示组件。主页面标签的关闭和右键批量关闭复用工作区回调并检查草稿。
+
+全局不启用 destroyOnHidden，仅逐项设置；否则全局销毁会覆盖设计页的 false，导致切页丢失草稿。查询等普通页仍按项销毁，设计页保持挂载。

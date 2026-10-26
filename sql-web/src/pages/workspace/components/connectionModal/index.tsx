@@ -25,7 +25,7 @@ export default function ConnectionModal({ open, connection, connections, onClose
       open={open}
       onCancel={busy ? undefined : onClose}
       closable={!busy}
-      maskClosable={!busy}
+      mask={{ closable: !busy }}
       destroyOnHidden
       afterOpenChange={(visible) => {
         if (!visible) {

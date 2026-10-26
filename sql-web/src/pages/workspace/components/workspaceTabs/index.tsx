@@ -24,7 +24,6 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
       type="editable-card"
       size={appearance.navigationSize}
       hideAdd
-      destroyOnHidden
       activeKey={activeTab}
       onChange={selectTab}
       onEdit={(key, action) => {

@@ -31,3 +31,5 @@ open、connection?、connections、onClose、onSaved。open 受控；connection 
 内容区为 min(600px, 100dvh - 180px)，右侧上下内边距 20px，仅展示 MySQL 常规和 SSL 配置。正常视口内容完整时不出现滚动条；窄小窗口、校验错误或较长反馈需要时仍可滚动。hover 使用原生 controlItemBgHover，与对象树一致。placeholder 使用 Ant Design 默认颜色，不做局部覆盖。
 
 数据库类型项与表单头部均使用 engine.value 显式传入的 logo 变体；按用户最新参考图统一为 40px 成功色底板与白色海豚剪影。
+
+遮罩关闭行为使用 mask.closable，忙碌时禁止点击遮罩关闭，避免已弃用 maskClosable 警告。
