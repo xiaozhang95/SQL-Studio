@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getColumns, getDatabases, getDDL, getIndexes, getTables, setConnectionSession } from '@/services/database'
+import { getColumns, getDatabases, getDDL, getIndexes, getSchemas, getTables, setConnectionSession } from '@/services/database'
 import type { Column, DBTable, TableDetails } from '@/typings/database'
 
 import { DatabaseLifecycle } from '../../utils/databaseLifecycle'
@@ -8,6 +8,7 @@ import { DatabaseLifecycle } from '../../utils/databaseLifecycle'
 type TableStructure = { columns: Column[]; ddl: string }
 
 type Snapshot = {
+  schemas?: Record<string, string[]>
   status: 'loading' | 'connected' | 'error'
   databases: string[]
   tables: Record<string, DBTable[]>
@@ -33,7 +34,7 @@ type Session = {
 }
 
 /** 各连接分别维护结构缓存；关闭或刷新时取消旧代请求，避免迟到响应重新点亮节点。 */
-export function useDatabaseObjects(connectionId: string, database: string, onDatabasesLoaded: (id: string, databases: string[]) => void) {
+export function useDatabaseObjects(connectionId: string, database: string, onDatabasesLoaded: (id: string, databases: string[]) => void, schemaConnections: readonly string[]) {
   const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({})
   const sessions = useRef(new Map<string, Session>())
   const current = snapshots[connectionId]
@@ -125,14 +126,19 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       const state = previous[id]
       if (!state || sessions.current.get(id) !== session) return previous
       const tables = { ...state.tables },
+        schemas = { ...state.schemas },
         tableErrors = { ...state.tableErrors }
-      if (!keepVisibleTables) delete tables[name]
+      if (!keepVisibleTables) {
+        delete tables[name]
+        delete schemas[name]
+      }
       delete tableErrors[name]
       return {
         ...previous,
         [id]: {
           ...state,
           tables,
+          schemas,
           tableErrors,
           loadingTables: state.loadingTables.filter((item) => item !== name),
           structures: without(state.structures),
@@ -157,13 +163,13 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
         .then(() => {
           if (!valid()) throw new Error('数据库已关闭')
           setClosedDatabases((previous) => ({ ...previous, [id]: (previous[id] || []).filter((item) => item !== name) }))
-          return getTables(id, name, scope.signal)
+          return Promise.all([getTables(id, name, scope.signal), schemaConnections.includes(id) ? getSchemas(id, name, scope.signal) : Promise.resolve([])])
         })
-        .then((tables) => {
+        .then(([tables, schemas]) => {
           if (!valid()) throw new Error('数据库已关闭')
           if (valid()) {
             session.tables[name] = tables
-            setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], tables: { ...previous[id].tables, [name]: tables } } }))
+            setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], tables: { ...previous[id].tables, [name]: tables }, schemas: { ...previous[id].schemas, [name]: schemas } } }))
           }
           return tables
         })
@@ -179,7 +185,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       session.pending.set(name, task)
       return task
     },
-    [connectionId]
+    [connectionId, schemaConnections]
   )
 
   const loadStructure = useCallback(

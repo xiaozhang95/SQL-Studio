@@ -17,3 +17,5 @@ app.New 装配 statefile/settings。StateDir 为空兼容旧调用者回落 Data
 装配 ai.New(stateStore, repository, deepseek.New())；AI与SQL执行分别拥有并发预算。
 
 app.New 在打开连接仓库前调用 connection.Migrate(cfg.LegacyDataDir,cfg.DataDir)，迁移冲突或校验失败直接阻止启动，不回退为新空连接列表。生产默认 DataDir=StateDir，连接、密钥与布局位于同一用户目录；显式 DataDir/StateDir 配置仍保留。
+
+app 同时创建 mysql.Client 与 postgresql.Client，通过 database.New 注册，业务模块仍消费最小端口；只有装配层导入具体引擎。

@@ -3,3 +3,7 @@
 `buildExplorerTree(connections,snapshots,expanded,search)` 返回 nodes、loadedKeys、expandedKeys 与 byKey。仅构建已展开层级的纯数据，折叠分支不创建字段/索引节点，不生成 React 元素或菜单。titleRender 只渲染可见节点，右键时才创建菜单。
 
 所有身份包含原始连接/库/表/字段，搜索匹配分组、连接和已加载库表。方法不修改传入数据或已保存的展开状态；expandedKeys 只过滤当前树有效节点，原展开记录由工作区保留。缓存元数据仍由 useDatabaseObjects 管理。
+
+索引节点接受 primary? 主键标志，不以 PostgreSQL 实际索引名推断主键；schema/table 完整身份由元数据原样传递。
+
+第五参数 layouts 按 connectionId 提供可选 DatabaseExplorerAdapter。带布局的连接使用 snapshots.schemas 的真实 schema 列表与已加载表分组，空 schema 仍保留；schema 与类别 key 包含 schema，表 key 保留原完整身份。仅展开 schema/类别创建下级节点，搜索支持空 schema 名称。无布局引擎保持原层次。

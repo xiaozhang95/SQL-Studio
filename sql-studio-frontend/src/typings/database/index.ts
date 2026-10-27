@@ -1,6 +1,7 @@
 import type { DatabaseType } from '@/databases/typings'
 
 export type Connection = {
+  database?: string
   type?: DatabaseType
   tls?: boolean
   id: string
@@ -28,6 +29,7 @@ export type Column = {
   comment: string
 }
 export type DBIndex = {
+  primary?: boolean
   name: string
   unique: boolean
   type: string
@@ -44,4 +46,4 @@ export type QueryResult = {
   truncated: boolean
   isQuery: boolean
 }
-export type QueryRequest = { database: string; sql: string; allowWrite?: boolean; limit?: number }
+export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; limit?: number }

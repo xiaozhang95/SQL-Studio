@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
+import type { DatabaseType } from '@/databases/typings'
 import { saveConnection, testConnection } from '@/services/database'
 import type { Connection, ConnectionInput } from '@/typings/database'
 
@@ -24,20 +25,28 @@ export const useConnectionForm = ({ open, connection, connections, onSaved }: Pr
   ]
   useEffect(() => {
     if (open) {
+      const initialEngine = getDatabaseAdapter(connection?.type).profile
       form.resetFields()
       form.setFieldsValue(
         connection
           ? {
               ...connection,
               group: connectionGroupName(connection.group),
-              type: connection.type || engine.value,
+              type: connection.type || initialEngine.value,
+              database: connection.database || initialEngine.database,
               tls: connection.tls || false,
               password: ''
             }
-          : { type: engine.value, tls: false, name: '', group: defaultConnectionGroup, host: '', port: engine.port, username: '' }
+          : { type: initialEngine.value, tls: false, name: '', group: defaultConnectionGroup, host: '', port: initialEngine.port, database: initialEngine.database, username: '' }
       )
     }
-  }, [open, connection, form, engine])
+  }, [open, connection, form])
+  function selectEngine(type: DatabaseType) {
+    if (busy || connection) return
+    const profile = getDatabaseAdapter(type).profile
+    form.setFieldsValue({ type, port: profile.port, database: profile.database })
+    setStatus(undefined)
+  }
   async function values() {
     try {
       const value = await form.validateFields()
@@ -74,5 +83,5 @@ export const useConnectionForm = ({ open, connection, connections, onSaved }: Pr
     }
   }
 
-  return { form, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save }
+  return { form, selectEngine, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save }
 }

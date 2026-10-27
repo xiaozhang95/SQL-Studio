@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import { appearance, ComponentSize } from '@/constant/appearance'
+import { getDatabaseAdapter } from '@/databases'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
@@ -54,6 +55,9 @@ export default function QueryHistory({ model, themeMode }: Props) {
     },
     { title: '连接', dataIndex: 'connectionName', width: 140, ellipsis: true },
     { title: '数据库', dataIndex: 'database', width: 140, ellipsis: true, render: (database: string) => database || '未选择数据库' },
+    ...(connections.some((connection) => connection.id === model.connectionId && getDatabaseAdapter(connection.type).explorer)
+      ? [{ title: 'Schema', dataIndex: 'schema', width: 140, ellipsis: true, render: (schema: string) => schema || '默认搜索路径' }]
+      : []),
     {
       title: 'SQL',
       dataIndex: 'sql',
@@ -140,7 +144,7 @@ export default function QueryHistory({ model, themeMode }: Props) {
           className="history-table"
           rowKey="id"
           columns={columns}
-          dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database}`.toLowerCase().includes(historySearch.toLowerCase()))}
+          dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database} ${item.schema || ''}`.toLowerCase().includes(historySearch.toLowerCase()))}
           scroll={{ x: 1200, y: bodyHeight || undefined }}
           pagination={{ ...tablePaginationDefaults, current: page, pageSize: 10 }}
           onChange={(pagination) => setPage(pagination.current || 1)}

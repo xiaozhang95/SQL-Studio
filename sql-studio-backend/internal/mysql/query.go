@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -14,6 +15,9 @@ import (
 const maxResultBytes = 8 * 1024 * 1024
 
 func (c *Client) Execute(ctx context.Context, connection model.Connection, input model.QueryRequest) (model.QueryResult, error) {
+	if input.Schema != "" {
+		return model.QueryResult{}, errors.New("MySQL 不使用独立 schema 范围")
+	}
 	ctx, db, release, err := c.openRequest(ctx, connection, input.Database)
 	if err != nil {
 		return model.QueryResult{}, err
@@ -68,6 +72,7 @@ func readRows(ctx context.Context, q querier, statement string, limit int, start
 	if err != nil {
 		return result, err
 	}
+	result.IsQuery = len(types) > 0
 	for _, column := range types {
 		result.Columns = append(result.Columns, model.ResultColumn{Name: column.Name(), Type: column.DatabaseTypeName()})
 	}

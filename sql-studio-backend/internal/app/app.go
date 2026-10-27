@@ -16,13 +16,16 @@ import (
 
 	"sql-studio-backend/internal/config"
 	"sql-studio-backend/internal/connection"
+	"sql-studio-backend/internal/database"
 	"sql-studio-backend/internal/deepseek"
 	"sql-studio-backend/internal/httpapi"
+	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/mysql"
+	"sql-studio-backend/internal/postgresql"
 )
 
 type App struct{ server *http.Server }
@@ -35,7 +38,7 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := mysql.NewClient()
+	client := database.New(map[string]database.Engine{model.TypeMySQL: mysql.NewClient(), model.TypePostgreSQL: postgresql.NewClient()})
 	connectionService := connections.New(repository, client)
 	// 首次初始化走同一业务校验，已有连接保持不变。
 	if len(connectionService.ListConnections()) == 0 && cfg.InitialConnection != nil {

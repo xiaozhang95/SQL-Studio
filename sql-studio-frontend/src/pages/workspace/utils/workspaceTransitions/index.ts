@@ -11,7 +11,7 @@ export function upsertConnection(connections: readonly Connection[], saved: Conn
 export function queryScopesAfterChange(tabs: WorkspaceTab[], { action, target, name }: ObjectChange): WorkspaceTab[] {
   return tabs.map((tab) => {
     if (tab.kind !== 'query' || tab.connectionId !== target.connectionId || tab.database !== target.database) return tab
-    if (action === ObjectAction.DropDatabase) return { ...tab, database: '', table: '' }
+    if (action === ObjectAction.DropDatabase) return { ...tab, database: '', schema: '', table: '' }
     if (tab.table !== target.table) return tab
     if (action === ObjectAction.DropTable) return { ...tab, table: '' }
     if (action === ObjectAction.RenameTable) return { ...tab, table: name }

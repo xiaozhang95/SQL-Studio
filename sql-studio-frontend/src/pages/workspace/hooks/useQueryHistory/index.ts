@@ -8,12 +8,9 @@ import { historyLimit, normalizeHistories, retainConnectionHistories } from '../
 import type { Histories } from '../../utils/queryHistory'
 
 let restored: Promise<Histories> | undefined
-// 当前支持范围为 MySQL，旧历史未保存引擎字段，沿用默认适配器读取。
-const cleanHistory = getDatabaseAdapter().cleanHistory
-
 async function restoreHistories(): Promise<Histories> {
   const stored = await readState<Histories>('history', async () => ({}))
-  return normalizeHistories(stored, cleanHistory)
+  return normalizeHistories(stored, (sql) => sql)
 }
 
 /** 当前 SQL 页仅消费自己的记录；持久化由 Go 用户目录配置管理。 */
@@ -67,7 +64,10 @@ export function useQueryHistory(connectionId: string) {
   }, [ready, available, histories])
   const appendHistory = useCallback((item: HistoryItem) => {
     if (!item.connectionId) return
-    setHistories((previous) => ({ ...previous, [item.connectionId]: [{ ...item, sql: cleanHistory(item.sql) }, ...(previous[item.connectionId] || [])].slice(0, historyLimit) }))
+    setHistories((previous) => ({
+      ...previous,
+      [item.connectionId]: [{ ...item, sql: getDatabaseAdapter(item.databaseType).cleanHistory(item.sql) }, ...(previous[item.connectionId] || [])].slice(0, historyLimit)
+    }))
   }, [])
   const clearHistory = useCallback((id: string) => {
     if (id)

@@ -22,6 +22,8 @@ import { Button, Dropdown, Empty, Input, Tree } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
+import { getDatabaseAdapter } from '@/databases'
+
 import { objectTreeLayout } from '../../constant/layout'
 import { useTreeViewport } from '../../hooks/useTreeViewport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
@@ -36,13 +38,17 @@ export default function DatabaseExplorer({ model }: Props) {
   const { connections, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
   const [contextMenu, setContextMenu] = useState<MenuProps>()
-  const data = useMemo(() => buildExplorerTree(connections, objects.snapshots, expanded, search), [connections, objects.snapshots, expanded, search])
+  const data = useMemo(
+    () => buildExplorerTree(connections, objects.snapshots, expanded, search, Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer]))),
+    [connections, objects.snapshots, expanded, search]
+  )
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
 
   // 菜单在右键时生成，不为几千张表预建按钮、图标和闭包。
   function menuFor(node: ExplorerNode): MenuProps | undefined {
     const { owner: id, database: db, table } = node
+
     let items: MenuProps['items']
     if (node.kind === 'connection') {
       const connected = objects.snapshots[id]?.status === 'connected'
@@ -53,6 +59,12 @@ export default function DatabaseExplorer({ model }: Props) {
         { type: 'divider' },
         { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
         { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true }
+      ]
+    } else if (node.kind === 'schema') {
+      items = [
+        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'database') {
       items = [
@@ -97,6 +109,23 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else return undefined
+    if (!getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type).objects) {
+      const unavailable =
+        node.kind === 'connection'
+          ? ['create-database']
+          : node.kind === 'database'
+            ? ['edit', 'create', 'delete', 'create-table']
+            : node.kind === 'tables'
+              ? ['create-table']
+              : ['design', 'create', 'delete', 'truncate', 'rename']
+      items = items
+        .filter((item) => !item || !('key' in item) || !unavailable.includes(String(item.key)))
+        .map((item) =>
+          item && 'key' in item && item.key === 'export' && 'children' in item
+            ? { ...item, children: (item.children ?? []).filter((child) => child && 'key' in child && child.key !== 'dump-data') }
+            : item
+        )
+    }
     if (running) items = items.filter((item) => item && 'key' in item && item.key === 'close')
     if (!items.length) return undefined
     return {
@@ -106,7 +135,7 @@ export default function DatabaseExplorer({ model }: Props) {
         setContextMenu(undefined)
         if (node.kind === 'connection') model.connectionAction(key, id)
         else if (node.kind === 'table') void model.tableAction(key, id, db, table)
-        else void model.databaseAction(key, id, db)
+        else void model.databaseAction(key, id, db, undefined, node.schema)
       }
     }
   }
@@ -115,6 +144,8 @@ export default function DatabaseExplorer({ model }: Props) {
     if (node.primary) return <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} />
     switch (node.kind) {
       case 'group':
+        return <FolderOutlined />
+      case 'schema':
         return <FolderOutlined />
       case 'database':
         return <DatabaseOutlined />
@@ -224,7 +255,7 @@ export default function DatabaseExplorer({ model }: Props) {
                   if (running) return
                   const node = data.byKey.get(String(value.key))
                   if (!node) return
-                  if (node.kind === 'database') void model.databaseAction('tables', node.owner, node.database)
+                  if (node.kind === 'database' || node.kind === 'schema') void model.databaseAction('tables', node.owner, node.database, undefined, node.schema)
                   else if (node.kind === 'table') void model.tableAction('data', node.owner, node.database, node.table)
                 }}
                 onRightClick={({ node: value }) => {

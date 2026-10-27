@@ -10,3 +10,5 @@
 仅服务端使用 `Repository.Get` 取凭据；不把凭据放入日志或响应，不访问 HTTP、文件系统或其他业务模块。app 创建模块并将其交给 HTTP 层；用临时仓库和测试替身验证，不连接业务数据库。
 
 SetSession(ctx,id,database *string,open bool) 读取原始连接凭据，库名指定时不得为空，7 秒超时继承取消，调用引擎实际打开/关闭。nil 库表示整个连接；关闭必须等待资源释放，错误不转换为成功。
+
+连接保存/测试/列表支持 mysql、postgresql；空类型仍兼容 mysql。PostgreSQL database 字段表示维护库，密码加密与空密码保留逻辑共用原存储。未支持类型留盘且不返回列表。

@@ -25,3 +25,5 @@ loadTableDetails(database, table, connectionId?) 返回 Promise<TableDetails>，
 closeConnection/closeDatabase 为异步操作：先取消对应前端元数据请求，再等待 session 关闭接口确认底层驱动资源释放，最后清理缓存。库级请求使用独立请求代，其他库不受影响，迟到响应及旧 finally 不能覆盖或删除新请求。loadTables 首次请求会显式打开数据库，openConnection 会显式打开连接。closedDatabases 标记本会话关闭的库，菜单可重新打开。
 
 refreshDatabases(id) 在保留连接、现有数据库缓存和打开状态的前提下重读库列表，按连接去重；仅取消并清理确实已删除的库。refreshTables(database,id?,force=false) 仅刷新目标库：保留旧表列表直至新列表返回，不重建连接；默认不加载从未打开的库，force 仅供手动刷新使用。其他连接与库缓存保留。
+
+第四参数 schemaConnections 为需要 schema 层的连接 ID 只读列表，useWorkspace 按所属引擎 explorer 能力提供。loadTables 在同一数据库作用域下并行读取表/schema，共用请求去重、取消及失效检查，完成后原子更新 snapshots.schemas[database] 与 tables；空 schema 也保存。刷新/关闭同步失效 schema 缓存，不跨连接，MySQL 不增加 schema 请求。

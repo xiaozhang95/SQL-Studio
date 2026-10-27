@@ -17,3 +17,11 @@ DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。
 DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承载 SQL；结果 UI 据此复用只读高亮与复制，具体列名由引擎维护。
 
 DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句；仅在请求成功后应用返回库名。
+
+DatabaseEngine.PostgreSQL=postgresql。DatabaseProfile.database? 为维护库默认值（MySQL 省略，PostgreSQL 为 postgres）。DatabaseAdapter.objects 可为 undefined，UI 与执行入口均据此限制可视化对象管理；exportDDL(database,table,ddl) 单独负责结构参考导出。
+
+DatabaseProfile.iconPresentation? 可为 brand，指定原始品牌图标使用透明底板与独立状态圆点；省略沿用现有状态底板，具体资源仍由所属引擎 profile 提供。
+
+DatabaseAdapter.explorer? 提供 schema 引擎的 tableIdentity(table):{schema,name}，纯数据树接收该布局契约；省略则沿用 MySQL 数据库直下表/视图层级。
+
+tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(tables,schema?) 提供引擎所属结构列表列/行，PostgreSQL 拆开 Schema 和表名列。SQLCompletionContext.namespace? 表示当前 schema，schema 字段仍是元数据 map。DatabaseExplorerAdapter.referencedTables? 根据所属方言识别 AI 上下文引用。

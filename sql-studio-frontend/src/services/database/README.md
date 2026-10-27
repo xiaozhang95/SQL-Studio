@@ -13,3 +13,5 @@ executeObjectSQL 也供表数据单元格点击保存使用，传递显式连接
 getIndexes(id, database, table, signal?) 返回 Promise<DBIndex[]>；显式携带原始连接、库、表范围，支持取消。无索引返回空数组，失败由调用方展示和重试，不以 DDL 文本推测索引。
 
 setConnectionSession(id, open, database?, signal?) 返回 Promise<{open:boolean}>；省略库为整个连接，指定库仅控制该库。等待后端释放驱动连接后关闭才成功，失败保留前端窗口；打开验证真实连通性。
+
+getSchemas(id,database,signal?) 调用 /connections/{id}/schemas，返回可访问的 schema 字符串数组，包含无表 schema；复用显式连接/库和取消。

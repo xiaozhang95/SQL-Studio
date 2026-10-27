@@ -13,3 +13,6 @@ app 负责装配，httpapi → modules 的公开入口 → model；基础设施�
 - [用户配置文件仓库](statefile/README.md)：用户目录分区 JSON。
 
 - [DeepSeek 客户端](deepseek/README.md)：官方模型 API 传输。
+
+- [数据库分派](database/README.md)：只按连接类型分派，不导入具体驱动。
+- [PostgreSQL 协议驱动](postgresql/README.md)：PolarDB PostgreSQL 连接、schema 元数据与执行。

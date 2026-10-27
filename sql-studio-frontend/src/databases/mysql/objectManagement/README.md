@@ -11,3 +11,5 @@ fields(columns, ddl?) 从元数据构造设计草稿；复杂类型、生成列�
 pnpm test:objects 使用隔离输入验证标识符、默认值、SQL mode、注入边界、特殊字段保护和差异 ALTER，不访问 MySQL。
 
 sameDefinition(current, original) 用于表设计提交前的结构检查：只忽略 SHOW CREATE TABLE 末行表选项中的 AUTO_INCREMENT 计数，字段、注释、索引等变化仍判为不同。
+
+defaultCollation 优先 utf8mb4 默认排序规则，initialFields 返回 BIGINT 自增主键 id，dumpWithData 统一包含结构/精确数据及 NO_AUTO_VALUE_ON_ZERO 的保存恢复包装；外层不拼 MySQL 会话 SQL。

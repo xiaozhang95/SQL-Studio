@@ -8,11 +8,11 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
-// 旧的非 MySQL 连接保留在本地文件中，不再作为可用连接返回。
+// 未支持的连接保留在本地文件中，不作为可用连接返回。
 func (s *Service) ListConnections() []model.Connection {
 	items := []model.Connection{}
 	for _, c := range s.connections.List() {
-		if model.IsMySQL(c.Type) {
+		if model.SupportedDatabaseType(c.Type) {
 			c.Group = model.NormalizeConnectionGroup(c.Group)
 			items = append(items, c)
 		}

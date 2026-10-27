@@ -11,3 +11,9 @@ Connection.group 为可选分组名称，与连接配置一起保存；省略或
 QueryRequest.allowWrite?:boolean 默认不传（只读），对象管理确认保存显式传 true；limit?:number 用于受后端上限约束的元数据读取。普通查询编辑器不增加写入开关。
 
 DBIndex 与服务端 Index 对齐，包含 name、unique、type 和 columns（name、position、可空 prefixLength、order）；TableDetails 组合 Column[] 和 DBIndex[]，仅用于对象树只读元数据。
+
+Connection.database? 对应后端维护数据库字段，仅 PostgreSQL 使用，空值默认 postgres；不是查询页的当前数据库。PostgreSQL DBTable.name 为完整双引号 schema/table 对，所有元数据和查询目标原样传递，不拆分点号。
+
+DBIndex.primary? 为可选主键标志，用于 PostgreSQL 真实索引名，旧 MySQL PRIMARY 名称仍兼容。
+
+QueryRequest.schema? 为 PostgreSQL 当前 schema，后端在本次请求独占的连接上验证 USAGE 并设置 search_path 后再执行。省略不改变旧行为；MySQL 拒绝非空独立 schema。

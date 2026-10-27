@@ -1,5 +1,6 @@
 import type { DataNode } from 'antd/es/tree'
 
+import type { DatabaseExplorerAdapter } from '@/databases/typings'
 import type { Connection } from '@/typings/database'
 
 import { connectionGroupName } from '../../../../constant/connectionGroup/index.ts'
@@ -13,6 +14,7 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   owner: string
   database: string
   table: string
+  schema?: string
   tooltip?: string
   primary?: boolean
   view?: boolean
@@ -22,7 +24,13 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   children?: ExplorerNode[]
 }
 type Snapshots = ReturnType<typeof useDatabaseObjects>['snapshots']
-export function buildExplorerTree(connections: readonly Connection[], snapshots: Snapshots, expanded: readonly string[], search: string) {
+export function buildExplorerTree(
+  connections: readonly Connection[],
+  snapshots: Snapshots,
+  expanded: readonly string[],
+  search: string,
+  layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {}
+) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
     byKey = new Map<string, ExplorerNode>()
@@ -60,7 +68,9 @@ export function buildExplorerTree(connections: readonly Connection[], snapshots:
     root.tooltip = `${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`
     if (connected) {
       loadedKeys.push(root.key)
-      const databases = state.databases.filter((db) => connectionMatch || matches(db) || !state.tables[db] || state.tables[db].some((table) => matches(table.name)))
+      const databases = state.databases.filter(
+        (db) => connectionMatch || matches(db) || !state.tables[db] || state.tables[db].some((table) => matches(table.name)) || state.schemas?.[db]?.some(matches)
+      )
       // 折叠分支保留原始元数据，不创建后代节点、React 元素或右键菜单。
       if ((open.has(key('group', groupName)) || term) && (open.has(root.key) || term))
         root.children = databases.map((db) => {
@@ -78,63 +88,92 @@ export function buildExplorerTree(connections: readonly Connection[], snapshots:
           }
           if (!tables) return databaseNode
           const values = tables.filter((table) => connectionMatch || matches(db) || matches(table.name))
-          databaseNode.children = []
-          for (const [kind, title, view] of [
-            ['tables', '表', false],
-            ['views', '视图', true]
-          ] as const) {
-            const items = values.filter((table) => table.type.includes('VIEW') === view)
-            if (view && !items.length) continue
-            const category = make(kind, title, id, db)
-            category.isLeaf = false
-            loadedKeys.push(category.key)
-            databaseNode.children.push(category)
-            if (!open.has(category.key)) continue
-            category.children = items.map((table) => {
-              const node = make('table', table.name, id, db, table.name)
-              node.view = view
-              node.isLeaf = view
-              node.tooltip = table.name + (table.comment ? `\n${table.comment}` : '')
-              if (view) return node
-              const identity = key(db, table.name),
-                details = state.details[identity],
-                error = state.detailErrors[identity]
-              if (details) loadedKeys.push(node.key)
-              if (!open.has(node.key)) return node
-              if (!details && !error) ready = false
-              if (error && !details) {
-                const failed = placeholder('detail-error', error, id, db, table.name)
-                failed.retry = 'table'
-                node.children = [failed]
+          const layout = layouts[id]
+          const names = new Map<string, string>()
+          const addCategories = (parent: ExplorerNode, entries: typeof values, schema?: string) => {
+            parent.children = []
+            for (const [kind, title, view] of [
+              ['tables', '表', false],
+              ['views', '视图', true]
+            ] as const) {
+              const items = entries.filter((table) => table.type.includes('VIEW') === view)
+              if (view && !items.length) continue
+              const category = make(kind, title, id, db, '', schema)
+              category.schema = schema
+              category.isLeaf = false
+              loadedKeys.push(category.key)
+              parent.children.push(category)
+              if (!open.has(category.key)) continue
+              category.children = items.map((table) => {
+                const node = make('table', names.get(table.name) ?? table.name, id, db, table.name)
+                node.view = view
+                node.isLeaf = view
+                node.tooltip = table.name + (table.comment ? `\n${table.comment}` : '')
+                if (view) return node
+                const identity = key(db, table.name),
+                  details = state.details[identity],
+                  error = state.detailErrors[identity]
+                if (details) loadedKeys.push(node.key)
+                if (!open.has(node.key)) return node
+                if (!details && !error) ready = false
+                if (error && !details) {
+                  const failed = placeholder('detail-error', error, id, db, table.name)
+                  failed.retry = 'table'
+                  node.children = [failed]
+                  return node
+                }
+                if (!details) return node
+                node.children = []
+                for (const kind of ['columns', 'indexes'] as const) {
+                  const group = make(kind, kind === 'columns' ? '字段' : '索引', id, db, table.name)
+                  group.isLeaf = false
+                  loadedKeys.push(group.key)
+                  node.children.push(group)
+                  if (!open.has(group.key)) continue
+                  group.children =
+                    kind === 'columns'
+                      ? details.columns.map((column) => {
+                          const item = make('column', column.name, id, db, table.name, column.name)
+                          item.primary = column.key === 'PRI'
+                          item.tooltip = `${column.name} · ${column.type}${item.primary ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`
+                          return item
+                        })
+                      : details.indexes.map((index) => {
+                          const item = make('index', index.name, id, db, table.name, index.name)
+                          item.primary = index.primary || index.name === 'PRIMARY'
+                          item.tooltip = `${index.name}\n${indexDescription(index)}`
+                          return item
+                        })
+                  if (!group.children.length) group.children = [placeholder(`empty-${kind}`, kind === 'columns' ? '暂无字段' : '暂无索引', id, db, table.name)]
+                }
                 return node
+              })
+              if (!category.children.length) {
+                const empty = make('empty-tables', '暂无表', id, db, '', schema)
+                empty.selectable = false
+                category.children = [empty]
               }
-              if (!details) return node
-              node.children = []
-              for (const kind of ['columns', 'indexes'] as const) {
-                const group = make(kind, kind === 'columns' ? '字段' : '索引', id, db, table.name)
-                group.isLeaf = false
-                loadedKeys.push(group.key)
-                node.children.push(group)
-                if (!open.has(group.key)) continue
-                group.children =
-                  kind === 'columns'
-                    ? details.columns.map((column) => {
-                        const item = make('column', column.name, id, db, table.name, column.name)
-                        item.primary = column.key === 'PRI'
-                        item.tooltip = `${column.name} · ${column.type}${item.primary ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`
-                        return item
-                      })
-                    : details.indexes.map((index) => {
-                        const item = make('index', index.name, id, db, table.name, index.name)
-                        item.primary = index.name === 'PRIMARY'
-                        item.tooltip = `${index.name}\n${indexDescription(index)}`
-                        return item
-                      })
-                if (!group.children.length) group.children = [placeholder(`empty-${kind}`, kind === 'columns' ? '暂无字段' : '暂无索引', id, db, table.name)]
-              }
-              return node
-            })
-            if (!category.children.length) category.children = [placeholder('empty-tables', '暂无表', id, db)]
+            }
+          }
+          if (!layout) addCategories(databaseNode, values)
+          else {
+            const schemas = new Map<string, typeof values>((state.schemas?.[db] || []).map((schema) => [schema, []]))
+            for (const table of values) {
+              const identity = layout.tableIdentity(table.name)
+              names.set(table.name, identity.name)
+              if (!schemas.has(identity.schema)) schemas.set(identity.schema, [])
+              schemas.get(identity.schema)!.push(table)
+            }
+            databaseNode.children = []
+            for (const [schema, entries] of [...schemas].sort(([left], [right]) => left.localeCompare(right))) {
+              if (term && !connectionMatch && !matches(db) && !matches(schema) && !entries.length) continue
+              const node = make('schema', schema, id, db, '', schema)
+              node.schema = schema
+              node.isLeaf = false
+              loadedKeys.push(node.key)
+              databaseNode.children.push(node)
+              if (open.has(node.key)) addCategories(node, entries, schema)
+            }
           }
           return databaseNode
         })

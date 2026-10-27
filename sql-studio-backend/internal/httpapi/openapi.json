@@ -374,6 +374,76 @@
         }
       }
     },
+    "/connections/{id}/schemas": {
+      "get": {
+        "operationId": "schemas",
+        "summary": "schema列表",
+        "tags": ["元数据"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaName"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/connections/{id}/tables": {
       "get": {
         "operationId": "tables",
@@ -1253,9 +1323,13 @@
           },
           "type": {
             "type": "string",
-            "enum": ["mysql", ""],
+            "enum": ["mysql", "postgresql", ""],
             "default": "mysql",
             "description": "省略或空字符串兼容为 mysql。"
+          },
+          "database": {
+            "type": "string",
+            "description": "PostgreSQL 维护库，省略或留空默认 postgres；MySQL 不使用。"
           },
           "tls": {
             "type": "boolean",
@@ -1292,6 +1366,7 @@
         "required": ["name", "host", "port", "username"],
         "additionalProperties": false
       },
+      "SchemaName": {"type": "string"},
       "Table": {
         "type": "object",
         "properties": {
@@ -1300,7 +1375,7 @@
           },
           "type": {
             "type": "string",
-            "description": "MySQL 对象类型，如 BASE TABLE 或 VIEW。"
+            "description": "对象类型 BASE TABLE 或 VIEW；PostgreSQL 表名保留完整双引号 schema/table 身份。"
           },
           "comment": {
             "type": "string"
@@ -1348,6 +1423,7 @@
       "QueryRequest": {
         "type": "object",
         "properties": {
+          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL 不接受独立 schema。"},
           "database": {
             "type": "string",
             "default": ""
@@ -1512,6 +1588,7 @@
       "AIRequest": {
         "type": "object",
         "properties": {
+          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL 不接受独立 schema。"},
           "action": {
             "type": "string",
             "enum": ["complete", "optimize"]
@@ -1648,7 +1725,11 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "主键名称为 PRIMARY"
+            "description": "MySQL 主键为 PRIMARY；PostgreSQL 保留实际名称。"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "可选主键标志；PostgreSQL 不通过名称判断主键。"
           },
           "unique": {
             "type": "boolean"
@@ -1671,7 +1752,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "表达式索引此值为空"
+            "description": "MySQL 表达式索引此值为空；PostgreSQL 返回表达式定义"
           },
           "position": {
             "type": "integer",

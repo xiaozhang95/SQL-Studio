@@ -15,3 +15,7 @@ WorkspacePageKind 增加 table-create/table-design，复用页面的连接/库/�
 RunState.scope 可选记录实际执行范围，用于刷新。旧快照缺少该字段时 SQL 刷新禁用。
 
 StatementRun.database 可选保存该条语句实际请求的数据库，刷新优先使用它；旧结果回退批次范围。
+
+HistoryItem.databaseType? 保存执行时引擎，用所属方言清理历史来源标记；旧记录缺少类型时兼容 MySQL。
+
+QueryScope.schema?、StatementRun.schema?、HistoryItem.schema? 分别保存页面、已执行语句和历史的 PostgreSQL schema。旧快照缺字段兼容默认搜索路径；刷新优先使用已执行语句记录，切换库或连接清空 schema。

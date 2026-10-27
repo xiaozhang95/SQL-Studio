@@ -23,6 +23,7 @@ type Column struct {
 
 // Index 保留复合索引的字段顺序；表达式索引的字段名可能为空。
 type Index struct {
+	Primary bool          `json:"primary,omitempty"`
 	Name    string        `json:"name"`
 	Unique  bool          `json:"unique"`
 	Type    string        `json:"type"`

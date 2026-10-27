@@ -26,3 +26,9 @@ workspace-transitions.test.mjs 验证新增对象不修改布局、删库按连�
 history-completion.test.mjs 覆盖旧历史每连接截取最新 50 条、删除归属隔离、AI 万表上下文选择与限长，以及原生 SQL 库前缀/别名字段补全。浏览器使用虚构连接和模拟 AI，检查历史追加/删除落盘、输入防抖、Tab 优先本地补全、AI 接受/取消和继续输入中止请求，不调用真实模型。
 
 切库回归：`node --test tests/use-database.test.mjs` 执行实际 executeSQL 编排、替换请求和状态，验证多次 USE 的后续请求/历史/结果范围、页面隔离、失败停止和取消不切库；不连接业务数据库。
+
+PostgreSQL 回归：`node --test tests/postgresql.test.mjs` 检查美元引号/E 字符串/嵌套注释、历史保护、schema 同名表身份、SQL 注入边界、精确主键与 NULL 数据编辑；不访问网络。
+
+explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
+
+Schema 回归覆盖结构列表拆列、旧记录迁移、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。

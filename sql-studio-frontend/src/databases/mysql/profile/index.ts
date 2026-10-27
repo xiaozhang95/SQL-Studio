@@ -1,4 +1,4 @@
-import mysqlDolphin from '@/assets/databases/mysql-dolphin.svg'
+import mysqlIcon from '@/assets/databases/mysql-official.svg'
 
 import { DatabaseEngine } from '../../typings'
 import type { DatabaseProfile } from '../../typings'
@@ -9,5 +9,6 @@ export const mysqlProfile = {
   description: 'MySQL 数据库',
   className: 'engine-mysql',
   port: 3306,
-  icon: mysqlDolphin
+  iconPresentation: 'brand',
+  icon: mysqlIcon
 } as const satisfies DatabaseProfile

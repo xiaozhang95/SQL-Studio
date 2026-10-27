@@ -2,7 +2,7 @@
 
 ## 技术栈与目录
 
-前端使用 Vite + React + TypeScript + Ant Design + SCSS，SQL 编辑器使用 CodeMirror；后端使用 Go + Gin 模块化单体，数据库引擎仅支持 MySQL。前端包管理使用 pnpm。
+前端使用 Vite + React + TypeScript + Ant Design + SCSS，SQL 编辑器使用 CodeMirror；后端使用 Go + Gin 模块化单体，数据库支持 MySQL 和 PolarDB PostgreSQL。前端包管理使用 pnpm。
 
 ```text
 SQL-Studio/
@@ -11,6 +11,7 @@ SQL-Studio/
 │  ├─ src/pages/workspace/    工作区组件、状态与业务 hooks
 │  ├─ src/services/           HTTP 接口
 │  ├─ src/databases/mysql/    MySQL SQL、补全、对象与数据操作
+│  ├─ src/databases/postgresql/ PostgreSQL 方言、补全与数据编辑
 │  ├─ src/ai/                 AI 服务商适配器
 │  ├─ src/constant/          共享只读定义
 │  ├─ src/typings/           跨模块类型契约
@@ -25,6 +26,8 @@ SQL-Studio/
 │  ├─ internal/modules/       connections/metadata/query/settings/ai
 │  ├─ internal/model/         跨层数据契约
 │  ├─ internal/mysql/         MySQL 驱动、元数据及执行
+│  ├─ internal/postgresql/    PostgreSQL 驱动、schema 元数据及执行
+│  ├─ internal/database/      引擎分派
 │  ├─ internal/connection/    AES-GCM 连接仓库
 │  ├─ internal/statefile/     用户分区 JSON 和修订保护
 │  ├─ internal/deepseek/      AI HTTPS 传输
@@ -37,12 +40,14 @@ SQL-Studio/
 ```mermaid
 flowchart LR
   UI[React 工作区] --> Hooks[业务 hooks]
-  Hooks --> Adapter[MySQL / AI 适配器]
+  Hooks --> Adapter[数据库 / AI 适配器]
   Hooks --> HTTP[共享 HTTP 服务]
   Adapter --> HTTP
   HTTP --> Gin[Gin HTTP API]
   Gin --> Modules[独立业务模块]
-  Modules --> MySQL[MySQL 驱动]
+  Modules --> Engines[数据库分派]
+  Engines --> MySQL[MySQL 驱动]
+  Engines --> PG[PostgreSQL 驱动]
   Modules --> Connections[加密连接仓库]
   Modules --> State[用户配置文件]
   Modules --> DeepSeek[DeepSeek 客户端]

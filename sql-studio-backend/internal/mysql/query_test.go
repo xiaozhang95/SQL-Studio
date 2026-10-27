@@ -205,3 +205,20 @@ func TestWriteFeedbackPreservesInsertID(t *testing.T) {
 		t.Fatal("explicit write did not use execution path")
 	}
 }
+
+func TestCommandAcknowledgementAndEmptyRowsetAreDifferent(t *testing.T) {
+	for _, columns := range [][]string{{}, {"id"}} {
+		types := []string{}
+		if len(columns) > 0 {
+			types = []string{"BIGINT"}
+		}
+		fixture := &queryFixture{columns: columns, types: types}
+		result, err := execute(context.Background(), fixtureDB(t, fixture), "SELECT fixture", 1000, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.IsQuery != (len(columns) > 0) || len(result.Rows) != 0 {
+			t.Fatal("command acknowledgement confused with empty SELECT")
+		}
+	}
+}

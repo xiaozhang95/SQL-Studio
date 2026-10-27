@@ -25,6 +25,7 @@ export function useSQLCompletion({ scope, connections, objects, columns }: Props
     () => [
       adapter.completion({
         database: scope.database,
+        namespace: scope.schema,
         table: scope.table,
         schema: connected
           ? Object.fromEntries(
@@ -41,6 +42,6 @@ export function useSQLCompletion({ scope, connections, objects, columns }: Props
           : {}
       })
     ],
-    [adapter, connected, databases, tables, structures, scope.database, scope.table, columns]
+    [adapter, connected, databases, tables, structures, scope.database, scope.schema, scope.table, columns]
   )
 }

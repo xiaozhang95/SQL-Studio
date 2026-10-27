@@ -49,3 +49,9 @@ refreshResult 固定已执行查询 scope 和当前选中 SQL，不使用后来�
 关闭确认弹窗宽 560px，底栏按钮整体靠右并保持统一间距，顺序为取消、不保存、保存并关闭；无查询 SQL 时右侧为放弃并关闭。仅简化文案与布局，保存和实际关闭流程保持原行为。
 
 成功的 USE 通过引擎 useDatabase 识别，更新发起查询页数据库并清空表范围，后续语句显式传入新库；失败或取消不切换范围。每条语句保存请求数据库及对应历史，刷新当前结果使用该条记录，多个 USE 依次生效，不修改其他页面或连接。此行为只传递默认库，不模拟事务、临时表或其他会话状态。
+
+创建/设计等可视化对象入口除菜单外还检查目标引擎 objects 能力。历史记录携带 databaseType，成功 USE 仍只由目标引擎识别，PostgreSQL 不继承 MySQL USE。
+
+schemaConnections 由连接及引擎 explorer 能力 memo 化提供给对象缓存，不依赖当前查询选择器。
+
+数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。旧对象标题/结构结果由 objectPresentation 兼容展示，恢复不重跑 SQL。

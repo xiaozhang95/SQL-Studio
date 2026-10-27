@@ -151,6 +151,14 @@ function rowCell(result: QueryResult, row: unknown[], column: string): string {
 }
 export const mysqlObjects: DatabaseObjectAdapter = {
   fieldTypes,
+  defaultCollation: (options) => options.find((value) => value.charset === 'utf8mb4' && value.default) || options.find((value) => value.default) || options[0],
+  initialFields: () => [{ ...mysqlObjects.defaultField(), name: 'id', type: 'BIGINT', nullable: false, primary: true, autoIncrement: true }],
+  dumpWithData: (database, table, ddl, result, columns) =>
+    mysqlObjects.dump(database, table, ddl).replace('仅包含对象结构，不包含数据', '包含对象结构和数据') +
+    "\nSET @sql_studio_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n" +
+    dumpData(database, table, result, columns) +
+    'SET SESSION sql_mode = @sql_studio_old_sql_mode;\n',
+
   sameDefinition: (current, original) => {
     const normalize = (ddl: string) => ddl.replace(/(^\)\s+ENGINE=[^\n]*?)\bAUTO_INCREMENT=\d+\s*/im, '$1')
     return normalize(current) === normalize(original)

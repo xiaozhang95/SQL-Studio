@@ -3,6 +3,7 @@ import { Select } from 'antd'
 import type { CSSProperties } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { getDatabaseAdapter } from '@/databases'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
@@ -14,12 +15,13 @@ type Props = {
   connections: Connection[]
   objects: ReturnType<typeof useDatabaseObjects>
   disabled: boolean
+  onSchema: (schema: string) => void
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
 const selectorStyle = { flex: '1 1 150px', minWidth: 130, maxWidth: appearance.selectWidth } satisfies CSSProperties
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
-export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect }: Props) {
+export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
   const loaded = connections.filter((connection) => objects.snapshots[connection.id]?.status === 'connected')
   return (
     <>
@@ -71,6 +73,19 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           )
         }))}
       />
+      {getDatabaseAdapter(connections.find((connection) => connection.id === scope.connectionId)?.type).explorer && (
+        <Select
+          style={selectorStyle}
+          aria-label="选择 Schema"
+          placeholder="Schema（默认搜索路径）"
+          allowClear
+          showSearch
+          disabled={disabled || !objects.connected || !scope.database}
+          value={scope.schema || undefined}
+          options={(objects.snapshots[scope.connectionId]?.schemas?.[scope.database] || []).map((schema) => ({ value: schema, label: schema }))}
+          onChange={(value) => onSchema(value || '')}
+        />
+      )}
     </>
   )
 }

@@ -13,6 +13,7 @@ function validTab(tab: WorkspaceTab) {
     typeof tab.title === 'string' &&
     typeof tab.connectionId === 'string' &&
     typeof tab.database === 'string' &&
+    (tab.schema === undefined || typeof tab.schema === 'string') &&
     typeof tab.table === 'string' &&
     ['query', 'data', 'structure', 'ddl', 'table-create', 'table-design'].includes(tab.kind)
   )

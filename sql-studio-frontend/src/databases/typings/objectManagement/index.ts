@@ -32,6 +32,9 @@ export type CollationOption = { charset: string; name: string; default: boolean 
 export type DatabaseDefinition = { name: string; charset: string; collation: string }
 export type ObjectChange = { action: ObjectAction; target: ObjectTarget; name: string }
 export interface DatabaseObjectAdapter {
+  defaultCollation: (options: readonly CollationOption[]) => CollationOption | undefined
+  initialFields: () => FieldDefinition[]
+  dumpWithData: (database: string, table: string, ddl: string, result: QueryResult, columns: Column[]) => string
   readonly collationsSQL: string
   readonly sqlModeSQL: string
   sameDefinition: (current: string, original: string) => boolean

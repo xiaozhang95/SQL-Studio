@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { explorerTableIdentity } from '../src/databases/postgresql/query/index.ts'
 import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
 import { objectNodeKey as key } from '../src/pages/workspace/utils/objectTree/index.ts'
 
@@ -63,4 +64,47 @@ test('scroll restoration waits for expanded connection and database lists to fin
   assert.equal(buildExplorerTree(connections, snapshots, tableExpanded, '').ready, false)
   const withDetails = { ...snapshot, details: { [key('big', 't_00000')]: { columns: [], indexes: [] } } }
   assert.equal(buildExplorerTree(connections, { a: withDetails, b: snapshots.b }, tableExpanded, '').ready, true)
+})
+
+test('PostgreSQL shows database/schema/category/table and preserves full action identities', () => {
+  const rows = [
+    { name: '"a.b"."same"', type: 'BASE TABLE', comment: '' },
+    { name: '"other"."same"', type: 'BASE TABLE', comment: '' },
+    { name: '"other"."view_name"', type: 'VIEW', comment: '' }
+  ]
+  const state = { ...snapshot, schemas: { big: ['a.b', 'other', 'empty'] }, tables: { big: rows } }
+  const initial = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big')]
+  const layout = { a: { tableIdentity: explorerTableIdentity } }
+  const closed = buildExplorerTree(connections, { a: state }, initial, '', layout)
+  assert.deepEqual(
+    closed.byKey.get(key('database', 'a', 'big')).children.map((node) => node.title),
+    ['a.b', 'empty', 'other']
+  )
+  assert.equal(
+    [...closed.byKey.values()].some((node) => node.kind === 'table'),
+    false
+  )
+  const expanded = [
+    ...initial,
+    key('schema', 'a', 'big', 'a.b'),
+    key('schema', 'a', 'big', 'other'),
+    key('schema', 'a', 'big', 'empty'),
+    key('tables', 'a', 'big', 'a.b'),
+    key('tables', 'a', 'big', 'other'),
+    key('tables', 'a', 'big', 'empty'),
+    key('views', 'a', 'big', 'other')
+  ]
+  const tree = buildExplorerTree(connections, { a: state }, expanded, '', layout)
+  const first = tree.byKey.get(key('table', 'a', 'big', '"a.b"."same"'))
+  const second = tree.byKey.get(key('table', 'a', 'big', '"other"."same"'))
+  assert.equal(first.title, 'same')
+  assert.equal(second.title, 'same')
+  assert.notEqual(first.key, second.key)
+  assert.equal(first.table, '"a.b"."same"')
+  assert.equal(second.owner, 'a')
+  assert.equal(tree.byKey.get(key('tables', 'a', 'big', 'empty')).children[0].title, '暂无表')
+  assert.equal(tree.byKey.get(key('views', 'a', 'big', 'other')).children[0].title, 'view_name')
+  assert.equal(new Set(tree.byKey.keys()).size, tree.byKey.size)
+  const search = buildExplorerTree(connections, { a: state }, expanded, 'empty', layout)
+  assert.equal(search.byKey.get(key('database', 'a', 'big')).children[0].title, 'empty')
 })

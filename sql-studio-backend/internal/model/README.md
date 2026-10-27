@@ -23,3 +23,9 @@ AIConfig统一AI配置内部结构和脱敏响应，model/CompletionEnabled兼�
 AIRequest.document/table携带注释草稿与选中表，AIConnectionContext仅包含Name/Type安全字段，由AI模块按ConnectionID填充。
 
 Index/IndexColumn 为索引只读契约，保存名称、唯一性、类型以及按 position 排列的组成字段（name、可空 prefixLength、order）；PRIMARY 表示主键，表达式字段名为空。
+
+TypePostgreSQL=postgresql，SupportedDatabaseType 接受 MySQL/PostgreSQL；Connection.Database 是可选维护库，PostgreSQL 缺省 postgres。PostgreSQL Table.Name 为双引号 schema/table 对，TableRef 原样传递；schema 不混入物理数据库。
+
+Index.Primary 是可选 JSON primary 主键标志；PostgreSQL 保留实际索引名称并显式设置，MySQL 兼容 PRIMARY 名称。
+
+QueryRequest.Schema 和 AIRequest.Schema 是可选 schema 字段，区别于物理数据库。旧客户端省略时兼容原范围。

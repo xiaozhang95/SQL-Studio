@@ -12,6 +12,7 @@ import { exportSQL } from '@/utils/sqlExport'
 import { saveSQL } from '@/utils/sqlSave'
 
 import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../constant/layout'
+import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { explorerAfterChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useDatabaseObjects } from '../useDatabaseObjects'
@@ -19,7 +20,7 @@ import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
 
-const emptyScope: QueryScope = { connectionId: '', database: '', table: '' }
+const emptyScope: QueryScope = { connectionId: '', database: '', schema: '', table: '' }
 const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query', sql: '' }
 
 /** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
@@ -58,7 +59,7 @@ export const useWorkspace = () => {
   const closedPages = useRef(new Set<string>())
   const executeRef = useRef<() => void>(() => {})
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
-  const { connectionId, database, table: selectedTable } = tab
+  const { connectionId, database, schema: selectedSchema = '', table: selectedTable } = tab
   const connection = connections.find((item) => item.id === connectionId)
   const adapter = getDatabaseAdapter(connection?.type)
   const engine = adapter.profile
@@ -70,10 +71,11 @@ export const useWorkspace = () => {
   }, [historyStore.ready, connectionLoading, connectionError, connections, pruneHistory])
   const validateDatabases = useCallback((id: string, databases: string[]) => {
     setTabs((previous) =>
-      previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', table: '' } : item))
+      previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', schema: '', table: '' } : item))
     )
   }, [])
-  const objects = useDatabaseObjects(connectionId, database, validateDatabases)
+  const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
+  const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
   const running = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean)
   const setTableDesignerBusy = useCallback(
@@ -112,6 +114,18 @@ export const useWorkspace = () => {
       objects.snapshots[page.connectionId]?.status !== 'connected'
     )
   }
+  useEffect(() => {
+    setTabs((previous) => {
+      let changed = false
+      const next = previous.map((page) => {
+        const names = objects.snapshots[page.connectionId]?.schemas?.[page.database]
+        if (page.kind !== 'query' || !page.schema || !names || names.includes(page.schema)) return page
+        changed = true
+        return { ...page, schema: '', table: '' }
+      })
+      return changed ? next : previous
+    })
+  }, [objects.snapshots])
   const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
   useEffect(() => {
     if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
@@ -120,7 +134,7 @@ export const useWorkspace = () => {
   const batch = runs[activeTab]
   const statementRun = batch?.statements?.[resultIndex]
   const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, id: `${batch.id}:${resultIndex}` } : batch
-  const result = run?.result
+  const result = useMemo(() => (tab.kind === 'structure' && !tab.table ? presentTableList(run?.result, adapter, tab.schema) : run?.result), [run?.result, adapter, tab.kind, tab.table, tab.schema])
   const resultSearch = resultViews[activeTab]?.search || ''
   const tablePage = resultViews[activeTab]?.page || 1
   const openedKey = JSON.stringify(Object.keys(objects.snapshots).sort())
@@ -187,6 +201,21 @@ export const useWorkspace = () => {
       stale = true
     }
   }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded])
+
+  useEffect(() => {
+    if (!storage.ready || connectionLoading || connectionError) return
+    setTabs((previous) => {
+      let changed = false
+      const next = previous.map((page) => {
+        const owner = connections.find((connection) => connection.id === page.connectionId)
+        if (!owner) return page
+        const presented = presentObjectPage(page, getDatabaseAdapter(owner.type))
+        changed ||= presented !== page
+        return presented
+      })
+      return changed ? next : previous
+    })
+  }, [storage.ready, connectionLoading, connectionError, connections])
 
   function updateExplorer(patch: Partial<ExplorerLayout>) {
     setExplorer((previous) => ({ ...previous, ...patch }))
@@ -320,7 +349,7 @@ export const useWorkspace = () => {
   }
   function addTab(statement = '', scope?: QueryScope, title?: string) {
     if (running || request.current) return
-    return createPage('query', scope || { connectionId, database, table: selectedTable }, title || `查询 ${tabs.filter((item) => item.kind === 'query').length + 1}`, statement)
+    return createPage('query', scope || { connectionId, database, schema: selectedSchema, table: selectedTable }, title || `查询 ${tabs.filter((item) => item.kind === 'query').length + 1}`, statement)
   }
   function openTableDesigner(kind: 'table-create' | 'table-design', scope: QueryScope) {
     const existing =
@@ -367,13 +396,13 @@ export const useWorkspace = () => {
   }
   function selectConnection(id: string) {
     if (running || objects.snapshots[id]?.status !== 'connected') return
-    updateTab({ connectionId: id, database: '', table: '' })
+    updateTab({ connectionId: id, database: '', schema: '', table: '' })
     resetStructure()
   }
-  function selectObject(db: string, table?: string, id = connectionId) {
+  function selectObject(db: string, table?: string, id = connectionId, schema = '') {
     if (running || objects.snapshots[id]?.status !== 'connected') return
     if (id !== connectionId || db !== database || (table || '') !== selectedTable) resetStructure(Boolean(table))
-    updateTab({ connectionId: id, database: db, table: table || '' })
+    updateTab({ connectionId: id, database: db, schema, table: table || '' })
   }
   function openConnection(id: string) {
     return running ? Promise.resolve([]) : objects.openConnection(id)
@@ -508,7 +537,7 @@ export const useWorkspace = () => {
       setConnectionModal(true)
     } else if (action === 'delete') deleteConnection(id)
   }
-  async function databaseAction(action: string, id: string, db: string, reuseTabId?: string) {
+  async function databaseAction(action: string, id: string, db: string, reuseTabId?: string, schema?: string) {
     if (action === 'close') {
       await closeScope(id, db)
       return
@@ -523,7 +552,7 @@ export const useWorkspace = () => {
       }
       return
     }
-    const scope = { connectionId: id, database: db, table: '' }
+    const scope = { connectionId: id, database: db, schema, table: '' }
     const actions: Partial<Record<string, ObjectAction>> = {
       create: ObjectAction.CreateDatabase,
       edit: ObjectAction.EditDatabase,
@@ -532,6 +561,7 @@ export const useWorkspace = () => {
     }
     const objectAction = actions[action]
     if (objectAction) {
+      if (!getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type).objects) return
       if (objectAction === ObjectAction.CreateTable) {
         openTableDesigner('table-create', scope)
         return
@@ -552,21 +582,21 @@ export const useWorkspace = () => {
       return
     }
     if (action !== 'tables') return
-    const title = `${db} · 结构`
+    const title = `${db}${schema ? ' / ' + schema : ''} · 结构`
     const tabId = reuseTabId || createPage('structure', scope, title)
-    const source = `${connections.find((item) => item.id === id)?.name || ''} / ${db}`
+    const source = `${connections.find((item) => item.id === id)?.name || ''} / ${db}${schema ? ' / ' + schema : ''}`
     const controller = startRun(tabId, { kind: 'structure', title, source })
     try {
       const tables = await objects.loadTables(db, id)
+      const listing = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type).tableListResult(tables, schema)
       if (controller.signal.aborted) throw new Error('请求已取消')
       publishResult(tabId, {
         kind: 'structure',
         title,
         source,
         result: {
-          columns: ['表名', '类型', '注释'].map((name) => ({ name, type: '' })),
-          rows: tables.map((table) => [table.name, table.type, table.comment]),
-          rowCount: tables.length,
+          ...listing,
+          rowCount: listing.rows.length,
           affectedRows: 0,
           lastInsertId: '',
           durationMs: 0,
@@ -586,6 +616,7 @@ export const useWorkspace = () => {
     const scope = {
       connectionId: targetConnectionId,
       database: db,
+      schema: getDatabaseAdapter(target.type).explorer?.tableIdentity(table).schema,
       table,
       view: Boolean(objects.snapshots[targetConnectionId]?.tables[db]?.find((value) => value.name === table)?.type.includes('VIEW'))
     }
@@ -598,6 +629,7 @@ export const useWorkspace = () => {
     }
     const objectAction = actions[action]
     if (objectAction) {
+      if (!getDatabaseAdapter(target.type).objects) return
       if (objectAction === ObjectAction.CreateTable || objectAction === ObjectAction.EditTable) {
         openTableDesigner(objectAction === ObjectAction.CreateTable ? 'table-create' : 'table-design', { ...scope, table: objectAction === ObjectAction.CreateTable ? '' : table })
         return
@@ -623,13 +655,13 @@ export const useWorkspace = () => {
       return
     }
     if (action !== 'data' && action !== 'structure' && action !== 'ddl') return
-    const title = `${table} · ${action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构'}`
+    const title = `${getDatabaseAdapter(target.type).tableLabel(table)} · ${action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构'}`
     const tabId = reuseTabId || createPage(action, scope, title)
     if (action === 'data') {
       void executeSQL(statement, scope, tabId, 'data')
       return
     }
-    const source = `${target.name} / ${db} / ${table}`
+    const source = `${target.name} / ${db} / ${getDatabaseAdapter(target.type).tableLabel(table)}`
     const controller = startRun(tabId, { kind: action, title, source })
     try {
       const structure = await objects.loadStructure(db, table, targetConnectionId)
@@ -670,8 +702,8 @@ export const useWorkspace = () => {
       message.info('请先输入 SQL 语句')
       return
     }
-    const source = `${target.name} / ${scope.database || '未选择数据库'}`
-    const title = kind === 'data' ? `${scope.table} · 数据` : 'SQL 结果'
+    const source = `${target.name} / ${scope.database || '未选择数据库'}${scope.schema ? ' / ' + scope.schema : ''}`
+    const title = kind === 'data' ? `${getDatabaseAdapter(target.type).tableLabel(scope.table)} · 数据` : 'SQL 结果'
     const startedAt = new Date().toISOString()
     const batchStart = performance.now()
     const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
@@ -687,19 +719,23 @@ export const useWorkspace = () => {
           database: executionDatabase,
           connectionId: target.id,
           connectionName: target.name,
+          databaseType: target.type,
+          schema: scope.schema,
           time: new Date().toISOString(),
           durationMs: 0,
           ok: false
         }
-        const entry: StatementRun = { sql, database: executionDatabase }
+        const entry: StatementRun = { sql, database: executionDatabase, schema: scope.schema }
         try {
           if (controller.signal.aborted) throw new Error('请求已取消')
-          entry.result = await executeQuery(target.id, { database: executionDatabase, sql }, controller.signal)
+          entry.result = await executeQuery(target.id, { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql }, controller.signal)
           if (controller.signal.aborted) throw new Error('请求已取消')
           const selectedDatabase = getDatabaseAdapter(target.type).useDatabase(sql)
           if (selectedDatabase !== undefined) {
             executionDatabase = selectedDatabase
-            setTabs((previous) => previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, table: '' } : page)))
+            setTabs((previous) =>
+              previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, schema: '', table: '' } : page))
+            )
           }
           item.ok = true
           item.durationMs = entry.result.durationMs
@@ -740,7 +776,8 @@ export const useWorkspace = () => {
   async function refreshResult() {
     if (running || !canRefreshResult || !refreshScope) return
     if (tab.kind === 'query') {
-      if (statementRun?.sql) void executeSQL(statementRun.sql, { ...refreshScope, database: statementRun.database ?? refreshScope.database }, tab.id)
+      if (statementRun?.sql)
+        void executeSQL(statementRun.sql, { ...refreshScope, database: statementRun.database ?? refreshScope.database, schema: statementRun.schema ?? refreshScope.schema }, tab.id)
       return
     }
     if (tab.kind === 'data') {
@@ -748,7 +785,7 @@ export const useWorkspace = () => {
       return
     }
     if (tab.kind === 'ddl' || (tab.kind === 'structure' && tab.table)) void tableAction(tab.kind, tab.connectionId, tab.database, tab.table, tab.id)
-    else if (tab.kind === 'structure') void databaseAction('tables', tab.connectionId, tab.database, tab.id)
+    else if (tab.kind === 'structure') void databaseAction('tables', tab.connectionId, tab.database, tab.id, tab.schema)
   }
   function executeCurrentSQL(statement: string) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id) return
@@ -757,7 +794,7 @@ export const useWorkspace = () => {
       return
     }
     if (running || request.current) return
-    void executeSQL(statement, { connectionId, database, table: selectedTable }, tab.id)
+    void executeSQL(statement, { connectionId, database, schema: selectedSchema, table: selectedTable }, tab.id)
   }
   function getSelectedSQL() {
     const state = editor.current?.state
@@ -853,7 +890,7 @@ export const useWorkspace = () => {
         })
       }))
       void objects.closeConnection(saved.id).catch((error) => message.error(error instanceof Error ? error.message : '关闭旧连接失败'))
-      setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', table: '' } : item)))
+      setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', schema: '', table: '' } : item)))
       if (connectionId === saved.id) resetStructure()
     }
     setEditing(undefined)

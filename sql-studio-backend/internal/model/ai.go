@@ -2,6 +2,7 @@ package model
 
 // AIRequest 不包含数据库凭据或查询结果；结构由当前页面缓存提供。
 type AIRequest struct {
+	Schema       string               `json:"schema,omitempty"`
 	Action       string               `json:"action"`
 	ConnectionID string               `json:"connectionId"`
 	Table        string               `json:"table,omitempty"`

@@ -81,6 +81,11 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     if (blocked || request.current) return
     const connection = connections.find((value) => value.id === target.connectionId)
     if (!connection) return
+    const adapter = getDatabaseAdapter(connection.type).objects
+    if (!adapter) {
+      message.info('该引擎暂不支持可视化结构管理')
+      return
+    }
     const controller = new AbortController()
     request.current = controller
     onBusyChange(true)
@@ -96,7 +101,6 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     setCollations([])
     setOriginal([])
     setSQLMode('')
-    const adapter = getDatabaseAdapter(connection.type).objects
     const values: ObjectFormValues = {
       name: action === ObjectAction.CreateDatabase || action === ObjectAction.CreateTable ? '' : target.table || target.database,
       charset: '',
@@ -122,7 +126,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
           values.charset = definition.charset
           values.collation = definition.collation
         } else {
-          const initial = options.find((value) => value.charset === 'utf8mb4' && value.default) || options.find((value) => value.default) || options[0]
+          const initial = adapter.defaultCollation(options)
           if (!initial) throw new Error('没有可用的字符集或排序规则')
           values.charset = initial.charset
           values.collation = initial.name
@@ -142,7 +146,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
           const fields = adapter.fields(columns, definition.ddl)
           loadedOriginal = fields
           values.fields = fields.map((value) => ({ ...value }))
-        } else values.fields = [{ ...adapter.defaultField(), name: 'id', type: 'BIGINT', nullable: false, primary: true, autoIncrement: true }]
+        } else values.fields = adapter.initialFields()
       }
       if (controller.signal.aborted || request.current !== controller) return
       setCollations(loadedCollations)
@@ -167,7 +171,9 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     if (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase) {
       if (!collations.some((value) => value.charset === values.charset && value.name === values.collation)) throw new Error('排序规则与字符集不匹配')
     }
-    const sql = getDatabaseAdapter(connection.type).objects.sql(action, target, values, original, sqlMode)
+    const adapter = getDatabaseAdapter(connection.type).objects
+    if (!adapter) throw new Error('该引擎暂不支持可视化结构管理')
+    const sql = adapter.sql(action, target, values, original, sqlMode)
     return { sql, values, dialog }
   }
   async function preview() {
@@ -200,7 +206,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       const { action, target, connection } = built.dialog
       if (keepOpen && action === ObjectAction.EditTable) {
         const latest = await getDDL(connection.id, target.database, target.table, controller.signal)
-        if (!getDatabaseAdapter(connection.type).objects.sameDefinition(latest.ddl, originalDDL)) throw new Error('表结构已被其他操作修改，请重新加载后再编辑')
+        if (!getDatabaseAdapter(connection.type).objects?.sameDefinition(latest.ddl, originalDDL)) throw new Error('表结构已被其他操作修改，请重新加载后再编辑')
       }
       if (controller.signal.aborted || currentDialog.current !== built.dialog) return
       await executeObjectSQL(
@@ -239,22 +245,19 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     onBusyChange(true)
     try {
       const result = await getDDL(connection.id, target.database, target.table, controller.signal)
-      const adapter = getDatabaseAdapter(connection.type).objects
-      let output = adapter.dump(target.database, target.table, result.ddl)
+      const engine = getDatabaseAdapter(connection.type)
+      const adapter = engine.objects
+      let output = engine.exportDDL(target.database, target.table, result.ddl)
       if (includeData) {
+        if (!adapter) throw new Error('该引擎暂不支持数据转储，请使用原生备份工具')
         if (target.view) throw new Error('视图仅支持结构转储')
         const [columns, data] = await Promise.all([
           getColumns(connection.id, target.database, target.table, controller.signal),
           executeQuery(connection.id, { database: target.database, sql: adapter.dumpQuerySQL(target.database, target.table), limit: 5000 }, controller.signal)
         ])
-        const inserts = adapter.dumpData(target.database, target.table, data, columns)
-        output =
-          output.replace('仅包含对象结构，不包含数据', '包含对象结构和数据') +
-          "\nSET @sql_studio_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n" +
-          inserts +
-          'SET SESSION sql_mode = @sql_studio_old_sql_mode;\n'
+        output = adapter.dumpWithData(target.database, target.table, result.ddl, data, columns)
       }
-      if (!controller.signal.aborted) exportSQL(output, target.table + (includeData ? '-structure-data' : '-structure'))
+      if (!controller.signal.aborted) exportSQL(output, engine.tableLabel(target.table) + (includeData ? '-structure-data' : '-structure'))
     } catch (reason) {
       if (!controller.signal.aborted) message.error(reason instanceof Error ? reason.message : 'SQL 转储失败')
     } finally {
@@ -282,8 +285,11 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     previewSQL,
     dirty,
     reload,
-    fieldTypes: adapter.fieldTypes,
-    defaultField: adapter.defaultField,
+    fieldTypes: adapter?.fieldTypes ?? [],
+    defaultField: () => {
+      if (!adapter) throw new Error('该引擎暂不支持可视化结构管理')
+      return adapter.defaultField()
+    },
     open,
     close,
     save,

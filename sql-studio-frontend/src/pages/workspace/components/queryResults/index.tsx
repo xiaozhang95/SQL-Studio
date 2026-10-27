@@ -70,6 +70,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
   const hasResults = run ? statementOutputs(run).length > 0 : false
   const showingResult = view === null && hasResults
+  const hasTable = Boolean(result?.columns.length)
+  const commandSucceeded = Boolean(result && !hasTable)
   const activeKey = view ?? (hasResults ? String(resultIndex) : 'messages')
   const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = getDatabaseAdapter(databaseType)
@@ -182,7 +184,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           }
         }}
       />
-      {(showingResult || (activeRunning && tab.kind !== 'query')) && (
+      {((showingResult && !commandSucceeded) || (activeRunning && tab.kind !== 'query')) && (
         <div
           className="result-toolbar"
           style={{
@@ -278,6 +280,8 @@ export default function QueryResults({ model, themeMode }: Props) {
           </div>
         ) : run?.error ? (
           <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<pre style={{ whiteSpace: 'pre-wrap' }}>{run.error}</pre>} />
+        ) : commandSucceeded ? (
+          <Alert style={{ margin: 16 }} type="success" showIcon title="执行成功" description={`语句执行成功，影响 ${result?.affectedRows ?? 0} 行。`} />
         ) : result ? (
           <>
             {result.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
@@ -296,7 +300,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           <Empty className="query-empty" image={<TableOutlined className="empty-state-icon" />} description="暂无结果" style={{ margin: '20px 0' }} />
         )}
       </div>
-      {showingResult && !activeRunning && result && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} />}
+      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} />}
     </ResultsDock>
   )
 }

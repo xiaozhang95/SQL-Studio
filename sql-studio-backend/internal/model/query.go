@@ -1,6 +1,7 @@
 package model
 
 type QueryRequest struct {
+	Schema     string `json:"schema,omitempty"`
 	Database   string `json:"database"`
 	SQL        string `json:"sql"`
 	Limit      int    `json:"limit"`

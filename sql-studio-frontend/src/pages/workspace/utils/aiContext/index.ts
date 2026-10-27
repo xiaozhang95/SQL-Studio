@@ -1,3 +1,4 @@
+import type { DatabaseExplorerAdapter } from '@/databases/typings'
 import type { AIContext } from '@/typings/ai'
 import type { Column, DBTable } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
@@ -5,9 +6,15 @@ import type { QueryScope } from '@/typings/workspace'
 export const aiContextLimits = { tables: 12, columns: 128, comment: 2000, column: 128 } as const
 
 /** 仅在实际请求时整理上下文：SQL 扫描一次，表元数据线性选择，不对整库排序。 */
-export function buildAIContext(scope: QueryScope, tables: readonly DBTable[], structures: Readonly<Record<string, { columns: readonly Column[] }>>, sql: string): AIContext {
-  const referenced = new Set<string>()
-  for (const match of sql.matchAll(/`((?:``|[^`])+)`|[\p{L}_$][\p{L}\p{N}_$]*/gu)) referenced.add((match[1]?.replaceAll('``', '`') || match[0]).toLowerCase())
+export function buildAIContext(
+  scope: QueryScope,
+  tables: readonly DBTable[],
+  structures: Readonly<Record<string, { columns: readonly Column[] }>>,
+  sql: string,
+  layout?: DatabaseExplorerAdapter
+): AIContext {
+  const referenced = new Set(layout?.referencedTables?.(sql, tables, scope.schema))
+  if (!layout?.referencedTables) for (const match of sql.matchAll(/`((?:``|[^`])+)`|[\p{L}_$][\p{L}\p{N}_$]*/gu)) referenced.add((match[1]?.replaceAll('``', '`') || match[0]).toLowerCase())
   const selected: DBTable[] = [],
     seen = new Set<string>()
   const add = (table: DBTable) => {
@@ -18,16 +25,18 @@ export function buildAIContext(scope: QueryScope, tables: readonly DBTable[], st
   const current = tables.find((table) => table.name === scope.table)
   if (current) add(current)
   for (const table of tables) {
-    if (referenced.has(table.name.toLowerCase())) add(table)
+    if (referenced.has(layout?.referencedTables ? table.name : table.name.toLowerCase())) add(table)
     if (selected.length === aiContextLimits.tables) break
   }
   for (const table of tables) {
+    if (scope.schema && layout && layout.tableIdentity(table.name).schema !== scope.schema) continue
     add(table)
     if (selected.length === aiContextLimits.tables) break
   }
   return {
     connectionId: scope.connectionId,
     database: scope.database,
+    schema: scope.schema,
     table: scope.table,
     tables: selected.map((table) => ({
       name: table.name,

@@ -7,3 +7,5 @@ QueryMessages 接收 run:RunState、running:boolean、themeMode:ThemeMode 和可
 SQL 使用 compact 变体，复制图标与摘要、历史及 DDL 一致，不额外显示 SQL 标题及复制 SQL 文本按钮。
 
 每条 SQL 的复制图标位于其左侧，紧邻首行；不随消息区宽度移到最右端，短语句和多条执行消息也能明确对应。
+
+成功消息按是否有结果列区分查询结果与纯执行回执，兼容旧无列成功记录，不依赖错误的历史 isQuery 标志。

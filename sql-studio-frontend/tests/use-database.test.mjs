@@ -8,7 +8,7 @@ import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/state
 // 执行真实工作区编排函数，替换请求与 React 状态；不连接业务数据库。
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
 const implementation = source.slice(source.indexOf('  async function executeSQL('), source.indexOf('  const refreshScope ='))
-async function run(script, failSQL, cancelSQL) {
+async function run(script, failSQL, cancelSQL, schema) {
   const controller = new AbortController()
   const calls = [],
     histories = [],
@@ -18,7 +18,7 @@ async function run(script, failSQL, cancelSQL) {
     { id: 'other', kind: 'query', connectionId: 'a', database: 'kept', table: 't' }
   ]
   const dependencies = {
-    connections: [{ id: 'a', name: 'fixture', type: 'mysql' }],
+    connections: [{ id: 'a', name: 'fixture', type: schema ? 'postgresql' : 'mysql' }],
     objects: { snapshots: { a: { status: 'connected' } } },
     running: false,
     request: { current: null },
@@ -40,7 +40,7 @@ async function run(script, failSQL, cancelSQL) {
     setResultViews() {}
   }
   const execute = new Function(...Object.keys(dependencies), stripTypeScriptTypes(implementation) + '; return executeSQL')(...Object.values(dependencies))
-  await execute(script, { connectionId: 'a', database: '', table: '' }, 'page')
+  await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page')
   return { calls, histories, results, pages }
 }
 
@@ -75,4 +75,29 @@ test('cancelled USE retains scope and stops subsequent statements', async () => 
   assert.equal(output.calls.length, 1)
   assert.equal(output.pages[0].database, '')
   assert.match(output.results[0].statements[0].error, /请求已取消/)
+})
+
+test('schema follows the originating batch into requests, histories and refresh records', async () => {
+  const output = await run('SELECT 1; SELECT 2;', undefined, undefined, 'cron')
+  assert.ok(output.calls.every((call) => call.schema === 'cron'))
+  assert.ok(output.histories.every((item) => item.schema === 'cron'))
+  assert.ok(output.results.at(-1).statements.every((item) => item.schema === 'cron'))
+})
+
+test('refresh reuses the executed statement schema instead of the current selector', async () => {
+  const start = source.indexOf('  async function refreshResult()')
+  const code = source.slice(start, source.indexOf('  function executeCurrentSQL', start))
+  const calls = []
+  const deps = {
+    running: false,
+    canRefreshResult: true,
+    refreshScope: { connectionId: 'a', database: 'batch-db', schema: 'batch-schema', table: '' },
+    tab: { id: 'query', kind: 'query', database: 'changed-db', schema: 'changed-schema' },
+    statementRun: { sql: 'SELECT 1', database: 'executed-db', schema: 'executed-schema' },
+    executeSQL: (...args) => calls.push(args)
+  }
+  const refresh = new Function(...Object.keys(deps), stripTypeScriptTypes(code) + ';return refreshResult')(...Object.values(deps))
+  await refresh()
+  assert.equal(calls[0][1].database, 'executed-db')
+  assert.equal(calls[0][1].schema, 'executed-schema')
 })

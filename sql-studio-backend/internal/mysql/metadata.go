@@ -150,3 +150,8 @@ func (c *Client) DDL(ctx context.Context, connection model.Connection, ref model
 		return "", errors.New("数据库返回的 DDL 类型不受支持")
 	}
 }
+
+// Schemas: MySQL 数据库本身即 schema，没有额外的 schema 层。
+func (c *Client) Schemas(context.Context, model.Connection, string) ([]string, error) {
+	return []string{}, nil
+}

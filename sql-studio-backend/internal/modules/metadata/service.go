@@ -55,3 +55,13 @@ func (s *Service) Indexes(ctx context.Context, id, database, table string) ([]mo
 	defer cancel()
 	return s.database.Indexes(ctx, c, model.TableRef{Database: database, Name: table})
 }
+
+func (s *Service) Schemas(ctx context.Context, id, database string) ([]string, error) {
+	c, err := s.connections.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(ctx, metadataTimeout)
+	defer cancel()
+	return s.database.Schemas(ctx, c, database)
+}

@@ -48,7 +48,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, undefined, title))
   const [contextSQL, setContextSQL] = useState('')
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
-  const ai = useAISQL(tab, objects, running)
+  const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
   const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...ai.extensions], [extensions, ai.extensions])
   const callbacks = useRef({ updateSQL, onUpdate: model.onEditorUpdate })
   useLayoutEffect(() => {
@@ -74,7 +74,15 @@ export default function QueryEditor({ model, themeMode }: Props) {
         }}
       >
         <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 500px', minWidth: 0, flexWrap: 'wrap' }}>
-          <ScopeSelects scope={tab} connections={connections} objects={objects} disabled={running} onConnection={selectConnection} onSelect={selectObject} />
+          <ScopeSelects
+            scope={tab}
+            connections={connections}
+            objects={objects}
+            disabled={running}
+            onConnection={selectConnection}
+            onSelect={selectObject}
+            onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}
+          />
           <Button type="primary" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running}>
             运行
           </Button>

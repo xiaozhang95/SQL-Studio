@@ -92,7 +92,7 @@ func TestModuleRoutesKeepExplicitScope(t *testing.T) {
 			return model.QueryResult{Columns: []model.ResultColumn{{Name: "id", Type: "BIGINT"}}, Rows: [][]any{{"9007199254740993"}}, RowCount: 1, IsQuery: true}, nil
 		}
 		router := New(regressionServices(store, db))
-		for _, operation := range []string{"databases", "tables", "columns", "indexes", "ddl", "query"} {
+		for _, operation := range []string{"databases", "schemas", "tables", "columns", "indexes", "ddl", "query"} {
 			wantDB, wantTable = "", ""
 			if operation != "databases" {
 				wantDB = "shared db"
@@ -194,4 +194,9 @@ func TestQueryBusyIsHTTP429(t *testing.T) {
 	if rec.Code != http.StatusTooManyRequests || !json.Valid(rec.Body.Bytes()) {
 		t.Fatalf("busy query: %d %s", rec.Code, rec.Body.String())
 	}
+}
+
+func (d routeDatabase) Schemas(ctx context.Context, c model.Connection, db string) ([]string, error) {
+	d.check(c, db, "")
+	return []string{"public"}, nil
 }

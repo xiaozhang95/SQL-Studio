@@ -43,3 +43,12 @@ func (h *handler) indexes(c *gin.Context) {
 	}
 	respond(c, 200, data)
 }
+
+func (h *handler) schemas(c *gin.Context) {
+	data, err := h.metadata.Schemas(c.Request.Context(), c.Param("id"), c.Query("database"))
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, data)
+}

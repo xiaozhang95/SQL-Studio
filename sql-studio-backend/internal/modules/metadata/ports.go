@@ -13,6 +13,7 @@ type Connections interface {
 }
 
 type Database interface {
+	Schemas(context.Context, model.Connection, string) ([]string, error)
 	Databases(context.Context, model.Connection) ([]string, error)
 	Tables(context.Context, model.Connection, string) ([]model.Table, error)
 	Columns(context.Context, model.Connection, model.TableRef) ([]model.Column, error)

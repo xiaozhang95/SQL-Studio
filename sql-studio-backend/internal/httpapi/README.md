@@ -35,3 +35,5 @@ JSON 解码统一使用 decodeLimit：普通请求 1 MiB，配置写入 32 MiB +
 GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表，继承元数据的范围、超时及取消；Swagger 和本地 API 列表同步维护。
 
 POST /api/connections/:id/session 要求显式非 null 的 open 布尔值；database 省略为整个连接，显式 null、空字符串和非字符串均拒绝。关闭成功响应表示目标驱动资源已释放。session_test.go 检查输入、原始范围、超时与失败响应；Swagger 及本地列表同步维护。
+
+新增 GET /connections/{id}/schemas?database=...，返回 schema 名称数组，仅解码/转发 metadata.Schemas。

@@ -17,3 +17,5 @@ Table 采用原生 small、8px 单元格内边距、小号载入按钮，每页 
 额外必传 themeMode:ThemeMode。列表 SQL 和展开详情统一使用 SQLPreview compact 高亮，只有同排复制图标，不重复 SQL 标题或复制文案。SQL 全文自动换行并按内容展开，不限高、不产生内部滚动；长记录由外层表体滚动。复制使用完整原始 SQL（保留换行/注释）；方言按记录 connectionId 查找当前连接类型，旧连接已删除时使用默认适配器。
 
 抽屉标题在当前连接名称前复用EngineIcon，按该connectionId的对象快照展示连接状态；不使用左侧高亮或其他连接状态。长名称省略并保留原生title。
+
+PostgreSQL 历史增加 Schema 列和 schema 搜索，未记录/未指定展示默认搜索路径；载入仍只追加 SQL，不自动改换当前连接、数据库或 schema。

@@ -4,7 +4,7 @@ import { canInsertColumn, insertRowSQL, updateCellSQL } from './dataEditing'
 import { stripHistoryMarkers } from './history'
 import { mysqlObjects } from './objectManagement'
 import { mysqlProfile } from './profile'
-import { tableDataSQL } from './query'
+import { tableDataSQL, tableLabel, tableListResult } from './query'
 import { isSQLColumn } from './resultSQL'
 import { splitSQLStatements, useDatabaseSQL } from './statements'
 
@@ -12,6 +12,7 @@ import { splitSQLStatements, useDatabaseSQL } from './statements'
 const mysql = {
   isSQLColumn,
   objects: mysqlObjects,
+  exportDDL: mysqlObjects.dump,
   updateCellSQL,
   insertRowSQL,
   canInsertColumn,
@@ -20,6 +21,8 @@ const mysql = {
   useDatabase: useDatabaseSQL,
   cleanHistory: stripHistoryMarkers,
   tableDataSQL,
+  tableLabel,
+  tableListResult,
   completion: mysqlCompletion
 } satisfies DatabaseAdapter
 export default mysql

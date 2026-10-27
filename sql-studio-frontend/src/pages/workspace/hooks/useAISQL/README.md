@@ -9,3 +9,5 @@ optimize(false) 优化整页，optimize(true,selectedSQL?) 仅优化选区，空
 续写额外携带当前查询scope.table、库表及字段缓存备注，document提供当前草稿开头最多16000字符（保留SQL注释），prefix/suffix继续提供光标前后上下文。连接名称和引擎由后端按connectionId解析，不使用对象树高亮推断连接。
 
 续写扩展只在范围、库表/结构缓存、配置修订、开关或运行锁变化时重建；普通输入与无关树状态不会重建。650ms 防抖、内容长度限制、旧响应校验仍由 aiCompletion 管理；输入法正在组词时不发送请求。
+
+第四参数 databaseType? 用于选取引擎的引用识别能力；当前 schema 同时进入续写/优化上下文与依赖。优化按真实引用完整表身份筛选，不再以 SQL 字符串包含完整引号表名判断 PostgreSQL 表引用。

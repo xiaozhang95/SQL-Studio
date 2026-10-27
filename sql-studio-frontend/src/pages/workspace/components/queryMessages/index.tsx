@@ -17,7 +17,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
           <Typography.Text type="secondary">语句 {index + 1}</Typography.Text>
           {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>此结果未记录执行语句</div>}
           <Typography.Paragraph type={item.error ? 'danger' : 'success'} style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
-            {item.error || (item.result?.isQuery ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`)}
+            {item.error || (item.result?.columns.length ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`)}
           </Typography.Paragraph>
           <Typography.Text type="secondary">查询耗时：{statementDuration(item) === undefined ? '未记录' : `${statementDuration(item)} ms`}</Typography.Text>
         </section>

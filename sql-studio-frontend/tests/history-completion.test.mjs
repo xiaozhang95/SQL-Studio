@@ -5,6 +5,7 @@ import { CompletionContext } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 
 import { mysqlCompletion } from '../src/databases/mysql/completion/index.ts'
+import { postgresqlCompletion } from '../src/databases/postgresql/completion/index.ts'
 import { buildAIContext } from '../src/pages/workspace/utils/aiContext/index.ts'
 import { normalizeHistories, retainConnectionHistories } from '../src/pages/workspace/utils/queryHistory/index.ts'
 
@@ -56,4 +57,19 @@ test('native SQL completion still supports database prefixes, aliases and cached
   assert.ok(alias.has('id'))
   assert.ok(alias.has('total'))
   assert.ok(!alias.has('name'))
+})
+
+test('PostgreSQL completion uses the selected schema and keeps cross-schema aliases separate', async () => {
+  const support = postgresqlCompletion({ database: 'db', namespace: 'cron', table: '', schema: { db: { '"cron"."jobs"': ['job_id'], '"public"."users"': ['user_id'] } } })
+  async function labels(doc, pos = doc.length) {
+    const state = EditorState.create({ doc, extensions: [support] })
+    const sources = state.languageDataAt('autocomplete', pos)
+    const results = await Promise.all(sources.map((source) => source(new CompletionContext(state, pos, true))))
+    return new Set(results.flatMap((result) => result?.options.map((item) => item.label) || []))
+  }
+  assert.ok((await labels('SELECT * FROM ')).has('jobs'))
+  assert.ok((await labels('SELECT * FROM public.')).has('users'))
+  const alias = await labels('SELECT j. FROM jobs j', 9)
+  assert.ok(alias.has('job_id'))
+  assert.ok(!alias.has('user_id'))
 })

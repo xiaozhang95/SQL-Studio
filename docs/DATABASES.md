@@ -1,17 +1,26 @@
 # 数据库连接说明
 
-当前仅支持 MySQL（type=mysql，默认端口 3306），不再提供其他产品类型、驱动或专属表单。
+| 引擎 | type | 默认端口 | 维护数据库 |
+| --- | --- | --- | --- |
+| MySQL | mysql | 3306 | 不需要 |
+| PolarDB PostgreSQL / PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
 
-连接表单填写名称、主机、端口、用户名和密码，新建时这些连接参数仅预填端口。编辑时密码留空保留旧密码。SSL 页签启用 TLS 后校验证书链和主机名，不提供跳过校验；暂未支持自定义 CA、客户端证书和 SSH 隧道。
+PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前端实现独立放在 `src/databases/mysql` 与 `src/databases/postgresql`，后端在 `internal/mysql` 与 `internal/postgresql`；统一入口只组合和分派。新增引擎按契约注册，不在 MySQL 模块或通用 UI 中拼另一种方言。
 
-连接分组支持输入新名称或选择已有分组，新建预选“默认分组”，旧连接缺少分组或留空时也统一归入默认分组；已有自定义分组保留。左侧连接树按文件夹展示，组内连接可右键编辑以更换分组或回到默认分组。分组随连接配置本地保存，不参与查询范围。
+连接表单可选引擎，切换新建类型更新默认端口和维护库并保留其他已填信息；编辑已有连接不更换引擎。名称、主机、用户名不预填。密码仅后端 AES-GCM 保存，编辑留空保留旧密码；连接分组默认“默认分组”，只影响树布局。SSL 启用后校验证书链和主机名，不提供跳过校验；暂不支持自定义 CA、客户端证书、SSH 隧道。
 
-连接和加密密码保存在本地 connections.json，密钥位于 master.key。缺少 type 的旧连接按 MySQL 处理；已有非 MySQL 连接不从磁盘删除，也不再返回可用连接列表；保存或测试非 MySQL 类型会被拒绝。
+连接和加密密码保存在本地 connections.json，密钥位于 master.key。旧连接缺少 type 时兼容 MySQL；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询标签独立保存连接、数据库、表和 SQL。SQL 默认使用只读事务；编辑器多语句按顺序切分请求，每个 API 请求仍为单语句，最长 30 秒，默认 1000 行、最大 5000 行，约 8 MiB 字段内容上限。精确整数、DECIMAL 保持文本，二进制转换为十六进制，保留 NULL 和重复列名；DDL 使用 SHOW CREATE TABLE。
+每个查询页独立保存连接、数据库、表和 SQL。查询默认只读事务；每个 API 请求单语句、最长 30 秒、默认 1000 最大 5000 行、约 8 MiB 字段内容。整数/DECIMAL/NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。各条请求不共享事务、SET 或临时表，取消不表示回滚。
 
-多语句各条请求不共享事务或会话；失败或取消停止后续语句，已完成结果保留在发起 SQL 页，通过结果标签查看。分号只在 MySQL 字符串、标识符及注释之外切分，不启用驱动多语句模式。
+MySQL 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
-对象树的数据库右键支持选择数据库、新建查询、查看表列表和刷新结构，表右键支持新建查询、查询数据、查询结构和查看 DDL。新建查询不自动执行。
+PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出。可视化建库/表设计、库表管理与结构数据联合转储尚未实现，入口按能力隐藏，不能回退使用 MySQL 方言。DDL 是目录重建的结构参考，含约束/索引/分区键，不能替代 pg_dump 完整备份；分区子表和外部表明确提示使用 pg_dump。
 
-真实数据库回归使用 SQLDESK_INTEGRATION=1，只读写自动生成的临时测试库，不访问业务表。参数见 [后端 README](../sql-studio-backend/README.md)。
+真实 MySQL 回归使用 SQLDESK_INTEGRATION=1，只操作随机临时库；参数见 [后端 README](../sql-studio-backend/README.md)。PostgreSQL 本次使用测试替身，未访问实际 PolarDB 或业务数据。
+
+连接方式参考 [阿里云 PolarDB PostgreSQL 官方说明](https://www.alibabacloud.com/help/en/polardb/polardb-for-postgresql/connect-to-polardb/)。当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
+
+PostgreSQL 对象树现按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。
+
+PostgreSQL 查询页可独立选择 schema。物理数据库与 schema 分别保存/请求，未限定表名在所选 schema 中解析；清空使用服务器默认搜索路径。结构列表分列 Schema/表名，对象页标签为 schema.table，历史与刷新记录执行时 schema。旧结果展示转换不会自动重跑 SQL。

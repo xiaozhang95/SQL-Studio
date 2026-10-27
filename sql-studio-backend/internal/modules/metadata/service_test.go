@@ -55,6 +55,9 @@ func TestMetadataScopeAndCancellation(t *testing.T) {
 			t.Fatal(err)
 		}
 		wantDB = "shared"
+		if _, err := svc.Schemas(context.Background(), id, wantDB); err != nil {
+			t.Fatal(err)
+		}
 		if _, err := svc.Tables(context.Background(), id, wantDB); err != nil {
 			t.Fatal(err)
 		}
@@ -77,4 +80,8 @@ func TestMetadataScopeAndCancellation(t *testing.T) {
 			t.Fatal("request cancellation was lost")
 		}
 	}
+}
+
+func (d database) Schemas(ctx context.Context, c model.Connection, db string) ([]string, error) {
+	return nil, d.check(ctx, c, db, "")
 }

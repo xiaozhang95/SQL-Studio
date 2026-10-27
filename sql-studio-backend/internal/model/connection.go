@@ -5,6 +5,7 @@ import "strings"
 
 // Connection 表示数据库连接。Password 仅供保存和服务端连接使用，列表响应须移除密码。
 type Connection struct {
+	Database    string `json:"database,omitempty"`
 	ID          string `json:"id"`
 	Type        string `json:"type"`
 	TLS         bool   `json:"tls"`
@@ -18,6 +19,7 @@ type Connection struct {
 }
 
 const TypeMySQL = "mysql"
+const TypePostgreSQL = "postgresql"
 const DefaultConnectionGroup = "默认分组"
 
 // NormalizeConnectionGroup 兼容缺少分组的旧配置，留空时归入默认分组。
@@ -35,6 +37,8 @@ func NormalizeDatabaseType(value string) string {
 	}
 	return value
 }
-func SupportedDatabaseType(value string) bool { return IsMySQL(value) }
+func SupportedDatabaseType(value string) bool {
+	return IsMySQL(value) || NormalizeDatabaseType(value) == TypePostgreSQL
+}
 
 func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }

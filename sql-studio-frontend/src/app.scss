@@ -274,13 +274,6 @@ body {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
 }
-.engine-option > .anticon {
-  color: var(--primary);
-  flex: none;
-}
-.engine-option.is-selected > .anticon {
-  color: inherit;
-}
 .connection-engine-header > .ant-tag {
   margin-left: auto;
   margin-right: 0;

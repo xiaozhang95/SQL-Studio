@@ -1,6 +1,7 @@
 import { CheckCircleOutlined, LinkOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
+import { databaseProfiles } from '@/databases'
 import type { Connection } from '@/typings/database'
 
 import { useConnectionForm } from '../../hooks/useConnectionForm'
@@ -14,7 +15,7 @@ type Props = {
   onSaved: (connection: Connection) => void
 }
 export default function ConnectionModal({ open, connection, connections, onClose, onSaved }: Props) {
-  const { form, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, connections, onSaved })
+  const { form, selectEngine, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, connections, onSaved })
   return (
     <Modal
       className="connection-dialog"
@@ -67,29 +68,20 @@ export default function ConnectionModal({ open, connection, connections, onClose
           <div className="engine-picker-heading" style={{ paddingBottom: 8 }}>
             数据库类型
           </div>
-          <div
-            className="engine-option is-selected"
-            style={{
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              textAlign: 'left',
-              border: '1px solid var(--primary)',
-              borderRadius: 0,
-              background: 'var(--primary)',
-              color: 'var(--on-primary)',
-              padding: '6px 10px',
-              minHeight: 48,
-              boxShadow: 'var(--shadow)',
-              cursor: 'default'
-            }}
-          >
-            <EngineIcon type={engine.value} variant="logo" />
-            <span className="engine-option-label" style={{ flex: 1 }}>
-              {engine.label}
-            </span>
-          </div>
+          {databaseProfiles.map((profile) => (
+            <Button
+              key={profile.value}
+              type={profile.value === engine.value ? 'primary' : 'text'}
+              className="engine-choice"
+              aria-pressed={profile.value === engine.value}
+              disabled={busy || Boolean(connection && profile.value !== engine.value)}
+              onClick={() => selectEngine(profile.value)}
+              style={{ border: 0, boxShadow: 'none', height: 'auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }}
+            >
+              <EngineIcon type={profile.value} variant="logo" size={32} />
+              <span>{profile.label}</span>
+            </Button>
+          ))}
         </aside>
         <div className="connection-settings" style={{ flex: 1, minWidth: 0, padding: '20px var(--connection-settings-padding, 28px)', minHeight: 0, overflowY: 'auto', background: 'var(--surface)' }}>
           <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
@@ -135,6 +127,16 @@ export default function ConnectionModal({ open, connection, connections, onClose
                       <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
                         <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
                       </Form.Item>
+                      {engine.database !== undefined && (
+                        <Form.Item
+                          name="database"
+                          label="维护数据库"
+                          rules={[{ required: true, whitespace: true, message: '请输入可连接的数据库' }]}
+                          extra="用于测试连接和读取数据库列表；查询可在顶部切换数据库"
+                        >
+                          <Input placeholder={engine.database} />
+                        </Form.Item>
+                      )}
                       <Form.Item name="username" label="用户名" rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}>
                         <Input autoComplete="username" placeholder="请输入数据库用户名" />
                       </Form.Item>

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getAIAdapter, isAIProvider } from '@/ai'
 import type { AIConfigDocument, AIProviderType } from '@/ai/typings'
+import { getDatabaseAdapter } from '@/databases'
+import type { DatabaseType } from '@/databases/typings'
 import type { AIResult } from '@/typings/ai'
 import type { QueryScope } from '@/typings/workspace'
 import { request } from '@/utils/request'
@@ -12,7 +14,8 @@ import { buildAIContext } from '../../utils/aiContext'
 import type { useDatabaseObjects } from '../useDatabaseObjects'
 
 type Preview = { result: AIResult; original: string; document: EditorView['state']['doc']; from: number; to: number; view: EditorView }
-export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnType<typeof useDatabaseObjects>, blocked: boolean) {
+export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnType<typeof useDatabaseObjects>, blocked: boolean, databaseType?: DatabaseType) {
+  const layout = getDatabaseAdapter(databaseType).explorer
   const snapshot = objects.snapshots[scope.connectionId]
   const tables = snapshot?.status === 'connected' ? snapshot.tables[scope.database] : undefined
   const structures = snapshot?.structures
@@ -63,10 +66,16 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const complete = useCallback(
     async (prefix: string, suffix: string, document: string, signal: AbortSignal) => {
       if (signal.aborted) return ''
-      const context = buildAIContext({ connectionId: scope.connectionId, database: scope.database, table: scope.table }, tables || [], structures || {}, `${document}\n${prefix}\n${suffix}`)
+      const context = buildAIContext(
+        { connectionId: scope.connectionId, database: scope.database, schema: scope.schema, table: scope.table },
+        tables || [],
+        structures || {},
+        `${document}\n${prefix}\n${suffix}`,
+        layout
+      )
       return (await getAIAdapter(provider).assist({ ...context, action: 'complete', prefix, suffix, document }, signal)).completion || ''
     },
-    [scope.connectionId, scope.database, scope.table, tables, structures, provider]
+    [scope.connectionId, scope.database, scope.schema, scope.table, tables, structures, provider, layout]
   )
   const extensions = useMemo(() => {
     if (!configured || !enabled || blocked) return []
@@ -103,8 +112,12 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     setError('')
     setPreview(null)
     try {
-      const context = buildAIContext(scope, snapshot?.status === 'connected' ? snapshot.tables[scope.database] || [] : [], snapshot?.structures || {}, original)
-      const result = await getAIAdapter(provider).assist({ ...context, tables: context.tables.filter((table) => original.includes(table.name)), action: 'optimize', sql: original }, current.signal)
+      const context = buildAIContext(scope, snapshot?.status === 'connected' ? snapshot.tables[scope.database] || [] : [], snapshot?.structures || {}, original, layout)
+      const referenced = layout?.referencedTables?.(original, tables || [], scope.schema)
+      const result = await getAIAdapter(provider).assist(
+        { ...context, tables: context.tables.filter((table) => (referenced ? referenced.has(table.name) : original.includes(table.name))), action: 'optimize', sql: original },
+        current.signal
+      )
       if (!current.signal.aborted) setPreview({ result, original, document: doc, from, to, view })
     } catch (cause) {
       if (!current.signal.aborted) setError(cause instanceof Error ? cause.message : 'SQL 优化失败')

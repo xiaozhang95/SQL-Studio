@@ -19,3 +19,9 @@ query_test.go 通过 database/sql 测试驱动验证实际扫描与事务流程�
 Client 跟踪每个请求的连接 ID、库、取消器与完成信号。SetSession(ctx, connection, database *string, open bool) 省略库为整个连接；关闭先阻止新请求，取消全部目标请求，并等待请求 defer 关闭 sql.DB 后才返回成功，驱动关闭错误/超时原样返回。打开用实际 Ping 验证连通性；不同请求仍不共享会话。lifecycle_test.go 使用真实 database/sql 与测试驱动验证底层 Close、范围隔离、阻止新请求及超时失败；不会终止其他客户端会话。
 
 显式“测试连接”允许临时探测已关闭配置，探测结束释放物理连接且不改变工作台打开状态；关闭正在进行时，探测同样被阻止。lifecycle_test.go 覆盖这条兼容边界。
+
+Schemas 返回空数组：MySQL 数据库本身即 schema，不引入额外的 schema 展示层，也不增加网络请求。
+
+readRows 按返回结果列数量设置 IsQuery：无列成功是执行回执，有列但零行仍是查询结果；不改动只读事务或执行权限。
+
+QueryRequest.Schema 非空明确拒绝，避免把 PostgreSQL 范围静默用于 MySQL；省略/空值保持兼容。

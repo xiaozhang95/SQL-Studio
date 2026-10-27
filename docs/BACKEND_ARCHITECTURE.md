@@ -7,7 +7,7 @@
 | 包                     | 职责与依赖                                                         |
 | ---------------------- | ------------------------------------------------------------------ |
 | cmd/sql-studio-backend | 加载 config、创建 app、处理退出信号                                |
-| app                    | 创建存储、MySQL、AI 客户端，注入业务模块并装配 HTTP                |
+| app                    | 创建存储、MySQL/PostgreSQL、AI 客户端，注入业务模块并装配 HTTP                |
 | httpapi                | Gin 路由、单 JSON 解码、本机同源保护和错误映射；仅调用模块公开入口 |
 | modules/connections    | 连接校验、分组、保存与 7 秒测试                                    |
 | modules/metadata       | 显式连接与对象范围，10 秒超时                                      |
@@ -16,6 +16,8 @@
 | modules/ai             | 上下文校验、续写/优化/模型发现，共享 4 并发                        |
 | model                  | 跨层命名结构、错误与只读定义                                       |
 | mysql                  | MySQL 驱动、TLS、SQL 识别、元数据和结果编码                        |
+| postgresql             | PostgreSQL 驱动、schema 元数据和结果编码                         |
+| database               | 只按连接类型分派，具体实现由 app 注入                             |
 | connection             | AES-GCM 密码与原子落盘                                             |
 | statefile              | 版本、修订、同进程互斥与分区 JSON 原子替换                         |
 | deepseek               | 官方 HTTPS 模型调用，不执行 SQL                                    |
