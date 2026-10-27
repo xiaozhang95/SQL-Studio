@@ -7,5 +7,4 @@
 - 前端源码入口：[sql-studio-frontend/src/README.md](sql-studio-frontend/src/README.md)。
 - 后端包入口：[sql-studio-backend/internal/README.md](sql-studio-backend/internal/README.md)。
 - 后端任务使用 [sql-studio-backend skill](.agents/skills/sql-studio-backend/SKILL.md) 并遵守 [后端开发规范](docs/BACKEND_STANDARDS.md)：按业务模块独立接口、实现及文档，app 单进程装配；启动直接用 `go run ./cmd/sql-studio-backend/main.go`，当前不增加启停/检查包装脚本和部署配置。
-- 界面参考：sql-studio-frontend/design/数据库连接弹窗-重设计.png。
 - 用户当前要求优先。项目规范不要求额外审批，也不授权发送消息、部署、提交或修改业务数据。
