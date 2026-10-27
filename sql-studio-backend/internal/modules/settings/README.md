@@ -7,3 +7,5 @@ AI 分区使用 provider=deepseek、apiKey。读取和写入响应仅返回 prov
 AI配置增加model和completionEnabled，旧记录未设置续写开关默认true；旧客户端省略字段保留旧模型/开关，空模型由服务商客户端处理默认值。模型标识最长128字符，Key最长512字符，Key仍只保存在后端。
 
 RemoveAI(ctx,revision)通过CAS清空Key、模型并关闭续写，保留配置修订号以阻止旧窗口回写；可随后重新配置新Key。
+
+connections 为保留分区，ValidSection/Read/Write 均拒绝，由连接仓库单独管理；与 statefile 的防护保持一致。

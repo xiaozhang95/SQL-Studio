@@ -15,7 +15,9 @@ var sectionPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{0,47}$`)
 
 const MaxBytes = 32 * 1024 * 1024
 
-func ValidSection(name string) bool { return sectionPattern.MatchString(name) }
+func ValidSection(name string) bool {
+	return sectionPattern.MatchString(name) && name != model.ConnectionsSection
+}
 
 type Repository interface {
 	Read(context.Context, string) (model.StateDocument, error)

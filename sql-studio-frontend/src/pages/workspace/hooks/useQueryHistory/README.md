@@ -1,6 +1,8 @@
 # 执行历史
 
-useQueryHistory(connectionId) 返回当前连接 history、appendHistory、clearHistory、ready/saving/error。首次读取 Go history 分区；缺失时迁移旧加密 IndexedDB/更早明文历史，按连接去重排序，最多50条，清理历史来源注释。只在后端提交成功后清理更早明文，旧加密记录保留。
+useQueryHistory(connectionId) 返回当前连接 history、appendHistory、clearHistory、pruneHistory、ready/saving/error。首次读取 Go history 分区，缺失初始化空历史；读取和追加都按每连接最多 50 条，保留新到旧顺序，清理来源注释。
+
+clearHistory(id) 移除该连接记录；pruneHistory(connectionIds) 清理已不存在连接的历史，无变化保留对象身份。工作区在连接删除成功后立即清理对应历史，并在历史恢复及连接列表成功加载后清理遗留孤立记录；连接列表失败不清理。
 
 恢复完成才允许执行，200ms防抖写入Go；同区请求串行，旧窗口CAS冲突不覆盖新数据。失败保留内存及旧文件并显示错误，不回落浏览器持久化。清空仅影响当前连接；记录实际发出的语句，取消不是回滚。最后200ms未提交变更在强制关闭时可能丢失。
 

@@ -21,3 +21,7 @@ loadStructure 将字段和 DDL 作为一份结构缓存，按连接与 JSON 编�
 查询页选择库也会调用 loadTables 供表/视图补全，与树的展开请求共享缓存和并发去重；不改变树选中或展开。加密工作区恢复时，仅按保存的打开连接 ID 重建元数据会话，不持久化数据库会话或自动执行 SQL。
 
 loadTableDetails(database, table, connectionId?) 返回 Promise<TableDetails>，展开表时并行读取字段与索引。snapshots.details/detailErrors 按 JSON 库表身份保存完成结果与错误；会话内并发去重，成功缓存、失败允许重试。与 loadStructure 复用已完成字段；索引失败不影响旧 DDL/补全流程。关闭、刷新连接或卸载会取消并废弃旧会话，迟到响应不能回填；详情不持久化，也不读取表数据。
+
+closeConnection/closeDatabase 为异步操作：先取消对应前端元数据请求，再等待 session 关闭接口确认底层驱动资源释放，最后清理缓存。库级请求使用独立请求代，其他库不受影响，迟到响应及旧 finally 不能覆盖或删除新请求。loadTables 首次请求会显式打开数据库，openConnection 会显式打开连接。closedDatabases 标记本会话关闭的库，菜单可重新打开。
+
+refreshDatabases(id) 在保留连接、现有数据库缓存和打开状态的前提下重读库列表，按连接去重；仅取消并清理确实已删除的库。refreshTables(database,id?,force=false) 仅刷新目标库：保留旧表列表直至新列表返回，不重建连接；默认不加载从未打开的库，force 仅供手动刷新使用。其他连接与库缓存保留。

@@ -9,11 +9,11 @@ import (
 )
 
 func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openRequest(ctx, connection, "")
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer release()
 	rows, err := db.QueryContext(ctx, "SHOW DATABASES")
 	if err != nil {
 		return nil, err
@@ -31,11 +31,11 @@ func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]
 }
 
 func (c *Client) Indexes(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Index, error) {
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openRequest(ctx, connection, ref.Database)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer release()
 	// 使用跨 MySQL 版本的字段读取，不依赖 8.0 才提供的 EXPRESSION 列。
 	rows, err := db.QueryContext(ctx, "SELECT INDEX_NAME,NON_UNIQUE,INDEX_TYPE,COALESCE(COLUMN_NAME,''),SEQ_IN_INDEX,SUB_PART,COALESCE(COLLATION,'') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY CASE WHEN INDEX_NAME='PRIMARY' THEN 0 ELSE 1 END,INDEX_NAME,SEQ_IN_INDEX", ref.Database, ref.Name)
 	if err != nil {
@@ -63,11 +63,11 @@ func readIndexes(rows *sql.Rows) ([]model.Index, error) {
 }
 
 func (c *Client) Tables(ctx context.Context, connection model.Connection, schema string) ([]model.Table, error) {
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openRequest(ctx, connection, schema)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer release()
 	rows, err := db.QueryContext(ctx, "SELECT TABLE_NAME,TABLE_TYPE,COALESCE(TABLE_COMMENT,'') FROM information_schema.TABLES WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME", schema)
 	if err != nil {
 		return nil, err
@@ -86,11 +86,11 @@ func (c *Client) Tables(ctx context.Context, connection model.Connection, schema
 
 func (c *Client) Columns(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Column, error) {
 	schema, table := ref.Database, ref.Name
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openRequest(ctx, connection, schema)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer release()
 	rows, err := db.QueryContext(ctx, "SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_KEY,COLUMN_DEFAULT,EXTRA,COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY ORDINAL_POSITION", schema, table)
 	if err != nil {
 		return nil, err
@@ -109,11 +109,11 @@ func (c *Client) Columns(ctx context.Context, connection model.Connection, ref m
 
 func (c *Client) DDL(ctx context.Context, connection model.Connection, ref model.TableRef) (string, error) {
 	schema, table := ref.Database, ref.Name
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openRequest(ctx, connection, schema)
 	if err != nil {
 		return "", err
 	}
-	defer db.Close()
+	defer release()
 	// 库名/表名不能使用参数占位符，因此统一转义反引号。
 	rows, err := db.QueryContext(ctx, "SHOW CREATE TABLE "+quoteIdentifier(schema)+"."+quoteIdentifier(table))
 	if err != nil {

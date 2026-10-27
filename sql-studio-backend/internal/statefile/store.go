@@ -33,7 +33,7 @@ func Open(directory string) (*Store, error) {
 	return &Store{directory: directory}, nil
 }
 func (s *Store) read(name string) (model.StateDocument, error) {
-	if !validName.MatchString(name) {
+	if !validName.MatchString(name) || name == model.ConnectionsSection {
 		return model.StateDocument{}, errors.New("配置名称无效")
 	}
 	file, err := os.Open(filepath.Join(s.directory, name+".json"))

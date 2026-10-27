@@ -19,9 +19,12 @@ func (r *repository) Write(context.Context, string, model.StateWrite) (model.Sta
 func TestValidation(t *testing.T) {
 	r := &repository{}
 	s := New(r)
-	for _, name := range []string{"../x", "", "A", "x.json"} {
+	for _, name := range []string{"../x", "", "A", "x.json", "connections"} {
 		if _, err := s.Read(context.Background(), name); err == nil {
 			t.Fatal(name)
+		}
+		if _, err := s.Write(context.Background(), name, model.StateWrite{Data: json.RawMessage("{}")}); err == nil {
+			t.Fatal("invalid section write reached repository", name)
 		}
 	}
 	for _, data := range []string{"null", "[]", "broken"} {

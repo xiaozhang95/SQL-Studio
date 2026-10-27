@@ -23,3 +23,5 @@
 - [useAISettings](useAISettings/README.md)：读取与保存 AI 配置。
 
 - [useAISQL](useAISQL/README.md)：AI 续写扩展、优化请求和应用。
+
+- [对象树虚拟视口](useTreeViewport/README.md)：实际高度、滚动恢复及延迟保存。

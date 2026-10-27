@@ -15,9 +15,10 @@ type Repository interface {
 	Delete(string) error
 }
 
-// Database 只暴露连接管理所需的连通性测试。
+// Database 只暴露连接管理所需的连通性测试和会话控制。
 type Database interface {
 	Test(context.Context, model.Connection) (string, error)
+	SetSession(context.Context, model.Connection, *string, bool) error
 }
 
 const connectionTimeout = 7 * time.Second

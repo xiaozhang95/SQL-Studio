@@ -6,6 +6,8 @@ model 提供当前连接 history、clearHistory、historyOpen/setHistoryOpen、�
 
 仅 SQL 查询页工具栏提供入口，独立结果页不展示。连接变化时按 key 重挂载，隔离分页、筛选和详情展开；打开时清空搜索。同一连接跨库记录均可见，不按显示名称筛选。清空确认后调用 clearHistory(connectionId)，只清空此连接。
 
+抽屉首次打开前不预渲染历史编辑器；只读 SQLPreview 复用相同内容，避免历史高亮随查询输入反复重配。
+
 Table 采用原生 small、8px 单元格内边距、小号载入按钮，每页 10 条；支持状态筛选、时间/耗时排序，SQL/数据库搜索。详情默认收起，可复制完整 SQL 和错误。抽屉搜索、表头与分页固定，useTableViewportLayout 只允许表体滚动；长 SQL 不推动分页，横向滚动和固定操作列保留。
 
 分页使用 tablePaginationDefaults，与查询结果统一原生默认尺寸、32px 页码、“共 X 条”文案和底栏间距/分隔线，不再随 small Table 自动缩小。保留原生 Table 对筛选、排序后总数与当前页的管理。

@@ -75,3 +75,29 @@ func TestDefaultWebDirectory(t *testing.T) {
 		t.Fatal("default web directory must point to the frontend project")
 	}
 }
+
+func TestConnectionDataUsesUserStateDirectoryByDefault(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("HOME", home)
+	t.Setenv("SQLDESK_DATA_DIR", "")
+	t.Setenv("SQLDESK_STATE_DIR", "")
+	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DataDir != filepath.Join(home, ".sql-studio", "state") || cfg.DataDir != cfg.StateDir || cfg.LegacyDataDir == "" {
+		t.Fatal("default data is not colocated with user state")
+	}
+	t.Setenv("SQLDESK_STATE_DIR", filepath.Join(home, "custom-state"))
+	cfg, err = Load()
+	if err != nil || cfg.DataDir != cfg.StateDir {
+		t.Fatal("data did not follow explicit state directory", err)
+	}
+	t.Setenv("SQLDESK_DATA_DIR", filepath.Join(home, "custom-connections"))
+	cfg, err = Load()
+	if err != nil || cfg.DataDir != filepath.Join(home, "custom-connections") || cfg.LegacyDataDir != "" {
+		t.Fatal("explicit data directory changed or triggered migration", err)
+	}
+}

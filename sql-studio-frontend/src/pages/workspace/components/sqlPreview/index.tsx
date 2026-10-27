@@ -1,8 +1,9 @@
 import { CopyOutlined } from '@ant-design/icons'
 import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
+import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
 import { App, Button, Card, Typography } from 'antd'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
 import type { DatabaseType } from '@/databases/typings'
@@ -18,8 +19,9 @@ type Props = {
   title?: string
   panel?: boolean
 }
+const previewSetup = { lineNumbers: false, foldGutter: false, highlightActiveLine: false, highlightActiveLineGutter: false, autocompletion: false } satisfies ReactCodeMirrorProps['basicSetup']
 /** 只读执行文本，复用引擎语言扩展与原生复制反馈。 */
-export default function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQL', panel = false }: Props) {
+function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQL', panel = false }: Props) {
   const { message } = App.useApp()
   const copySQL = async () => {
     try {
@@ -31,18 +33,7 @@ export default function SQLPreview({ sql, themeMode, databaseType, compact = fal
   }
   const extensions = useMemo(() => [sqlPreviewAppearance, getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} }), EditorView.lineWrapping], [databaseType])
   const copyButton = <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制" title="复制" style={{ flex: 'none' }}></Button>
-  const editor = (
-    <CodeMirror
-      value={sql}
-      theme={themeMode}
-      extensions={extensions}
-      editable={false}
-      readOnly
-      style={{ flex: 1, minWidth: 0 }}
-      basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, highlightActiveLineGutter: false, autocompletion: false }}
-      aria-label="SQL 文本"
-    />
-  )
+  const editor = <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly style={{ flex: 1, minWidth: 0 }} basicSetup={previewSetup} aria-label="SQL 文本" />
   if (panel)
     return (
       <Card size="small" title={title} extra={copyButton} styles={{ body: { padding: 0 } }} style={{ minWidth: 0 }}>
@@ -66,3 +57,4 @@ export default function SQLPreview({ sql, themeMode, databaseType, compact = fal
     </div>
   )
 }
+export default memo(SQLPreview)

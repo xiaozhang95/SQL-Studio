@@ -13,19 +13,16 @@ import (
 type Config struct {
 	Address           string
 	DataDir           string
+	LegacyDataDir     string
 	StateDir          string
 	WebDir            string
 	InitialConnection *model.Connection
 }
 
-// Load 将相对目录解析为绝对路径；原生命令以 sql-studio-backend 为工作目录，兼容已有数据位置。
+// Load 将相对目录解析为绝对路径；默认使用用户状态目录，旧 data 交由 app 迁移。
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080"}
 	var err error
-	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", "data")
-	if err != nil {
-		return cfg, err
-	}
 	home, homeErr := os.UserHomeDir()
 	if homeErr != nil {
 		return cfg, homeErr
@@ -33,6 +30,17 @@ func Load() (Config, error) {
 	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", defaultStateDirectory(home))
 	if err != nil {
 		return cfg, err
+	}
+	// 默认与布局/历史共用用户目录；显式数据目录保持原有含义，不自动搬移。
+	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", cfg.StateDir)
+	if err != nil {
+		return cfg, err
+	}
+	if os.Getenv("SQLDESK_DATA_DIR") == "" {
+		cfg.LegacyDataDir, err = filepath.Abs("data")
+		if err != nil {
+			return cfg, err
+		}
 	}
 	cfg.WebDir, err = resolveDirectory("SQLDESK_WEB_DIR", "../sql-studio-frontend/dist")
 	if err != nil {

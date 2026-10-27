@@ -1,33 +1,21 @@
 import type { EditorView } from '@codemirror/view'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getAIAdapter, isAIProvider } from '@/ai'
 import type { AIConfigDocument, AIProviderType } from '@/ai/typings'
-import type { AIContext, AIResult } from '@/typings/ai'
+import type { AIResult } from '@/typings/ai'
 import type { QueryScope } from '@/typings/workspace'
 import { request } from '@/utils/request'
 
 import { aiCompletion } from '../../utils/aiCompletion'
+import { buildAIContext } from '../../utils/aiContext'
 import type { useDatabaseObjects } from '../useDatabaseObjects'
 
 type Preview = { result: AIResult; original: string; document: EditorView['state']['doc']; from: number; to: number; view: EditorView }
 export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnType<typeof useDatabaseObjects>, blocked: boolean) {
   const snapshot = objects.snapshots[scope.connectionId]
-  const context: AIContext = {
-    connectionId: scope.connectionId,
-    database: scope.database,
-    table: scope.table,
-    tables: (snapshot?.status === 'connected' ? snapshot.tables[scope.database] || [] : [])
-      .toSorted((a, b) => Number(scope.sql.includes(b.name) || b.name === scope.table) - Number(scope.sql.includes(a.name) || a.name === scope.table))
-      .slice(0, 12)
-      .map((table) => ({
-        name: table.name,
-        comment: table.comment.slice(0, 2000),
-        columns: (snapshot?.structures[JSON.stringify([scope.database, table.name])]?.columns || [])
-          .slice(0, 128)
-          .map((column) => `${column.name} ${column.type}${column.key ? ` ${column.key}` : ''}${column.comment ? ` -- ${column.comment}` : ''}`.slice(0, 128))
-      }))
-  }
+  const tables = snapshot?.status === 'connected' ? snapshot.tables[scope.database] : undefined
+  const structures = snapshot?.structures
   const editor = useRef<EditorView | null>(null)
   const [configured, setConfigured] = useState(false)
   const [enabled, setEnabled] = useState(true)
@@ -39,7 +27,6 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const [open, setOpen] = useState(false)
   const [preview, setPreview] = useState<Preview | null>(null)
   const controller = useRef<AbortController | null>(null)
-  const contextKey = JSON.stringify(context)
 
   useEffect(() => {
     let alive = true
@@ -73,17 +60,23 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     },
     []
   )
+  const complete = useCallback(
+    async (prefix: string, suffix: string, document: string, signal: AbortSignal) => {
+      if (signal.aborted) return ''
+      const context = buildAIContext({ connectionId: scope.connectionId, database: scope.database, table: scope.table }, tables || [], structures || {}, `${document}\n${prefix}\n${suffix}`)
+      return (await getAIAdapter(provider).assist({ ...context, action: 'complete', prefix, suffix, document }, signal)).completion || ''
+    },
+    [scope.connectionId, scope.database, scope.table, tables, structures, provider]
+  )
   const extensions = useMemo(() => {
     if (!configured || !enabled || blocked) return []
-    const snapshot: AIContext = JSON.parse(contextKey)
-    const adapter = getAIAdapter(provider)
     // 修订改变时重建扩展，取消旧模型/Key/开关对应的在途建议。
     void settingsRevision
     return aiCompletion({
-      complete: async (prefix, suffix, document, signal) => (await adapter.assist({ ...snapshot, action: 'complete', prefix, suffix, document }, signal)).completion || '',
+      complete,
       loading: setCompletionLoading
     })
-  }, [contextKey, configured, enabled, blocked, setCompletionLoading, provider, settingsRevision])
+  }, [complete, configured, enabled, blocked, setCompletionLoading, settingsRevision])
   const close = () => {
     controller.current?.abort()
     setOpen(false)
@@ -110,6 +103,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     setError('')
     setPreview(null)
     try {
+      const context = buildAIContext(scope, snapshot?.status === 'connected' ? snapshot.tables[scope.database] || [] : [], snapshot?.structures || {}, original)
       const result = await getAIAdapter(provider).assist({ ...context, tables: context.tables.filter((table) => original.includes(table.name)), action: 'optimize', sql: original }, current.signal)
       if (!current.signal.aborted) setPreview({ result, original, document: doc, from, to, view })
     } catch (cause) {

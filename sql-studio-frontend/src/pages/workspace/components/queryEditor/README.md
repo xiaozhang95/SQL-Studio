@@ -2,6 +2,8 @@
 
 补全配置由 useSQLCompletion 按当前连接组织元数据，并调用数据库适配器 completion 构造；组件不导入具体 MySQL 方言。局部 contextSQL 只保留本区域右键菜单的选区快照。
 
+编辑器 basicSetup 与 onChange/onUpdate 桥接保持稳定身份，桥接在布局 effect 更新最新回调；避免每次输入、loading 更新或树状态变化都触发 UIW 全量 reconfigure，同时保持当前页面的 SQL 和布局回调正确归属。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 仅在 kind=query 的主页面内展示，页面导航与关闭行为由 workspaceTabs 管理。本组件负责连接/库选择器、运行/取消、导入/导出、历史工具栏和 CodeMirror。

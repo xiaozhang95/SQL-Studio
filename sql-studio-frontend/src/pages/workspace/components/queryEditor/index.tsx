@@ -1,7 +1,9 @@
 import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import type { ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
+import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
 import { Alert, Button, Dropdown, Upload } from 'antd'
-import { useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import type { ThemeMode } from '@/typings/theme'
 
@@ -39,6 +41,7 @@ type Props = {
     | 'openHistory'
   >
 }
+const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
   const { activeTab, running, activeRunning, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
@@ -47,6 +50,13 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
   const ai = useAISQL(tab, objects, running)
   const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...ai.extensions], [extensions, ai.extensions])
+  const callbacks = useRef({ updateSQL, onUpdate: model.onEditorUpdate })
+  useLayoutEffect(() => {
+    callbacks.current = { updateSQL, onUpdate: model.onEditorUpdate }
+  }, [updateSQL, model.onEditorUpdate])
+  // UIW 将回调/配置身份变化视为全量重配，输入时保持身份以保留补全与解析状态。
+  const onChange = useCallback((sql: string) => callbacks.current.updateSQL(sql), [])
+  const onUpdate = useCallback((update: ViewUpdate) => callbacks.current.onUpdate(update), [])
   return (
     <section className="editor-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--surface)', overflow: 'hidden' }}>
       <div
@@ -126,9 +136,9 @@ export default function QueryEditor({ model, themeMode }: Props) {
               ai.onEditorReady(view)
               onEditorReady(view)
             }}
-            onUpdate={model.onEditorUpdate}
-            onChange={updateSQL}
-            basicSetup={{ foldGutter: false, autocompletion: true }}
+            onUpdate={onUpdate}
+            onChange={onChange}
+            basicSetup={editorSetup}
             aria-label="SQL 编辑器"
           />
           {ai.enabled && ai.completionLoading && (

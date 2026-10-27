@@ -18,6 +18,8 @@ func (d *stubDatabase) Test(ctx context.Context, c model.Connection) (string, er
 	return d.test(ctx, c)
 }
 
+func (d *stubDatabase) SetSession(context.Context, model.Connection, *string, bool) error { return nil }
+
 func TestConnectionPolicies(t *testing.T) {
 	repo, err := connection.Open(t.TempDir())
 	if err != nil {

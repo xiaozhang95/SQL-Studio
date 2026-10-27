@@ -4,3 +4,5 @@ export const sidebarLayout = { defaultWidth: 272, minimumWidth: 200, maximumWidt
 export const resultPanelLayout = { defaultHeight: 260, minimumHeight: 260, editorReservedHeight: 280, keyboardStep: 24 } as const
 
 export const resultSQLLayout = { columnWidth: 520 } as const
+export const scopeCloseDialogLayout = { width: 560 } as const
+export const objectTreeLayout = { rowHeight: 30, scrollSaveDelay: 150 } as const

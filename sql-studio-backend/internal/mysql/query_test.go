@@ -13,15 +13,16 @@ import (
 
 // 使用 database/sql 的真实扫描和事务流程，替换网络驱动，不访问 MySQL 实例。
 type queryFixture struct {
-	columns, types []string
-	rows           [][]driver.Value
-	queryError     error
-	rowError       error
-	mu             sync.Mutex
-	readOnly       bool
-	rolledBack     bool
-	rowsClosed     bool
-	executed       bool
+	columns, types   []string
+	rows             [][]driver.Value
+	queryError       error
+	rowError         error
+	mu               sync.Mutex
+	readOnly         bool
+	rolledBack       bool
+	rowsClosed       bool
+	executed         bool
+	connectionClosed bool
 }
 
 type fixtureConnector struct{ fixture *queryFixture }
@@ -40,7 +41,12 @@ func (c fixtureConnector) Connect(context.Context) (driver.Conn, error) {
 	return fixtureConn{c.fixture}, nil
 }
 func (fixtureConn) Prepare(string) (driver.Stmt, error) { return nil, errors.New("unexpected prepare") }
-func (fixtureConn) Close() error                        { return nil }
+func (c fixtureConn) Close() error {
+	c.fixture.mu.Lock()
+	c.fixture.connectionClosed = true
+	c.fixture.mu.Unlock()
+	return nil
+}
 func (c fixtureConn) Begin() (driver.Tx, error) {
 	return c.BeginTx(context.Background(), driver.TxOptions{})
 }

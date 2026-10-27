@@ -697,7 +697,8 @@
             "schema": {
               "type": "string",
               "pattern": "^[a-z][a-z0-9-]{0,47}$"
-            }
+            },
+            "description": "配置分区名称；connections 为保留名称，读取和写入均返回 400。"
           }
         ],
         "responses": {
@@ -756,7 +757,8 @@
             "schema": {
               "type": "string",
               "pattern": "^[a-z][a-z0-9-]{0,47}$"
-            }
+            },
+            "description": "配置分区名称；connections 为保留名称，读取和写入均返回 400。"
           }
         ],
         "requestBody": {
@@ -1123,6 +1125,93 @@
           }
         },
         "description": "按显式连接、数据库、表读取，最长 10 秒；无索引返回空数组。表达式索引字段名为空，不返回表达式文本。"
+      }
+    },
+    "/connections/{id}/session": {
+      "post": {
+        "operationId": "setConnectionSession",
+        "summary": "打开或关闭连接/数据库",
+        "tags": ["连接"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "完成打开验证，或目标范围底层资源已释放",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["open"],
+                  "properties": {
+                    "open": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "open 必填；database 省略为整个连接，指定非空库名时仅控制该库。关闭先拒绝新请求、取消在途请求，等待驱动连接释放后返回成功，最长 7 秒。打开测试实际连通性。不删除连接配置，不终止其他客户端会话。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["open"],
+                "additionalProperties": false,
+                "properties": {
+                  "open": {
+                    "type": "boolean"
+                  },
+                  "database": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

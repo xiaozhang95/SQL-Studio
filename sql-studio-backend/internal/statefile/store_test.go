@@ -35,6 +35,27 @@ func TestRoundTripConflict(t *testing.T) {
 		t.Fatal("unsafe path")
 	}
 }
+
+func TestConnectionsFileIsReserved(t *testing.T) {
+	dir := t.TempDir()
+	store, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "connections.json")
+	if err = os.WriteFile(path, []byte("connection ciphertext fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.Read(context.Background(), "connections"); err == nil {
+		t.Fatal("connection file exposed as state")
+	}
+	if _, err = store.Write(context.Background(), "connections", model.StateWrite{Data: json.RawMessage("{}")}); err == nil {
+		t.Fatal("connection file overwritten as state")
+	}
+	if value, _ := os.ReadFile(path); string(value) != "connection ciphertext fixture" {
+		t.Fatal("connection file changed")
+	}
+}
 func TestCorruptFuturePreserved(t *testing.T) {
 	for _, content := range []string{"broken", `{"schemaVersion":2,"revision":1,"data":{}}`} {
 		dir := t.TempDir()

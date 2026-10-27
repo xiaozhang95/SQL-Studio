@@ -51,6 +51,7 @@ func New(services Services) *gin.Engine {
 	api.GET("/connections", h.listConnections)
 	api.POST("/connections", h.saveConnection)
 	api.DELETE("/connections/:id", h.deleteConnection)
+	api.POST("/connections/:id/session", h.setSession)
 	api.POST("/connections/test", h.testConnection)
 	api.GET("/connections/:id/databases", h.databases)
 	api.GET("/connections/:id/tables", h.tables)

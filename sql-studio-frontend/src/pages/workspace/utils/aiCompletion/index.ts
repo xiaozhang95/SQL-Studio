@@ -64,6 +64,7 @@ export function aiCompletion(options: Options) {
         this.timer = setTimeout(() => void this.run(version), 650)
       }
       async run(version: number) {
+        if (version !== this.version || this.view.composing) return
         const { state } = this.view
         const selection = state.selection.main
         if (!selection.empty || !this.view.hasFocus || state.selection.ranges.length !== 1) return

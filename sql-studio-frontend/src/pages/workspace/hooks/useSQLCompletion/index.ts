@@ -17,18 +17,22 @@ type Props = {
 export function useSQLCompletion({ scope, connections, objects, columns }: Props) {
   const adapter = getDatabaseAdapter(connections.find((connection) => connection.id === scope.connectionId)?.type)
   const snapshot = objects.snapshots[scope.connectionId]
+  const connected = snapshot?.status === 'connected'
+  const databases = snapshot?.databases
+  const tables = snapshot?.tables
+  const structures = snapshot?.structures
   return useMemo(
     () => [
       adapter.completion({
         database: scope.database,
         table: scope.table,
-        schema: objects.connected
+        schema: connected
           ? Object.fromEntries(
-              objects.databases.map((database) => [
+              (databases || []).map((database) => [
                 database,
                 Object.fromEntries(
-                  (objects.tables[database] || []).map((table) => {
-                    const structure = snapshot?.structures[JSON.stringify([database, table.name])]
+                  (tables?.[database] || []).map((table) => {
+                    const structure = structures?.[JSON.stringify([database, table.name])]
                     return [table.name, structure?.columns.map((column) => column.name) || (database === scope.database && table.name === scope.table ? columns.map((column) => column.name) : [])]
                   })
                 )
@@ -37,6 +41,6 @@ export function useSQLCompletion({ scope, connections, objects, columns }: Props
           : {}
       })
     ],
-    [adapter, objects.connected, objects.databases, objects.tables, snapshot, scope.database, scope.table, columns]
+    [adapter, connected, databases, tables, structures, scope.database, scope.table, columns]
   )
 }

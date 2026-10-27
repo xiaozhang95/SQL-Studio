@@ -14,11 +14,11 @@ import (
 const maxResultBytes = 8 * 1024 * 1024
 
 func (c *Client) Execute(ctx context.Context, connection model.Connection, input model.QueryRequest) (model.QueryResult, error) {
-	db, err := Open(connection, input.Database)
+	ctx, db, release, err := c.openRequest(ctx, connection, input.Database)
 	if err != nil {
 		return model.QueryResult{}, err
 	}
-	defer db.Close()
+	defer release()
 	return execute(ctx, db, input.SQL, input.Limit, input.AllowWrite)
 }
 

@@ -9,3 +9,7 @@ sidebarLayout 是只读尺寸配置：默认 272px，范围 200–560px，主区
 resultPanelLayout 为结果区只读尺寸：默认/最小 260px，编辑器预留 280px，键盘步进 24px。useWorkspace 恢复快照与 resultsDock 展示和拖动使用相同下限，旧记录不会继续压缩表头和数据区。
 
 resultSQLLayout 仅定义普通查询 SQL 单元格列宽 520px；只读 SQL 完整展开、自动换行，没有独立限高或滚动条。独立 DDL 页铺满表体，长内容由外层表体滚动。
+
+scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
+
+objectTreeLayout.rowHeight=30 与既有 28px 节点内容和 2px 行距一致；scrollSaveDelay=150ms 在滚动结束后保存位置。

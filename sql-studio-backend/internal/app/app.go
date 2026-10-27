@@ -28,6 +28,9 @@ import (
 type App struct{ server *http.Server }
 
 func New(cfg config.Config) (*App, error) {
+	if err := connection.Migrate(cfg.LegacyDataDir, cfg.DataDir); err != nil {
+		return nil, err
+	}
 	repository, err := connection.Open(cfg.DataDir)
 	if err != nil {
 		return nil, err

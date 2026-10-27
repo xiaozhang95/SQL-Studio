@@ -72,7 +72,7 @@ pnpm dev
 
 配置采用带版本号和修订号的 JSON 格式，可通过 `SQLDESK_STATE_DIR` 指定目录。已有旧配置目录继续兼容；配置文件缺失时使用默认布局并重新生成，不再读取浏览器旧记录。恢复页面不会自动执行查询。
 
-连接与加密密钥默认保存在 `sql-studio-backend/data/`，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`；界面配置可能包含查询文本和结果。
+连接与加密密钥默认保存在同一个用户配置目录 `.sql-studio/state/`，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`；界面配置可能包含查询文本和结果。
 
 ## 使用范围
 
@@ -83,3 +83,5 @@ pnpm dev
 项目维护：[文档索引](docs/README.md) · [项目框架](docs/ARCHITECTURE.md) · [接口列表与 Swagger](docs/API.md)
 
 使用说明：[数据库连接](docs/DATABASES.md) · [用户配置格式](docs/USER_STATE.md)
+
+首次升级会将后端旧 data/ 中的 connections.json 和 master.key 校验后迁入用户目录；两者字节与密码解密均通过后才清理旧文件。目标已有不同数据时停止，不覆盖或合并。SQLDESK_STATE_DIR 覆盖统一目录，SQLDESK_DATA_DIR 仍可显式指定独立连接目录，此时不自动迁移。迁移只在后端单进程启动时进行，升级前先停止旧服务。

@@ -98,7 +98,6 @@ export default function QueryHistory({ model, themeMode }: Props) {
       open={historyOpen}
       onClose={() => setHistoryOpen(false)}
       size={1080}
-      forceRender
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
         <Button

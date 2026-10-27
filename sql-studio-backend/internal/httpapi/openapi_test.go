@@ -38,7 +38,8 @@ func TestOpenAPIAndMarkdownCoverRoutes(t *testing.T) {
 			t.Errorf("duplicate operationId: %s", operation.OperationID)
 		}
 		operations[operation.OperationID] = true
-		if !strings.Contains(string(markdown), "| "+route.Method+" | `"+path+"` |") {
+		row := regexp.MustCompile(`(?m)^\|\s*` + regexp.QuoteMeta(route.Method) + `\s*\|\s*` + regexp.QuoteMeta("`"+path+"`") + `\s*\|`)
+		if !row.Match(markdown) {
 			t.Errorf("missing Markdown route: %s %s", route.Method, path)
 		}
 		delete(spec.Paths[path], strings.ToLower(route.Method))

@@ -31,6 +31,19 @@ func (s *Service) SaveConnection(c model.Connection) (model.Connection, error) {
 
 func (s *Service) DeleteConnection(id string) error { return s.connections.Delete(id) }
 
+func (s *Service) SetSession(ctx context.Context, id string, database *string, open bool) error {
+	if database != nil && strings.TrimSpace(*database) == "" {
+		return errors.New("数据库名称不能为空")
+	}
+	connection, err := s.connections.Get(id)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(ctx, connectionTimeout)
+	defer cancel()
+	return s.database.SetSession(ctx, connection, database, open)
+}
+
 // TestConnection 支持编辑时密码留空复用旧密码，但不向客户端返回已保存密码。
 func (s *Service) TestConnection(ctx context.Context, c model.Connection) (string, error) {
 	c.Type = model.NormalizeDatabaseType(c.Type)

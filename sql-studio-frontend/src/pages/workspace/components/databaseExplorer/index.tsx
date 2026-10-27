@@ -19,417 +19,222 @@ import {
   TableOutlined
 } from '@ant-design/icons'
 import { Button, Dropdown, Empty, Input, Tree } from 'antd'
-import type { DropdownProps, MenuProps } from 'antd'
-import type { DataNode } from 'antd/es/tree'
-import { isValidElement, useEffect, useRef, useState } from 'react'
+import type { MenuProps } from 'antd'
+import { useMemo, useState } from 'react'
 
-import { connectionGroupName } from '@/constant/connectionGroup'
-
+import { objectTreeLayout } from '../../constant/layout'
+import { useTreeViewport } from '../../hooks/useTreeViewport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import { indexDescription, objectNodeKey as nodeKey } from '../../utils/objectTree'
+import { buildExplorerTree } from '../../utils/explorerTree'
+import type { ExplorerNode } from '../../utils/explorerTree'
 import EngineIcon from '../engineIcon'
 
-type Props = {
-  model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'objects' | 'running' | 'explorer' | 'updateExplorer'>
-}
-// 节点保留声明式菜单；实际触发交给 Tree，包含图标及整行内容空白。
-function ObjectTreeTitle({ children }: Pick<DropdownProps, 'children' | 'menu'>) {
-  return <>{children}</>
-}
-/** 连接、数据库和表共用一棵树；所有菜单携带完整连接范围，避免误用当前查询的连接。 */
+type Props = { model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'objects' | 'running' | 'explorer' | 'updateExplorer'> }
+
+/** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
 export default function DatabaseExplorer({ model }: Props) {
-  const { connections, connectionAction, databaseAction, tableAction, objects, running } = model
-  const { explorer, updateExplorer } = model
+  const { connections, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
   const [contextMenu, setContextMenu] = useState<MenuProps>()
-  const scroll = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (scroll.current) scroll.current.scrollTop = explorer.top
-  }, [explorer.top, objects.snapshots])
-  // 树的高亮只属于对象浏览器，不读取或修改任何查询标签的范围。
-  const matches = (value: string) => value.toLowerCase().includes(search.toLowerCase())
-  const loadedKeys: string[] = []
-  const tableChildren = (id: string, db: string, table: string): DataNode[] | undefined => {
-    const state = objects.snapshots[id]
-    const key = nodeKey(db, table)
-    const details = state.details[key]
-    const error = state.detailErrors[key]
-    if (!details)
-      return error
-        ? [
-            {
-              key: nodeKey('detail-error', id, db, table),
-              title: (
-                <span title={error} style={{ color: 'var(--ant-color-error-text)' }}>
-                  {error}
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      void objects.loadTableDetails(db, table, id).catch(() => {})
-                    }}
-                  >
-                    重试
-                  </Button>
-                </span>
-              ),
-              selectable: false,
-              isLeaf: true
-            }
+  const data = useMemo(() => buildExplorerTree(connections, objects.snapshots, expanded, search), [connections, objects.snapshots, expanded, search])
+  const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
+  const selectedKeys = selected.filter((key) => data.byKey.has(key))
+
+  // 菜单在右键时生成，不为几千张表预建按钮、图标和闭包。
+  function menuFor(node: ExplorerNode): MenuProps | undefined {
+    const { owner: id, database: db, table } = node
+    let items: MenuProps['items']
+    if (node.kind === 'connection') {
+      const connected = objects.snapshots[id]?.status === 'connected'
+      items = [
+        connected || objects.snapshots[id]?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
+        { key: 'refresh', label: '刷新连接', icon: <ReloadOutlined />, disabled: !connected },
+        { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
+        { type: 'divider' },
+        { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
+        { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true }
+      ]
+    } else if (node.kind === 'database') {
+      items = [
+        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        objects.closedDatabases[id]?.includes(db) ? { key: 'open', label: '打开数据库', icon: <LinkOutlined /> } : { key: 'close', label: '关闭数据库', icon: <CloseOutlined /> },
+        { type: 'divider' },
+        { key: 'edit', label: '编辑数据库', icon: <EditOutlined /> },
+        { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },
+        { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
+        { type: 'divider' },
+        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
+        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+      ]
+    } else if (node.kind === 'tables') {
+      items = [
+        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
+        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+      ]
+    } else if (node.kind === 'table') {
+      items = [
+        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        { key: 'data', label: '打开表', icon: <TableOutlined /> },
+        { key: 'design', label: '设计表', icon: <EditOutlined />, disabled: node.view },
+        { key: 'create', label: '新建表', icon: <PlusOutlined /> },
+        { key: 'structure', label: '查询结构', icon: <ProfileOutlined /> },
+        { key: 'ddl', label: '查看 DDL', icon: <FileTextOutlined /> },
+        { type: 'divider' },
+        { key: 'delete', label: node.view ? '删除视图' : '删除表', icon: <DeleteOutlined />, danger: true },
+        { key: 'truncate', label: '清空表', icon: <ClearOutlined />, danger: true, disabled: node.view },
+        { key: 'rename', label: '重命名', icon: <EditOutlined /> },
+        {
+          key: 'export',
+          label: '转储文件',
+          icon: <ExportOutlined />,
+          children: [
+            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined />, disabled: node.view }
           ]
-        : undefined
-    loadedKeys.push(nodeKey('table', id, db, table))
-    return [
-      {
-        key: nodeKey('columns', id, db, table),
-        title: (
-          <span>
-            <ProfileOutlined /> 字段
-          </span>
-        ),
-        children: details.columns.length
-          ? details.columns.map((column) => ({
-              key: nodeKey('column', id, db, table, column.name),
-              title: (
-                <span
-                  title={`${column.name} · ${column.type}${column.key === 'PRI' ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}
-                >
-                  {column.key === 'PRI' ? <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} /> : <ProfileOutlined />}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{column.name}</span>
-                </span>
-              ),
-              isLeaf: true
-            }))
-          : [{ key: nodeKey('empty-columns', id, db, table), title: '暂无字段', selectable: false, isLeaf: true }]
-      },
-      {
-        key: nodeKey('indexes', id, db, table),
-        title: (
-          <span>
-            <SortAscendingOutlined /> 索引
-          </span>
-        ),
-        children: details.indexes.length
-          ? details.indexes.map((index) => ({
-              key: nodeKey('index', id, db, table, index.name),
-              title: (
-                <span title={`${index.name}\n${indexDescription(index)}`} style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-                  {index.name === 'PRIMARY' ? <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} /> : <SortAscendingOutlined />}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{index.name}</span>
-                </span>
-              ),
-              isLeaf: true
-            }))
-          : [{ key: nodeKey('empty-indexes', id, db, table), title: '暂无索引', selectable: false, isLeaf: true }]
+        },
+        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+      ]
+    } else return undefined
+    if (running) items = items.filter((item) => item && 'key' in item && item.key === 'close')
+    if (!items.length) return undefined
+    return {
+      items,
+      onClick: ({ key, domEvent }) => {
+        domEvent.stopPropagation()
+        setContextMenu(undefined)
+        if (node.kind === 'connection') model.connectionAction(key, id)
+        else if (node.kind === 'table') void model.tableAction(key, id, db, table)
+        else void model.databaseAction(key, id, db)
       }
-    ]
+    }
   }
-  const connectionNodes: DataNode[] = connections.flatMap((connection): DataNode[] => {
-    const id = connection.id
-    const state = objects.snapshots[id]
-    const connected = state?.status === 'connected'
-    const status = connected ? 'is-connected' : state?.status === 'error' ? 'is-error' : 'is-closed'
-    const connectionMatches = matches(connection.name) || matches(connectionGroupName(connection.group))
-    if (connected) loadedKeys.push(nodeKey('connection', id))
-    const children: DataNode[] | undefined = connected
-      ? state.databases
-          .map((db) => {
-            const dbMatches = connectionMatches || matches(db)
-            if (state.tables[db]) loadedKeys.push(nodeKey('database', id, db))
-            const tables: DataNode[] | undefined = state.tables[db]
-              ?.filter((table) => dbMatches || matches(table.name))
-              .map((table) => ({
-                key: nodeKey('table', id, db, table.name),
-                title: (
-                  <ObjectTreeTitle
-                    menu={{
-                      items: [
-                        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-                        { key: 'data', label: '打开表', icon: <TableOutlined /> },
-                        { key: 'design', label: '设计表', icon: <EditOutlined />, disabled: table.type.includes('VIEW') },
-                        { key: 'create', label: '新建表', icon: <PlusOutlined /> },
-                        { key: 'structure', label: '查询结构', icon: <ProfileOutlined /> },
-                        { key: 'ddl', label: '查看 DDL', icon: <FileTextOutlined /> },
-                        { type: 'divider' },
-                        { key: 'delete', label: table.type.includes('VIEW') ? '删除视图' : '删除表', icon: <DeleteOutlined />, danger: true },
-                        { key: 'truncate', label: '清空表', icon: <ClearOutlined />, danger: true, disabled: table.type.includes('VIEW') },
-                        { key: 'rename', label: '重命名', icon: <EditOutlined /> },
-                        {
-                          key: 'export',
-                          label: '转储文件',
-                          icon: <ExportOutlined />,
-                          children: [
-                            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
-                            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined />, disabled: table.type.includes('VIEW') }
-                          ]
-                        },
-                        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
-                      ],
-                      onClick: ({ key, domEvent }) => {
-                        domEvent.stopPropagation()
-                        void tableAction(key, id, db, table.name)
-                      }
-                    }}
-                  >
-                    <span
-                      className="object-context-target"
-                      title={table.comment || table.name}
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden' }}
-                    >
-                      {table.type.includes('VIEW') ? <EyeOutlined /> : <TableOutlined />}
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{table.name}</span>
-                    </span>
-                  </ObjectTreeTitle>
-                ),
-                isLeaf: table.type.includes('VIEW'),
-                children: table.type.includes('VIEW') ? undefined : tableChildren(id, db, table.name)
-              }))
-            const collections: DataNode[] | undefined = tables && [
-              {
-                key: nodeKey('tables', id, db),
-                title: (
-                  <ObjectTreeTitle
-                    menu={{
-                      items: [
-                        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-                        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
-                        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
-                      ],
-                      onClick: ({ key }) => {
-                        void databaseAction(key, id, db)
-                      }
-                    }}
-                  >
-                    <span>
-                      <TableOutlined /> 表
-                    </span>
-                  </ObjectTreeTitle>
-                ),
-                children: tables.some((node) => !node.isLeaf) ? tables.filter((node) => !node.isLeaf) : [{ key: nodeKey('empty-tables', id, db), title: '暂无表', selectable: false, isLeaf: true }]
-              },
-              ...(tables.some((node) => node.isLeaf)
-                ? [
-                    {
-                      key: nodeKey('views', id, db),
-                      title: (
-                        <span>
-                          <EyeOutlined /> 视图
-                        </span>
-                      ),
-                      children: tables.filter((node) => node.isLeaf)
-                    }
-                  ]
-                : [])
-            ]
-            return {
-              key: nodeKey('database', id, db),
-              title: (
-                <ObjectTreeTitle
-                  menu={{
-                    items: [
-                      { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-                      { key: 'edit', label: '编辑数据库', icon: <EditOutlined /> },
-                      { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },
-                      { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
-                      { type: 'divider' },
-                      { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-                      { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
-                      { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
-                    ],
-                    onClick: ({ key, domEvent }) => {
-                      domEvent.stopPropagation()
-                      void databaseAction(key, id, db)
-                    }
-                  }}
-                >
-                  <span className="object-context-target" title={db} style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden' }}>
-                    <DatabaseOutlined />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{db}</span>
-                  </span>
-                </ObjectTreeTitle>
-              ),
-              isLeaf: false,
-              children: state.tableErrors[db]
-                ? [
-                    {
-                      key: nodeKey('error', id, db),
-                      title: (
-                        <span className="tree-error" title={state.tableErrors[db]} style={{ color: 'var(--ant-color-error-text)' }}>
-                          {state.tableErrors[db]}
-                        </span>
-                      ),
-                      selectable: false,
-                      isLeaf: true
-                    }
-                  ]
-                : collections
-            }
-          })
-          .filter((node) => {
-            const db = (JSON.parse(String(node.key)) as string[])[2]
-            return connectionMatches || matches(db) || !state.tables[db] || state.tables[db].some((table) => matches(table.name))
-          })
-      : state?.error
-        ? [
-            {
-              key: nodeKey('error', id),
-              title: (
-                <span className="tree-error" title={state.error} style={{ color: 'var(--ant-color-error-text)' }}>
-                  {state.error}
-                </span>
-              ),
-              selectable: false,
-              isLeaf: true
-            }
-          ]
-        : undefined
-    if (!connectionMatches && connected && !children?.length) return []
-    return [
-      {
-        key: nodeKey('connection', id),
-        className: `connection-tree-node ${status}`,
-        title: (
-          <ObjectTreeTitle
-            menu={{
-              items: [
-                connected || state?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
-                { key: 'refresh', label: '刷新连接', icon: <ReloadOutlined />, disabled: !connected },
-                { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
-                { type: 'divider' },
-                { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
-                { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true }
-              ],
-              onClick: ({ key, domEvent }) => {
-                domEvent.stopPropagation()
-                connectionAction(key, id)
-              }
+  function icon(node: ExplorerNode) {
+    if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} size={20} />
+    if (node.primary) return <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} />
+    switch (node.kind) {
+      case 'group':
+        return <FolderOutlined />
+      case 'database':
+        return <DatabaseOutlined />
+      case 'tables':
+        return <TableOutlined />
+      case 'views':
+        return <EyeOutlined />
+      case 'table':
+        return node.view ? <EyeOutlined /> : <TableOutlined />
+      case 'columns':
+      case 'column':
+        return <ProfileOutlined />
+      case 'indexes':
+      case 'index':
+        return <SortAscendingOutlined />
+      default:
+        return null
+    }
+  }
+  function retry(node: ExplorerNode) {
+    if (node.retry === 'connection') void model.openConnection(node.owner).catch(() => {})
+    else if (node.retry === 'database') void objects.loadTables(node.database, node.owner).catch(() => {})
+    else if (node.retry === 'table') void objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
+  }
+  function renderTitle(node: ExplorerNode) {
+    // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
+    return (
+      <span
+        className={node.connection ? `connection-tree-label object-context-target ${node.status}` : 'object-context-target'}
+        title={node.tooltip}
+        style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden', color: node.retry ? 'var(--ant-color-error-text)' : 'inherit' }}
+      >
+        <span className={node.connection ? `connection-tree-icon ${node.status}` : undefined} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
+          {icon(node)}
+        </span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.title}</span>
+        {node.retry && (
+          <Button
+            type="link"
+            size="small"
+            disabled={running}
+            onClick={(event) => {
+              event.stopPropagation()
+              retry(node)
             }}
           >
-            <span
-              className={`connection-tree-label object-context-target ${status}`}
-              title={`${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`}
-              style={{ display: 'flex', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'inherit', alignItems: 'center', gap: 4, width: '100%', minHeight: 24 }}
-            >
-              <span className={`connection-tree-icon ${status}`} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
-                <EngineIcon type={connection.type} connected={connected} size={20} />
-              </span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{connection.name}</span>
-            </span>
-          </ObjectTreeTitle>
-        ),
-        isLeaf: false,
-        children
-      }
-    ]
-  })
-  const nodes: DataNode[] = []
-  const groups = new Map<string, DataNode>()
-  const connectionsById = new Map(connections.map((connection) => [connection.id, connection]))
-  for (const node of connectionNodes) {
-    const [, id] = JSON.parse(String(node.key)) as string[]
-    const name = connectionGroupName(connectionsById.get(id)?.group)
-    let group = groups.get(name)
-    if (!group) {
-      group = {
-        key: nodeKey('group', name),
-        title: (
-          <span className="object-context-target" title={name} style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden' }}>
-            <FolderOutlined />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
-          </span>
-        ),
-        icon: <FolderOutlined />,
-        selectable: false,
-        children: []
-      }
-      groups.set(name, group)
-      nodes.push(group)
-      loadedKeys.push(String(group.key))
-    }
-    group.children!.push(node)
+            重试
+          </Button>
+        )}
+      </span>
+    )
   }
-  const expandedKeys = expanded.filter((key) => {
-    const [type, id] = JSON.parse(key) as string[]
-    if (type === 'group') return groups.has(id)
-    return connections.some((connection) => connection.id === id) && (type === 'connection' ? Boolean(objects.snapshots[id]) : objects.snapshots[id]?.status === 'connected')
-  })
-  // 搜索时展开分组以显示匹配连接，不覆盖用户保存的折叠状态。
-  if (search.trim()) for (const group of groups.values()) if (!expandedKeys.includes(String(group.key))) expandedKeys.push(String(group.key))
-  const selectedKeys = selected.filter((key) => {
-    const [type, id, db, table] = JSON.parse(key) as string[]
-    const state = objects.snapshots[id]
-    if (!connections.some((connection) => connection.id === id)) return false
-    if (type === 'connection') return true
-    if (state?.status !== 'connected' || !state.databases.includes(db)) return false
-    return ['database', 'tables', 'views'].includes(type) || Boolean(state.tables[db]?.some((item) => item.name === table))
-  })
   return (
     <div
       className="explorer connection-explorer"
       style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: 'var(--workspace-inset) var(--workspace-inset) 0', paddingTop: 16 }}
     >
       <Input prefix={<SearchOutlined />} value={search} onChange={(event) => updateExplorer({ search: event.target.value })} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
-      <div
-        className="object-tree"
-        ref={scroll}
-        onScroll={(event) => updateExplorer({ top: event.currentTarget.scrollTop })}
-        style={{ flex: 1, minHeight: 0, overflow: 'auto', marginTop: 12, paddingBottom: 12, userSelect: 'none' }}
-      >
+      <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
         {!connections.length ? (
           <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
         ) : (
           <Dropdown
             trigger={['contextMenu']}
-            disabled={running}
-            open={Boolean(contextMenu) && !running}
+            open={Boolean(contextMenu)}
             onOpenChange={(open) => {
               if (!open) setContextMenu(undefined)
             }}
             menu={contextMenu}
           >
-            <div onContextMenuCapture={() => setContextMenu(undefined)}>
-              <Tree
+            <div style={{ height: '100%' }} onContextMenuCapture={() => setContextMenu(undefined)}>
+              <Tree<ExplorerNode>
+                ref={treeRef}
                 aria-label="数据库连接树"
                 showIcon={false}
                 blockNode
                 expandAction="doubleClick"
-                disabled={running}
-                treeData={nodes}
-                expandedKeys={expandedKeys}
-                onExpand={(keys) => updateExplorer({ expanded: keys.map(String) })}
-                loadedKeys={loadedKeys}
+                autoExpandParent={false}
+                virtual
+                height={treeHeight}
+                itemHeight={objectTreeLayout.rowHeight}
+                onScroll={onTreeScroll}
+                treeData={data.nodes}
+                titleRender={renderTitle}
+                expandedKeys={data.expandedKeys}
+                loadedKeys={data.loadedKeys}
                 selectedKeys={selectedKeys}
-                loadData={async (node) => {
-                  const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
-                  if (type === 'connection') await model.openConnection(id).catch(() => {})
-                  else if (type === 'database') await objects.loadTables(db, id).catch(() => {})
-                  else if (type === 'table') await objects.loadTableDetails(db, table, id).catch(() => {})
-                }}
-                onDoubleClick={(_, node) => {
-                  if (running) return
-                  const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
-                  if (type === 'database') void databaseAction('tables', id, db)
-                  else if (type === 'table') void tableAction('data', id, db, table)
-                }}
-                onRightClick={({ node }) => {
-                  if (running || !isValidElement<DropdownProps>(node.title) || node.title.type !== ObjectTreeTitle || !node.title.props.menu) {
-                    setContextMenu(undefined)
-                    return
+                onExpand={(_, info) => {
+                  if (!running) {
+                    const next = new Set(expanded)
+                    if (info.expanded) next.add(String(info.node.key))
+                    else next.delete(String(info.node.key))
+                    updateExplorer({ expanded: [...next] })
                   }
-                  updateExplorer({ selected: [String(node.key)] })
-                  const menu = node.title.props.menu
-                  setContextMenu({
-                    ...menu,
-                    onClick: (info) => {
-                      setContextMenu(undefined)
-                      menu.onClick?.(info)
-                    }
-                  })
+                }}
+                loadData={async (value) => {
+                  if (running) return
+                  const node = data.byKey.get(String(value.key))
+                  if (!node) return
+                  if (node.kind === 'connection') await model.openConnection(node.owner).catch(() => {})
+                  else if (node.kind === 'database') await objects.loadTables(node.database, node.owner).catch(() => {})
+                  else if (node.kind === 'table') await objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
+                }}
+                onDoubleClick={(_, value) => {
+                  if (running) return
+                  const node = data.byKey.get(String(value.key))
+                  if (!node) return
+                  if (node.kind === 'database') void model.databaseAction('tables', node.owner, node.database)
+                  else if (node.kind === 'table') void model.tableAction('data', node.owner, node.database, node.table)
+                }}
+                onRightClick={({ node: value }) => {
+                  const node = data.byKey.get(String(value.key))
+                  if (!node) return
+                  const menu = menuFor(node)
+                  if (!menu) return
+                  updateExplorer({ selected: [node.key] })
+                  setContextMenu(menu)
                 }}
                 onSelect={(keys) => {
-                  if (keys.length) updateExplorer({ selected: keys.map(String) })
+                  if (!running && keys.length) updateExplorer({ selected: keys.map(String) })
                 }}
               />
             </div>

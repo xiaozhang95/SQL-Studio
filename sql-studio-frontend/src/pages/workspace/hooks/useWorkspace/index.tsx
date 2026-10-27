@@ -1,8 +1,7 @@
 import type { EditorView, ViewUpdate } from '@codemirror/view'
-import { App as AntApp } from 'antd'
+import { App as AntApp, Button } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { connectionGroupName } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
@@ -10,8 +9,11 @@ import { executeQuery, getConnections, deleteConnection as removeConnection } fr
 import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
+import { saveSQL } from '@/utils/sqlSave'
 
-import { resultPanelLayout, sidebarLayout } from '../../constant/layout'
+import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../constant/layout'
+import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
+import { explorerAfterChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
@@ -52,6 +54,8 @@ export const useWorkspace = () => {
   const [historySearch, setHistorySearch] = useState('')
   const editor = useRef<EditorView | null>(null)
   const request = useRef<AbortController | null>(null)
+  const closingScope = useRef(false)
+  const closedPages = useRef(new Set<string>())
   const executeRef = useRef<() => void>(() => {})
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, table: selectedTable } = tab
@@ -59,7 +63,11 @@ export const useWorkspace = () => {
   const adapter = getDatabaseAdapter(connection?.type)
   const engine = adapter.profile
   const historyStore = useQueryHistory(tab.kind === 'query' ? connectionId : '')
-  const { history, appendHistory, clearHistory } = historyStore
+  const { history, appendHistory, clearHistory, pruneHistory } = historyStore
+  useEffect(() => {
+    // 列表失败/尚未恢复时不能把暂时的空列表当成所有连接已删除。
+    if (historyStore.ready && !connectionLoading && !connectionError) pruneHistory(connections.map((item) => item.id))
+  }, [historyStore.ready, connectionLoading, connectionError, connections, pruneHistory])
   const validateDatabases = useCallback((id: string, databases: string[]) => {
     setTabs((previous) =>
       previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', table: '' } : item))
@@ -104,7 +112,7 @@ export const useWorkspace = () => {
       objects.snapshots[page.connectionId]?.status !== 'connected'
     )
   }
-  const { loadStructure, loadTables, openConnection: openObjectsConnection } = objects
+  const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
   useEffect(() => {
     if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
   }, [tab.kind, objects.connected, database, connectionId, loadTables])
@@ -164,8 +172,12 @@ export const useWorkspace = () => {
       for (const id of ids) {
         void openObjectsConnection(id)
           .then(async () => {
-            const databases = explorer.expanded.map((key) => JSON.parse(key) as string[]).filter(([type, owner]) => type === 'database' && owner === id)
+            const expandedNodes = explorer.expanded.map((key) => JSON.parse(key) as string[])
+            const databases = expandedNodes.filter(([type, owner]) => type === 'database' && owner === id)
             await Promise.allSettled(databases.map(([, , db]) => loadTables(db, id)))
+            // 只恢复用户已展开表的详情，避免虚拟滚动恢复时字段/索引再插入导致位移。
+            const tables = expandedNodes.filter(([type, owner, db]) => type === 'table' && owner === id && databases.some(([, , name]) => name === db))
+            await Promise.allSettled(tables.map(([, , db, name]) => loadTableDetails(db, name, id)))
           })
           .catch(() => {})
       }
@@ -174,7 +186,7 @@ export const useWorkspace = () => {
     return () => {
       stale = true
     }
-  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, explorer.expanded])
+  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded])
 
   function updateExplorer(patch: Partial<ExplorerLayout>) {
     setExplorer((previous) => ({ ...previous, ...patch }))
@@ -321,6 +333,7 @@ export const useWorkspace = () => {
     createPage(kind, scope, kind === 'table-create' ? '新建表 ' + number + ' · ' + scope.database : scope.table + ' · 设计')
   }
   function publishResult(id: string, value: RunState) {
+    if (closedPages.current.has(id)) return
     setRuns((previous) => ({ ...previous, [id]: { ...value, id: crypto.randomUUID() } }))
   }
   function replaceTableResult(id: string, result: QueryResult) {
@@ -374,45 +387,121 @@ export const useWorkspace = () => {
     void objects.refreshConnection(id).catch(() => {})
   }
   async function refreshObjectTarget(id: string, db: string) {
-    await objects.refreshConnection(id)
-    if (db) await objects.loadTables(db, id)
+    await objects.refreshDatabases(id)
+    if (db) await objects.refreshTables(db, id, true)
   }
   async function onObjectChanged({ action, target, name }: ObjectChange) {
-    setTabs((previous) =>
-      previous.map((item) => {
-        if (item.kind !== 'query' || item.connectionId !== target.connectionId || item.database !== target.database) return item
-        if (action === ObjectAction.DropDatabase) return { ...item, database: '', table: '' }
-        if (item.table === target.table && action === ObjectAction.DropTable) return { ...item, table: '' }
-        if (item.table === target.table && action === ObjectAction.RenameTable) return { ...item, table: name }
-        return item
-      })
-    )
-    if (connectionId === target.connectionId) resetStructure()
-    const db = action === ObjectAction.DropDatabase ? '' : action === ObjectAction.CreateDatabase ? name : target.database
-    await refreshObjectTarget(target.connectionId, db)
-    if (db)
+    const change = { action, target, name }
+    setTabs((previous) => queryScopesAfterChange(previous, change))
+    setExplorer((previous) => explorerAfterChange(previous, change))
+    if (connectionId === target.connectionId && database === target.database && (!target.table || selectedTable === target.table)) {
+      resetStructure()
+      setRefresh((value) => value + 1)
+    }
+    if ([ObjectAction.CreateDatabase, ObjectAction.EditDatabase, ObjectAction.DropDatabase].some((value) => value === action)) await objects.refreshDatabases(target.connectionId)
+    else await objects.refreshTables(target.database, target.connectionId)
+  }
+  async function closeScope(id: string, db?: string) {
+    if (closingScope.current) return false
+    if (objectBusy || objectManagement.dialog || Object.values(designerBusy).some(Boolean)) {
+      message.info('请等待当前对象操作完成后再关闭')
+      return false
+    }
+    closingScope.current = true
+    setObjectBusy(true)
+    const affected = pagesForScope(tabs, id, db).map((page) => (page.id === activeTab && page.kind === 'query' && editor.current ? { ...page, sql: editor.current.state.doc.toString() } : page))
+    const sql = sqlForPages(affected)
+    const dirty = affected.filter((page) => designerDirty[page.id])
+    try {
+      if (sql || dirty.length) {
+        const proceed = await new Promise<boolean>((resolve) => {
+          const dialog = modal.confirm({
+            width: scopeCloseDialogLayout.width,
+            title: sql ? '关闭前是否保存查询？' : '关闭前请确认未保存的修改',
+            content: (
+              <>
+                <p>
+                  {affected.map((page) => page.title).join('、')} 将随{db ? '数据库' : '连接'}一起关闭。
+                </p>
+                {sql && <p>查询内容将保存为一个 .sql 文件。</p>}
+                {dirty.length > 0 && <p>{dirty.map((page) => page.title).join('、')} 的表结构或数据修改尚未提交，继续关闭将放弃这些修改；SQL 文件不包含这些修改。</p>}
+              </>
+            ),
+            okText: sql ? '保存并关闭' : '放弃并关闭',
+            cancelText: '取消',
+            onCancel: () => resolve(false),
+            onOk: async () => {
+              try {
+                if (sql) await saveSQL(sql, db || 'SQL Studio 查询')
+                resolve(true)
+              } catch (error) {
+                if (!(error instanceof DOMException && error.name === 'AbortError')) message.error('SQL 保存失败，窗口已保留')
+                throw error
+              }
+            },
+            footer: (_, { OkBtn, CancelBtn }) => (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                <CancelBtn />
+                {sql && (
+                  <Button
+                    onClick={() => {
+                      resolve(true)
+                      dialog.destroy()
+                    }}
+                  >
+                    不保存
+                  </Button>
+                )}
+                <OkBtn />
+              </div>
+            )
+          })
+        })
+        if (!proceed) return false
+      }
+      const activeScope = runs[runningTabId]?.scope || tabs.find((page) => page.id === runningTabId)
+      if (activeScope?.connectionId === id && (db === undefined || activeScope.database === db)) request.current?.abort()
+      // 只有服务端确认驱动资源已释放后，才删除窗口和本地元数据。
+      if (db === undefined) await objects.closeConnection(id)
+      else await objects.closeDatabase(id, db)
+      const removed = new Set(affected.map((page) => page.id))
+      removed.forEach((page) => closedPages.current.add(page))
+      const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([key]) => !removed.has(key)))
+      const remaining = tabs.filter((page) => !removed.has(page.id))
+      setTabs(remaining)
+      setRuns(keep)
+      setResultViews(keep)
+      setEditorLayouts(keep)
+      setDesignerBusy(keep)
+      setDesignerDirty(keep)
+      if (removed.has(activeTabRef.current)) selectTab(remaining[0]?.id || '', true)
       setExplorer((previous) => ({
         ...previous,
-        expanded: Array.from(new Set([...previous.expanded, JSON.stringify(['connection', target.connectionId]), JSON.stringify(['database', target.connectionId, db])]))
+        expanded: previous.expanded.filter((key) => {
+          const [, owner, name] = JSON.parse(key) as string[]
+          return owner !== id || (db !== undefined && name !== db)
+        }),
+        selected: [JSON.stringify(db === undefined ? ['connection', id] : ['database', id, db])]
       }))
-  }
-  function closeConnection(id: string) {
-    if (running) return
-    objects.closeConnection(id)
-    // 结果页保留不可变来源；仅清理可执行 SQL 页的失效范围。
-    setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === id ? { ...item, ...emptyScope } : item)))
-    if (id === connectionId) {
-      resetStructure()
-      setHistoryOpen(false)
+      return true
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '关闭失败，窗口已保留')
+      return false
+    } finally {
+      closingScope.current = false
+      setObjectBusy(false)
     }
   }
   function connectionAction(action: string, id: string) {
+    if (action === 'close') {
+      void closeScope(id)
+      return
+    }
     if (running) return
     const target = connections.find((item) => item.id === id)
     if (!target) return
     if (action === 'create-database') void objectManagement.open(ObjectAction.CreateDatabase, { connectionId: id, database: '', table: '' })
     else if (action === 'open') void openConnection(id).catch(() => {})
-    else if (action === 'close') closeConnection(id)
     else if (action === 'refresh') refreshSchema(id)
     else if (action === 'edit') {
       setEditing(target)
@@ -420,7 +509,20 @@ export const useWorkspace = () => {
     } else if (action === 'delete') deleteConnection(id)
   }
   async function databaseAction(action: string, id: string, db: string, reuseTabId?: string) {
+    if (action === 'close') {
+      await closeScope(id, db)
+      return
+    }
     if (running || request.current || objects.snapshots[id]?.status !== 'connected') return
+    if (action === 'open') {
+      try {
+        await objects.loadTables(db, id)
+        setExplorer((previous) => ({ ...previous, expanded: [...new Set([...previous.expanded, JSON.stringify(['database', id, db])])] }))
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : '打开数据库失败')
+      }
+      return
+    }
     const scope = { connectionId: id, database: db, table: '' }
     const actions: Partial<Record<string, ObjectAction>> = {
       create: ObjectAction.CreateDatabase,
@@ -674,8 +776,9 @@ export const useWorkspace = () => {
       content: '删除本机保存的连接信息，数据库中的数据不受影响。',
       okButtonProps: { danger: true },
       onOk: async () => {
+        if (!(await closeScope(id))) return
         await removeConnection(id)
-        closeConnection(id)
+        clearHistory(id)
         await loadConnections()
       }
     })
@@ -734,14 +837,20 @@ export const useWorkspace = () => {
   }
   const onConnectionSaved = (saved: Connection) => {
     setConnectionModal(false)
-    const key = JSON.stringify(['group', connectionGroupName(saved.group)])
-    setExplorer((previous) => ({ ...previous, expanded: [...new Set([...previous.expanded, key])] }))
-    objects.closeConnection(saved.id)
-    setTabs((previous) =>
-      previous.map((item) => (item.kind === 'query' && (item.connectionId === saved.id || (!editing && item.id === activeTab)) ? { ...item, connectionId: saved.id, database: '', table: '' } : item))
-    )
-    if (connectionId === saved.id || !editing) resetStructure()
-    void loadConnections()
+    setConnections((previous) => upsertConnection(previous, saved))
+    if (editing) {
+      setExplorer((previous) => ({
+        ...previous,
+        expanded: previous.expanded.filter((key) => {
+          const [type, owner] = JSON.parse(key) as string[]
+          return type === 'group' || owner !== saved.id
+        })
+      }))
+      void objects.closeConnection(saved.id).catch((error) => message.error(error instanceof Error ? error.message : '关闭旧连接失败'))
+      setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', table: '' } : item)))
+      if (connectionId === saved.id) resetStructure()
+    }
+    setEditing(undefined)
   }
   return {
     workspaceReady,

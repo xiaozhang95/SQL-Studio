@@ -47,7 +47,7 @@ export default function ConnectionSidebar({ model, layout }: Props) {
       }}
     >
       {model.connectionError && <Alert type="error" title="连接列表加载失败" description={model.connectionError} action={<Button onClick={() => void model.loadConnections()}>重试</Button>} />}
-      {model.connectionLoading ? (
+      {model.connectionLoading && !model.connections.length ? (
         <div className="tree-loading" style={{ textAlign: 'center', padding: '28px 10px' }}>
           <Spin />
         </div>

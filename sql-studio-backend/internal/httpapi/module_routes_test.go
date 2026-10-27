@@ -19,6 +19,7 @@ import (
 )
 
 type routeDatabase struct {
+	session func(context.Context, model.Connection, *string, bool) error
 	check   func(model.Connection, string, string)
 	execute func(context.Context, model.Connection, model.QueryRequest) (model.QueryResult, error)
 }
@@ -49,6 +50,18 @@ func (d routeDatabase) Indexes(_ context.Context, c model.Connection, ref model.
 }
 func (d routeDatabase) Execute(ctx context.Context, c model.Connection, input model.QueryRequest) (model.QueryResult, error) {
 	return d.execute(ctx, c, input)
+}
+
+func (d routeDatabase) SetSession(ctx context.Context, c model.Connection, database *string, open bool) error {
+	if d.session != nil {
+		return d.session(ctx, c, database, open)
+	}
+	name := ""
+	if database != nil {
+		name = *database
+	}
+	d.check(c, name, "")
+	return nil
 }
 
 func regressionServices(store *connection.Store, db routeDatabase) Services {

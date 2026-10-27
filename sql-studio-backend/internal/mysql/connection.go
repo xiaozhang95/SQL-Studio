@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -14,9 +15,18 @@ import (
 )
 
 // Client 每次请求使用独立连接，避免不同查询之间共享会话状态。
-type Client struct{}
+type Client struct {
+	mu      sync.Mutex
+	control chan struct{}
+	active  map[*requestLease]bool
+	closed  map[string]bool
+	closing map[string]bool
+	open    func(model.Connection, string) (*sql.DB, error)
+}
 
-func NewClient() *Client { return &Client{} }
+func NewClient() *Client {
+	return &Client{control: make(chan struct{}, 1), active: make(map[*requestLease]bool), closed: make(map[string]bool), closing: make(map[string]bool), open: Open}
+}
 
 // Open 集中维护底层连接参数，业务代码应使用 Client 的请求方法。
 func Open(c model.Connection, schema string) (*sql.DB, error) {
@@ -56,11 +66,11 @@ func driverConfig(c model.Connection, schema string) (*mysql.Config, error) {
 }
 
 func (c *Client) Test(ctx context.Context, connection model.Connection) (string, error) {
-	db, err := Open(connection, "")
+	ctx, db, release, err := c.openScopedRequest(ctx, connection, "", true)
 	if err != nil {
 		return "", err
 	}
-	defer db.Close()
+	defer release()
 	if err = db.PingContext(ctx); err != nil {
 		return "", err
 	}

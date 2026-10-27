@@ -8,3 +8,5 @@
 - `TestConnection(ctx context.Context, input model.Connection) (string, error)`：编辑时可复用已存密码，限制为 7 秒并继承调用者取消，返回数据库版本或错误。
 
 仅服务端使用 `Repository.Get` 取凭据；不把凭据放入日志或响应，不访问 HTTP、文件系统或其他业务模块。app 创建模块并将其交给 HTTP 层；用临时仓库和测试替身验证，不连接业务数据库。
+
+SetSession(ctx,id,database *string,open bool) 读取原始连接凭据，库名指定时不得为空，7 秒超时继承取消，调用引擎实际打开/关闭。nil 库表示整个连接；关闭必须等待资源释放，错误不转换为成功。
