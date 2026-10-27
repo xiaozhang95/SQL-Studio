@@ -28,7 +28,11 @@ export default function EngineIcon({
         display: 'inline-grid',
         placeItems: 'center',
         border: 0,
-        background: originalBrand ? 'transparent' : connected ? 'var(--ant-color-success)' : 'linear-gradient(var(--ant-color-text-disabled), var(--ant-color-text-disabled)), var(--surface)'
+        background: originalBrand
+          ? (engine.iconBackground ?? 'transparent')
+          : connected
+            ? 'var(--ant-color-success)'
+            : 'linear-gradient(var(--ant-color-text-disabled), var(--ant-color-text-disabled)), var(--surface)'
       }}
     >
       {originalBrand && variant === 'icon' && (
@@ -46,7 +50,19 @@ export default function EngineIcon({
           }}
         />
       )}
-      <img src={engine.icon} alt="" style={{ display: 'block', width: originalBrand ? '100%' : '80%', height: originalBrand ? '100%' : '80%', objectFit: 'contain' }} />
+      <img
+        src={engine.icon}
+        alt=""
+        style={{
+          display: 'block',
+          width: originalBrand ? '100%' : '80%',
+          height: originalBrand ? '100%' : '80%',
+          objectFit: 'contain',
+          boxSizing: 'border-box',
+          padding: engine.iconBackground ? size * 0.1 : 0,
+          filter: originalBrand ? undefined : 'brightness(0) invert(1)'
+        }}
+      />
     </span>
   )
 }

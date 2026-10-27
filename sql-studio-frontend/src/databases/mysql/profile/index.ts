@@ -9,6 +9,5 @@ export const mysqlProfile = {
   description: 'MySQL 数据库',
   className: 'engine-mysql',
   port: 3306,
-  iconPresentation: 'brand',
   icon: mysqlIcon
 } as const satisfies DatabaseProfile

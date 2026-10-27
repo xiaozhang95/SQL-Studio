@@ -10,6 +10,5 @@ export const postgresqlProfile = {
   className: 'engine-postgresql',
   port: 5432,
   database: 'postgres',
-  iconPresentation: 'brand',
   icon
 } as const satisfies DatabaseProfile

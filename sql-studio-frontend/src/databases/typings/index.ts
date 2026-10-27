@@ -16,6 +16,8 @@ export interface DatabaseProfile {
   readonly port: number
   readonly database?: string
   readonly iconPresentation?: 'brand'
+  /** 品牌图形的固定衬底，确保主题及选中背景下对比度稳定。 */
+  readonly iconBackground?: string
   readonly icon: string
 }
 
