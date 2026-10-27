@@ -13,3 +13,5 @@ StatementRun.durationMs 为可选语句请求耗时（失败时仍记录）；Ru
 WorkspacePageKind 增加 table-create/table-design，复用页面的连接/库/表范围。表设计草稿不放在 sql 字段或运行结果中，由各设计页组件独立持有；快照只保存这些页面的描述和范围，恢复不执行写入。
 
 RunState.scope 可选记录实际执行范围，用于刷新。旧快照缺少该字段时 SQL 刷新禁用。
+
+StatementRun.database 可选保存该条语句实际请求的数据库，刷新优先使用它；旧结果回退批次范围。

@@ -7,3 +7,5 @@ splitSQLStatements(script) 按 MySQL 默认转义规则返回有效语句数组�
 忽略空语句及纯普通注释，保留可执行版本注释；未闭合引号/块注释抛出中文错误，调用方在任何请求前完整校验。不处理 DELIMITER 指令；不发请求、不更改脚本。
 
 在 sql-studio-frontend 执行 `pnpm test:sql`（原生 `node --test tests/mysql.test.mjs`）验证引号、注释、空语句及批量行为。
+
+useDatabaseSQL(statement) 返回完整 USE 语句中的库名，否则为 undefined；支持普通注释和反引号转义，不解释可执行版本注释。只做范围识别，成功与权限由实际请求确认。

@@ -194,6 +194,8 @@ export default function DatabaseExplorer({ model }: Props) {
                 expandAction="doubleClick"
                 autoExpandParent={false}
                 virtual
+                // 折叠时数据会裁剪后代，禁用依赖旧节点层级的离场动画，避免缩进先归零。
+                motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
                 height={treeHeight}
                 itemHeight={objectTreeLayout.rowHeight}
                 onScroll={onTreeScroll}

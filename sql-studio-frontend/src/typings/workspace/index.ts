@@ -4,7 +4,7 @@ import type { QueryResult } from '../database'
 export type QueryScope = { connectionId: string; database: string; table: string }
 export type WorkspacePageKind = 'query' | 'data' | 'structure' | 'ddl' | 'table-create' | 'table-design'
 export type WorkspaceTab = QueryScope & { id: string; title: string; kind: WorkspacePageKind; sql: string }
-export type StatementRun = { sql: string; result?: QueryResult; error?: string; durationMs?: number }
+export type StatementRun = { sql: string; database?: string; result?: QueryResult; error?: string; durationMs?: number }
 export type RunState = {
   scope?: QueryScope
   id?: string

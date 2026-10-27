@@ -45,3 +45,5 @@ explorer/updateExplorer 由工作区受控，保存 expanded/selected/search/top
 树采用原生虚拟滚动，ResizeObserver 提供视口高度；按展开层级生成纯数据，titleRender 仅渲染可见行，右键时才生成菜单。节点数据按连接、元数据、展开和搜索缓存，SQL 编辑、选中及滚动不会重建万表节点。滚动结束 150ms 后保存一次位置，首次加载等待元数据恢复后再定位；主题、伸缩、查询范围与菜单行为保持一致。
 
 Tree 与视口 ref 使用 ExplorerNode 泛型。titleRender 直接消费 Tree 传入的节点快照；折叠动画仍保留旧子节点时，当前 byKey 已可能裁剪它们，不能再次通过 byKey 取标题或回退显示内部 key。名称、图标及 tooltip 在收起动画期间保持完整，操作目标仍从当前 byKey 校验。
+
+Tree 显式设置 motionAppear/motionEnter/motionLeave=false，展开和折叠直接更新可见行（Ant Design 会将 null 回退为默认动画，不能用 motion=null 禁用）。按展开状态裁剪后代数据会同步移除原生树的层级索引，关闭过渡可避免离场节点缩进归零、先跳到最左侧再消失；保留虚拟滚动与按需加载。

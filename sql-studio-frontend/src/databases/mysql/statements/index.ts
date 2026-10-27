@@ -54,3 +54,11 @@ export function splitSQLStatements(script: string): string[] {
   append(script.length)
   return statements
 }
+
+/** 仅识别完整 USE；数据库是否存在及访问权限仍由服务端验证。 */
+export function useDatabaseSQL(statement: string): string | undefined {
+  const gap = String.raw`(?:\s|/\*(?![!+])[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
+  const match = new RegExp('^' + gap + String.raw`USE\b` + gap + '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+)' + gap + ';?' + gap + '$', 'iu').exec(statement)
+  if (!match) return undefined
+  return match[1].startsWith('`') ? match[1].slice(1, -1).replace(/``/g, '`') : match[1]
+}

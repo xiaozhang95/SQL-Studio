@@ -676,25 +676,31 @@ export const useWorkspace = () => {
     const batchStart = performance.now()
     const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
     const completed: StatementRun[] = []
+    let executionDatabase = scope.database
     try {
-      // 驱动继续保持单语句；整批固定目标范围、取消信号和运行锁，逐条保留结果与历史。
+      // 驱动继续保持单语句；整批固定连接、取消信号和运行锁，默认库跟随成功的 USE，逐条保留结果与历史。
       for (const [index, sql] of statements.entries()) {
         const start = performance.now()
         const item: HistoryItem = {
           id: crypto.randomUUID(),
           sql,
-          database: scope.database,
+          database: executionDatabase,
           connectionId: target.id,
           connectionName: target.name,
           time: new Date().toISOString(),
           durationMs: 0,
           ok: false
         }
-        const entry: StatementRun = { sql }
+        const entry: StatementRun = { sql, database: executionDatabase }
         try {
           if (controller.signal.aborted) throw new Error('请求已取消')
-          entry.result = await executeQuery(target.id, { database: scope.database, sql }, controller.signal)
+          entry.result = await executeQuery(target.id, { database: executionDatabase, sql }, controller.signal)
           if (controller.signal.aborted) throw new Error('请求已取消')
+          const selectedDatabase = getDatabaseAdapter(target.type).useDatabase(sql)
+          if (selectedDatabase !== undefined) {
+            executionDatabase = selectedDatabase
+            setTabs((previous) => previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, table: '' } : page)))
+          }
           item.ok = true
           item.durationMs = entry.result.durationMs
           if (!entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
@@ -734,7 +740,7 @@ export const useWorkspace = () => {
   async function refreshResult() {
     if (running || !canRefreshResult || !refreshScope) return
     if (tab.kind === 'query') {
-      if (statementRun?.sql) void executeSQL(statementRun.sql, refreshScope, tab.id)
+      if (statementRun?.sql) void executeSQL(statementRun.sql, { ...refreshScope, database: statementRun.database ?? refreshScope.database }, tab.id)
       return
     }
     if (tab.kind === 'data') {

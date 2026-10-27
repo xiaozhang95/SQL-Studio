@@ -31,6 +31,7 @@ export interface DatabaseAdapter {
   readonly profile: DatabaseProfile
   readonly objects: DatabaseObjectAdapter
   splitStatements: (script: string) => string[]
+  useDatabase: (statement: string) => string | undefined
   cleanHistory: (script: string) => string
   tableDataSQL: (database: string, table: string) => string
   completion: (context: SQLCompletionContext) => ReturnType<typeof sql>

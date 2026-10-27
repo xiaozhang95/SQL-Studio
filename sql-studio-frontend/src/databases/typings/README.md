@@ -15,3 +15,5 @@ DatabaseAdapter.updateCellSQL 根据显式库表、字段元数据和原结果�
 DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。
 
 DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承载 SQL；结果 UI 据此复用只读高亮与复制，具体列名由引擎维护。
+
+DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句；仅在请求成功后应用返回库名。

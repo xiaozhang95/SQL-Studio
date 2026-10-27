@@ -4,7 +4,7 @@ import test from 'node:test'
 import { stripHistoryMarkers } from '../src/databases/mysql/history/index.ts'
 import { identifier, tableDataSQL } from '../src/databases/mysql/query/index.ts'
 import { isSQLColumn } from '../src/databases/mysql/resultSQL/index.ts'
-import { splitSQLStatements } from '../src/databases/mysql/statements/index.ts'
+import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/statements/index.ts'
 
 test('recognizes SQL definitions and statement result columns without treating ordinary metadata as SQL', () => {
   for (const name of [
@@ -89,4 +89,15 @@ test('history cleanup preserves SQL literals, quoted identifiers, and ordinary c
     '# -- 历史记录\nSELECT 1;'
   ])
     assert.equal(stripHistoryMarkers(`-- 历史记录\n${sql}`), sql)
+})
+
+test('USE extracts only a complete database switch, preserving quoted names and comments', () => {
+  for (const [sql, database] of [
+    ['use qianguanguan;', 'qianguanguan'],
+    ['USE `a``b;中文`;', 'a`b;中文'],
+    ['-- history\nUSE /* database */ `db name`; # tail', 'db name'],
+    ['USE 中文库', '中文库']
+  ])
+    assert.equal(useDatabaseSQL(sql), database)
+  for (const sql of ["SELECT 'USE wrong'", '-- USE wrong', 'USE db; SELECT 1', 'USEdb', 'USE', 'USE /*!80000 db */', 'USE `broken']) assert.equal(useDatabaseSQL(sql), undefined, sql)
 })
