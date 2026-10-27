@@ -1,0 +1,1580 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SQL Studio API",
+    "version": "1.0.0",
+    "description": "本机单用户 API；仅允许本机 Host 与同源请求，无开放 CORS。成功直接返回 JSON；失败返回 {error:string}。所有 JSON 请求必须为单个对象，拒绝未知顶层字段。普通请求最多 1 MiB，配置写入例外。"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "当前服务同源 API"
+    }
+  ],
+  "tags": [
+    {
+      "name": "服务"
+    },
+    {
+      "name": "连接"
+    },
+    {
+      "name": "元数据"
+    },
+    {
+      "name": "查询"
+    },
+    {
+      "name": "配置"
+    },
+    {
+      "name": "AI"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "服务健康（不测试数据库）",
+        "tags": [
+          "服务"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "openAPI",
+        "summary": "OpenAPI 文档",
+        "tags": [
+          "服务"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections": {
+      "get": {
+        "operationId": "listConnections",
+        "summary": "连接列表（无密码）",
+        "tags": [
+          "连接"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Connection"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveConnection",
+        "summary": "新增或更新连接",
+        "tags": [
+          "连接"
+        ],
+        "description": "普通请求最多 1 MiB。更新时空密码保留；不返回密码。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Connection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}": {
+      "delete": {
+        "operationId": "deleteConnection",
+        "summary": "删除本地连接",
+        "tags": [
+          "连接"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/test": {
+      "post": {
+        "operationId": "testConnection",
+        "summary": "测试表单连接，返回版本",
+        "tags": [
+          "连接"
+        ],
+        "description": "最长 7 秒；编辑时空密码复用已保存凭据。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Connection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "version"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/databases": {
+      "get": {
+        "operationId": "databases",
+        "summary": "数据库名称列表",
+        "tags": [
+          "元数据"
+        ],
+        "description": "最长 10 秒，继承请求取消。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/tables": {
+      "get": {
+        "operationId": "tables",
+        "summary": "表和视图列表",
+        "tags": [
+          "元数据"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Table"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/columns": {
+      "get": {
+        "operationId": "columns",
+        "summary": "字段列表",
+        "tags": [
+          "元数据"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "table",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Column"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/ddl": {
+      "get": {
+        "operationId": "ddl",
+        "summary": "对象建表语句",
+        "tags": [
+          "元数据"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "table",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ddl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ddl"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/query": {
+      "post": {
+        "operationId": "query",
+        "summary": "执行一条 SQL",
+        "tags": [
+          "查询"
+        ],
+        "description": "最长 30 秒，全进程 4 并发；默认 1000 行、最多 5000 行、约 8 MiB 字段内容。截断时 truncated=true，保留重复列名和精确数值文本。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "进程共享并发预算已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/state/{section}": {
+      "get": {
+        "operationId": "readState",
+        "summary": "读取配置分区",
+        "tags": [
+          "配置"
+        ],
+        "description": "workspace、history、appearance、ai 等独立分区；缺失返回 revision=0,data=null；ai 响应省略 apiKey。",
+        "parameters": [
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,47}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "对应模块未装配",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "writeState",
+        "summary": "按修订号保存配置",
+        "tags": [
+          "配置"
+        ],
+        "description": "data 必须为对象、最多 32 MiB，HTTP 信封最多 32 MiB + 1024 字节。已存在分区严格 CAS；缺失分区允许按会话旧 revision 重建。ai 数据遵守 AIConfig，响应脱敏。",
+        "parameters": [
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,47}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StateWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置修订冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "对应模块未装配",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/assist": {
+      "post": {
+        "operationId": "assist",
+        "summary": "SQL 续写或优化",
+        "tags": [
+          "AI"
+        ],
+        "description": "续写 12 秒，优化 30 秒；与模型发现共享 4 并发；只发送 SQL 上下文和结构，无数据库凭据或查询结果；不执行 SQL。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "连接不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "进程共享并发预算已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "对应模块未装配",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/models": {
+      "post": {
+        "operationId": "aiModels",
+        "summary": "获取服务商模型列表",
+        "tags": [
+          "AI"
+        ],
+        "description": "10 秒超时，使用本次 Key 或已保存 Key；真实请求 DeepSeek，不回传 Key。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIModelsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AIModel"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "进程共享并发预算已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "对应模块未装配",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/config": {
+      "delete": {
+        "operationId": "removeAI",
+        "summary": "清除 AI 配置并关闭续写",
+        "tags": [
+          "AI"
+        ],
+        "description": "保留并递增修订号，防止旧窗口回写已移除的 Key。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入、JSON、数据库或上游服务错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "配置修订冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "对应模块未装配",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string",
+            "enum": [
+              "SQL Studio"
+            ]
+          },
+          "framework": {
+            "type": "string",
+            "enum": [
+              "gin"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "framework"
+        ]
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "更新时携带已保存的连接 ID；新建可省略或留空。"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "mysql",
+              ""
+            ],
+            "default": "mysql",
+            "description": "省略或空字符串兼容为 mysql。"
+          },
+          "tls": {
+            "type": "boolean",
+            "default": false
+          },
+          "name": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string",
+            "default": "默认分组"
+          },
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "更新时留空保留原密码；任何响应都省略本字段。"
+          },
+          "hasPassword": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "name",
+          "host",
+          "port",
+          "username"
+        ],
+        "additionalProperties": false
+      },
+      "Table": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "MySQL 对象类型，如 BASE TABLE 或 VIEW。"
+          },
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "comment"
+        ]
+      },
+      "Column": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "nullable": {
+            "type": "string",
+            "enum": [
+              "YES",
+              "NO"
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string",
+            "nullable": true
+          },
+          "extra": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "nullable",
+          "key",
+          "default",
+          "extra",
+          "comment"
+        ]
+      },
+      "QueryRequest": {
+        "type": "object",
+        "properties": {
+          "database": {
+            "type": "string",
+            "default": ""
+          },
+          "sql": {
+            "type": "string",
+            "minLength": 1,
+            "example": "SELECT 1",
+            "description": "非空、单语句；多条 SQL 由前端逐条请求。"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 1000,
+            "description": "小于等于 0 使用 1000，大于 5000 限制为 5000。"
+          },
+          "allowWrite": {
+            "type": "boolean",
+            "default": false,
+            "description": "false 使用只读事务；显式 true 的写入自动提交。取消不代表回滚。"
+          }
+        },
+        "required": [
+          "sql"
+        ],
+        "additionalProperties": false
+      },
+      "QueryResult": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ]
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "nullable": true,
+                "description": "NULL、字符串、数值或布尔；整数和 DECIMAL 使用字符串。"
+              }
+            }
+          },
+          "rowCount": {
+            "type": "integer"
+          },
+          "affectedRows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastInsertId": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "isQuery": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "columns",
+          "rows",
+          "rowCount",
+          "affectedRows",
+          "lastInsertId",
+          "durationMs",
+          "truncated",
+          "isQuery"
+        ]
+      },
+      "AIConfig": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepseek"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[a-zA-Z0-9._-]*$",
+            "description": "更新省略或留空保留原模型；旧记录由服务商选择默认模型。"
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 512,
+            "description": "首次填写；更新留空保留。响应省略此字段。"
+          },
+          "configured": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "已配置为 true；未配置时可能省略。"
+          },
+          "completionEnabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "省略时保留旧值，首次默认 true。"
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "StateDocument": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "缺失分区为 0；保存后递增。"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "RFC3339Nano 时间；缺失分区为空字符串。"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "description": "缺失为 null；ai 分区按 AIConfig 脱敏，其他分区为业务对象。"
+          },
+          "extensions": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "revision",
+          "updatedAt",
+          "data"
+        ]
+      },
+      "StateWrite": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "最多 32 MiB；ai 分区遵守 AIConfig，密钥仅后端保存。"
+          }
+        },
+        "required": [
+          "revision",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "AIRequest": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "optimize"
+            ]
+          },
+          "connectionId": {
+            "type": "string",
+            "default": "",
+            "description": "可省略；提供时服务端校验连接并补充名称和引擎。"
+          },
+          "database": {
+            "type": "string",
+            "maxLength": 256,
+            "default": ""
+          },
+          "table": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "document": {
+            "type": "string",
+            "description": "草稿上下文，最多 64000 UTF-8 字节。"
+          },
+          "connection": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "description": "兼容输入；服务端忽略并按 connectionId 重建，不能伪造凭据。"
+          },
+          "sql": {
+            "type": "string",
+            "description": "optimize 时必填；与 prefix/suffix 合计最多 48000 字节。"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "complete 时非空；保留光标前 SQL。"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "最多 8000 字节。"
+                },
+                "columns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "每字段最多 512 字节。"
+                  },
+                  "maxItems": 128
+                }
+              },
+              "required": [
+                "name",
+                "columns"
+              ]
+            },
+            "maxItems": 12
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "AIResult": {
+        "type": "object",
+        "properties": {
+          "completion": {
+            "type": "string"
+          },
+          "sql": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "description": "complete 返回 completion（无建议时 {}）；optimize 返回 sql，可附 explanation。不执行 SQL。"
+      },
+      "AIModelsRequest": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "deepseek"
+            ]
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 512,
+            "description": "省略时使用后端保存的 Key。"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "additionalProperties": false
+      },
+      "AIModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Revision": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

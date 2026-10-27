@@ -1,12 +1,12 @@
 # 前端开发规范
 
-本文件记录用户确认的前端规范，适用于新增功能和维护现有模块。前端任务使用 [sql-studio-frontend skill](../.agents/skills/sql-studio-frontend/SKILL.md)，开发前与 [源码索引](../sql-web/src/README.md) 和目标模块 README 一起阅读；用户最新明确要求优先。
+本文件记录用户确认的前端规范，适用于新增功能和维护现有模块。前端任务使用 [sql-studio-frontend skill](../.agents/skills/sql-studio-frontend/SKILL.md)，开发前与 [源码索引](../sql-studio-frontend/src/README.md) 和目标模块 README 一起阅读；用户最新明确要求优先。
 
 ## Ant Design 与样式
 
 1. 默认使用 Ant Design 提供的尺寸、边框、弧度、字体、颜色及交互，不在业务组件里随意覆盖原生样式。
-2. 局部布局优先使用组件参数、`style`、语义化 `styles`；样式对象用 `CSSProperties` 或组件公开类型约束。需要 hover/选中/伪元素等选择器或确实必须覆盖 Ant Design 时，统一放在 [app.scss](../sql-web/src/app.scss)，限定业务作用域并说明原因。
-3. 同类组件使用相同尺寸和外观配置，不零散写死高度、边框、弧度或颜色。全局约定放 [appearance](../sql-web/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
+2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
+3. 同类组件使用相同尺寸和外观配置，不零散写死高度、边框、弧度或颜色。全局约定放 [appearance](../sql-studio-frontend/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
 4. 用户已确认的方角、成功/失败语义色、紧凑数据表等属于明确产品要求，集中配置后复用；不能把单处要求扩大为所有原生组件的覆盖。修改共享配置时同时核对亮暗主题和所有使用者。
 
 ## 单一功能模块
@@ -25,11 +25,11 @@ README 至少说明职责、导出接口、参数类型/可选值/默认值、�
 
 项目启用 `erasableSyntaxOnly`，使用 `as const` 常量对象加值联合类型表达枚举；使用 `interface`/`type`、泛型、判别联合、`Record`、`Pick`、`Omit`、`Readonly` 和 `satisfies` 描述契约及做穷尽校验。不用 `any`、双重断言或强行类型转换掩盖边界错误；网络和存储输入仍需运行时校验。
 
-共享 API 契约维护在 [typings/database](../sql-web/src/typings/database/README.md)，引擎枚举及能力契约在 [databases/typings](../sql-web/src/databases/typings/README.md)。组件只消费需要的字段，不把整个业务层任意传递。
+共享 API 契约维护在 [typings/database](../sql-studio-frontend/src/typings/database/README.md)，引擎枚举及能力契约在 [databases/typings](../sql-studio-frontend/src/databases/typings/README.md)。组件只消费需要的字段，不把整个业务层任意传递。
 
 ## 数据库按引擎拆分
 
-[databases](../sql-web/src/databases/README.md) 是统一分派入口；[mysql](../sql-web/src/databases/mysql/README.md) 单独维护 MySQL 实现，按功能拆分 profile、query、statements、history、completion，每个模块都有独立 README。
+[databases](../sql-studio-frontend/src/databases/README.md) 是统一分派入口；[mysql](../sql-studio-frontend/src/databases/mysql/README.md) 单独维护 MySQL 实现，按功能拆分 profile、query、statements、history、completion，每个模块都有独立 README。
 
 数据库专属的配置、类型、接口、SQL 方法、补全、组件或 hooks 放到对应引擎内；存在实际专属样式对象时也归该功能。外部只通过 DatabaseAdapter 调用，不在通用组件中硬编码 MySQL 标签、3306、图标资源、方言或引号规则。新增引擎按同一契约注册，注册表做类型穷尽检查，不提前创建未支持引擎的空实现。
 
@@ -37,4 +37,4 @@ README 至少说明职责、导出接口、参数类型/可选值/默认值、�
 
 ## 验证
 
-修改后运行 `pnpm format`、`pnpm lint`、`pnpm build` 和根目录 `cd sql-web && node --test tests/structure.test.mjs`。功能迁移同步全部调用方、README、目录索引及回归入口；针对行为变化做必要验证。涉及 UI 时核对亮暗主题、长名称、尺寸一致性与伸缩布局，使用隔离数据，不读取业务表满足检查。
+修改后运行 `pnpm format`、`pnpm lint`、`pnpm build` 和根目录 `cd sql-studio-frontend && node --test tests/structure.test.mjs`。功能迁移同步全部调用方、README、目录索引及回归入口；针对行为变化做必要验证。涉及 UI 时核对亮暗主题、长名称、尺寸一致性与伸缩布局，使用隔离数据，不读取业务表满足检查。

@@ -1,44 +1,32 @@
-# 后端架构与维护规范
+# 后端架构
 
-开发遵守 [后端开发规范](BACKEND_STANDARDS.md) 与 [后端 skill](../.agents/skills/sql-studio-backend/SKILL.md)。架构为模块化单体：一个 Go module、一个进程、一个 HTTP 服务，业务边界独立，调用在进程内完成。
+整体框架见 [项目框架](ARCHITECTURE.md)，维护规则见 [后端规范](BACKEND_STANDARDS.md)。
 
-## 目录与依赖
+## 包与依赖
 
-- cmd/sql-studio：读取配置、创建应用、监听退出信号。
-- internal/app：组合根，创建 connection.Store 和 mysql.Client，注入独立模块，装配 Gin API 与静态文件。
-- internal/config：统一读取环境变量、解析数据及网页目录、校验首次连接端口。
-- internal/httpapi：Gin 路由、参数解码、响应状态、同源及本机保护；不直接使用驱动或文件系统。
-- internal/modules/connections：连接管理、分组、校验及 7 秒连通性测试，声明 Repository/Database 消费接口。
-- internal/modules/metadata：数据库、表、字段与 DDL，声明 Connections/Database 接口，控制 10 秒超时。
-- internal/modules/query：SQL 执行、行数、30 秒超时和进程共享的 4 并发预算，声明 Connections/Executor 接口。
-- internal/model：Connection、TableRef、Table、Column、QueryRequest、QueryResult 等契约，仅接受 MySQL 类型。
-- internal/mysql：MySQL 驱动参数、TLS、连接测试、information_schema/SHOW 元数据与 SQL 执行。
-- internal/connection：连接 CRUD、AES-GCM 加密、原子落盘。
+| 包                     | 职责与依赖                                                         |
+| ---------------------- | ------------------------------------------------------------------ |
+| cmd/sql-studio-backend | 加载 config、创建 app、处理退出信号                                |
+| app                    | 创建存储、MySQL、AI 客户端，注入业务模块并装配 HTTP                |
+| httpapi                | Gin 路由、单 JSON 解码、本机同源保护和错误映射；仅调用模块公开入口 |
+| modules/connections    | 连接校验、分组、保存与 7 秒测试                                    |
+| modules/metadata       | 显式连接与对象范围，10 秒超时                                      |
+| modules/query          | 行数、30 秒超时、全进程 4 并发                                     |
+| modules/settings       | 分区校验、32 MiB 对象限制和 AI 配置脱敏                            |
+| modules/ai             | 上下文校验、续写/优化/模型发现，共享 4 并发                        |
+| model                  | 跨层命名结构、错误与只读定义                                       |
+| mysql                  | MySQL 驱动、TLS、SQL 识别、元数据和结果编码                        |
+| connection             | AES-GCM 密码与原子落盘                                             |
+| statefile              | 版本、修订、同进程互斥与分区 JSON 原子替换                         |
+| deepseek               | 官方 HTTPS 模型调用，不执行 SQL                                    |
+| config                 | 环境变量和目录解析                                                 |
 
-依赖方向：cmd → config/app；app → config/connection/mysql/modules/httpapi/Gin；httpapi → modules/model/Gin；各 modules 子包 → model；connection/config → model/标准库；mysql → model/MySQL 驱动。模块之间不导入，不直接依赖具体仓库、引擎、文件系统或 HTTP。新增包必须更新 tests/architecture 的依赖约束及 README。
+modules 各自只依赖 model 与最小消费接口，不导入兄弟模块、驱动、Gin 或存储实现。app 创建一次 query/ai 服务，全请求共享其预算。架构测试递归约束依赖与 README/doc.go。
 
-仅保留 MySQL 实现，app 创建一次客户端和仓库，分别传入 connections.New、metadata.New、query.New，再将模块交给 httpapi.Services；query 实例在所有请求间复用。不保留总 service 转发层、多协议注册表或其他驱动依赖。连接模块过滤已保存的非 MySQL 连接，不删除磁盘记录；保存、测试或驱动操作仍会拒绝非 MySQL 类型，空类型兼容旧 MySQL 连接。
+## 请求和资源生命周期
 
-## 请求边界
+HTTP context 传入模块和驱动，保留取消、超时、游标与连接释放。普通查询默认只读、单语句、1000 行（最多 5000）、约 8 MiB 内容；精确整数和 DECIMAL 保留文本。输入与状态码见 [接口列表](API.md)。
 
-HTTP 请求体最多 1 MiB，拒绝未知字段与多 JSON 对象。SQL 非空、单语句执行，默认只读事务；后端显式 allowWrite 仍允许自动提交，普通 SQL 编辑器不暴露写入开关或行数参数；对象管理确认保存复用显式 allowWrite，元数据可设置受限 limit。默认 1000 行、最高 5000 行、约 8 MiB 字段内容、最长 30 秒、4 并发，元数据最长 10 秒。取消不能被描述为事务已回滚。
+普通 JSON 请求限制 1 MiB，配置写入信封限制 32 MiB + 1024 字节。配置文件缺失可重建，现存文件严格 CAS，损坏或未知版本拒绝覆盖。密码不进入响应与日志；AI Key 仅保存在后端配置，响应脱敏。
 
-每次请求使用独立数据库连接，关闭游标及连接；精确整数与 DECIMAL 保留文本、二进制转为十六进制，保留 NULL 与重复列名。元数据以数据库和表名确定对象，标识符反引号转义，元数据筛选使用参数绑定。
-
-错误状态：不存在连接 404，并发超限 429，其他输入或数据库错误 400。见 [API](API.md) 和 [数据库支持](DATABASES.md)。
-
-## 配置与生命周期
-
-config.Load 读取 SQLDESK_DATA_DIR、SQLDESK_WEB_DIR、SQLDESK_MYSQL_*。从 sql-server 根目录执行 go run ./cmd/sql-studio/main.go，默认 data/ 和 ../sql-web/dist；只在没有可用连接时按环境变量初始化，不覆盖已有连接密码。连接沿用 connections.json 与 master.key；密钥丢失拒绝覆盖，不记录明文密码。HTTP 退出时给予在途请求 5 秒结束时间。
-
-## 维护与验证
-
-包内实现与单元测试同目录，跨层测试位于 tests；每个实际包有 README 与 doc.go。修改实现、调用方、契约和相关说明同步维护。
-
-在 sql-server 执行 gofmt -w .、go test -count=1 ./...、go vet ./...、go build ./...。Go 架构测试递归校验每个实际包的依赖、README 与 doc.go，后端无需 Node 或包装脚本。真实 MySQL 集成参数见 [后端 README](../sql-server/README.md)，只使用自动生成的临时库。验证历史见 [验证记录](VERIFICATION.md)。
-
-新增 settings→model、statefile→model，app装配两者，httpapi→settings。用户配置默认主目录/.sql-studio/state，单Go进程拥有目录，CAS防窗口覆盖。
-
-项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。
-
-AI：app装配 modules/ai 与 deepseek。ai仅依赖model和消费接口，读取statefile配置、校验显式连接；deepseek仅依赖model/标准库，通过官方HTTPS传输。HTTP调用ai公开入口，不执行生成SQL。
+Go 服务默认仅监听 127.0.0.1:8080，提供构建网页及 API。退出给予在途请求 5 秒结束时间。目录、启动、环境变量和测试入口见 [后端 README](../sql-studio-backend/README.md)。

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL Studio API</title>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script type="module">
+      import SwaggerUIBundle from 'swagger-ui-dist/swagger-ui-bundle.js'
+      import 'swagger-ui-dist/swagger-ui.css'
+
+      SwaggerUIBundle({
+        url: '/api/openapi.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        validatorUrl: null,
+        persistAuthorization: false
+      })
+    </script>
+  </body>
+</html>

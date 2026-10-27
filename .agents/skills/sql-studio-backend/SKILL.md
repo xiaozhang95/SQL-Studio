@@ -5,12 +5,12 @@ description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用�
 
 # SQL Studio 后端开发
 
-适用于本仓库 `sql-server`。先读[后端规范](../../../docs/BACKEND_STANDARDS.md)、[架构](../../../docs/BACKEND_ARCHITECTURE.md)、[包索引](../../../sql-server/internal/README.md)，再读目标包 README；用户最新要求优先。
+适用于本仓库 `sql-studio-backend`。先读[后端规范](../../../docs/BACKEND_STANDARDS.md)、[架构](../../../docs/BACKEND_ARCHITECTURE.md)、[包索引](../../../sql-studio-backend/internal/README.md)，再读目标包 README；用户最新要求优先。
 
 ## 模块化单体
 
 - 保留一个 Go module、启动入口、进程和 HTTP 服务。按业务功能建立独立模块，采用明确职责与契约边界，在进程内装配；当前不引入内部 HTTP/RPC、网关、服务发现、消息队列、容器或多服务部署配置。
-- [modules](../../../sql-server/internal/modules/README.md) 的 connections、metadata、query 分别拥有业务实现、消费接口、常量和测试。模块只依赖 model，不直接导入兄弟模块、Gin、驱动或具体存储；需要什么接口，由消费模块声明并由 app 注入。不重建大而全的 service 或旧路径转发层。
+- [modules](../../../sql-studio-backend/internal/modules/README.md) 的 connections、metadata、query 分别拥有业务实现、消费接口、常量和测试。模块只依赖 model，不直接导入兄弟模块、Gin、驱动或具体存储；需要什么接口，由消费模块声明并由 app 注入。不重建大而全的 service 或旧路径转发层。
 - app 组合具体实现并拥有资源生命周期；main.go 只加载配置、装配和处理退出；httpapi 只解码、调用模块公开方法和编码，不承载业务规则、SQL 或文件读写。query 在启动时创建一次，所有请求共用并发预算。
 
 ## 包、类型与引擎
@@ -28,7 +28,7 @@ description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用�
 
 ## 原生命令与验证
 
-从 `sql-server` 执行 `go run ./cmd/sql-studio/main.go`，日志输出终端，Ctrl+C 退出；当前不增加启停/检查包装脚本、后台 PID 或部署配置。保留运行必需的 config、go.mod/go.sum 和有效测试；自动化配置待实际需求再添加。
+从 `sql-studio-backend` 执行 `go run ./cmd/sql-studio-backend/main.go`，日志输出终端，Ctrl+C 退出；当前不增加启停/检查包装脚本、后台 PID 或部署配置。保留运行必需的 config、go.mod/go.sum 和有效测试；自动化配置待实际需求再添加。
 
 使用 `gofmt -w .`、`gofmt -l .`、`go test -count=1 ./...`、`go vet ./...`、`go build ./...`；架构测试约束真实包路径、模块独立与递归 README/doc.go。行为变化使用测试替身和临时目录验证。真实数据库集成默认跳过，仅在明确授权时启用，并限随机临时库，不读取业务表完成检查。
 

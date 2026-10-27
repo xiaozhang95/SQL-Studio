@@ -14,4 +14,4 @@
 
 对象树的数据库右键支持选择数据库、新建查询、查看表列表和刷新结构，表右键支持新建查询、查询数据、查询结构和查看 DDL。新建查询不自动执行。
 
-真实数据库回归使用 SQLDESK_INTEGRATION=1，只读写自动生成的临时测试库，不访问业务表。详见 [验证记录](VERIFICATION.md)。
+真实数据库回归使用 SQLDESK_INTEGRATION=1，只读写自动生成的临时测试库，不访问业务表。参数见 [后端 README](../sql-studio-backend/README.md)。

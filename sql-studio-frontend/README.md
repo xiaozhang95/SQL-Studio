@@ -1,0 +1,23 @@
+# SQL Studio 前端
+
+Vite + React + TypeScript + Ant Design + SCSS，SQL 编辑使用 CodeMirror。包管理使用 pnpm。
+
+从仓库根目录进入 sql-studio-frontend：
+
+```sh
+cd sql-studio-frontend
+pnpm install
+pnpm dev
+```
+
+开发地址 `http://127.0.0.1:5173`，/api 同源代理到 Go 8080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
+
+[源码索引](src/README.md) · [前端规范](../docs/FRONTEND_STANDARDS.md) · [项目框架](../docs/ARCHITECTURE.md) · [测试](tests/README.md)
+
+页面只组合组件，状态、请求与取消归所属 hook。MySQL SQL/补全/对象操作经 databases 适配器调用，AI 服务商经 ai 适配器调用。查询与结果始终归属发起页面及连接，恢复本机配置不执行 SQL。
+
+Ant Design 默认优先；方角、紧凑表格等统一配置见 appearance，必要覆盖全部位于 app.scss。主题使用 defaultAlgorithm/darkAlgorithm 和原生 token，保持系统字体。工作区、历史、主题通过 Go 保存，格式见 [用户状态](../docs/USER_STATE.md)。
+
+检查：`pnpm format`、`pnpm lint`、`node --test tests/*.test.mjs`、`pnpm build`。结构测试包含模块 README、样式归属和本地文档链接。
+
+Swagger 为独立入口 swagger.html，UI 依赖 swagger-ui-dist，资源随构建提供，不使用 CDN；契约从 /api/openapi.json 获取。访问路径与接口列表见 [API](../docs/API.md)。pnpm-workspace.yaml 禁用非必需的 watcher/Scarf 安装脚本。

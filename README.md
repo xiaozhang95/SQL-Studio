@@ -2,9 +2,14 @@
 
 本地数据库工作台，支持 MySQL 连接管理、查询、表结构设计与数据编辑。
 
-![SQL Studio](docs/preview.png)
+项目显示名称统一为 **SQL Studio**，仓库目录为 `SQL-Studio`。各模块目录、项目标识和 skill 使用相同名称：
 
-[暗黑模式预览](docs/preview-dark.png)
+| 模块 | 目录                  | 项目标识                           | skill                 |
+| ---- | --------------------- | ---------------------------------- | --------------------- |
+| 前端 | `sql-studio-frontend` | npm package：`sql-studio-frontend` | `sql-studio-frontend` |
+| 后端 | `sql-studio-backend`  | Go module：`sql-studio-backend`    | `sql-studio-backend`  |
+
+项目级 skill 为 `sql-studio`；后端命令入口同名为 `cmd/sql-studio-backend`。
 
 ## 功能
 
@@ -16,6 +21,7 @@
 - 查看建表语句，转储结构或结构和数据。
 - 亮色、暗色和跟随系统主题。
 - 用户目录保存布局、页签、查询草稿、结果快照与历史。
+- DeepSeek SQL 续写、优化与可选模型配置，生成后由用户决定是否运行。
 
 ## 安装与启动
 
@@ -24,9 +30,9 @@
 安装依赖：
 
 ```sh
-cd sql-web
+cd sql-studio-frontend
 pnpm install
-cd ../sql-server
+cd ../sql-studio-backend
 go mod download
 ```
 
@@ -34,13 +40,13 @@ go mod download
 
 ```sh
 # 后端（仓库根目录执行）
-cd sql-server
-go run ./cmd/sql-studio/main.go
+cd sql-studio-backend
+go run ./cmd/sql-studio-backend/main.go
 ```
 
 ```sh
 # 前端（仓库根目录执行）
-cd sql-web
+cd sql-studio-frontend
 pnpm dev
 ```
 
@@ -66,7 +72,7 @@ pnpm dev
 
 配置采用带版本号和修订号的 JSON 格式，可通过 `SQLDESK_STATE_DIR` 指定目录。已有旧配置目录继续兼容；配置文件缺失时使用默认布局并重新生成，不再读取浏览器旧记录。恢复页面不会自动执行查询。
 
-连接与加密密钥默认保存在 `sql-server/data/`，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`；界面配置可能包含查询文本和结果。
+连接与加密密钥默认保存在 `sql-studio-backend/data/`，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`；界面配置可能包含查询文本和结果。
 
 ## 使用范围
 
@@ -74,4 +80,6 @@ pnpm dev
 
 普通查询默认最多返回 1000 行、约 8 MiB 内容，最长30秒。结果筛选和导出仅针对已返回的数据；“结构和数据”转储超过5000行或8 MiB时会提示失败。视图及无完整主键的已有记录不支持直接编辑，生成列和部分特殊字段由数据库处理。
 
-详细说明：[数据库连接](docs/DATABASES.md) · [用户配置格式](docs/USER_STATE.md)
+项目维护：[文档索引](docs/README.md) · [项目框架](docs/ARCHITECTURE.md) · [接口列表与 Swagger](docs/API.md)
+
+使用说明：[数据库连接](docs/DATABASES.md) · [用户配置格式](docs/USER_STATE.md)

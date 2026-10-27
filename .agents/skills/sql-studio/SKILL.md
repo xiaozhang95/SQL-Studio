@@ -5,10 +5,10 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 
 # SQL Studio 项目开发
 
-本 skill 只适用于本仓库。按任务读取实际模块 README，用户当前明确要求优先。
+本 skill 只适用于本仓库。按任务读取实际模块 README，用户当前明确要求优先。项目显示名为 SQL Studio；前端目录和 npm package 均为 sql-studio-frontend，后端目录、Go module 和 cmd 入口均为 sql-studio-backend，与对应 skill 名称一致。
 
-- 前端任务使用 [sql-studio-frontend](../sql-studio-frontend/SKILL.md)，遵守 [前端规范](../../../docs/FRONTEND_STANDARDS.md)，从 [源码索引](../../../sql-web/src/README.md) 进入实际模块。
-- 后端任务使用 [sql-studio-backend](../sql-studio-backend/SKILL.md)，遵守 [后端规范](../../../docs/BACKEND_STANDARDS.md)，从 [架构](../../../docs/BACKEND_ARCHITECTURE.md) 和 [包索引](../../../sql-server/internal/README.md) 进入实际模块。
+- 前端任务使用 [sql-studio-frontend](../sql-studio-frontend/SKILL.md)，遵守 [前端规范](../../../docs/FRONTEND_STANDARDS.md)，从 [源码索引](../../../sql-studio-frontend/src/README.md) 进入实际模块。
+- 后端任务使用 [sql-studio-backend](../sql-studio-backend/SKILL.md)，遵守 [后端规范](../../../docs/BACKEND_STANDARDS.md)，从 [架构](../../../docs/BACKEND_ARCHITECTURE.md) 和 [包索引](../../../sql-studio-backend/internal/README.md) 进入实际模块。
 - 跨端功能同时维护 API、类型与公开行为，参见 [API 文档](../../../docs/API.md) 和 [开发约定](../../../docs/DEVELOPMENT.md)。数据库仅支持 MySQL，不套用历史多协议约定。
 
 查询与结果始终归属发起页面和连接，旧请求取消/失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化或日志；编辑空密码保留旧值。工作区加密快照不含连接密码，恢复不自动执行 SQL。后端保持默认只读、单语句与请求限制，前端多语句顺序调用单语句 API；取消不能描述为已回滚。
