@@ -55,6 +55,7 @@ func New(services Services) *gin.Engine {
 	api.GET("/connections/:id/databases", h.databases)
 	api.GET("/connections/:id/tables", h.tables)
 	api.GET("/connections/:id/columns", h.columns)
+	api.GET("/connections/:id/indexes", h.indexes)
 	api.GET("/connections/:id/ddl", h.ddl)
 	api.POST("/connections/:id/query", h.query)
 	return router

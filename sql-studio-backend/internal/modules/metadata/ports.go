@@ -16,6 +16,7 @@ type Database interface {
 	Databases(context.Context, model.Connection) ([]string, error)
 	Tables(context.Context, model.Connection, string) ([]model.Table, error)
 	Columns(context.Context, model.Connection, model.TableRef) ([]model.Column, error)
+	Indexes(context.Context, model.Connection, model.TableRef) ([]model.Index, error)
 	DDL(context.Context, model.Connection, model.TableRef) (string, error)
 }
 

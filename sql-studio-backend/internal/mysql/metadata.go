@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"sql-studio-backend/internal/model"
@@ -25,6 +26,38 @@ func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]
 			return nil, err
 		}
 		out = append(out, name)
+	}
+	return out, rows.Err()
+}
+
+func (c *Client) Indexes(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Index, error) {
+	db, err := Open(connection, "")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	// 使用跨 MySQL 版本的字段读取，不依赖 8.0 才提供的 EXPRESSION 列。
+	rows, err := db.QueryContext(ctx, "SELECT INDEX_NAME,NON_UNIQUE,INDEX_TYPE,COALESCE(COLUMN_NAME,''),SEQ_IN_INDEX,SUB_PART,COALESCE(COLLATION,'') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY CASE WHEN INDEX_NAME='PRIMARY' THEN 0 ELSE 1 END,INDEX_NAME,SEQ_IN_INDEX", ref.Database, ref.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return readIndexes(rows)
+}
+
+func readIndexes(rows *sql.Rows) ([]model.Index, error) {
+	out := []model.Index{}
+	for rows.Next() {
+		var name, kind string
+		var nonUnique int
+		var column model.IndexColumn
+		if err := rows.Scan(&name, &nonUnique, &kind, &column.Name, &column.Position, &column.PrefixLength, &column.Order); err != nil {
+			return nil, err
+		}
+		if len(out) == 0 || out[len(out)-1].Name != name {
+			out = append(out, model.Index{Name: name, Unique: nonUnique == 0, Type: kind, Columns: []model.IndexColumn{}})
+		}
+		out[len(out)-1].Columns = append(out[len(out)-1].Columns, column)
 	}
 	return out, rows.Err()
 }

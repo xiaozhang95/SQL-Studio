@@ -45,3 +45,13 @@ func (s *Service) DDL(ctx context.Context, id, database, table string) (string, 
 	defer cancel()
 	return s.database.DDL(ctx, c, model.TableRef{Database: database, Name: table})
 }
+
+func (s *Service) Indexes(ctx context.Context, id, database, table string) ([]model.Index, error) {
+	c, err := s.connections.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(ctx, metadataTimeout)
+	defer cancel()
+	return s.database.Indexes(ctx, c, model.TableRef{Database: database, Name: table})
+}

@@ -43,6 +43,10 @@ func (d routeDatabase) DDL(_ context.Context, c model.Connection, ref model.Tabl
 	d.check(c, ref.Database, ref.Name)
 	return "CREATE TABLE `same items` (`id` BIGINT)", nil
 }
+func (d routeDatabase) Indexes(_ context.Context, c model.Connection, ref model.TableRef) ([]model.Index, error) {
+	d.check(c, ref.Database, ref.Name)
+	return []model.Index{{Name: "PRIMARY", Unique: true, Type: "BTREE", Columns: []model.IndexColumn{{Name: "id", Position: 1}}}}, nil
+}
 func (d routeDatabase) Execute(ctx context.Context, c model.Connection, input model.QueryRequest) (model.QueryResult, error) {
 	return d.execute(ctx, c, input)
 }
@@ -75,12 +79,12 @@ func TestModuleRoutesKeepExplicitScope(t *testing.T) {
 			return model.QueryResult{Columns: []model.ResultColumn{{Name: "id", Type: "BIGINT"}}, Rows: [][]any{{"9007199254740993"}}, RowCount: 1, IsQuery: true}, nil
 		}
 		router := New(regressionServices(store, db))
-		for _, operation := range []string{"databases", "tables", "columns", "ddl", "query"} {
+		for _, operation := range []string{"databases", "tables", "columns", "indexes", "ddl", "query"} {
 			wantDB, wantTable = "", ""
 			if operation != "databases" {
 				wantDB = "shared db"
 			}
-			if operation == "columns" || operation == "ddl" {
+			if operation == "columns" || operation == "indexes" || operation == "ddl" {
 				wantTable = "same items"
 			}
 			endpoint := "http://127.0.0.1:8080/api/connections/" + saved.ID + "/" + operation + "?database=" + url.QueryEscape(wantDB) + "&table=" + url.QueryEscape(wantTable)

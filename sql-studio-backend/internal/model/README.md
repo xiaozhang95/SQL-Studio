@@ -21,3 +21,5 @@ AIRequest/AIResult/AITable/AIMessage 定义模型输入输出，不携带数据�
 AIConfig统一AI配置内部结构和脱敏响应，model/CompletionEnabled兼容缺省值；AIModel和AIModelsRequest定义官方模型发现契约。
 
 AIRequest.document/table携带注释草稿与选中表，AIConnectionContext仅包含Name/Type安全字段，由AI模块按ConnectionID填充。
+
+Index/IndexColumn 为索引只读契约，保存名称、唯一性、类型以及按 position 排列的组成字段（name、可空 prefixLength、order）；PRIMARY 表示主键，表达式字段名为空。

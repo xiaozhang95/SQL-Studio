@@ -34,3 +34,12 @@ func (h *handler) ddl(c *gin.Context) {
 	}
 	respond(c, 200, gin.H{"ddl": data})
 }
+
+func (h *handler) indexes(c *gin.Context) {
+	data, err := h.metadata.Indexes(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"))
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, data)
+}

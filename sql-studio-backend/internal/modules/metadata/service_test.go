@@ -32,6 +32,9 @@ func (d database) Columns(ctx context.Context, c model.Connection, ref model.Tab
 func (d database) DDL(ctx context.Context, c model.Connection, ref model.TableRef) (string, error) {
 	return "", d.check(ctx, c, ref.Database, ref.Name)
 }
+func (d database) Indexes(ctx context.Context, c model.Connection, ref model.TableRef) ([]model.Index, error) {
+	return nil, d.check(ctx, c, ref.Database, ref.Name)
+}
 
 // 两个连接使用同名对象，验证模块始终传递调用者的连接和对象范围。
 func TestMetadataScopeAndCancellation(t *testing.T) {
@@ -62,8 +65,14 @@ func TestMetadataScopeAndCancellation(t *testing.T) {
 		if _, err := svc.DDL(context.Background(), id, wantDB, wantTable); err != nil {
 			t.Fatal(err)
 		}
+		if _, err := svc.Indexes(context.Background(), id, wantDB, wantTable); err != nil {
+			t.Fatal(err)
+		}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
+		if _, err := svc.Indexes(ctx, id, wantDB, wantTable); !errors.Is(err, context.Canceled) {
+			t.Fatal("index request cancellation was lost")
+		}
 		if _, err := svc.DDL(ctx, id, wantDB, wantTable); !errors.Is(err, context.Canceled) {
 			t.Fatal("request cancellation was lost")
 		}

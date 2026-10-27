@@ -27,6 +27,13 @@ export type Column = {
   extra: string
   comment: string
 }
+export type DBIndex = {
+  name: string
+  unique: boolean
+  type: string
+  columns: { name: string; position: number; prefixLength: number | null; order: string }[]
+}
+export type TableDetails = { columns: Column[]; indexes: DBIndex[] }
 export type QueryResult = {
   columns: { name: string; type: string }[]
   rows: unknown[][]

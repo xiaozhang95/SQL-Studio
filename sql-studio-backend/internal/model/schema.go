@@ -20,3 +20,18 @@ type Column struct {
 	Extra    string  `json:"extra"`
 	Comment  string  `json:"comment"`
 }
+
+// Index 保留复合索引的字段顺序；表达式索引的字段名可能为空。
+type Index struct {
+	Name    string        `json:"name"`
+	Unique  bool          `json:"unique"`
+	Type    string        `json:"type"`
+	Columns []IndexColumn `json:"columns"`
+}
+
+type IndexColumn struct {
+	Name         string `json:"name"`
+	Position     int    `json:"position"`
+	PrefixLength *int   `json:"prefixLength"`
+	Order        string `json:"order"`
+}

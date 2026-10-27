@@ -31,3 +31,5 @@ GET /api/openapi.json 返回编译内嵌的 OpenAPI 3.0 契约，不依赖运行
 JSON 解码统一使用 decodeLimit：普通请求 1 MiB，配置写入 32 MiB + 1024 字节信封。要求对象起始符，拒绝 null/数组/多 JSON/未知顶层字段，避免零值输入触发修改；保留流式解码和业务层 data 大小校验。
 
 配置 PUT 与 AI 移除必须显式提供非 null 的 revision，首次写入可为 0；缺失字段不能以零值替代并触发写入。
+
+GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表，继承元数据的范围、超时及取消；Swagger 和本地 API 列表同步维护。

@@ -9,3 +9,5 @@
 executeObjectSQL(id, database, sql, signal?) 仅供对象管理确认提交，使用已有 query API 显式 allowWrite:true；普通 executeQuery 不设置该值时保持只读。QueryRequest 也允许元数据请求设置 limit（服务端仍限制最高 5000）。
 
 executeObjectSQL 也供表数据单元格点击保存使用，传递显式连接、库和限定目标的单行更新；普通 executeQuery 默认只读。
+
+getIndexes(id, database, table, signal?) 返回 Promise<DBIndex[]>；显式携带原始连接、库、表范围，支持取消。无索引返回空数组，失败由调用方展示和重试，不以 DDL 文本推测索引。

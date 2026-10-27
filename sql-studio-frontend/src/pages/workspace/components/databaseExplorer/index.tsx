@@ -9,14 +9,16 @@ import {
   EyeOutlined,
   FileTextOutlined,
   FolderOutlined,
+  KeyOutlined,
   LinkOutlined,
   PlusOutlined,
   ProfileOutlined,
   ReloadOutlined,
   SearchOutlined,
+  SortAscendingOutlined,
   TableOutlined
 } from '@ant-design/icons'
-import { Dropdown, Empty, Input, Tree } from 'antd'
+import { Button, Dropdown, Empty, Input, Tree } from 'antd'
 import type { DropdownProps, MenuProps } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import { isValidElement, useEffect, useRef, useState } from 'react'
@@ -24,6 +26,7 @@ import { isValidElement, useEffect, useRef, useState } from 'react'
 import { connectionGroupName } from '@/constant/connectionGroup'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
+import { indexDescription, objectNodeKey as nodeKey } from '../../utils/objectTree'
 import EngineIcon from '../engineIcon'
 
 type Props = {
@@ -33,7 +36,6 @@ type Props = {
 function ObjectTreeTitle({ children }: Pick<DropdownProps, 'children' | 'menu'>) {
   return <>{children}</>
 }
-const nodeKey = (...parts: string[]) => JSON.stringify(parts)
 /** 连接、数据库和表共用一棵树；所有菜单携带完整连接范围，避免误用当前查询的连接。 */
 export default function DatabaseExplorer({ model }: Props) {
   const { connections, connectionAction, databaseAction, tableAction, objects, running } = model
@@ -47,6 +49,83 @@ export default function DatabaseExplorer({ model }: Props) {
   // 树的高亮只属于对象浏览器，不读取或修改任何查询标签的范围。
   const matches = (value: string) => value.toLowerCase().includes(search.toLowerCase())
   const loadedKeys: string[] = []
+  const tableChildren = (id: string, db: string, table: string): DataNode[] | undefined => {
+    const state = objects.snapshots[id]
+    const key = nodeKey(db, table)
+    const details = state.details[key]
+    const error = state.detailErrors[key]
+    if (!details)
+      return error
+        ? [
+            {
+              key: nodeKey('detail-error', id, db, table),
+              title: (
+                <span title={error} style={{ color: 'var(--ant-color-error-text)' }}>
+                  {error}
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void objects.loadTableDetails(db, table, id).catch(() => {})
+                    }}
+                  >
+                    重试
+                  </Button>
+                </span>
+              ),
+              selectable: false,
+              isLeaf: true
+            }
+          ]
+        : undefined
+    loadedKeys.push(nodeKey('table', id, db, table))
+    return [
+      {
+        key: nodeKey('columns', id, db, table),
+        title: (
+          <span>
+            <ProfileOutlined /> 字段
+          </span>
+        ),
+        children: details.columns.length
+          ? details.columns.map((column) => ({
+              key: nodeKey('column', id, db, table, column.name),
+              title: (
+                <span
+                  title={`${column.name} · ${column.type}${column.key === 'PRI' ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}
+                >
+                  {column.key === 'PRI' ? <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} /> : <ProfileOutlined />}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{column.name}</span>
+                </span>
+              ),
+              isLeaf: true
+            }))
+          : [{ key: nodeKey('empty-columns', id, db, table), title: '暂无字段', selectable: false, isLeaf: true }]
+      },
+      {
+        key: nodeKey('indexes', id, db, table),
+        title: (
+          <span>
+            <SortAscendingOutlined /> 索引
+          </span>
+        ),
+        children: details.indexes.length
+          ? details.indexes.map((index) => ({
+              key: nodeKey('index', id, db, table, index.name),
+              title: (
+                <span title={`${index.name}\n${indexDescription(index)}`} style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                  {index.name === 'PRIMARY' ? <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} /> : <SortAscendingOutlined />}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{index.name}</span>
+                </span>
+              ),
+              isLeaf: true
+            }))
+          : [{ key: nodeKey('empty-indexes', id, db, table), title: '暂无索引', selectable: false, isLeaf: true }]
+      }
+    ]
+  }
   const connectionNodes: DataNode[] = connections.flatMap((connection): DataNode[] => {
     const id = connection.id
     const state = objects.snapshots[id]
@@ -104,8 +183,46 @@ export default function DatabaseExplorer({ model }: Props) {
                     </span>
                   </ObjectTreeTitle>
                 ),
-                isLeaf: true
+                isLeaf: table.type.includes('VIEW'),
+                children: table.type.includes('VIEW') ? undefined : tableChildren(id, db, table.name)
               }))
+            const collections: DataNode[] | undefined = tables && [
+              {
+                key: nodeKey('tables', id, db),
+                title: (
+                  <ObjectTreeTitle
+                    menu={{
+                      items: [
+                        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
+                        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+                        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+                      ],
+                      onClick: ({ key }) => {
+                        void databaseAction(key, id, db)
+                      }
+                    }}
+                  >
+                    <span>
+                      <TableOutlined /> 表
+                    </span>
+                  </ObjectTreeTitle>
+                ),
+                children: tables.some((node) => !node.isLeaf) ? tables.filter((node) => !node.isLeaf) : [{ key: nodeKey('empty-tables', id, db), title: '暂无表', selectable: false, isLeaf: true }]
+              },
+              ...(tables.some((node) => node.isLeaf)
+                ? [
+                    {
+                      key: nodeKey('views', id, db),
+                      title: (
+                        <span>
+                          <EyeOutlined /> 视图
+                        </span>
+                      ),
+                      children: tables.filter((node) => node.isLeaf)
+                    }
+                  ]
+                : [])
+            ]
             return {
               key: nodeKey('database', id, db),
               title: (
@@ -147,12 +264,12 @@ export default function DatabaseExplorer({ model }: Props) {
                       isLeaf: true
                     }
                   ]
-                : tables
+                : collections
             }
           })
           .filter((node) => {
             const db = (JSON.parse(String(node.key)) as string[])[2]
-            return connectionMatches || matches(db) || !state.tables[db] || Boolean(node.children?.length)
+            return connectionMatches || matches(db) || !state.tables[db] || state.tables[db].some((table) => matches(table.name))
           })
       : state?.error
         ? [
@@ -246,7 +363,7 @@ export default function DatabaseExplorer({ model }: Props) {
     if (!connections.some((connection) => connection.id === id)) return false
     if (type === 'connection') return true
     if (state?.status !== 'connected' || !state.databases.includes(db)) return false
-    return type === 'database' || Boolean(state.tables[db]?.some((item) => item.name === table))
+    return ['database', 'tables', 'views'].includes(type) || Boolean(state.tables[db]?.some((item) => item.name === table))
   })
   return (
     <div
@@ -285,9 +402,10 @@ export default function DatabaseExplorer({ model }: Props) {
                 loadedKeys={loadedKeys}
                 selectedKeys={selectedKeys}
                 loadData={async (node) => {
-                  const [type, id, db] = JSON.parse(String(node.key)) as string[]
+                  const [type, id, db, table] = JSON.parse(String(node.key)) as string[]
                   if (type === 'connection') await model.openConnection(id).catch(() => {})
                   else if (type === 'database') await objects.loadTables(db, id).catch(() => {})
+                  else if (type === 'table') await objects.loadTableDetails(db, table, id).catch(() => {})
                 }}
                 onDoubleClick={(_, node) => {
                   if (running) return
