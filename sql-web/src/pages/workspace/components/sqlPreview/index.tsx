@@ -44,8 +44,8 @@ export default function SQLPreview({ sql, themeMode, databaseType, compact = fal
     )
   return compact ? (
     <div className={`output-sql-preview${singleLine ? ' is-single-line' : ''}`} title={singleLine ? sql : undefined} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-      {editor}
       {copyButton}
+      {editor}
     </div>
   ) : (
     <div className="output-sql-preview">

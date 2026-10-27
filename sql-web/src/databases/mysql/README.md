@@ -11,3 +11,5 @@
 - [数据编辑](dataEditing/README.md)：按主键与单元格原值生成安全单行 UPDATE。
 
 - [数据转储](dataDump/README.md)：生成精确值 INSERT。
+
+- [结果 SQL 列](resultSQL/README.md)：识别查询结果中的 SQL 定义与语句列，统一高亮和复制。

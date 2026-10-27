@@ -81,8 +81,8 @@ export default function AISettings({ themeMode }: { themeMode: ThemeMode }) {
             </Space.Compact>
           </Form.Item>
           {model.modelsError && <Alert type="error" title={model.modelsError} style={{ marginBottom: 16 }} />}
-          <Form.Item label="AI 续写">
-            <Switch checked={model.completionEnabled} onChange={model.setCompletionEnabled} aria-label="AI 续写" />
+          <Form.Item label="SQL补全">
+            <Switch checked={model.completionEnabled} onChange={model.setCompletionEnabled} aria-label="SQL补全" />
           </Form.Item>
         </Form>
       </Modal>

@@ -33,3 +33,5 @@ open、connection?、connections、onClose、onSaved。open 受控；connection 
 数据库类型项与表单头部均使用 engine.value 显式传入的 logo 变体；按用户最新参考图统一为 40px 成功色底板与白色海豚剪影。
 
 遮罩关闭行为使用 mask.closable，忙碌时禁止点击遮罩关闭，避免已弃用 maskClosable 警告。
+
+弹窗外框继承 App 的 ConfigProvider.modal.styles（由 appearance/modalStyles 统一维护），使用 Ant Design colorBorder 的 1px 实线随亮暗主题切换，与其他业务及确认弹窗保持一致；保留默认阴影及内部原有分隔线。

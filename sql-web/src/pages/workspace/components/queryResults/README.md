@@ -12,7 +12,7 @@ QueryResults 接收 model（当前页 run/result、连接信息、运行状态�
 
 重复执行替换本批输出，失败/取消保留已完成结果。interrupted 提示刷新中断；恢复不自动执行 SQL。执行中对象页保留取消按钮，查询页取消按钮归编辑器工具栏。主页面状态色始终跟随工作区选中结果，消息/摘要切换不影响它。
 
-DDL 页的原始建表语句使用 SQLPreview compact 高亮并提供同排复制图标，保留完整换行和定义，不进入普通单元格省略样式；编辑器不设内部限高，由结果表体统一滚动，筛选和 CSV 导出仍使用原始结果值。普通字段结构和查询数据仍保持原表格展示。
+DDL 页和普通查询中的 SQL 定义/语句列通过 DatabaseAdapter.isSQLColumn 识别，统一使用 SQLPreview compact 高亮并提供同排复制图标，保留完整换行和定义，不进入普通单元格省略样式。覆盖 SHOW CREATE TABLE/VIEW/DATABASE/PROCEDURE/FUNCTION/TRIGGER/EVENT、SHOW TRIGGERS、information_schema 定义列及 SQL 语句记录列，具体列名见引擎 resultSQL 模块。普通查询 SQL 列宽 520px、预览限高 160px 并可滚动；DDL 页不设编辑器内部限高，由结果表体统一滚动。复制、筛选和 CSV 导出均使用完整原始值；NULL、空值和普通字段保留原展示，数据页仍可双击编辑。
 
 data 页面支持双击单元格，由 [useDataEditing](../../hooks/useDataEditing/README.md) 加载元数据并使用 [dataCellEditor](../dataCellEditor/README.md) 编辑。保存显式写入且重读结果；普通 SQL 结果、视图、无主键表以及不支持字段保持只读。
 

@@ -2,3 +2,5 @@
 export const sidebarLayout = { defaultWidth: 272, minimumWidth: 200, maximumWidth: 560, minimumMainWidth: 520, keyboardStep: 24 } as const
 
 export const resultPanelLayout = { defaultHeight: 260, minimumHeight: 260, editorReservedHeight: 280, keyboardStep: 24 } as const
+
+export const resultSQLLayout = { columnWidth: 520, maxHeight: '160px' } as const

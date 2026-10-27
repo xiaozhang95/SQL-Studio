@@ -13,3 +13,5 @@ DatabaseProfile 约束只读类型、标签、说明、样式类、端口、图�
 DatabaseAdapter.updateCellSQL 根据显式库表、字段元数据和原结果生成单行更新，拒绝不完整主键或不支持字段。
 
 DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。
+
+DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承载 SQL；结果 UI 据此复用只读高亮与复制，具体列名由引擎维护。

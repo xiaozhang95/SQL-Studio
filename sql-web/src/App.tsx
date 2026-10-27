@@ -1,7 +1,7 @@
 import { App as AntApp, ConfigProvider, theme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 
-import { appearance } from '@/constant/appearance'
+import { appearance, modalStyles } from '@/constant/appearance'
 import { useThemePreference } from '@/hooks/useThemePreference'
 import Workspace from '@/pages/workspace'
 
@@ -13,6 +13,7 @@ export default function App() {
       locale={zhCN}
       componentSize={appearance.controlSize}
       tag={{ variant: 'solid' }}
+      modal={{ styles: modalStyles }}
       theme={{
         algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: { borderRadius: appearance.borderRadius },

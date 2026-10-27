@@ -36,5 +36,3 @@
 - [SQL 优化预览](sqlOptimization/README.md)：原文、建议和说明。
 
 - [AI 服务商图标](aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
-
-- [对象范围下拉框](objectScopeSelects/README.md)：对象管理共用的固定连接/库/表展示。

@@ -3,9 +3,11 @@ import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
 import { useEffect, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { getDatabaseAdapter } from '@/databases'
 import type { ThemeMode } from '@/typings/theme'
 import { exportCSV } from '@/utils/csv'
 
+import { resultSQLLayout } from '../../constant/layout'
 import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
@@ -67,6 +69,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   const showingResult = view === null && hasResults
   const activeKey = view ?? (hasResults ? String(resultIndex) : 'messages')
   const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
+  const adapter = getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
   useEffect(() => {
     const body = viewport.current?.querySelector<HTMLElement>('.ant-table-body')
@@ -107,7 +110,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           if (tab.kind === 'data' && row.key >= 0) void editing.begin(row.key, index)
         }
       }),
-      width: run?.kind === 'ddl' ? undefined : 200,
+      width: run?.kind === 'ddl' ? undefined : adapter.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : 200,
       render: (_: unknown, row: { key: number; cells: unknown[] }) =>
         row.key < 0 ? (
           <NewRowCell
@@ -119,8 +122,10 @@ export default function QueryResults({ model, themeMode }: Props) {
           />
         ) : editing.cell?.row === row.key && editing.cell.column === index ? (
           <DataCellEditor editor={editing} disabled={editingBlocked} />
-        ) : run?.kind === 'ddl' && typeof row.cells[index] === 'string' ? (
-          <SQLPreview compact sql={row.cells[index] === undefined ? '(默认)' : String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} maxHeight="none" />
+        ) : adapter.isSQLColumn(column.name) && typeof row.cells[index] === 'string' && String(row.cells[index]).trim() ? (
+          <div style={{ minWidth: 0, width: run?.kind === 'ddl' ? undefined : resultSQLLayout.columnWidth, maxWidth: '100%' }}>
+            <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} maxHeight={run?.kind === 'ddl' ? 'none' : resultSQLLayout.maxHeight} />
+          </div>
         ) : row.cells[index] === null ? (
           <span className="cell-null">(NULL)</span>
         ) : (

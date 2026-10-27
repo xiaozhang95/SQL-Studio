@@ -5,10 +5,12 @@ import { stripHistoryMarkers } from './history'
 import { mysqlObjects } from './objectManagement'
 import { mysqlProfile } from './profile'
 import { tableDataSQL } from './query'
+import { isSQLColumn } from './resultSQL'
 import { splitSQLStatements } from './statements'
 
 /** MySQL 的实际实现归属本目录；外层只依赖统一数据库契约。 */
 const mysql = {
+  isSQLColumn,
   objects: mysqlObjects,
   updateCellSQL,
   insertRowSQL,

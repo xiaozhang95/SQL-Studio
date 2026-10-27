@@ -6,16 +6,13 @@ import type { ThemeMode } from '@/typings/theme'
 import { useTableDesigner } from '../../hooks/useTableDesigner'
 import type { TableDesignerOptions } from '../../hooks/useTableDesigner'
 import ObjectManagementForm from '../objectManagementForm'
-import ObjectScopeSelects from '../objectScopeSelects'
 
 type Props = TableDesignerOptions & { themeMode: ThemeMode; available: boolean }
 export default function TableDesigner({ themeMode, available, ...options }: Props) {
   const manager = useTableDesigner(options)
-  const connection = options.connections.find((value) => value.id === options.page.connectionId)
   return (
     <section className="workspace-page" aria-label="表设计工作区">
       <div className="editor-toolbar">
-        <ObjectScopeSelects connection={connection || manager.dialog?.connection} database={options.page.database} table={options.page.table} connected={available} />
         <Space wrap>
           <Button type="primary" icon={<SaveOutlined />} loading={manager.saving} disabled={!manager.ready || manager.loading || options.blocked} onClick={manager.save}>
             保存
@@ -32,7 +29,7 @@ export default function TableDesigner({ themeMode, available, ...options }: Prop
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 12 }}>
         {!available && <Alert type="warning" showIcon title="连接未打开，请重新打开连接后保存。" style={{ marginBottom: 12 }} />}
         <Spin spinning={manager.loading}>
-          <ObjectManagementForm manager={manager} themeMode={themeMode} showScope={false} />
+          <ObjectManagementForm manager={manager} themeMode={themeMode} />
         </Spin>
       </div>
     </section>

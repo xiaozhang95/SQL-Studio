@@ -8,16 +8,15 @@ import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
-import ObjectScopeSelects from '../objectScopeSelects'
 import SQLPreview from '../sqlPreview'
 
 type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
   'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview'
 >
-type Props = { manager: FormManager; themeMode: ThemeMode; showScope?: boolean }
+type Props = { manager: FormManager; themeMode: ThemeMode }
 type FormField = { name: number; key: number }
-export default function ObjectManagementForm({ manager, themeMode, showScope = true }: Props) {
+export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const { dialog, form, loading, saving, ready, error, collations, original, previewSQL } = manager
   const action = dialog?.action
   const databaseForm = action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase
@@ -27,11 +26,6 @@ export default function ObjectManagementForm({ manager, themeMode, showScope = t
   const targetName = dialog?.target.table || dialog?.target.database || ''
   return (
     <>
-      {showScope && dialog && action !== ObjectAction.RenameTable && (
-        <div style={{ marginBottom: 16 }}>
-          <ObjectScopeSelects connection={dialog.connection} database={dialog.target.database} table={dialog.target.table} view={dialog.target.view} />
-        </div>
-      )}
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
       {destructive && (
         <Alert

@@ -24,6 +24,7 @@ export interface SQLCompletionContext {
 }
 
 export interface DatabaseAdapter {
+  isSQLColumn: (name: string) => boolean
   canInsertColumn: (column: Column) => boolean
   insertRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, values: unknown[]) => string
   updateCellSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) => string

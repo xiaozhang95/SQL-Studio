@@ -3,7 +3,36 @@ import test from 'node:test'
 
 import { stripHistoryMarkers } from '../src/databases/mysql/history/index.ts'
 import { identifier, tableDataSQL } from '../src/databases/mysql/query/index.ts'
+import { isSQLColumn } from '../src/databases/mysql/resultSQL/index.ts'
 import { splitSQLStatements } from '../src/databases/mysql/statements/index.ts'
+
+test('recognizes SQL definitions and statement result columns without treating ordinary metadata as SQL', () => {
+  for (const name of [
+    'DDL',
+    'Create Table',
+    'Create View',
+    'Create Database',
+    'Create Procedure',
+    'Create Function',
+    'Create Trigger',
+    'Create Event',
+    'SQL Original Statement',
+    'Statement',
+    'VIEW_DEFINITION',
+    'ROUTINE_DEFINITION',
+    'ACTION_STATEMENT',
+    'EVENT_DEFINITION',
+    'SQL_TEXT',
+    'SQL',
+    'Query',
+    '  create_table  '
+  ]) {
+    assert.equal(isSQLColumn(name), true, name)
+  }
+  for (const name of ['Table', 'View', 'Database', 'Field', 'Type', 'Default', 'Comment', 'Info', 'sql_mode', 'character_set_client', 'description', '']) {
+    assert.equal(isSQLColumn(name), false, name)
+  }
+})
 
 test('MySQL table preview keeps its target explicit and escapes identifiers', () => {
   assert.equal(identifier('db`name'), '`db``name`')
