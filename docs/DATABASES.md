@@ -17,7 +17,7 @@ MySQL 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页
 
 PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出。可视化建库/表设计、库表管理与结构数据联合转储尚未实现，入口按能力隐藏，不能回退使用 MySQL 方言。DDL 是目录重建的结构参考，含约束/索引/分区键，不能替代 pg_dump 完整备份；分区子表和外部表明确提示使用 pg_dump。
 
-真实 MySQL 回归使用 SQLDESK_INTEGRATION=1，只操作随机临时库；参数见 [后端 README](../sql-studio-backend/README.md)。PostgreSQL 本次使用测试替身，未访问实际 PolarDB 或业务数据。
+真实 MySQL 和 PostgreSQL 回归分别使用随机临时库和 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 
 连接方式参考 [阿里云 PolarDB PostgreSQL 官方说明](https://www.alibabacloud.com/help/en/polardb/polardb-for-postgresql/connect-to-polardb/)。当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
 

@@ -728,7 +728,11 @@ export const useWorkspace = () => {
         const entry: StatementRun = { sql, database: executionDatabase, schema: scope.schema }
         try {
           if (controller.signal.aborted) throw new Error('请求已取消')
-          entry.result = await executeQuery(target.id, { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql }, controller.signal)
+          entry.result = await executeQuery(
+            target.id,
+            { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' && target.type === 'postgresql' ? { allowWrite: true } : {}) },
+            controller.signal
+          )
           if (controller.signal.aborted) throw new Error('请求已取消')
           const selectedDatabase = getDatabaseAdapter(target.type).useDatabase(sql)
           if (selectedDatabase !== undefined) {

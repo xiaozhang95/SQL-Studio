@@ -54,4 +54,6 @@ connections 是状态分区保留名称，GET/PUT /state/connections 均返回 4
 
 索引响应新增可选 primary:boolean 标记 PostgreSQL 主键，旧 MySQL 响应不要求新增字段。
 
-QueryRequest/AIRequest 新增可选 schema:string。PostgreSQL 请求指定 schema 时验证 USAGE 并在本次独占连接设置搜索路径，普通 SQL 仍由只读事务保护；MySQL 查询拒绝非空独立 schema。
+QueryRequest/AIRequest 新增可选 schema:string。PostgreSQL 请求指定 schema 时验证 USAGE 并在本次独占连接设置搜索路径，省略 allowWrite 的请求仍由只读事务保护；MySQL 查询拒绝非空独立 schema。
+
+PostgreSQL SQL 窗口手动执行显式设置 allowWrite=true，支持 DDL/DML 和 RETURNING；API 省略该字段仍默认只读。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。

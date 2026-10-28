@@ -19,7 +19,7 @@ export default function App() {
         cssVar: { key: 'sql-studio-theme' }
       }}
     >
-      <AntApp>
+      <AntApp message={{ styles: { root: { display: 'none' } } }}>
         <Workspace themeReady={ready} themeSaving={saving} themeError={error} themeMode={mode} themePreference={preference} onThemeChange={setPreference} />
       </AntApp>
     </ConfigProvider>

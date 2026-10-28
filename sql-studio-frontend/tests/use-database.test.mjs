@@ -101,3 +101,10 @@ test('refresh reuses the executed statement schema instead of the current select
   assert.equal(calls[0][1].database, 'executed-db')
   assert.equal(calls[0][1].schema, 'executed-schema')
 })
+
+test('PostgreSQL SQL window explicitly enables writes while MySQL stays read-only', async () => {
+  const pg = await run('CREATE SCHEMA sample; INSERT INTO sample.t VALUES (1);', undefined, undefined, 'public')
+  assert.ok(pg.calls.every((call) => call.allowWrite === true))
+  const mysql = await run('SELECT 1;')
+  assert.ok(mysql.calls.every((call) => call.allowWrite === undefined))
+})

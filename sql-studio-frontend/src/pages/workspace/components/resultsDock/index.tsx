@@ -52,7 +52,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
         overflow: 'hidden',
         borderTop: resizable ? '1px solid var(--border)' : 0,
         paddingTop: resizable ? 5 : 0,
-        userSelect: resizing ? 'none' : undefined
+        userSelect: resizing ? 'none' : 'text'
       }}
     >
       {resizable && (
