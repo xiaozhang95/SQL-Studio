@@ -19,3 +19,25 @@ func TestIdentifiersAndKeyword(t *testing.T) {
 		t.Fatal("CTE update misclassified")
 	}
 }
+
+func TestReadOnlyStatementBoundary(t *testing.T) {
+	for _, statement := range []string{
+		"SELECT 1", "SHOW TABLES", "DESCRIBE sample", "EXPLAIN SELECT 1", "USE `example`",
+		"WITH ids AS (SELECT 1) SELECT * FROM ids", "SELECT '/*! text */'", "SELECT /* ordinary /*! text */ 1",
+		"SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1", "SELECT 1 -- /*! not executed */\n",
+	} {
+		if !isReadOnlyStatement(statement) {
+			t.Errorf("read query rejected: %s", statement)
+		}
+	}
+	for _, statement := range []string{
+		"CREATE TABLE blocked (id INT)", "/* comment */ ALTER TABLE sample ADD n INT", "DROP TABLE sample", "TRUNCATE TABLE sample",
+		"RENAME TABLE sample TO renamed", "COMMIT", "SET autocommit=1", "CALL mutation()", "INSERT INTO sample VALUES(1)",
+		"WITH ids AS (SELECT 1) UPDATE sample SET id=2", "/*! CREATE TABLE blocked (id INT) */",
+		"/*!80000 CREATE TABLE blocked AS */ SELECT 1", "SELECT /*!80000 SQL_NO_CACHE */ 1",
+	} {
+		if isReadOnlyStatement(statement) {
+			t.Errorf("unsafe read-only query accepted: %s", statement)
+		}
+	}
+}

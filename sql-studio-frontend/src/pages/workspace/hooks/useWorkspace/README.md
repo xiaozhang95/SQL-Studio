@@ -34,6 +34,8 @@ useQueryHistory 通过 Go 用户目录配置保存各连接最新 50 条记录�
 
 右键打开时捕获选区快照，runSelectedSQL 不回退到整页；工具栏和 Ctrl+Enter 优先执行选区，无选区则完整草稿。导入本地 SQL 新建查询而不执行，exportCurrentSQL 原样导出完整草稿。onEditorReady/onEditorUpdate/rememberEditor 负责恢复并保存编辑位置。
 
+Ctrl/Command+Enter 在 window 捕获阶段处理并停止向编辑器传播，在 CodeMirror 插入空行之前读取原选区；快捷键运行不修改 SQL 草稿。浏览器回归需同时验证两种引擎的单条选区、多条选区、无选区和运行中重复按键，避免意外执行整份脚本。
+
 executeSQL 在单语句执行开始记录批次 startedAt，按完成语句更新 durationMs，最后一条或失败记录 endedAt；失败语句也保留请求耗时供消息/摘要展示。不新增后端请求，不改变失败/取消停止及结果归属边界。
 
 objectManagement 编排库表表单和写入；objectBusy 与普通查询共用界面锁，但MySQL 普通查询不传 allowWrite。对象操作后仅刷新目标连接的库列表或目标库已加载的表列表，创建库/表不自动展开，删库/表只清理关联查询范围，重命名更新查询页表范围，保留 SQL 草稿及原输出快照，不自动执行结果页查询。表刷新重新加载所属连接/库元数据，不创建新查询或执行 SELECT。

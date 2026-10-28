@@ -1442,7 +1442,7 @@
           "allowWrite": {
             "type": "boolean",
             "default": false,
-            "description": "false 使用只读事务；显式 true 的写入自动提交。取消不代表回滚。"
+              "description": "false 使用只读事务；MySQL 另拒绝非查询语句及可执行版本注释，防止 DDL 隐式提交绕过保护。显式 true 的写入自动提交。取消不代表回滚。"
           }
         },
         "required": ["sql"],

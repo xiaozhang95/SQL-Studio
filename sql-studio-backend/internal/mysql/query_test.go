@@ -206,6 +206,15 @@ func TestWriteFeedbackPreservesInsertID(t *testing.T) {
 	}
 }
 
+func TestReadOnlyDDLIsRejectedBeforeDatabaseAccess(t *testing.T) {
+	for _, statement := range []string{"CREATE TABLE blocked (id INT)", "DROP TABLE sample", "/*!80000 CREATE TABLE blocked AS */ SELECT 1"} {
+		// A nil DB proves rejection happens before beginning a transaction or sending SQL.
+		if _, err := execute(context.Background(), nil, statement, 1000, false); err == nil {
+			t.Fatalf("read-only statement reached the database: %s", statement)
+		}
+	}
+}
+
 func TestCommandAcknowledgementAndEmptyRowsetAreDifferent(t *testing.T) {
 	for _, columns := range [][]string{{}, {"id"}} {
 		types := []string{}

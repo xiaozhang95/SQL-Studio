@@ -30,7 +30,7 @@ func firstKeyword(s string) string {
 	return strings.ToUpper(s[:end])
 }
 
-// 分类仅决定调用 QueryContext 还是 ExecContext，只读权限始终由 MySQL 事务保证。
+// 分类决定调用 QueryContext 还是 ExecContext；读查询仍需数据库只读事务保护。
 func isQuery(s string) bool {
 	keyword := firstKeyword(s)
 	if keyword == "WITH" {
@@ -39,6 +39,54 @@ func isQuery(s string) bool {
 	switch keyword {
 	case "SELECT", "SHOW", "DESC", "DESCRIBE", "EXPLAIN", "TABLE", "VALUES":
 		return true
+	}
+	return false
+}
+
+// 只读事务不能阻止会隐式提交的 DDL。仅接受查询及 USE，并拒绝可能改变语句含义的版本注释。
+func isReadOnlyStatement(s string) bool {
+	if hasExecutableComment(s, true) || hasExecutableComment(s, false) {
+		return false
+	}
+	return isQuery(s) || firstKeyword(s) == "USE"
+}
+
+// 同时按默认转义与 NO_BACKSLASH_ESCAPES 扫描，遇到有歧义的可执行注释保守拒绝。
+func hasExecutableComment(s string, backslashEscapes bool) bool {
+	var quote byte
+	for i := 0; i < len(s); i++ {
+		if quote != 0 {
+			if backslashEscapes && s[i] == '\\' {
+				i++
+			} else if s[i] == quote {
+				if i+1 < len(s) && s[i+1] == quote {
+					i++
+				} else {
+					quote = 0
+				}
+			}
+			continue
+		}
+		if s[i] == '\'' || s[i] == '"' || s[i] == '`' {
+			quote = s[i]
+			continue
+		}
+		if s[i] == '#' || (s[i] == '-' && i+2 < len(s) && s[i+1] == '-' && s[i+2] <= ' ') {
+			for i < len(s) && s[i] != '\n' && s[i] != '\r' {
+				i++
+			}
+			continue
+		}
+		if s[i] == '/' && i+1 < len(s) && s[i+1] == '*' {
+			if i+2 < len(s) && s[i+2] == '!' {
+				return true
+			}
+			end := strings.Index(s[i+2:], "*/")
+			if end < 0 {
+				return false
+			}
+			i += end + 3
+		}
 	}
 	return false
 }

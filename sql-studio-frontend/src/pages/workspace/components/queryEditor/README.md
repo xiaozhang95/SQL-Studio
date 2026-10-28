@@ -10,7 +10,7 @@
 
 每页 SQL 与范围由 model 受控保存；切页恢复草稿。左侧树与选择器独立，仅共用元数据缓存。连接必须成功加载结构才允许运行，切连接清库表，切库清表；没有表下拉。补全保留系统字体和主题，支持 Ctrl+Enter，结果页快捷键不会执行旧 SQL。
 
-查询结果在同一页面编辑器下方展示，重复执行替换该页最新结果，不创建额外标签。当前页执行时显示取消，其他页面执行时只应用全局操作锁。请求使用后端默认只读，不传行数或写入参数。
+查询结果在同一页面编辑器下方展示，重复执行替换该页最新结果，不创建额外标签。当前页执行时显示取消，其他页面执行时只应用全局操作锁。请求不传行数；MySQL 使用后端默认只读，PostgreSQL SQL 窗口显式传 allowWrite=true，支持 DDL/DML 和 RETURNING。
 
 工具栏右侧顺序为导入、导出、执行历史。导入本地 UTF-8/BOM SQL 并新建查询页，不上传、不自动执行；导出当前页完整 SQL，空白时禁用。历史读取当前查询页连接，打开时重置搜索。
 
@@ -21,6 +21,8 @@ SQL 补全浮层采用与系统 Select 一致的 colorBgElevated、colorBorderSe
 外层容器与工具栏布局使用组件 style；编辑器、行号、补全和 AI 建议外观由 [editorAppearance](../../utils/editorAppearance/README.md) 的 EditorView.theme 扩展提供，不再在 app.scss 覆盖 CodeMirror。
 
 运行按钮、Ctrl+Enter 与右键选区执行共用多语句流程：只切分选中的 SQL（未选中则为完整草稿），依次执行，在本页结果选择器查看每条输出；失败或取消后停止后续语句。
+
+执行快捷键由 useWorkspace 在捕获阶段接管，不触发 CodeMirror 的插入空行命令；原选区和 SQL 文本保持不变。
 
 补全 schema 仅使用当前连接的数据库命名空间；选库自动加载表/视图，以 defaultSchema 提供无前缀表名补全，并复用缓存字段。扩展通过 useMemo 稳定配置，输入 SQL 不反复重建语言扩展。编辑器选区与滚动通过 onEditorReady/onEditorUpdate/rememberEditor 加密保存，恢复不执行 SQL。
 

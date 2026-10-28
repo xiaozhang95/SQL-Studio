@@ -31,8 +31,11 @@ func execute(ctx context.Context, db *sql.DB, statement string, limit int, allow
 	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
 	result.Columns = []model.ResultColumn{}
 	result.Rows = [][]any{}
-	// 即使语句包含注释、CTE 或函数，默认模式也由数据库的只读事务拒绝持久写入。
+	// DDL 可隐式提交并逃离只读事务，必须在发送 SQL 前拒绝；读查询仍保留数据库只读事务。
 	if !allowWrite {
+		if !isReadOnlyStatement(statement) {
+			return result, errors.New("只读查询不允许该语句；写入需通过显式写入操作提交")
+		}
 		tx, e := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 		if e != nil {
 			return result, e

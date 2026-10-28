@@ -10,6 +10,8 @@ MySQL 的连接测试、结构读取、DDL 与 SQL 执行。
 
 SQL 默认只读事务，单语句执行；结果行数/约 8MiB 限制，保留 BIGINT/DECIMAL 精度与 NULL；标识符严格转义。
 
+MySQL DDL 会隐式提交，单靠只读事务不足以保护普通查询。默认入口仅接受 SELECT/SHOW/DESC/DESCRIBE/EXPLAIN/TABLE/VALUES、查询型 WITH 和 USE，发送前拒绝其他语句及字符串/普通注释之外的可执行版本注释。读查询继续使用只读事务；显式 allowWrite=true 的对象与数据操作保持原行为。statement_test.go、query_test.go 覆盖隐式提交与可执行注释边界；前端可选真实 SQL 窗口测试同时验证拒绝后数据和结构未改变。
+
 query_test.go 通过 database/sql 测试驱动验证实际扫描与事务流程：精确有符号/无符号整数、DECIMAL、二进制、NULL、重复列名、行数/字节边界、错误和取消、游标关闭及写入反馈；不建立网络连接，不能代替真实 MySQL 的协议和只读权限集成验证。
 
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。

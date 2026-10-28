@@ -76,6 +76,20 @@ func TestMySQLIntegration(t *testing.T) {
 			t.Fatalf("read-only allowed write: %s", statement)
 		}
 	}
+	// MySQL DDL implicitly commits; the application's read-only boundary must reject it before execution.
+	for _, statement := range []string{
+		"CREATE TABLE " + name + ".blocked (id INT)", "ALTER TABLE " + table + " ADD blocked INT",
+		"TRUNCATE TABLE " + table, "DROP TABLE " + table, "RENAME TABLE " + table + " TO " + name + ".renamed",
+		"/*!80000 CREATE TABLE " + name + ".blocked AS */ SELECT 1",
+	} {
+		if _, err = run(ctx, statement, 100, false); err == nil {
+			t.Fatalf("read-only allowed implicit commit: %s", statement)
+		}
+	}
+	output, err = run(ctx, "SELECT COUNT(*) FROM "+table, 100, false)
+	if err != nil || output.Rows[0][0] != "3" {
+		t.Fatalf("rejected DDL changed the test table: %+v %v", output, err)
+	}
 	if _, err = run(ctx, "SELECT 1; SELECT 2", 100, false); err == nil {
 		t.Fatal("multiple statements allowed")
 	}

@@ -29,6 +29,8 @@ history-completion.test.mjs 覆盖旧历史每连接截取最新 50 条、删除
 
 PostgreSQL 回归：`node --test tests/postgresql.test.mjs` 检查美元引号/E 字符串/嵌套注释、历史保护、schema 同名表身份、SQL 注入边界、精确主键与 NULL 数据编辑；不访问网络。
 
+真实 SQL 窗口回归：`node --test tests/sql-window.integration.test.mjs` 默认跳过。先用独立 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 启动本地后端，再设置 SQLDESK_SQL_WINDOW_INTEGRATION=1、SQLDESK_MYSQL_PASSWORD、SQLDESK_PG_PASSWORD；SQLDESK_TEST_API 可覆盖接口地址（默认 http://127.0.0.1:8080/api）。测试执行实际 executeSQL 编排和引擎切分器，经 HTTP 访问本机 3306/root 与 5432/postgres；只创建随机 sqldesk_window_ 临时库/schema、临时连接，finally 清理。覆盖精确值、多结果、错误停止、取消后重跑、行数限制、MySQL USE/只读 DDL 拒绝、PostgreSQL DDL/DML/RETURNING 与美元引号。它替换 React 状态并断言请求、逐条结果及历史，不替代浏览器点击、选区或快捷键检查。凭据只从环境变量读取，勿把真实密码写入测试文件或报告。
+
 explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
 
 Schema 回归覆盖结构列表拆列、旧记录迁移、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。

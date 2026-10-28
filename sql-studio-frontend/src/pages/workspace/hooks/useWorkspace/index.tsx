@@ -277,11 +277,13 @@ export const useWorkspace = () => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault()
+        // 在 CodeMirror 的插入空行快捷键之前读取选区，避免选区丢失后执行整份草稿。
+        event.stopPropagation()
         executeRef.current()
       }
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
   }, [])
 
   function resetStructure(loading = false) {
