@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { readState, writeState } from '@/services/userState'
+import { readState, writeSerializedState } from '@/services/userState'
 import type { WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
+import { createLatestWriter } from '@/utils/latestWriter'
+
+import { createWorkspaceSerializer, restoreWorkspaceResults } from '../../utils/workspaceSerialization'
 
 let restored: Promise<WorkspaceSnapshot | null> | undefined
 
@@ -51,11 +54,16 @@ async function restoreSnapshot() {
     openedConnections: [],
     runningTabId: ''
   }))
-  return validate(saved)
+  return restoreWorkspaceResults(validate(saved))
 }
 
 /** 先恢复服务端配置再允许保存，避免首帧空状态覆盖已有工作区；恢复失败时阻止后续覆盖。 */
 export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (snapshot: WorkspaceSnapshot) => void) {
+  const [save] = useState(() => {
+    const serialize = createWorkspaceSerializer()
+    return createLatestWriter<WorkspaceSnapshot>((value) => writeSerializedState('workspace', serialize(value)))
+  })
+  const dirtySince = useRef<number | null>(null)
   const [ready, setReady] = useState(false)
   const [savedSnapshot, setSavedSnapshot] = useState<WorkspaceSnapshot | null>(null)
   const [error, setError] = useState('')
@@ -89,8 +97,11 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   useEffect(() => {
     if (!ready || !available.current) return
     const version = ++revision.current
+    dirtySince.current ??= Date.now()
+    const delay = Math.min(500, Math.max(0, 3000 - (Date.now() - dirtySince.current)))
     const timer = window.setTimeout(() => {
-      void writeState('workspace', snapshot)
+      dirtySince.current = null
+      void save(snapshot)
         .then(() => {
           restored = Promise.resolve(snapshot)
           if (version === revision.current) {
@@ -104,8 +115,8 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
             setError(reason instanceof Error ? reason.message : '本机配置保存失败')
           }
         })
-    }, 300)
+    }, delay)
     return () => window.clearTimeout(timer)
-  }, [ready, snapshot])
+  }, [ready, snapshot, save])
   return { ready, saving: ready && savedSnapshot !== snapshot && !error, error }
 }

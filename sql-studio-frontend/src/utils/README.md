@@ -11,3 +11,5 @@
 - [关闭前保存 SQL](sqlSave/README.md)。
 
 - [exportWriter](exportWriter/README.md)：原生文件流及有界下载兼容。
+
+- [latestWriter](latestWriter/README.md)：同一工作区单在途、只保留最新等待保存。

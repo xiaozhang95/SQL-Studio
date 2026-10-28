@@ -1,5 +1,5 @@
 import { App } from 'antd'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
 import { executeObjectSQL, executeQuery, getColumns, getTables } from '@/services/database'
@@ -23,6 +23,19 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
   const [drafts, setDrafts] = useState<Record<string, Cell>>({})
   const [newRows, setNewRows] = useState<{ key: number; cells: unknown[]; columns: Column[] }[]>([])
   const nextKey = useRef(-1)
+  const previewRows = useMemo(() => {
+    if (!result || !Object.keys(drafts).length) return result?.rows ?? []
+    const rows = result.rows.slice()
+    const copied = new Set<number>()
+    for (const draft of Object.values(drafts)) {
+      if (!copied.has(draft.row)) {
+        rows[draft.row] = [...rows[draft.row]]
+        copied.add(draft.row)
+      }
+      rows[draft.row][draft.column] = draft.isNull ? null : draft.value
+    }
+    return rows
+  }, [result, drafts])
   const dirty = Object.keys(drafts).length + newRows.length
   useEffect(() => {
     onDirtyChange(tab.id, dirty > 0)
@@ -225,6 +238,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     })
   }
   return {
+    rows: previewRows,
     deleteRows,
     deletionError: deletionError?.page === tab.id ? deletionError.detail : '',
     clearDeletionError: () => setDeletionError(undefined),

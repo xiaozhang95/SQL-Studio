@@ -13,7 +13,7 @@ import {
   UndoOutlined
 } from '@ant-design/icons'
 import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
-import { useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
@@ -93,18 +93,23 @@ export default function QueryResults({ model, themeMode }: Props) {
     const body = viewport.current?.querySelector<HTMLElement>('.ant-table-body')
     if (body) body.scrollTop = 0
   }, [run?.id, tablePage, resultSearch, view, viewport])
-  const rows = (result?.rows || [])
-    .map((cells, index) => ({ key: index, cells: cells.map((value, column) => editing.display(index, column, value)) }))
-    .filter(
-      ({ cells }) =>
-        !resultSearch ||
-        cells.some((cell) =>
-          String(cell ?? 'NULL')
-            .toLowerCase()
-            .includes(resultSearch.toLowerCase())
-        )
-    )
-  rows.unshift(...editing.newRows.map((row) => ({ key: row.key, cells: row.cells })))
+  const deferredSearch = useDeferredValue(resultSearch)
+  const rows = useMemo(() => {
+    if (!showingResult) return []
+    const search = deferredSearch.toLowerCase()
+    const existing = editing.rows
+      .map((cells, index) => ({ key: index, cells }))
+      .filter(
+        ({ cells }) =>
+          !search ||
+          cells.some((cell) =>
+            String(cell ?? 'NULL')
+              .toLowerCase()
+              .includes(search)
+          )
+      )
+    return [...editing.newRows.map((row) => ({ key: row.key, cells: row.cells })), ...existing]
+  }, [editing.rows, editing.newRows, deferredSearch, showingResult])
   const columns = [
     {
       title: '#',
@@ -276,7 +281,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                 />
                 <Button
                   icon={<DownloadOutlined />}
-                  disabled={!result?.isQuery}
+                  disabled={!result?.isQuery || deferredSearch !== resultSearch}
                   onClick={() =>
                     result &&
                     exportCSV(

@@ -20,13 +20,17 @@ export async function readState<T>(section: string, legacy: () => Promise<T>): P
   return doc.data === null ? legacy() : (doc.data as T)
 }
 export function writeState(section: string, value: unknown): Promise<void> {
-  const data = JSON.stringify(value)
+  return writeSerializedState(section, JSON.stringify(value))
+}
+
+/** Accept trusted pre-serialized internal state without a parse/stringify round trip. */
+export function writeSerializedState(section: string, data: string): Promise<void> {
   const task = (writes.get(section) || Promise.resolve())
     .catch(() => {})
     .then(async () => {
       const revision = revisions.get(section)
       if (revision === undefined) throw new Error('配置尚未读取，拒绝覆盖')
-      const doc = await request<Document<unknown>>('/state/' + encodeURIComponent(section), { method: 'PUT', body: JSON.stringify({ revision, data: JSON.parse(data) }) })
+      const doc = await request<Document<unknown>>('/state/' + encodeURIComponent(section), { method: 'PUT', body: `{"revision":${revision},"data":${data}}` })
       if (doc.schemaVersion !== 1 || !Number.isSafeInteger(doc.revision) || doc.revision <= revision) throw new Error('配置保存响应无效')
       revisions.set(section, doc.revision)
       documents.set(section, doc)
