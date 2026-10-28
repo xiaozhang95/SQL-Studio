@@ -29,7 +29,8 @@ export default function QueryHistory({ model, themeMode }: Props) {
   const connectionHistory = history
   const { modal } = AntApp.useApp()
   const [page, setPage] = useState(1)
-  const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${connectionId}:${connectionHistory.length}:${historySearch}`)
+  const [drawerReady, setDrawerReady] = useState(false)
+  const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${drawerReady}:${connectionId}:${connectionHistory.length}:${historySearch}`)
   const columns: TableColumnsType<HistoryItem> = [
     {
       title: '状态',
@@ -101,7 +102,8 @@ export default function QueryHistory({ model, themeMode }: Props) {
       }
       open={historyOpen}
       onClose={() => setHistoryOpen(false)}
-      size={1080}
+      afterOpenChange={setDrawerReady}
+      size="min(1080px, 100vw)"
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
         <Button
@@ -145,7 +147,7 @@ export default function QueryHistory({ model, themeMode }: Props) {
           rowKey="id"
           columns={columns}
           dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database} ${item.schema || ''}`.toLowerCase().includes(historySearch.toLowerCase()))}
-          scroll={{ x: 1200, y: bodyHeight || undefined }}
+          scroll={{ x: 1200, y: bodyHeight || 24 }}
           pagination={{ ...tablePaginationDefaults, current: page, pageSize: 10 }}
           onChange={(pagination) => setPage(pagination.current || 1)}
           expandable={{
