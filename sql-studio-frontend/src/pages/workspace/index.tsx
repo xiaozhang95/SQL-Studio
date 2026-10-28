@@ -61,7 +61,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
             >
               新建连接
             </Button>
-            <Button icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={() => model.addTab()}>
+            <Button icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
               新建查询
             </Button>
           </div>

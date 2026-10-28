@@ -26,6 +26,7 @@ type Session = {
   opening?: Promise<string[]>
   refreshing?: Promise<string[]>
   tables: Record<string, DBTable[]>
+  schemas: Record<string, string[]>
   pending: Map<string, Promise<DBTable[]>>
   structures: Record<string, TableStructure>
   pendingStructures: Map<string, Promise<TableStructure>>
@@ -70,6 +71,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
         controller,
         lifecycle: new DatabaseLifecycle(controller.signal),
         tables: {},
+        schemas: {},
         pending: new Map(),
         structures: {},
         pendingStructures: new Map(),
@@ -118,6 +120,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
     session.lifecycle.close(name)
     const without = <T>(values: Record<string, T>) => Object.fromEntries(Object.entries(values).filter(([key]) => JSON.parse(key)[0] !== name))
     delete session.tables[name]
+    delete session.schemas[name]
     session.pending.delete(name)
     session.structures = without(session.structures)
     session.details = without(session.details)
@@ -169,6 +172,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
           if (!valid()) throw new Error('数据库已关闭')
           if (valid()) {
             session.tables[name] = tables
+            session.schemas[name] = schemas
             setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], tables: { ...previous[id].tables, [name]: tables }, schemas: { ...previous[id].schemas, [name]: schemas } } }))
           }
           return tables
@@ -186,6 +190,17 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       return task
     },
     [connectionId, schemaConnections]
+  )
+
+  const loadSchemas = useCallback(
+    async (name: string, id = connectionId): Promise<string[]> => {
+      const session = sessions.current.get(id)
+      if (!session) throw new Error('请先打开连接')
+      await loadTables(name, id)
+      if (sessions.current.get(id) !== session || session.controller.signal.aborted || !session.schemas[name]) throw new Error('数据库已关闭或结构已失效')
+      return session.schemas[name]
+    },
+    [connectionId, loadTables]
   )
 
   const loadStructure = useCallback(
@@ -309,6 +324,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
     refreshDatabases,
     refreshTables,
     loadTables,
+    loadSchemas,
     loadStructure,
     loadTableDetails,
     connected: current?.status === 'connected',

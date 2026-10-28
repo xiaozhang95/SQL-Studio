@@ -7,3 +7,5 @@ identifier(value) 转义双引号；tableIdentity(table) 解析元数据返回�
 explorerTableIdentity(table) 返回 {schema,name}，用于分层展示；完整双引号表身份继续用于所有 API/SQL 操作，不使用显示名称推断对象范围。
 
 tableListResult 返回 Schema/表名/类型/注释四列，可按 schema 筛选；tableLabel 对常规标识符展示 schema.table，特殊名称保留必要引号。显示转换不改写 API/缓存表身份。
+
+schemaListResult 将服务端返回的完整 schema 名称列表转换为结构结果，包含没有表的 schema。

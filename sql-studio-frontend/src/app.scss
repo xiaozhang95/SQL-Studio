@@ -150,6 +150,10 @@ body {
   align-items: center;
   justify-content: center;
 }
+// Tree 在 showIcon=false 的加载期仍插入额外图标，占位会挤动标题；加载状态已显示在展开箭头中。
+.object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle.ant-tree-icon_loading {
+  display: none;
+}
 .object-tree .ant-tree-node-selected .ant-tree-iconEle {
   color: inherit;
 }

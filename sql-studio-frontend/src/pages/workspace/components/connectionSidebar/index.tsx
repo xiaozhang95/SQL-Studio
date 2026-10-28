@@ -17,6 +17,7 @@ type Props = {
     | 'openConnection'
     | 'databaseAction'
     | 'tableAction'
+    | 'openExplorerPage'
     | 'objects'
     | 'database'
     | 'selectedTable'

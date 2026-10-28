@@ -4,7 +4,7 @@
 
 ## 参数与回调
 
-model 通过 Pick 仅消费 connections、objects、running，以及 connectionAction、openConnection、databaseAction、tableAction；不消费查询标签的连接/库/表或选择回调。
+model 通过 Pick 消费 connections、objects、running，以及 connectionAction、openConnection、databaseAction、tableAction 和 openExplorerPage；不消费查询标签的连接/库/表或选择回调。
 
 ## 行为与边界
 
@@ -20,7 +20,9 @@ model 通过 Pick 仅消费 connections、objects、running，以及 connectionA
 
 双击通过原生 Tree expandAction=doubleClick 与箭头共用展开、loadData 和加载状态；表可展开字段和索引，视图保持叶节点。图标容器统一 flex 居中，连接图标外层也使用 flex，覆盖原生 inline-block 的基线偏移；图标和文字在最小 28px 的选中背景内垂直居中，上下各留 2px，节点不额外加 padding-block；覆盖原生 margin-bottom 为 2px，行距约 30px。
 
-双击库同时创建独立结构页（表名、类型、注释），与树展开共用一次 loadTables 缓存请求；已展开的库双击仍可打开结构页。双击表/视图调用只读查询并创建独立数据页，不隐式创建 SQL 编辑器；箭头只控制子项，不创建页面。
+异步展开时，加载指示显示在展开箭头区域；隐藏 Tree 在 `showIcon=false` 时额外插入的加载图标占位，节点图标和文字保持位置不变。
+
+双击展开数据库时打开结构页：PostgreSQL 展示 schema 列表（包含空 schema），MySQL 展示表列表；双击展开 PostgreSQL schema 展示该 schema 的表和视图。数据库右键相应显示“查看 Schema 列表”或“查看表列表”。双击展开表时打开数据页。按连接、库、schema、表和页面类型匹配已有标签，存在则切换并刷新，否则新建；表数据未保存时先确认。双击折叠时只收起节点，不打开页面；视图是叶节点，双击仍打开数据。箭头只控制子项，不创建页面。
 
 树节点文字禁止浏览器选择，双击仅执行展开/收起，不产生文本高亮。连接关闭时子节点的选中高亮随节点隐藏失效；查询范围只按连接关闭后的有效性清理，不参与树的日常选择。SQL 编辑器、结果和历史 SQL 仍可正常选择复制。
 
@@ -48,7 +50,7 @@ Tree 与视口 ref 使用 ExplorerNode 泛型。titleRender 直接消费 Tree �
 
 Tree 显式设置 motionAppear/motionEnter/motionLeave=false，展开和折叠直接更新可见行（Ant Design 会将 null 回退为默认动画，不能用 motion=null 禁用）。按展开状态裁剪后代数据会同步移除原生树的层级索引，关闭过渡可避免离场节点缩进归零、先跳到最左侧再消失；保留虚拟滚动与按需加载。
 
-右键菜单按所属连接适配器的 objects 能力隐藏尚未实现的可视化库表管理及数据转储，不影响读取、查询和结构参考导出。PostgreSQL 表名保留完整双引号 schema/table 标识。
+右键菜单按所属连接适配器能力显示操作，隐藏未实现的数据转储。PostgreSQL 支持建库、删库、删表或视图、清空表和重命名；schema、表分类及表节点支持新建表，表节点支持设计表字段。表名保留完整双引号 schema/table 标识。
 
 PostgreSQL 新增 schema 文件夹层：连接 → 数据库 → schema → 表/视图 → 对象 → 字段/索引。schema/类别只展开本地元数据，不切换查询范围、不发送表数据 SQL。表标题省略所属 schema，菜单和详情仍以原始完整表身份操作；schema 内分类不提供指向整个数据库的菜单。
 

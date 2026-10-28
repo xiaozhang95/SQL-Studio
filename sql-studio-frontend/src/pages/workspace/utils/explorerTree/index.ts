@@ -2,6 +2,7 @@ import type { DataNode } from 'antd/es/tree'
 
 import type { DatabaseExplorerAdapter } from '@/databases/typings'
 import type { Connection } from '@/typings/database'
+import type { QueryScope } from '@/typings/workspace'
 
 import { connectionGroupName } from '../../../../constant/connectionGroup/index.ts'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
@@ -24,6 +25,12 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   children?: ExplorerNode[]
 }
 type Snapshots = ReturnType<typeof useDatabaseObjects>['snapshots']
+/** 仅从当前可见且已连接的树节点取库范围，忽略连接和分组节点。 */
+export function explorerQueryScope(node: ExplorerNode | undefined, connected: boolean, layout?: DatabaseExplorerAdapter): QueryScope | undefined {
+  if (!node || !connected || !node.owner || !node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index'].includes(node.kind)) return undefined
+  const schema = node.schema || (node.table && layout ? layout.tableIdentity(node.table).schema : undefined)
+  return { connectionId: node.owner, database: node.database, ...(schema ? { schema } : {}), table: '' }
+}
 export function buildExplorerTree(
   connections: readonly Connection[],
   snapshots: Snapshots,

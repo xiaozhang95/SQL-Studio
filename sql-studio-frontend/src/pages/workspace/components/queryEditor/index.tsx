@@ -45,7 +45,7 @@ const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactC
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
   const { activeTab, running, activeRunning, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
-  const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, undefined, title))
+  const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
   const [contextSQL, setContextSQL] = useState('')
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)

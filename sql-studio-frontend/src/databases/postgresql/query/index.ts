@@ -23,6 +23,7 @@ export function explorerTableIdentity(table: string) {
   const [schema, name] = tableIdentity(table)
   return { schema, name }
 }
+export const schemaListResult = (schemas: readonly string[]): Pick<QueryResult, 'columns' | 'rows'> => ({ columns: [{ name: 'Schema', type: '' }], rows: schemas.map((schema) => [schema]) })
 
 export const tableLabel = (table: string) =>
   tableIdentity(table)

@@ -10,7 +10,7 @@
 - [补全](completion/README.md)：当前数据库的 schema 范围。
 - [数据编辑](dataEditing/README.md)：完整主键 UPDATE 与 INSERT。
 
-objects=undefined 明确表示尚无可视化库表设计/管理与结构数据联合转储；通用 UI 隐藏这些入口，执行边界也拒绝，不能回退调用 MySQL SQL。保留查询、表/视图浏览、字段、索引、DDL 结构参考和数据行编辑。exportDDL 独立于可视化对象管理。useDatabase 返回 undefined，PostgreSQL 使用连接目标切库，不模拟 USE。每条请求独立会话，事务、SET、临时表不跨语句继承。
+objects=undefined 表示尚无库属性编辑与结构数据联合转储。simpleObjects 独立提供建库、删库、删表或视图、清空表与重命名；tableDesign 提供新建表及字段增删改，边界见 [表设计](tableDesign/README.md)。均不回退 MySQL SQL。保留查询、表/视图浏览、字段、索引、DDL 结构参考和数据行编辑。exportDDL 独立于可视化对象管理。useDatabase 返回 undefined，PostgreSQL 使用连接目标切库，不模拟 USE。每条请求独立会话，事务、SET、临时表不跨语句继承。
 
 对象树按数据库 → schema → 表/视图分类 → 对象名展示；schema 使用真实列表，包含空 schema，表标签只显示本层名，目标仍为完整 schema/table。
 

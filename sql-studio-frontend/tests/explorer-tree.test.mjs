@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { explorerTableIdentity } from '../src/databases/postgresql/query/index.ts'
-import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
+import { buildExplorerTree, explorerQueryScope } from '../src/pages/workspace/utils/explorerTree/index.ts'
 import { objectNodeKey as key } from '../src/pages/workspace/utils/objectTree/index.ts'
 
 const connections = [
@@ -12,6 +12,16 @@ const connections = [
 const tables = Array.from({ length: 10000 }, (_, index) => ({ name: `t_${String(index).padStart(5, '0')}`, type: 'BASE TABLE', comment: '' }))
 const snapshot = { status: 'connected', databases: ['big'], tables: { big: tables }, loadingTables: [], tableErrors: {}, details: {}, structures: {}, detailErrors: {}, error: '' }
 const snapshots = { a: snapshot, b: { ...snapshot, tables: { big: [] } } }
+
+test('new query scope follows selected database or schema, never an unrelated page', () => {
+  const layout = { tableIdentity: explorerTableIdentity }
+  assert.equal(explorerQueryScope(undefined, true, layout), undefined)
+  assert.equal(explorerQueryScope({ kind: 'connection', owner: 'a', database: '', table: '' }, true, layout), undefined)
+  assert.equal(explorerQueryScope({ kind: 'database', owner: 'a', database: 'db', table: '' }, false, layout), undefined)
+  assert.deepEqual(explorerQueryScope({ kind: 'database', owner: 'a', database: 'db', table: '' }, true, layout), { connectionId: 'a', database: 'db', table: '' })
+  assert.deepEqual(explorerQueryScope({ kind: 'schema', owner: 'a', database: 'db', schema: 'x.y', table: '' }, true, layout), { connectionId: 'a', database: 'db', schema: 'x.y', table: '' })
+  assert.deepEqual(explorerQueryScope({ kind: 'table', owner: 'a', database: 'db', table: '"x.y"."t"' }, true, layout), { connectionId: 'a', database: 'db', schema: 'x.y', table: '' })
+})
 
 test('ten thousand cached tables do not create descendants under collapsed categories or groups', () => {
   const expanded = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big')]

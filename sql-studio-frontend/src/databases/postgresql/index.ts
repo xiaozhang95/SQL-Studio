@@ -2,14 +2,18 @@ import type { DatabaseAdapter } from '../typings'
 import { postgresqlCompletion } from './completion'
 import { referencedTables } from './context'
 import { canInsertColumn, insertRowSQL, updateCellSQL } from './dataEditing'
+import { simpleObjects } from './objectManagement'
 import { postgresqlProfile } from './profile'
-import { explorerTableIdentity, exportDDL, tableDataSQL, tableLabel, tableListResult } from './query'
+import { explorerTableIdentity, exportDDL, schemaListResult, tableDataSQL, tableLabel, tableListResult } from './query'
 import { cleanPostgreSQLHistory, splitPostgreSQLStatements } from './statements'
+import { tableDesign } from './tableDesign'
 
 const postgresql = {
   profile: postgresqlProfile,
-  explorer: { tableIdentity: explorerTableIdentity, referencedTables },
+  explorer: { tableIdentity: explorerTableIdentity, schemaListResult, referencedTables },
   objects: undefined,
+  simpleObjects,
+  tableDesign,
   canInsertColumn,
   insertRowSQL,
   updateCellSQL,

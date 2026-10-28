@@ -22,7 +22,7 @@ export function useTableDesigner({ page, connections, blocked, onBusyChange, onD
   const { modal } = App.useApp()
   const [initial] = useState(() => ({
     action: page.kind === 'table-create' ? ObjectAction.CreateTable : ObjectAction.EditTable,
-    target: { connectionId: page.connectionId, database: page.database, table: page.table }
+    target: { connectionId: page.connectionId, database: page.database, schema: page.schema, table: page.table }
   }))
   const busy = useCallback((value: boolean) => onBusyChange(page.id, value), [onBusyChange, page.id])
   const dirty = useCallback((value: boolean) => onDirtyChange(page.id, value), [onDirtyChange, page.id])

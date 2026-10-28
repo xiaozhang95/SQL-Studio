@@ -23,6 +23,7 @@ import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
+import { ObjectAction } from '@/databases/typings/objectManagement'
 
 import { objectTreeLayout } from '../../constant/layout'
 import { useTreeViewport } from '../../hooks/useTreeViewport'
@@ -31,7 +32,9 @@ import { buildExplorerTree } from '../../utils/explorerTree'
 import type { ExplorerNode } from '../../utils/explorerTree'
 import EngineIcon from '../engineIcon'
 
-type Props = { model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'objects' | 'running' | 'explorer' | 'updateExplorer'> }
+type Props = {
+  model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'>
+}
 
 /** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
 export default function DatabaseExplorer({ model }: Props) {
@@ -48,6 +51,7 @@ export default function DatabaseExplorer({ model }: Props) {
   // 菜单在右键时生成，不为几千张表预建按钮、图标和闭包。
   function menuFor(node: ExplorerNode): MenuProps | undefined {
     const { owner: id, database: db, table } = node
+    const engine = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
 
     let items: MenuProps['items']
     if (node.kind === 'connection') {
@@ -63,6 +67,7 @@ export default function DatabaseExplorer({ model }: Props) {
     } else if (node.kind === 'schema') {
       items = [
         { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
         { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
@@ -76,7 +81,7 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
         { type: 'divider' },
         { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        { key: 'tables', label: engine.explorer ? '查看 Schema 列表' : '查看表列表', icon: <TableOutlined /> },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'tables') {
@@ -109,17 +114,33 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else return undefined
-    if (!getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type).objects) {
+    if (!engine.objects) {
+      const supported = engine.simpleObjects?.actions ?? []
+      const actionForKey =
+        node.kind === 'connection'
+          ? { 'create-database': ObjectAction.CreateDatabase }
+          : node.kind === 'database'
+            ? { edit: ObjectAction.EditDatabase, create: ObjectAction.CreateDatabase, delete: ObjectAction.DropDatabase, 'create-table': ObjectAction.CreateTable }
+            : node.kind === 'tables' || node.kind === 'schema'
+              ? { 'create-table': ObjectAction.CreateTable }
+              : { design: ObjectAction.EditTable, create: ObjectAction.CreateTable, delete: ObjectAction.DropTable, truncate: ObjectAction.TruncateTable, rename: ObjectAction.RenameTable }
       const unavailable =
         node.kind === 'connection'
           ? ['create-database']
           : node.kind === 'database'
             ? ['edit', 'create', 'delete', 'create-table']
-            : node.kind === 'tables'
+            : node.kind === 'tables' || node.kind === 'schema'
               ? ['create-table']
               : ['design', 'create', 'delete', 'truncate', 'rename']
       items = items
-        .filter((item) => !item || !('key' in item) || !unavailable.includes(String(item.key)))
+        .filter(
+          (item) =>
+            !item ||
+            !('key' in item) ||
+            !unavailable.includes(String(item.key)) ||
+            supported.some((action) => action === actionForKey[String(item.key) as keyof typeof actionForKey]) ||
+            Boolean(engine.tableDesign && ((item.key === 'create-table' && node.schema) || (node.kind === 'table' && (item.key === 'create' || item.key === 'design'))))
+        )
         .map((item) =>
           item && 'key' in item && item.key === 'export' && 'children' in item
             ? { ...item, children: (item.children ?? []).filter((child) => child && 'key' in child && child.key !== 'dump-data') }
@@ -251,12 +272,21 @@ export default function DatabaseExplorer({ model }: Props) {
                   else if (node.kind === 'database') await objects.loadTables(node.database, node.owner).catch(() => {})
                   else if (node.kind === 'table') await objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
                 }}
-                onDoubleClick={(_, value) => {
+                onDoubleClick={(event, value) => {
                   if (running) return
                   const node = data.byKey.get(String(value.key))
                   if (!node) return
-                  if (node.kind === 'database' || node.kind === 'schema') void model.databaseAction('tables', node.owner, node.database, undefined, node.schema)
-                  else if (node.kind === 'table') void model.tableAction('data', node.owner, node.database, node.table)
+                  // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。
+                  if (!value.isLeaf && (value.expanded || event.shiftKey || event.metaKey || event.ctrlKey)) return
+                  if (node.kind === 'database' || node.kind === 'schema') model.openExplorerPage('structure', node.owner, node.database, '', node.schema)
+                  else if (node.kind === 'table')
+                    model.openExplorerPage(
+                      'data',
+                      node.owner,
+                      node.database,
+                      node.table,
+                      getDatabaseAdapter(connections.find((connection) => connection.id === node.owner)?.type).explorer?.tableIdentity(node.table).schema
+                    )
                 }}
                 onRightClick={({ node: value }) => {
                   const node = data.byKey.get(String(value.key))

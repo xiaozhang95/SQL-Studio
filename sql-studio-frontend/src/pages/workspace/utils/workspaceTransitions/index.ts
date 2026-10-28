@@ -4,6 +4,11 @@ import type { ExplorerLayout, WorkspaceTab } from '@/typings/workspace'
 
 import { ObjectAction } from '../../../../databases/typings/objectManagement/index.ts'
 
+/** 按连接、库、schema 和表身份查找对象结果页，SQL 与设计页不参与匹配。 */
+export function findExplorerPage(tabs: readonly WorkspaceTab[], kind: 'data' | 'structure', connectionId: string, database: string, table: string, schema?: string) {
+  return tabs.find((page) => page.kind === kind && page.connectionId === connectionId && page.database === database && page.table === table && (page.schema || '') === (schema || ''))
+}
+
 export function upsertConnection(connections: readonly Connection[], saved: Connection): Connection[] {
   return connections.some((item) => item.id === saved.id) ? connections.map((item) => (item.id === saved.id ? saved : item)) : [...connections, saved]
 }

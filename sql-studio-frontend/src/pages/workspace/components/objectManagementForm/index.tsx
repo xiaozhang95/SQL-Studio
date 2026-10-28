@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ThemeMode } from '@/typings/theme'
 
@@ -19,6 +20,7 @@ type FormField = { name: number; key: number }
 export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const { dialog, form, loading, saving, ready, error, collations, original, previewSQL } = manager
   const action = dialog?.action
+  const postgresDesign = Boolean(dialog && getDatabaseAdapter(dialog.connection.type).tableDesign)
   const databaseForm = action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase
   const tableForm = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
   const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
@@ -34,7 +36,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           style={{ marginBottom: 16 }}
           title={
             action === ObjectAction.TruncateTable
-              ? '清空表会删除所有数据并重置自增计数，保留表结构。此操作不可撤销。'
+              ? '清空表会删除所有数据，保留表结构。此操作不可撤销。'
               : action === ObjectAction.DropDatabase
                 ? '将删除整个数据库及其中的表和数据。此操作不可撤销。'
                 : dialog?.target.view
@@ -43,7 +45,18 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           }
         />
       )}
-      {tableForm && <Alert type="info" showIcon style={{ marginBottom: 12 }} title="保存会直接修改数据库结构；删除字段可能丢失该字段的数据。其他已有索引保留，特殊字段只读。" />}
+      {tableForm && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 12 }}
+          title={
+            postgresDesign
+              ? '保存会修改表结构；删除字段可能导致数据丢失。生成列暂不可编辑，依赖和类型转换由数据库校验。'
+              : '保存会直接修改数据库结构；删除字段可能丢失该字段的数据。其他已有索引保留，特殊字段只读。'
+          }
+        />
+      )}
       <Form form={form} layout="vertical" disabled={loading || saving || !ready} onValuesChange={manager.invalidatePreview}>
         {destructive ? (
           <Form.Item
@@ -71,7 +84,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
             />
           </Form.Item>
         )}
-        {databaseForm && (
+        {databaseForm && dialog && getDatabaseAdapter(dialog.connection.type).objects && (
           <>
             <Form.Item name="charset" label="字符集" rules={[{ required: true }]}>
               <Select
@@ -133,7 +146,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                         onChange={(event) => {
                           if (event.target.checked && (key === 'primary' || key === 'autoIncrement')) form.setFieldValue(['fields', row.name, 'nullable'], false)
                           if (event.target.checked && key === 'autoIncrement') {
-                            form.setFieldValue(['fields', row.name, 'primary'], true)
+                            if (!postgresDesign) form.setFieldValue(['fields', row.name, 'primary'], true)
                             form.setFieldValue(['fields', row.name, 'defaultMode'], 'none')
                           }
                           if (event.target.checked && key === 'primary' && form.getFieldValue(['fields', row.name, 'defaultMode']) === 'null')
@@ -157,13 +170,17 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                           { value: 'none', label: '无默认值' },
                           { value: 'null', label: 'NULL' },
                           { value: 'literal', label: '常量' },
-                          { value: 'expression', label: '时间表达式' }
+                          { value: 'expression', label: postgresDesign ? '表达式' : '时间表达式' }
                         ]}
                       />
                     )
                 },
                 { title: '默认值', width: 160, render: (_, row) => item(row, 'defaultValue', <Input placeholder="请输入默认值" disabled={locked(row)} />) },
-                { title: '注释', width: 160, render: (_, row) => item(row, 'comment', <Input placeholder="请输入注释（可选）" disabled={locked(row)} />) },
+                {
+                  title: '注释',
+                  width: 160,
+                  render: (_, row) => item(row, 'comment', <Input placeholder="请输入注释（可选）" disabled={locked(row)} />)
+                },
                 {
                   title: '',
                   width: 48,

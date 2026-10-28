@@ -11,7 +11,7 @@ export const ObjectAction = {
   RenameTable: 'renameTable'
 } as const
 export type ObjectAction = (typeof ObjectAction)[keyof typeof ObjectAction]
-export type ObjectTarget = { connectionId: string; database: string; table: string; view?: boolean }
+export type ObjectTarget = { connectionId: string; database: string; table: string; schema?: string; view?: boolean }
 export type FieldDefinition = {
   originalName?: string
   name: string
@@ -31,6 +31,15 @@ export type ObjectFormValues = { name: string; charset: string; collation: strin
 export type CollationOption = { charset: string; name: string; default: boolean }
 export type DatabaseDefinition = { name: string; charset: string; collation: string }
 export type ObjectChange = { action: ObjectAction; target: ObjectTarget; name: string }
+export interface TableDesignAdapter {
+  readonly fieldTypes: readonly string[]
+  initialFields: () => FieldDefinition[]
+  defaultField: () => FieldDefinition
+  fields: (columns: Column[], ddl?: string) => FieldDefinition[]
+  sql: (action: ObjectAction, target: ObjectTarget, values: ObjectFormValues, original: FieldDefinition[]) => string
+  identity: (target: ObjectTarget, name: string) => string
+  sameDefinition: (current: string, original: string) => boolean
+}
 export interface DatabaseObjectAdapter {
   defaultCollation: (options: readonly CollationOption[]) => CollationOption | undefined
   initialFields: () => FieldDefinition[]

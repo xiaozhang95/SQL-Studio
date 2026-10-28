@@ -81,8 +81,12 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     if (blocked || request.current) return
     const connection = connections.find((value) => value.id === target.connectionId)
     if (!connection) return
-    const adapter = getDatabaseAdapter(connection.type).objects
-    if (!adapter) {
+    const engine = getDatabaseAdapter(connection.type)
+    const adapter = engine.objects
+    const simple = engine.simpleObjects
+    const designer = engine.tableDesign
+    const tableAction = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
+    if (!adapter && !(tableAction && designer) && !simple?.actions.includes(action)) {
       message.info('该引擎暂不支持可视化结构管理')
       return
     }
@@ -102,7 +106,15 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     setOriginal([])
     setSQLMode('')
     const values: ObjectFormValues = {
-      name: action === ObjectAction.CreateDatabase || action === ObjectAction.CreateTable ? '' : target.table || target.database,
+      name: tableAction
+        ? action === ObjectAction.CreateTable
+          ? ''
+          : (engine.explorer?.tableIdentity(target.table).name ?? target.table)
+        : simple
+          ? simple.initialName(action, target)
+          : action === ObjectAction.CreateDatabase
+            ? ''
+            : target.table || target.database,
       charset: '',
       collation: '',
       fields: [],
@@ -115,7 +127,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     form.resetFields()
     form.setFieldsValue(values)
     try {
-      if (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase) {
+      if (adapter && (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase)) {
         const result = await executeQuery(connection.id, { database: '', sql: adapter.collationsSQL, limit: 5000 }, controller.signal)
         if (result.truncated) throw new Error('排序规则列表不完整，无法安全加载表单')
         const options = adapter.collations(result)
@@ -132,7 +144,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
           values.collation = initial.name
         }
       }
-      if (action === ObjectAction.CreateTable || action === ObjectAction.EditTable) {
+      if (adapter && (action === ObjectAction.CreateTable || action === ObjectAction.EditTable)) {
         const result = await executeQuery(connection.id, { database: target.database, sql: adapter.sqlModeSQL }, controller.signal)
         const mode = result.rows[0]?.[0]
         if (typeof mode !== 'string') throw new Error('无法读取 SQL 模式')
@@ -147,6 +159,17 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
           loadedOriginal = fields
           values.fields = fields.map((value) => ({ ...value }))
         } else values.fields = adapter.initialFields()
+      }
+      if (designer && tableAction) {
+        if (action === ObjectAction.EditTable) {
+          const [columns, definition] = await Promise.all([
+            getColumns(connection.id, target.database, target.table, controller.signal),
+            getDDL(connection.id, target.database, target.table, controller.signal)
+          ])
+          loadedDDL = definition.ddl
+          loadedOriginal = designer.fields(columns, definition.ddl)
+          values.fields = loadedOriginal.map((field) => ({ ...field }))
+        } else values.fields = designer.initialFields()
       }
       if (controller.signal.aborted || request.current !== controller) return
       setCollations(loadedCollations)
@@ -168,12 +191,19 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     const { action, target, connection } = dialog
     if ([ObjectAction.DropDatabase, ObjectAction.DropTable, ObjectAction.TruncateTable].some((value) => value === action) && values.confirmation !== (target.table || target.database))
       throw new Error('请输入完整对象名称确认操作')
-    if (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase) {
+    const engine = getDatabaseAdapter(connection.type)
+    if (engine.objects && (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase)) {
       if (!collations.some((value) => value.charset === values.charset && value.name === values.collation)) throw new Error('排序规则与字符集不匹配')
     }
-    const adapter = getDatabaseAdapter(connection.type).objects
-    if (!adapter) throw new Error('该引擎暂不支持可视化结构管理')
-    const sql = adapter.sql(action, target, values, original, sqlMode)
+    const adapter = engine.objects
+    const designer = engine.tableDesign
+    const tableAction = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
+    if (!adapter && !(designer && tableAction) && !engine.simpleObjects?.actions.includes(action)) throw new Error('该引擎暂不支持此操作')
+    const sql = adapter
+      ? adapter.sql(action, target, values, original, sqlMode)
+      : designer && tableAction
+        ? designer.sql(action, target, values, original)
+        : engine.simpleObjects!.sql(action, target, values.name)
     return { sql, values, dialog }
   }
   async function preview() {
@@ -205,8 +235,13 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     try {
       const { action, target, connection } = built.dialog
       if (keepOpen && action === ObjectAction.EditTable) {
-        const latest = await getDDL(connection.id, target.database, target.table, controller.signal)
-        if (!getDatabaseAdapter(connection.type).objects?.sameDefinition(latest.ddl, originalDDL)) throw new Error('表结构已被其他操作修改，请重新加载后再编辑')
+        const engine = getDatabaseAdapter(connection.type)
+        const [latest, columns] = await Promise.all([
+          getDDL(connection.id, target.database, target.table, controller.signal),
+          engine.tableDesign ? getColumns(connection.id, target.database, target.table, controller.signal) : Promise.resolve(undefined)
+        ])
+        if (!(engine.objects ?? engine.tableDesign)?.sameDefinition(latest.ddl, originalDDL)) throw new Error('表结构已被其他操作修改，请重新加载后再编辑')
+        if (columns && JSON.stringify(engine.tableDesign?.fields(columns, latest.ddl)) !== JSON.stringify(original)) throw new Error('字段或注释已被其他操作修改，请重新加载后再编辑')
       }
       if (controller.signal.aborted || currentDialog.current !== built.dialog) return
       await executeObjectSQL(
@@ -224,11 +259,19 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       onDirtyChange?.(false)
       message.success(titles[action] + '成功')
       try {
-        await onChanged({ action, target, name: built.values.name })
+        const engine = getDatabaseAdapter(connection.type)
+        const name =
+          action === ObjectAction.CreateTable && engine.tableDesign
+            ? engine.tableDesign.identity(target, built.values.name)
+            : action === ObjectAction.EditTable
+              ? target.table
+              : (engine.simpleObjects?.resultName(action, target, built.values.name) ?? built.values.name)
+        await onChanged({ action, target, name })
       } catch (reason) {
         message.warning('操作已生效，但对象刷新失败，请手动刷新。' + (reason instanceof Error ? reason.message : ''))
       }
-      if (keepOpen) reopen = { ...target, table: action === ObjectAction.CreateTable ? built.values.name : target.table }
+      if (keepOpen)
+        reopen = { ...target, table: action === ObjectAction.CreateTable ? (getDatabaseAdapter(connection.type).tableDesign?.identity(target, built.values.name) ?? built.values.name) : target.table }
     } catch (reason) {
       if (!controller.signal.aborted) setError((reason instanceof Error ? reason.message : '操作失败') + '；如连接在提交时断开，请刷新核对实际状态后再决定是否重试。')
     } finally {
@@ -271,7 +314,8 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     initialize()
   }, [initial, blocked, connections])
   const reload = () => (dialog ? open(dialog.action, dialog.target) : initial ? open(initial.action, initial.target) : Promise.resolve())
-  const adapter = getDatabaseAdapter(dialog?.connection.type).objects
+  const engine = getDatabaseAdapter(dialog?.connection.type)
+  const adapter = engine.objects ?? engine.tableDesign
   return {
     form,
     dialog,

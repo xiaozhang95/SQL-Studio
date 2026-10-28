@@ -15,12 +15,14 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前�
 
 MySQL 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
-PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出。可视化建库/表设计、库表管理与结构数据联合转储尚未实现，入口按能力隐藏，不能回退使用 MySQL 方言。DDL 是目录重建的结构参考，含约束/索引/分区键，不能替代 pg_dump 完整备份；分区子表和外部表明确提示使用 pg_dump。
+PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建和删除数据库、删除或重命名表及视图、清空表。可从 schema 下新建表，并设计已有表字段；生成列和复杂默认表达式的编辑有边界，见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库属性编辑与结构数据联合转储尚未实现。DDL 是目录重建的结构参考，含约束/索引/分区键，不能替代 pg_dump 完整备份；分区子表和外部表明确提示使用 pg_dump。
 
 真实 MySQL 和 PostgreSQL 回归分别使用随机临时库和 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 
 连接方式参考 [阿里云 PolarDB PostgreSQL 官方说明](https://www.alibabacloud.com/help/en/polardb/polardb-for-postgresql/connect-to-polardb/)。当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
 
 PostgreSQL 对象树现按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。
+
+PostgreSQL 数据库结构页展示 schema 列表，schema 结构页展示该 schema 内的表和视图；MySQL 数据库结构页仍展示表列表。已恢复的旧结果在刷新前保留原快照。
 
 PostgreSQL 查询页可独立选择 schema。物理数据库与 schema 分别保存/请求，未限定表名在所选 schema 中解析；清空使用服务器默认搜索路径。结构列表分列 Schema/表名，对象页标签为 schema.table，历史与刷新记录执行时 schema。旧结果展示转换不会自动重跑 SQL。
