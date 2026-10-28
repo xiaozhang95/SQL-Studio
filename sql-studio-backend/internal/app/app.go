@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"sql-studio-backend/internal/modules/settings"
+	"sql-studio-backend/internal/modules/workspace"
 	"sql-studio-backend/internal/statefile"
 	"strings"
 	"time"
@@ -55,6 +56,7 @@ func New(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	router := httpapi.New(httpapi.Services{
+		Workspace:   workspace.New(stateStore),
 		Connections: connectionService,
 		AI:          ai.New(stateStore, repository, deepseek.New()),
 		Settings:    settings.New(stateStore),

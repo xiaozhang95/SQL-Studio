@@ -13,10 +13,10 @@ import (
 // 将依赖方向纳入回归检查，防止后续新增接口又直接耦合数据库或文件存储。
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
-		"app":        {"modules/ai": true, "deepseek": true, "statefile": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
+		"app":        {"modules/ai": true, "deepseek": true, "statefile": true, "modules/workspace": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
 		"postgresql": {"model": true, "rowstream": true}, "database": {"model": true}, "config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true, "rowstream": true}, "rowstream": {"model": true},
-		"httpapi":    {"modules/ai": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
-		"modules/ai": {"model": true}, "deepseek": {"model": true},
+		"httpapi":           {"modules/ai": true, "modules/workspace": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
+		"modules/workspace": {"model": true}, "modules/ai": {"model": true}, "deepseek": {"model": true},
 		"statefile": {"model": true}, "modules/settings": {"model": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
 	}
 	root, err := filepath.Abs("../../internal")

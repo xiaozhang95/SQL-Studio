@@ -8,14 +8,18 @@ import type { WorkspaceTab } from '@/typings/workspace'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'resultViews' | 'running' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
+  model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'resultViews' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
 }
 /** 主区域只保留这一层页面标签；各页内容、执行状态和关闭目标独立。 */
 export default function WorkspaceTabs({ model, children, renderDesigner }: Props) {
-  const { connections, designerDirty, tabs, activeTab, runs, resultViews, running, runningTabId, selectTab, closeTab, closeTabs } = model
+  const { connections, designerDirty, tabs, activeTab, runs, resultViews, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
   const selectedRun = (id: string) => runs[id]?.statements?.[resultViews[id]?.resultIndex || 0] || runs[id]
+  const selectedStatus = (page: WorkspaceTab) => {
+    const output = selectedRun(page.id)
+    return output ? (output.error ? 'error' : output.result ? 'success' : undefined) : page.resultStatus
+  }
   return (
     <Tabs
       className="workspace-tabs page-tabs"
@@ -75,12 +79,12 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
           ),
         label: (
           <span
-            className={`result-tab-label${selectedRun(item.id)?.error ? ' is-error' : selectedRun(item.id)?.result ? ' is-success' : ''}`}
+            className={`result-tab-label${selectedStatus(item) === 'error' ? ' is-error' : selectedStatus(item) === 'success' ? ' is-success' : ''}`}
             title={
               item.kind === 'table-create' || item.kind === 'table-design'
                 ? `${item.title}\n${connections.find((value) => value.id === item.connectionId)?.name || ''} / ${item.database}${item.table ? ' / ' + item.table : ''}`
-                : runs[item.id]?.source
-                  ? `${item.title}\n${runs[item.id].source}`
+                : runs[item.id]?.source || item.resultSource
+                  ? `${item.title}\n${runs[item.id]?.source || item.resultSource}`
                   : item.title
             }
           >

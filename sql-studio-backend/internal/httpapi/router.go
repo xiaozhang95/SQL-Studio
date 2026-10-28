@@ -11,10 +11,12 @@ import (
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/modules/settings"
+	"sql-studio-backend/internal/modules/workspace"
 )
 
 // Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
 type Services struct {
+	Workspace   *workspace.Service
 	AI          *ai.Service
 	Connections *connections.Service
 	Metadata    *metadata.Service
@@ -23,6 +25,7 @@ type Services struct {
 }
 
 type handler struct {
+	workspace   *workspace.Service
 	ai          *ai.Service
 	connections *connections.Service
 	metadata    *metadata.Service
@@ -31,7 +34,7 @@ type handler struct {
 }
 
 func New(services Services) *gin.Engine {
-	h := &handler{ai: services.AI, connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
+	h := &handler{workspace: services.Workspace, ai: services.AI, connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)
 	router.Use(gin.Recovery(), localOnly)
@@ -48,6 +51,9 @@ func New(services Services) *gin.Engine {
 	})
 	api.GET("/state/:section", h.readState)
 	api.PUT("/state/:section", h.writeState)
+	api.GET("/workspace", h.readWorkspace)
+	api.PUT("/workspace", h.commitWorkspace)
+	api.GET("/workspace/parts/:id", h.readWorkspacePart)
 	api.GET("/connections", h.listConnections)
 	api.POST("/connections", h.saveConnection)
 	api.DELETE("/connections/:id", h.deleteConnection)

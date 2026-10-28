@@ -39,3 +39,5 @@ POST /api/connections/:id/session 要求显式非 null 的 open 布尔值；data
 新增 GET /connections/{id}/schemas?database=...，返回 schema 名称数组，仅解码/转发 metadata.Schemas。
 
 GET /connections/:id/export-data?database=...&table=... 输出 SSE JSON 事件 rows(result:QueryResult)、done、error(error:string)，开始与每10秒注释心跳。只对该流动态续期写入 deadline，普通HTTP超时不变。断开连接取消模块请求，逐事件背压，无部分成功保证，只有 done 表示游标结束；无效范围400，其余运行错误通过 error事件报告。
+
+GET/PUT /workspace 和 GET /workspace/parts/:id 调用独立workspace模块。GET只返回轻量索引，PUT要求显式revision并只提交变化的drafts/results，最多96MiB+1MiB信封，单份内容32MiB；冲突409。Part返回原始JSON并no-store，散列无效400、丢失404、损坏400。不在HTTP读写文件或执行SQL。

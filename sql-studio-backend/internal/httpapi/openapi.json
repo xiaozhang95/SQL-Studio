@@ -32,6 +32,120 @@
     }
   ],
   "paths": {
+    "/workspace": {
+      "get": {
+        "operationId": "readWorkspaceIndex",
+        "summary": "读取轻量工作区索引，首次后端迁移旧JSON",
+        "responses": {
+          "200": {
+            "description": "工作区索引或内容JSON"
+          },
+          "400": {
+            "description": "无效请求或损坏的文件"
+          },
+          "403": {
+            "description": "禁止访问"
+          },
+          "409": {
+            "description": "修订冲突，不覆盖其他窗口"
+          },
+          "503": {
+            "description": "服务未启用"
+          }
+        }
+      },
+      "put": {
+        "operationId": "commitWorkspace",
+        "summary": "只提交变化的草稿及结果，CAS原子提交索引",
+        "responses": {
+          "200": {
+            "description": "工作区索引或内容JSON"
+          },
+          "400": {
+            "description": "无效请求或损坏的文件"
+          },
+          "403": {
+            "description": "禁止访问"
+          },
+          "409": {
+            "description": "修订冲突，不覆盖其他窗口"
+          },
+          "503": {
+            "description": "服务未启用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision",
+                  "index"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "index": {
+                    "type": "object"
+                  },
+                  "drafts": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "results": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspace/parts/{id}": {
+      "get": {
+        "operationId": "readWorkspacePart",
+        "summary": "按需读取不可变草稿或结果",
+        "responses": {
+          "200": {
+            "description": "工作区索引或内容JSON"
+          },
+          "400": {
+            "description": "无效请求或损坏的文件"
+          },
+          "403": {
+            "description": "禁止访问"
+          },
+          "409": {
+            "description": "修订冲突，不覆盖其他窗口"
+          },
+          "503": {
+            "description": "服务未启用"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health",

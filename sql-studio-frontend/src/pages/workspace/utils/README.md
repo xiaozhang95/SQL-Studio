@@ -15,5 +15,3 @@
 - [纯数据对象树](explorerTree/README.md)。
 
 [对象展示兼容](objectPresentation/README.md) 为旧结构结果和对象页标题提供不执行 SQL 的 schema 展示转换。
-
-- [workspaceSerialization](workspaceSerialization/README.md)：不可变页面/结果 JSON 缓存与重复结果恢复。

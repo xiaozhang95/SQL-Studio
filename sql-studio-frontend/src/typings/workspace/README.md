@@ -4,7 +4,7 @@
 
 QueryScope 保存连接/库/表；WorkspaceTab 保存页面 kind/id/title/sql。RunState/StatementRun 描述一批执行和各条结果，ResultView 保存选中结果、筛选与分页。HistoryItem 保存发起连接、SQL、时间、耗时和错误。
 
-WorkspaceSnapshot 是本地加密持久化白名单：页面、范围、SQL、结果、编辑位置、树布局、结果高度、打开连接 ID 与未完成批次标识；不包含连接密码或表单对象。EditorLayout/ExplorerLayout 只保存视图状态，恢复不触发 SQL。
+WorkspaceSnapshot 是运行时组合视图：页面、范围、当前常驻SQL/结果、编辑位置、树布局、结果高度、打开连接ID与执行标识；不包含连接密码或表单对象。持久化使用services/workspace的v2索引及独立内容；未加载页sql为空仅代表占位，不能作为空草稿写回。EditorLayout/ExplorerLayout 只保存视图状态，恢复不触发 SQL。
 
 WorkspaceSnapshot.sidebarWidth 为可选对象栏宽度，用于兼容旧快照；缺少或无效时使用默认 272px，新保存的快照记录用户调整后的宽度。
 
@@ -19,3 +19,5 @@ StatementRun.database 可选保存该条语句实际请求的数据库，刷新�
 HistoryItem.databaseType? 保存执行时引擎，用所属方言清理历史来源标记；旧记录缺少类型时兼容 MySQL。
 
 QueryScope.schema?、StatementRun.schema?、HistoryItem.schema? 分别保存页面、已执行语句和历史的 PostgreSQL schema。旧快照缺字段兼容默认搜索路径；刷新优先使用已执行语句记录，切换库或连接清空 schema。
+
+WorkspaceTab.resultStatus/resultSource 为轻量结果摘要，非活动结果释放后仍保留标签状态与来源；完整结果仅来自按页加载的RunState。

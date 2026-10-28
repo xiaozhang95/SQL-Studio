@@ -5,3 +5,11 @@ Open(directory) 创建私有配置目录；Read/Write 接收 context、分区名
 保存前重新确保目录存在；缺失文件视为新分区，允许当前会话旧revision连续重建，现存文件仍严格CAS。
 
 connections 为保留名称，Read/Write 一律拒绝，防止统一目录中的 connections.json 通过普通状态接口读取或覆盖。master.key 不属于 JSON 状态分区。
+
+ReadWorkspace/CommitWorkspace/ReadWorkspacePart 提供分片工作区：workspace-index.json 为v2轻量索引，workspace-parts/<SHA256>.json 为不可变草稿/结果。先0600临时文件同步、重命名内容，最后以严格CAS原子替换索引；失败或取消提交前不改变旧索引。读取内容校验散列及32MiB大小。普通 Read/Write 禁止访问 workspace-index，防止绕过专用引用校验。
+
+首次ReadWorkspace在后端迁移旧workspace.json，不改写原文件；迁移失败不发布索引。关闭页和更新留下的孤立内容经 CollectWorkspaceParts 清理，仅匹配受管散列文件，超过24小时或孤立内容总量超过128MiB时优先清理最旧内容，当前索引引用始终保留；多窗口持有很旧的索引可能遇到404，前端报告重试/刷新，不自动执行或覆盖。单进程互斥共享原仓库锁，不缓存全文。
+
+已迁移后旧格式 workspace 分区写入返回409，要求旧客户端刷新；不允许旧格式覆盖或与新索引分叉。回收最多每5秒检查一次，128MiB为孤立内容回收目标（不包括当前引用），不是所有用户结果的总容量限制。
+
+迁移会保留页面成功/失败及来源摘要到索引，并去掉与最后一条语句相同的顶层重复结果；所有语句与数据行保留，前端读取时重建共享引用。旧格式中缺少草稿、重复ID或非法页面类型时拒绝发布索引。

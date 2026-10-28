@@ -19,3 +19,5 @@ app.New 装配 statefile/settings。StateDir 为空兼容旧调用者回落 Data
 app.New 在打开连接仓库前调用 connection.Migrate(cfg.LegacyDataDir,cfg.DataDir)，迁移冲突或校验失败直接阻止启动，不回退为新空连接列表。生产默认 DataDir=StateDir，连接、密钥与布局位于同一用户目录；显式 DataDir/StateDir 配置仍保留。
 
 app 同时创建 mysql.Client 与 postgresql.Client，通过 database.New 注册，业务模块仍消费最小端口；只有装配层导入具体引擎。
+
+workspace.New(stateStore) 与 settings 共用仓库，独立模块公开分片工作区API；普通分区不能绕过workspace-index引用边界。首次迁移在请求时进行，不阻塞服务装配或改动凭据。

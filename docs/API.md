@@ -11,6 +11,9 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 | 方法   | 路径                          | 说明                                        |
 | ------ | ----------------------------- | ------------------------------------------- |
 | GET    | `/health`                     | 服务健康（不测试数据库）                    |
+| GET | `/workspace` | 轻量索引，兼容后端迁移旧工作区 |
+| PUT | `/workspace` | revision/index/drafts/results，CAS 增量内容提交 |
+| GET | `/workspace/parts/{id}` | 按64位SHA256读取草稿或结果，不执行SQL |
 | GET    | `/openapi.json`               | OpenAPI 文档                                |
 | GET    | `/connections`                | 连接列表（无密码）                          |
 | POST   | `/connections`                | 新增或更新连接                              |
@@ -62,3 +65,9 @@ MySQL/PostgreSQL SQL 窗口手动执行及结果刷新均显式设置 allowWrite
 MySQL 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释，避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
 流式导出 `GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功；约每10秒发送注释心跳。断开取消、后端独立2并发/30分钟限制、单行8MiB限制，不改变普通查询1000/5000行限制。客户端分批写入文件，失败/取消不提交文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
+
+工作区v2：GET /workspace 返回 {revision,index}；index.version=2，tabs是原页面元数据加 draftRef/resultRef（无sql），其他布局字段同旧工作区，但没有runs。GET /workspace/parts/{id} 按SHA256读取 {sql:string} 草稿或RunState结果。无内容ref为空字符串；缺失404/校验失败400，响应no-store，不执行SQL。首次读取在后端迁移旧文件，原 workspace.json 保留。
+
+PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunState|null}}。索引中原ref必须匹配当前版本，新增页须提供草稿；服务生成新ref，全部内容写入后才严格CAS提交索引。返回新revision/index，冲突409，失败保留旧索引。每份内容32MiB，请求96MiB+1MiB；布局与未变化内容不传全文。删除标签从index移除即可，旧孤立内容超过24小时或超过128MiB回收预算时清理，当前引用保留。不可用服务503，不回落整份保存或空草稿覆盖。
+
+已迁移后旧格式 workspace 分区写入返回409，要求旧客户端刷新；不允许旧格式覆盖或与新索引分叉。回收最多每5秒检查一次，128MiB为孤立内容回收目标（不包括当前引用），不是所有用户结果的总容量限制。

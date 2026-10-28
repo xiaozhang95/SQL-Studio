@@ -81,7 +81,6 @@ export const useWorkspace = () => {
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
-  const running = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean)
   const setTableDesignerBusy = useCallback(
     (id: string, value: boolean) =>
       setDesignerBusy((previous) => {
@@ -160,24 +159,62 @@ export const useWorkspace = () => {
     }),
     [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, restoringConnections, openedConnections, runningTabId]
   )
-  const storage = useWorkspacePersistence(snapshot, (saved) => {
-    const restoredRuns = { ...saved.runs }
-    if (saved.runningTabId && restoredRuns[saved.runningTabId]) {
-      const interrupted = restoredRuns[saved.runningTabId]
-      restoredRuns[saved.runningTabId] = { ...interrupted, interrupted: true, error: interrupted.result ? interrupted.error : '页面刷新中断了上次执行，请手动重新运行。' }
+  const storage = useWorkspacePersistence(
+    snapshot,
+    (saved) => {
+      const restoredRuns = { ...saved.runs }
+      if (saved.runningTabId && restoredRuns[saved.runningTabId]) {
+        const interrupted = restoredRuns[saved.runningTabId]
+        restoredRuns[saved.runningTabId] = { ...interrupted, interrupted: true, error: interrupted.result ? interrupted.error : '页面刷新中断了上次执行，请手动重新运行。' }
+      }
+      setTabs(saved.tabs)
+      const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
+      setActiveTab(active)
+      activeTabRef.current = active
+      setRuns(restoredRuns)
+      setResultViews(saved.resultViews)
+      setEditorLayouts(saved.editorLayouts)
+      setExplorer(saved.explorer)
+      setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
+      setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : sidebarLayout.defaultWidth)
+      setRestoringConnections(saved.openedConnections)
+    },
+    {
+      hydrate: ({ id, sql, run, expectedSQL, expectedRun }) => {
+        setTabs((previous) => previous.map((page) => (page.id === id && page.sql === expectedSQL ? { ...page, sql } : page)))
+        setRuns((previous) => {
+          if (closedPages.current.has(id) || previous[id] !== expectedRun) return previous
+          if (!run) return previous
+          return { ...previous, [id]: run }
+        })
+      },
+      evict: (ids, expected) => {
+        const removed = new Set(ids.filter((id) => id !== activeTabRef.current && id !== runningTabId))
+        if (!removed.size) return []
+        setTabs((previous) =>
+          previous.map((page) => {
+            if (!removed.has(page.id) || page.sql !== expected.tabs.find((item) => item.id === page.id)?.sql) return page
+            const run = expected.runs[page.id]
+            const output = run?.statements?.[expected.resultViews[page.id]?.resultIndex || 0] ?? run
+            return { ...page, sql: '', resultStatus: output?.error ? 'error' : output?.result ? 'success' : page.resultStatus, resultSource: run?.source ?? page.resultSource }
+          })
+        )
+        setRuns((previous) => {
+          const next = { ...previous }
+          let changed = false
+          for (const id of removed)
+            if (previous[id] && previous[id] === expected.runs[id]) {
+              delete next[id]
+              changed = true
+            }
+          return changed ? next : previous
+        })
+        return [...removed]
+      }
     }
-    setTabs(saved.tabs)
-    const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
-    setActiveTab(active)
-    activeTabRef.current = active
-    setRuns(restoredRuns)
-    setResultViews(saved.resultViews)
-    setEditorLayouts(saved.editorLayouts)
-    setExplorer(saved.explorer)
-    setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
-    setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : sidebarLayout.defaultWidth)
-    setRestoringConnections(saved.openedConnections)
-  })
+  )
+  const tabBusy = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean)
+  const running = tabBusy || !storage.pageReady
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
   const saving = storage.saving || historyStore.saving
@@ -306,7 +343,7 @@ export const useWorkspace = () => {
     setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', page: 1, resultIndex: index } }))
   }
   function updateTab(patch: Partial<QueryScope> & { sql?: string }) {
-    if (!tab.id || tab.kind !== 'query') return
+    if (!tab.id || tab.kind !== 'query' || !storage.pageReady) return
     setTabs((previous) => previous.map((item) => (item.id === activeTab ? { ...item, ...patch } : item)))
   }
   const updateSQL = (sql: string) => updateTab({ sql })
@@ -464,10 +501,11 @@ export const useWorkspace = () => {
     }
     closingScope.current = true
     setObjectBusy(true)
-    const affected = pagesForScope(tabs, id, db).map((page) => (page.id === activeTab && page.kind === 'query' && editor.current ? { ...page, sql: editor.current.state.doc.toString() } : page))
-    const sql = sqlForPages(affected)
-    const dirty = affected.filter((page) => designerDirty[page.id])
+    const scoped = pagesForScope(tabs, id, db).map((page) => (page.id === activeTab && page.kind === 'query' && editor.current ? { ...page, sql: editor.current.state.doc.toString() } : page))
     try {
+      const affected = await storage.draftsFor(scoped)
+      const sql = sqlForPages(affected)
+      const dirty = affected.filter((page) => designerDirty[page.id])
       if (sql || dirty.length) {
         const proceed = await new Promise<boolean>((resolve) => {
           const dialog = modal.confirm({
@@ -862,7 +900,7 @@ export const useWorkspace = () => {
     else if (tab.kind === 'structure') void databaseAction('tables', tab.connectionId, tab.database, tab.id, tab.schema, true)
   }
   function executeCurrentSQL(statement: string) {
-    if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id) return
+    if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id || !storage.pageReady) return
     if (!connection || !objects.connected) {
       message.info('请先展开连接并加载数据库结构')
       return
@@ -901,7 +939,7 @@ export const useWorkspace = () => {
     })
   }
   function closeTabs(key: string, mode: 'current' | 'others' | 'right' = 'current') {
-    if (running || request.current) return
+    if (tabBusy || request.current) return
     const index = tabs.findIndex((item) => item.id === key)
     if (index < 0) return
     const remaining = tabs.filter((item, position) => (mode === 'others' ? item.id === key : mode === 'right' ? position <= index : item.id !== key))
@@ -909,6 +947,7 @@ export const useWorkspace = () => {
       if (request.current) return
       const retained = new Set(remaining.map((item) => item.id))
       const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
+      tabs.filter((page) => !retained.has(page.id)).forEach((page) => closedPages.current.add(page.id))
       setTabs(remaining)
       setRuns(keep)
       setResultViews(keep)
@@ -972,6 +1011,9 @@ export const useWorkspace = () => {
   return {
     dataExport,
     workspaceReady,
+    pageReady: storage.pageReady,
+    pageLoadError: storage.loadError,
+    retryPage: storage.retryPage,
     storageError,
     saving,
     explorer,
@@ -986,6 +1028,7 @@ export const useWorkspace = () => {
     runs,
     resultViews,
     running,
+    tabBusy,
     runningTabId,
     activeRunning,
     selectTab,

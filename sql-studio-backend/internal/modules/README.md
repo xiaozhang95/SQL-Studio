@@ -11,3 +11,5 @@
 - [settings](settings/README.md)：用户配置输入边界与分区读写。
 
 - [ai](ai/README.md)：SQL 灰色续写和手动优化，独立并发与取消。
+
+- [workspace](workspace/README.md)：分片工作区索引、按需内容和增量提交。

@@ -1,3 +1,11 @@
+export class RequestError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...options,
@@ -10,7 +18,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   } catch {
     throw new Error('后端服务不可用，请检查 Go 服务是否已启动（8080 端口）')
   }
-  if (!response.ok) throw new Error(data.error || `请求失败：${response.status}`)
+  if (!response.ok) throw new RequestError(data.error || `请求失败：${response.status}`, response.status)
   return data as T
 }
 export const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) })

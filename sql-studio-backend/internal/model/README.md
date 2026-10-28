@@ -29,3 +29,5 @@ TypePostgreSQL=postgresql，SupportedDatabaseType 接受 MySQL/PostgreSQL；Conn
 Index.Primary 是可选 JSON primary 主键标志；PostgreSQL 保留实际索引名称并显式设置，MySQL 兼容 PRIMARY 名称。
 
 QueryRequest.Schema 和 AIRequest.Schema 是可选 schema 字段，区别于物理数据库。旧客户端省略时兼容原范围。
+
+workspace.go 定义v2 WorkspacePage/WorkspaceIndex/WorkspaceDocument/WorkspaceCommit：标签元数据与草稿/结果散列引用、布局、修订号及仅变化部分的提交。结果为不执行的JSON对象，草稿为文本；不包含连接密码。

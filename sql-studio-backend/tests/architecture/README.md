@@ -7,3 +7,5 @@
 由 `go test ./...` 运行，不访问真实数据库。
 
 rowstream 允许依赖 model 和 database/sql，仅提供游标扫描；mysql/postgresql 可依赖它，模块与 HTTP 不得直接导入。各引擎继续独立拼接只读导出 SQL 和管理事务，不共享引擎方言。
+
+workspace 模块仅依赖 model 与自己声明的仓库端口，app 注入 statefile；httpapi 调用公开方法，不读写文件或导入具体存储。

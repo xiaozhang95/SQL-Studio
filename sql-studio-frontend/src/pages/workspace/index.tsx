@@ -117,8 +117,20 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
                   )}
                 >
                   <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-                    {model.tab.kind === 'query' && <QueryEditor key={JSON.stringify([model.activeTab, model.tab.connectionId, model.tab.database])} model={model} themeMode={themeMode} />}
-                    <QueryResults model={model} themeMode={themeMode} />
+                    {!model.pageReady ? (
+                      model.pageLoadError ? (
+                        <Alert type="error" title="标签内容加载失败" description={model.pageLoadError} action={<Button onClick={model.retryPage}>重试</Button>} />
+                      ) : (
+                        <div style={{ padding: 24 }}>
+                          <Spin description="正在加载当前标签…" />
+                        </div>
+                      )
+                    ) : (
+                      <>
+                        {model.tab.kind === 'query' && <QueryEditor key={JSON.stringify([model.activeTab, model.tab.connectionId, model.tab.database])} model={model} themeMode={themeMode} />}
+                        <QueryResults model={model} themeMode={themeMode} />
+                      </>
+                    )}
                   </div>
                 </WorkspaceTabs>
               ) : (

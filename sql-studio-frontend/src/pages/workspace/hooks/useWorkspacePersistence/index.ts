@@ -1,122 +1,138 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { readState, writeSerializedState } from '@/services/userState'
-import type { WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
+import { WorkspaceStore } from '@/services/workspace'
+import type { RunState, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { createLatestWriter } from '@/utils/latestWriter'
 
-import { createWorkspaceSerializer, restoreWorkspaceResults } from '../../utils/workspaceSerialization'
-
-let restored: Promise<WorkspaceSnapshot | null> | undefined
-
-function validTab(tab: WorkspaceTab) {
-  return (
-    tab &&
-    typeof tab.id === 'string' &&
-    typeof tab.sql === 'string' &&
-    typeof tab.title === 'string' &&
-    typeof tab.connectionId === 'string' &&
-    typeof tab.database === 'string' &&
-    (tab.schema === undefined || typeof tab.schema === 'string') &&
-    typeof tab.table === 'string' &&
-    ['query', 'data', 'structure', 'ddl', 'table-create', 'table-design'].includes(tab.kind)
-  )
+type Content = { id: string; sql: string; run?: RunState; expectedSQL: string; expectedRun?: RunState }
+type Options = {
+  hydrate: (content: Content) => void
+  evict: (ids: string[], expected: WorkspaceSnapshot) => string[]
 }
 
-function validate(snapshot: WorkspaceSnapshot) {
-  if (
-    snapshot.version !== 1 ||
-    !Array.isArray(snapshot.tabs) ||
-    !snapshot.tabs.every(validTab) ||
-    !snapshot.runs ||
-    !snapshot.resultViews ||
-    !snapshot.editorLayouts ||
-    !snapshot.explorer ||
-    !Array.isArray(snapshot.openedConnections)
-  )
-    throw new Error('本地工作区记录格式不受支持')
-  for (const key of [...snapshot.explorer.expanded, ...snapshot.explorer.selected]) {
-    const parts: unknown = JSON.parse(key)
-    if (!Array.isArray(parts) || !parts.every((part) => typeof part === 'string')) throw new Error('对象树记录格式不受支持')
-  }
-  return snapshot
-}
-
-async function restoreSnapshot() {
-  const saved = await readState<WorkspaceSnapshot>('workspace', async () => ({
-    version: 1,
-    tabs: [],
-    activeTab: '',
-    runs: {},
-    resultViews: {},
-    editorLayouts: {},
-    explorer: { expanded: [], selected: [], search: '', top: 0 },
-    resultHeight: 260,
-    openedConnections: [],
-    runningTabId: ''
-  }))
-  return restoreWorkspaceResults(validate(saved))
-}
-
-/** 先恢复服务端配置再允许保存，避免首帧空状态覆盖已有工作区；恢复失败时阻止后续覆盖。 */
-export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (snapshot: WorkspaceSnapshot) => void) {
-  const [save] = useState(() => {
-    const serialize = createWorkspaceSerializer()
-    return createLatestWriter<WorkspaceSnapshot>((value) => writeSerializedState('workspace', serialize(value)))
+/** The index stays small; only active/in-flight and not-yet-durable content stays resident. */
+export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (snapshot: WorkspaceSnapshot) => void, options: Options) {
+  const store = useRef<WorkspaceStore | null>(null)
+  const current = useRef({ snapshot, restore, options })
+  useLayoutEffect(() => {
+    current.current = { snapshot, restore, options }
   })
-  const dirtySince = useRef<number | null>(null)
+  const [repository, setRepository] = useState<WorkspaceStore | null>(null)
   const [ready, setReady] = useState(false)
-  const [savedSnapshot, setSavedSnapshot] = useState<WorkspaceSnapshot | null>(null)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [epoch, setEpoch] = useState(0)
+  const [retry, setRetry] = useState(0)
+  const [saving, setSaving] = useState(false)
   const available = useRef(true)
-  const restoreRef = useRef(restore)
-  useEffect(() => {
-    restoreRef.current = restore
-  }, [restore])
-  const revision = useRef(0)
-  useEffect(() => {
-    let stale = false
-    async function load() {
-      try {
-        const saved = await (restored ??= restoreSnapshot())
-        if (!stale && saved) restoreRef.current(validate(saved))
-      } catch (reason) {
-        if (!stale) {
-          available.current = false
-          setError(reason instanceof Error ? reason.message : '无法恢复本地工作区')
-        }
-      } finally {
-        if (!stale) setReady(true)
-      }
-    }
-    void load()
-    return () => {
-      stale = true
-    }
+  const version = useRef(0)
+  const dirtySince = useRef<number | null>(null)
+  const queue = useRef<((value: WorkspaceSnapshot) => Promise<void>) | null>(null)
+  const save = useCallback((value: WorkspaceSnapshot) => {
+    queue.current ??= createLatestWriter<WorkspaceSnapshot>(async (value) => {
+      const repository = store.current
+      if (!repository) throw new Error('工作区尚未读取，拒绝覆盖')
+      await repository.commit(value)
+      const latest = current.current.snapshot
+      const ids = repository.evictable(latest)
+      const evicted = current.current.options.evict(ids, latest)
+      repository.forget(evicted)
+      setEpoch((value) => value + 1)
+    })
+    return queue.current(value)
   }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    void WorkspaceStore.open(controller.signal)
+      .then((repository) => {
+        controller.signal.throwIfAborted()
+        store.current = repository
+        setRepository(repository)
+        current.current.restore(repository.snapshot())
+        setReady(true)
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted) {
+          available.current = false
+          setError(reason instanceof Error ? reason.message : '工作区读取失败，原文件已保留')
+          setReady(true)
+        }
+      })
+    return () => controller.abort()
+  }, [])
+
+  const active = snapshot.activeTab
+  const pageReady = !active || !repository || repository.ready(active)
+  useEffect(() => {
+    const repository = store.current
+    if (!ready || !repository || !active || repository.ready(active)) return
+    const page = current.current.snapshot.tabs.find((page) => page.id === active)
+    if (!page) return
+    const controller = new AbortController()
+    setLoadError('')
+    const expectedRun = current.current.snapshot.runs[active]
+    void repository
+      .hydrate(active, controller.signal)
+      .then((content) => {
+        if (controller.signal.aborted || !current.current.snapshot.tabs.some((page) => page.id === active)) return
+        current.current.options.hydrate({ ...content, id: active, expectedSQL: page.sql, expectedRun })
+        setEpoch((value) => value + 1)
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted) setLoadError(reason instanceof Error ? reason.message : '标签内容加载失败')
+      })
+    return () => controller.abort()
+  }, [active, ready, retry, epoch])
 
   useEffect(() => {
     if (!ready || !available.current) return
-    const version = ++revision.current
+    const token = ++version.current
+    queueMicrotask(() => {
+      if (token === version.current) setSaving(true)
+    })
+    if (!pageReady) return
     dirtySince.current ??= Date.now()
     const delay = Math.min(500, Math.max(0, 3000 - (Date.now() - dirtySince.current)))
     const timer = window.setTimeout(() => {
       dirtySince.current = null
+      setSaving(true)
       void save(snapshot)
         .then(() => {
-          restored = Promise.resolve(snapshot)
-          if (version === revision.current) {
-            setSavedSnapshot(snapshot)
+          if (token === version.current) {
+            setSaving(false)
             setError('')
           }
-          localStorage.removeItem('sqldesk.resultHeight')
         })
         .catch((reason) => {
-          if (version === revision.current) {
-            setError(reason instanceof Error ? reason.message : '本机配置保存失败')
+          if (token === version.current) {
+            setSaving(false)
+            setError(reason instanceof Error ? reason.message : '工作区保存失败')
           }
         })
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [ready, snapshot, save])
-  return { ready, saving: ready && savedSnapshot !== snapshot && !error, error }
+  }, [ready, snapshot, pageReady, save])
+  async function draftsFor(pages: WorkspaceTab[]) {
+    const repository = store.current
+    const output: WorkspaceTab[] = []
+    for (let index = 0; index < pages.length; index += 4)
+      output.push(
+        ...(await Promise.all(
+          pages.slice(index, index + 4).map(async (page) => ({ ...page, sql: repository?.page(page.id) && !repository.draftsLoaded.has(page.id) ? await repository.draft(page.id) : page.sql }))
+        ))
+      )
+    return output
+  }
+  return {
+    ready,
+    pageReady,
+    loadError,
+    retryPage: () => {
+      setLoadError('')
+      setRetry((value) => value + 1)
+    },
+    draftsFor,
+    saving: ready && saving && !error,
+    error
+  }
 }

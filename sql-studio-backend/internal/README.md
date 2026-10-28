@@ -18,3 +18,5 @@ app 负责装配，httpapi → modules 的公开入口 → model；基础设施�
 - [PostgreSQL 协议驱动](postgresql/README.md)：PolarDB PostgreSQL 连接、schema 元数据与执行。
 
 - [rowstream](rowstream/README.md)：两种引擎共用的有界导出游标扫描，仅依赖 model/database/sql。
+
+工作区分片保存由 [workspace模块](modules/workspace/README.md) 编排，基础设施见 [statefile](statefile/README.md)，与数据库引擎和查询执行隔离。
