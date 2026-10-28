@@ -22,6 +22,8 @@ DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句
 
 DatabaseEngine.PostgreSQL=postgresql。DatabaseProfile.database? 为维护库默认值（MySQL 省略，PostgreSQL 为 postgres）。DatabaseAdapter.objects 可为 undefined，UI 与执行入口均据此限制可视化对象管理；exportDDL(database,table,ddl) 单独负责结构参考导出。
 
+databaseEditor.Form 接收 creating:boolean 和可选 definition:DatabaseDefinition，新建/编辑共用属性行；库名称字段由共享 ObjectManagementForm 注册。引擎组件按实际支持能力禁用属性，新建禁用字段不注册、不校验或提交；数据库 SQL、读取和提交能力保持原契约。
+
 DatabaseProfile.iconPresentation? 可为 brand，指定原始品牌图标使用透明底板与独立状态圆点；省略沿用现有状态底板，具体资源仍由所属引擎 profile 提供。
 
 DatabaseAdapter.explorer? 提供 schema 引擎的 tableIdentity(table):{schema,name}，纯数据树接收该布局契约；省略则沿用 MySQL 数据库直下表/视图层级。

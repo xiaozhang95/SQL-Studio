@@ -49,7 +49,7 @@ export interface DatabaseAdapter {
     metadataSQL: (database: string) => string
     definition: (result: QueryResult) => DatabaseDefinition
     sql: (database: string, values: ObjectFormValues, original: DatabaseDefinition) => string
-    Form: ComponentType<{ definition: DatabaseDefinition }>
+    Form: ComponentType<{ creating: boolean; definition?: DatabaseDefinition }>
   }
   readonly dataDump?: {
     querySQL: (database: string, table: string) => string

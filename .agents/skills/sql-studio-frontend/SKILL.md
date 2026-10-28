@@ -29,6 +29,8 @@ MySQL/PostgreSQL SQL 窗口运行及结果刷新均允许执行查询、DDL 和 
 
 所有业务表单必须“左侧文本标签、右侧输入控件”，使用 Ant Design Form horizontal、labelCol/wrapperCol 和右对齐标签；错误/帮助说明位于右侧输入下方。连接、AI、库/Schema/表管理及引擎专属属性表单统一遵守，不新增 vertical/上下排列。长对象名说明放右侧内容区，表格内无标签单元格不添加空标签列。实现后核对真实渲染、亮暗主题、长名称和窄窗口，不能仅在文档中记录却继续使用纵向布局。
 
+同一引擎的新建/编辑数据库表单保持相同字段顺序、标签宽度和控件列位置。编辑时保留库名行并禁用；PostgreSQL 不可修改属性直接 disabled，不使用可聚焦的 readOnly。新建尚不支持设置的属性显示默认值提示并禁用，不注册校验或提交这些字段。
+
 ## 图标与资产
 
 - 图标先复用已有资源和 `@ant-design/icons`。引擎图标经 profile 分派，由 engineIcon 展示；来源和使用范围记录在 [资产说明](../../../sql-studio-frontend/src/assets/databases/README.md)。当前海豚是用户参考图对应的状态图标，不宣称为官方 Logo。

@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Checkbox, Form, Input, Select, Table, Typography } from 'antd'
+import { Alert, AutoComplete, Button, Checkbox, Form, Input, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
@@ -27,7 +27,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const schemaForm = action === ObjectAction.CreateSchema || action === ObjectAction.RenameSchema || action === ObjectAction.DropSchema
   const charset = Form.useWatch('charset', form)
   const targetName = (schemaForm ? dialog?.target.schema : dialog?.target.table || dialog?.target.database) || ''
-  const DatabasePropertiesForm = action === ObjectAction.EditDatabase && dialog ? getDatabaseAdapter(dialog.connection.type).databaseEditor?.Form : undefined
+  const DatabasePropertiesForm = databaseForm && dialog ? getDatabaseAdapter(dialog.connection.type).databaseEditor?.Form : undefined
   return (
     <>
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
@@ -90,8 +90,9 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
         ) : (
           <Form.Item
             name="name"
-            hidden={action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
+            hidden={action === ObjectAction.EditTable}
             label={schemaForm ? 'Schema 名称' : databaseForm ? '数据库名称' : '表名称'}
+            required={action === ObjectAction.EditDatabase ? false : undefined}
             rules={[
               { required: true, whitespace: true, message: '请输入名称' },
               { max: 64, message: '名称最多 64 个字符' }
@@ -104,7 +105,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
             />
           </Form.Item>
         )}
-        {DatabasePropertiesForm && manager.databaseDefinition && <DatabasePropertiesForm definition={manager.databaseDefinition} />}
+        {DatabasePropertiesForm && <DatabasePropertiesForm creating={action === ObjectAction.CreateDatabase} definition={manager.databaseDefinition} />}
         {databaseForm && dialog && getDatabaseAdapter(dialog.connection.type).objects && (
           <>
             <Form.Item name="charset" label="字符集" rules={[{ required: true }]}>
@@ -118,10 +119,14 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                 }}
               />
             </Form.Item>
-            <Form.Item name="collation" label="排序规则" rules={[{ required: true }]}>
+            <Form.Item
+              name="collation"
+              label="排序规则"
+              rules={[{ required: true }]}
+              extra={action === ObjectAction.EditDatabase ? '修改库默认字符集和排序规则，不转换已有表的数据或字段。' : undefined}
+            >
               <Select placeholder="请选择排序规则" showSearch options={collations.filter((value) => value.charset === charset).map((value) => ({ value: value.name, label: value.name }))} />
             </Form.Item>
-            {action === ObjectAction.EditDatabase && <Typography.Paragraph type="secondary">修改库默认字符集和排序规则，不转换已有表的数据或字段。</Typography.Paragraph>}
           </>
         )}
         {tableForm && (
