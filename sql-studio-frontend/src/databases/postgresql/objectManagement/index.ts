@@ -8,8 +8,17 @@ function name(value: string) {
 }
 
 export const simpleObjects = {
-  actions: [ObjectAction.CreateDatabase, ObjectAction.DropDatabase, ObjectAction.DropTable, ObjectAction.TruncateTable, ObjectAction.RenameTable],
-  initialName: (action: Action, target: ObjectTarget) => (action === ObjectAction.RenameTable ? tableIdentity(target.table)[1] : ''),
+  actions: [
+    ObjectAction.CreateDatabase,
+    ObjectAction.DropDatabase,
+    ObjectAction.CreateSchema,
+    ObjectAction.RenameSchema,
+    ObjectAction.DropSchema,
+    ObjectAction.DropTable,
+    ObjectAction.TruncateTable,
+    ObjectAction.RenameTable
+  ],
+  initialName: (action: Action, target: ObjectTarget) => (action === ObjectAction.RenameTable ? tableIdentity(target.table)[1] : action === ObjectAction.RenameSchema ? target.schema || '' : ''),
   resultName: (action: Action, target: ObjectTarget, value: string) => (action === ObjectAction.RenameTable ? `${identifier(tableIdentity(target.table)[0])}.${name(value)}` : value),
   sql(action: Action, target: ObjectTarget, value: string) {
     switch (action) {
@@ -17,6 +26,15 @@ export const simpleObjects = {
         return `CREATE DATABASE ${name(value)};`
       case ObjectAction.DropDatabase:
         return `DROP DATABASE ${name(target.database)};`
+      case ObjectAction.CreateSchema:
+        return `CREATE SCHEMA ${name(value)};`
+      case ObjectAction.RenameSchema:
+        if (!target.schema) throw new Error('Schema 不能为空')
+        if (target.schema === value) throw new Error('新名称与原名称相同')
+        return `ALTER SCHEMA ${name(target.schema)} RENAME TO ${name(value)};`
+      case ObjectAction.DropSchema:
+        if (!target.schema) throw new Error('Schema 不能为空')
+        return `DROP SCHEMA ${name(target.schema)} RESTRICT;`
       case ObjectAction.DropTable:
         return `DROP ${target.view ? 'VIEW' : 'TABLE'} ${relation(target.table)};`
       case ObjectAction.TruncateTable:

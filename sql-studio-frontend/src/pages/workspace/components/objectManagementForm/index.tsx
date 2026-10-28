@@ -23,9 +23,10 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const postgresDesign = Boolean(dialog && getDatabaseAdapter(dialog.connection.type).tableDesign)
   const databaseForm = action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase
   const tableForm = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
-  const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
+  const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropSchema || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
+  const schemaForm = action === ObjectAction.CreateSchema || action === ObjectAction.RenameSchema || action === ObjectAction.DropSchema
   const charset = Form.useWatch('charset', form)
-  const targetName = dialog?.target.table || dialog?.target.database || ''
+  const targetName = (schemaForm ? dialog?.target.schema : dialog?.target.table || dialog?.target.database) || ''
   return (
     <>
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
@@ -37,11 +38,13 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           title={
             action === ObjectAction.TruncateTable
               ? '清空表会删除所有数据，保留表结构。此操作不可撤销。'
-              : action === ObjectAction.DropDatabase
-                ? '将删除整个数据库及其中的表和数据。此操作不可撤销。'
-                : dialog?.target.view
-                  ? '将删除此视图定义，不会删除基础表数据。此操作不可撤销。'
-                  : '将删除此对象及其数据。此操作不可撤销。'
+              : action === ObjectAction.DropSchema
+                ? '仅允许删除空 Schema；包含对象时数据库会拒绝删除。'
+                : action === ObjectAction.DropDatabase
+                  ? '将删除整个数据库及其中的表和数据。此操作不可撤销。'
+                  : dialog?.target.view
+                    ? '将删除此视图定义，不会删除基础表数据。此操作不可撤销。'
+                    : '将删除此对象及其数据。此操作不可撤销。'
           }
         />
       )}
@@ -71,7 +74,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           <Form.Item
             name="name"
             hidden={action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
-            label={databaseForm ? '数据库名称' : '表名称'}
+            label={schemaForm ? 'Schema 名称' : databaseForm ? '数据库名称' : '表名称'}
             rules={[
               { required: true, whitespace: true, message: '请输入名称' },
               { max: 64, message: '名称最多 64 个字符' }
@@ -80,7 +83,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
             <Input
               disabled={loading || saving || !ready || action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
               autoComplete="off"
-              placeholder={databaseForm ? '请输入数据库名称' : '请输入表名称'}
+              placeholder={schemaForm ? '请输入 Schema 名称' : databaseForm ? '请输入数据库名称' : '请输入表名称'}
             />
           </Form.Item>
         )}

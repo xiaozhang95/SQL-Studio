@@ -15,7 +15,7 @@ import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
-import { explorerAfterChange, findExplorerPage, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
+import { explorerAfterChange, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
@@ -116,6 +116,7 @@ export const useWorkspace = () => {
     )
   }
   useEffect(() => {
+    if (objectBusy) return
     setTabs((previous) => {
       let changed = false
       const next = previous.map((page) => {
@@ -126,7 +127,7 @@ export const useWorkspace = () => {
       })
       return changed ? next : previous
     })
-  }, [objects.snapshots])
+  }, [objects.snapshots, objectBusy])
   const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
   useEffect(() => {
     if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
@@ -429,6 +430,18 @@ export const useWorkspace = () => {
   }
   async function onObjectChanged({ action, target, name }: ObjectChange) {
     const change = { action, target, name }
+    if ([ObjectAction.CreateSchema, ObjectAction.RenameSchema, ObjectAction.DropSchema].some((value) => value === action)) {
+      const engine = getDatabaseAdapter(connections.find((connection) => connection.id === target.connectionId)?.type).explorer
+      if (!engine) throw new Error('无法识别 Schema 所属引擎')
+      await objects.refreshTables(target.database, target.connectionId, true)
+      setTabs((previous) => pagesAfterSchemaChange(previous, change, engine))
+      setExplorer((previous) => explorerAfterChange(previous, change, engine))
+      if (connectionId === target.connectionId && database === target.database) {
+        resetStructure()
+        setRefresh((value) => value + 1)
+      }
+      return
+    }
     setTabs((previous) => queryScopesAfterChange(previous, change))
     setExplorer((previous) => explorerAfterChange(previous, change))
     if (connectionId === target.connectionId && database === target.database && (!target.table || selectedTable === target.table)) {
@@ -565,12 +578,22 @@ export const useWorkspace = () => {
       create: ObjectAction.CreateDatabase,
       edit: ObjectAction.EditDatabase,
       delete: ObjectAction.DropDatabase,
-      'create-table': ObjectAction.CreateTable
+      'create-table': ObjectAction.CreateTable,
+      'create-schema': ObjectAction.CreateSchema,
+      'rename-schema': ObjectAction.RenameSchema,
+      'delete-schema': ObjectAction.DropSchema
     }
     const objectAction = actions[action]
     if (objectAction) {
       const adapter = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
       if (!adapter.objects && !(objectAction === ObjectAction.CreateTable && adapter.tableDesign && schema) && !adapter.simpleObjects?.actions.includes(objectAction)) return
+      if (
+        (objectAction === ObjectAction.RenameSchema || objectAction === ObjectAction.DropSchema) &&
+        tabs.some((page) => page.connectionId === id && page.database === db && page.schema === schema && (page.kind === 'table-design' || page.kind === 'table-create' || designerDirty[page.id]))
+      ) {
+        message.info('请先保存或关闭此 Schema 中的表设计及未保存的数据修改')
+        return
+      }
       if (objectAction === ObjectAction.CreateTable) {
         openTableDesigner('table-create', scope)
         return

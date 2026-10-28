@@ -16,7 +16,8 @@ const snapshots = { a: snapshot, b: { ...snapshot, tables: { big: [] } } }
 test('new query scope follows selected database or schema, never an unrelated page', () => {
   const layout = { tableIdentity: explorerTableIdentity }
   assert.equal(explorerQueryScope(undefined, true, layout), undefined)
-  assert.equal(explorerQueryScope({ kind: 'connection', owner: 'a', database: '', table: '' }, true, layout), undefined)
+  assert.deepEqual(explorerQueryScope({ kind: 'connection', owner: 'a', database: '', table: '' }, true, layout), { connectionId: 'a', database: '', table: '' })
+  assert.equal(explorerQueryScope({ kind: 'connection', owner: 'a', database: '', table: '' }, false, layout), undefined)
   assert.equal(explorerQueryScope({ kind: 'database', owner: 'a', database: 'db', table: '' }, false, layout), undefined)
   assert.deepEqual(explorerQueryScope({ kind: 'database', owner: 'a', database: 'db', table: '' }, true, layout), { connectionId: 'a', database: 'db', table: '' })
   assert.deepEqual(explorerQueryScope({ kind: 'schema', owner: 'a', database: 'db', schema: 'x.y', table: '' }, true, layout), { connectionId: 'a', database: 'db', schema: 'x.y', table: '' })

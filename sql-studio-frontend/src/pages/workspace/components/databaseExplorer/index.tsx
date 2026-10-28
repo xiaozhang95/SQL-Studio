@@ -67,6 +67,13 @@ export default function DatabaseExplorer({ model }: Props) {
     } else if (node.kind === 'schema') {
       items = [
         { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema)
+          ? [
+              { key: 'create-schema', label: '新建 Schema', icon: <PlusOutlined /> },
+              { key: 'rename-schema', label: '重命名 Schema', icon: <EditOutlined /> },
+              { key: 'delete-schema', label: '删除 Schema', icon: <DeleteOutlined />, danger: true }
+            ]
+          : []),
         { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
         { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
@@ -80,6 +87,7 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },
         { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
         { type: 'divider' },
+        ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema) ? [{ key: 'create-schema', label: '新建 Schema', icon: <PlusOutlined /> }] : []),
         { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
         { key: 'tables', label: engine.explorer ? '查看 Schema 列表' : '查看表列表', icon: <TableOutlined /> },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }

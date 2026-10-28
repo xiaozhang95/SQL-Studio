@@ -55,3 +55,5 @@ Tree 显式设置 motionAppear/motionEnter/motionLeave=false，展开和折叠�
 PostgreSQL 新增 schema 文件夹层：连接 → 数据库 → schema → 表/视图 → 对象 → 字段/索引。schema/类别只展开本地元数据，不切换查询范围、不发送表数据 SQL。表标题省略所属 schema，菜单和详情仍以原始完整表身份操作；schema 内分类不提供指向整个数据库的菜单。
 
 schema 节点双击/菜单可打开仅此 schema 的结构列表或新建带该 schema 范围的查询；schema 内表分类菜单指向所属 schema。表菜单和详情始终保留完整标识。
+
+PostgreSQL 数据库及 schema 右键可新建 Schema；schema 右键可重命名或删除。删除要求输入名称并使用 RESTRICT，仅允许删除空 Schema。相关表设计页或未保存表格修改须先保存或关闭。

@@ -11,7 +11,7 @@ export default function ObjectManagementModal({ manager, themeMode }: Props) {
   const { dialog, loading, saving, ready } = manager
   const action = dialog?.action
   const tableForm = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
-  const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
+  const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropSchema || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
   return (
     <Modal
       title={manager.title}

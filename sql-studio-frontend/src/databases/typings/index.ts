@@ -31,6 +31,7 @@ export interface SQLCompletionContext {
 export interface DatabaseExplorerAdapter {
   referencedTables?: (sql: string, tables: readonly DBTable[], schema?: string) => ReadonlySet<string>
   tableIdentity: (table: string) => { schema: string; name: string }
+  tableInSchema: (table: string, schema: string) => string
   schemaListResult: (schemas: readonly string[]) => Pick<QueryResult, 'columns' | 'rows'>
 }
 

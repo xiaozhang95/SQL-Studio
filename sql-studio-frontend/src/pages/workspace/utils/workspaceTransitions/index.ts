@@ -1,3 +1,4 @@
+import type { DatabaseExplorerAdapter } from '@/databases/typings'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
 import type { Connection } from '@/typings/database'
 import type { ExplorerLayout, WorkspaceTab } from '@/typings/workspace'
@@ -24,14 +25,29 @@ export function queryScopesAfterChange(tabs: WorkspaceTab[], { action, target, n
   })
 }
 
+/** SQL 文本及结果快照保留；更新重命名后的页面范围，删除时只清空查询范围。 */
+export function pagesAfterSchemaChange(tabs: WorkspaceTab[], { action, target, name }: ObjectChange, layout: DatabaseExplorerAdapter): WorkspaceTab[] {
+  if (action !== ObjectAction.RenameSchema && action !== ObjectAction.DropSchema) return tabs
+  return tabs.map((page) => {
+    if (page.connectionId !== target.connectionId || page.database !== target.database || page.schema !== target.schema) return page
+    if (action === ObjectAction.DropSchema) return page.kind === 'query' ? { ...page, schema: '', table: '' } : page
+    return { ...page, schema: name, table: page.table ? layout.tableInSchema(page.table, name) : '' }
+  })
+}
+
 /** 仅处理确实失效的节点；新增对象不会展开、选中或折叠任何节点。 */
-export function explorerAfterChange(layout: ExplorerLayout, { action, target, name }: ObjectChange): ExplorerLayout {
-  if (![ObjectAction.DropDatabase, ObjectAction.DropTable, ObjectAction.RenameTable].some((value) => value === action)) return layout
+export function explorerAfterChange(layout: ExplorerLayout, { action, target, name }: ObjectChange, engine?: DatabaseExplorerAdapter): ExplorerLayout {
+  if (![ObjectAction.DropDatabase, ObjectAction.DropTable, ObjectAction.RenameTable, ObjectAction.DropSchema, ObjectAction.RenameSchema].some((value) => value === action)) return layout
   const update = (keys: string[]) =>
     keys.flatMap((key) => {
       const parts = JSON.parse(key) as string[]
       if (parts[0] === 'group' || parts[1] !== target.connectionId || parts[2] !== target.database) return [key]
       if (action === ObjectAction.DropDatabase) return []
+      if (action === ObjectAction.DropSchema || action === ObjectAction.RenameSchema) {
+        if (['schema', 'tables', 'views', 'empty-tables'].includes(parts[0]) && parts[3] === target.schema) return []
+        if (engine && ['table', 'columns', 'column', 'indexes', 'index', 'detail-error'].includes(parts[0]) && parts[3] && engine.tableIdentity(parts[3]).schema === target.schema) return []
+        return [key]
+      }
       if (parts[3] !== target.table) return [key]
       if (action === ObjectAction.DropTable) return []
       parts[3] = name

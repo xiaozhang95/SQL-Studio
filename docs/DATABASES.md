@@ -25,4 +25,6 @@ PostgreSQL 对象树现按数据库 → schema → 表/视图 → 对象展示�
 
 PostgreSQL 数据库结构页展示 schema 列表，schema 结构页展示该 schema 内的表和视图；MySQL 数据库结构页仍展示表列表。已恢复的旧结果在刷新前保留原快照。
 
+PostgreSQL 支持新建、重命名和删除 Schema；删除采用 RESTRICT，只允许删除空 Schema。重命名更新相关页面范围，但不改写 SQL 草稿或历史结果。
+
 PostgreSQL 查询页可独立选择 schema。物理数据库与 schema 分别保存/请求，未限定表名在所选 schema 中解析；清空使用服务器默认搜索路径。结构列表分列 Schema/表名，对象页标签为 schema.table，历史与刷新记录执行时 schema。旧结果展示转换不会自动重跑 SQL。

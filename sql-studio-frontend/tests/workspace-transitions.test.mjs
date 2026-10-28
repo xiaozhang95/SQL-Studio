@@ -1,9 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { explorerTableIdentity, tableInSchema } from '../src/databases/postgresql/query/index.ts'
 import { ObjectAction } from '../src/databases/typings/objectManagement/index.ts'
 import { objectNodeKey as key } from '../src/pages/workspace/utils/objectTree/index.ts'
-import { explorerAfterChange, findExplorerPage, queryScopesAfterChange, upsertConnection } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
+import { explorerAfterChange, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
+
+test('schema rename updates only matching scopes and clears old tree branches', () => {
+  const engine = { tableIdentity: explorerTableIdentity, tableInSchema }
+  const tabs = [
+    { id: 'q', kind: 'query', connectionId: 'a', database: 'db', schema: 'old.name', table: '"old.name"."t"', sql: 'SELECT * FROM "old.name".t' },
+    { id: 'd', kind: 'data', connectionId: 'a', database: 'db', schema: 'old.name', table: '"old.name"."t"' },
+    { id: 'other', kind: 'query', connectionId: 'b', database: 'db', schema: 'old.name', table: '' }
+  ]
+  const target = { connectionId: 'a', database: 'db', schema: 'old.name', table: '' }
+  const change = { action: ObjectAction.RenameSchema, target, name: 'new"name' }
+  const changed = pagesAfterSchemaChange(tabs, change, engine)
+  assert.equal(changed[0].table, '"new""name"."t"')
+  assert.equal(changed[0].sql, tabs[0].sql)
+  assert.equal(changed[1].schema, 'new"name')
+  assert.equal(changed[2], tabs[2])
+  const tree = { expanded: [key('schema', 'a', 'db', 'old.name'), key('table', 'a', 'db', '"old.name"."t"'), key('schema', 'b', 'db', 'old.name')], selected: [], search: '', top: 0 }
+  assert.deepEqual(explorerAfterChange(tree, change, engine).expanded, [tree.expanded[2]])
+  const deleted = pagesAfterSchemaChange(tabs, { ...change, action: ObjectAction.DropSchema }, engine)
+  assert.equal(deleted[0].schema, '')
+  assert.equal(deleted[1], tabs[1])
+})
 
 test('explorer page reuse matches the complete scope and result kind', () => {
   const tabs = [

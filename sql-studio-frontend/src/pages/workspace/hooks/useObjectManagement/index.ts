@@ -23,6 +23,9 @@ const titles: Record<ObjectAction, string> = {
   createDatabase: '新建数据库',
   editDatabase: '编辑数据库',
   dropDatabase: '删除数据库',
+  createSchema: '新建 Schema',
+  renameSchema: '重命名 Schema',
+  dropSchema: '删除 Schema',
   createTable: '新建表',
   editTable: '设计表',
   dropTable: '删除表',
@@ -189,7 +192,10 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     await form.validateFields()
     const values: ObjectFormValues = form.getFieldsValue(true)
     const { action, target, connection } = dialog
-    if ([ObjectAction.DropDatabase, ObjectAction.DropTable, ObjectAction.TruncateTable].some((value) => value === action) && values.confirmation !== (target.table || target.database))
+    if (
+      [ObjectAction.DropDatabase, ObjectAction.DropSchema, ObjectAction.DropTable, ObjectAction.TruncateTable].some((value) => value === action) &&
+      values.confirmation !== (action === ObjectAction.DropSchema ? target.schema : target.table || target.database)
+    )
       throw new Error('请输入完整对象名称确认操作')
     const engine = getDatabaseAdapter(connection.type)
     if (engine.objects && (action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase)) {

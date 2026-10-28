@@ -25,9 +25,11 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   children?: ExplorerNode[]
 }
 type Snapshots = ReturnType<typeof useDatabaseObjects>['snapshots']
-/** 仅从当前可见且已连接的树节点取库范围，忽略连接和分组节点。 */
+/** 仅从当前可见且已连接的树节点取连接和库范围。 */
 export function explorerQueryScope(node: ExplorerNode | undefined, connected: boolean, layout?: DatabaseExplorerAdapter): QueryScope | undefined {
-  if (!node || !connected || !node.owner || !node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index'].includes(node.kind)) return undefined
+  if (!node || !connected || !node.owner) return undefined
+  if (node.kind === 'connection') return { connectionId: node.owner, database: '', table: '' }
+  if (!node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index'].includes(node.kind)) return undefined
   const schema = node.schema || (node.table && layout ? layout.tableIdentity(node.table).schema : undefined)
   return { connectionId: node.owner, database: node.database, ...(schema ? { schema } : {}), table: '' }
 }

@@ -4,13 +4,13 @@ import { referencedTables } from './context'
 import { canInsertColumn, insertRowSQL, updateCellSQL } from './dataEditing'
 import { simpleObjects } from './objectManagement'
 import { postgresqlProfile } from './profile'
-import { explorerTableIdentity, exportDDL, schemaListResult, tableDataSQL, tableLabel, tableListResult } from './query'
+import { explorerTableIdentity, exportDDL, schemaListResult, tableDataSQL, tableInSchema, tableLabel, tableListResult } from './query'
 import { cleanPostgreSQLHistory, splitPostgreSQLStatements } from './statements'
 import { tableDesign } from './tableDesign'
 
 const postgresql = {
   profile: postgresqlProfile,
-  explorer: { tableIdentity: explorerTableIdentity, schemaListResult, referencedTables },
+  explorer: { tableIdentity: explorerTableIdentity, tableInSchema, schemaListResult, referencedTables },
   objects: undefined,
   simpleObjects,
   tableDesign,

@@ -22,6 +22,11 @@ test('PostgreSQL object operations preserve schema and quote names', () => {
   assert.equal(simpleObjects.resultName(ObjectAction.RenameTable, target, 'new"name'), '"a.b"."new""name"')
   assert.throws(() => simpleObjects.sql(ObjectAction.CreateDatabase, target, '界'.repeat(22)))
   assert.throws(() => simpleObjects.sql(ObjectAction.TruncateTable, { ...target, view: true }, ''))
+  assert.equal(simpleObjects.sql(ObjectAction.CreateSchema, target, 'a"b'), 'CREATE SCHEMA "a""b";')
+  assert.equal(simpleObjects.sql(ObjectAction.RenameSchema, { ...target, schema: 'a.b' }, 'new"name'), 'ALTER SCHEMA "a.b" RENAME TO "new""name";')
+  assert.equal(simpleObjects.sql(ObjectAction.DropSchema, { ...target, schema: 'a.b' }, ''), 'DROP SCHEMA "a.b" RESTRICT;')
+  assert.throws(() => simpleObjects.sql(ObjectAction.RenameSchema, { ...target, schema: 'a.b' }, 'a.b'))
+  assert.throws(() => simpleObjects.sql(ObjectAction.DropSchema, target, ''))
   assert.throws(() => simpleObjects.sql(ObjectAction.EditTable, target, ''))
 })
 
