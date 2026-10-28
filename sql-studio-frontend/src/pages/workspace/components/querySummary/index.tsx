@@ -7,12 +7,14 @@ import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
+import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { statementDuration, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
 export default function QuerySummary({ run, running, themeMode, databaseType }: Props) {
   const [errorsOnly, setErrorsOnly] = useState(false)
+  const [page, setPage] = useState(1)
   const statements = statementOutputs(run)
   const failed = statements.filter((item) => item.error).length
   const columns: TableColumnsType<StatementRun> = [
@@ -27,7 +29,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
       width: 300,
       render: (_, item) => (
         <Typography.Text type={item.error ? 'danger' : 'success'} style={{ whiteSpace: 'pre-wrap' }}>
-          {item.error || 'OK'}
+          {item.error || (item.result && !item.result.columns.length ? `OK，影响 ${item.result.affectedRows} 行` : 'OK')}
         </Typography.Text>
       )
     },
@@ -46,7 +48,14 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
           <br />
           运行时间：{run.durationMs === undefined ? '未记录' : `${run.durationMs} ms`}
         </div>
-        <Checkbox checked={errorsOnly} onChange={(event) => setErrorsOnly(event.target.checked)} style={{ marginInlineStart: 'auto' }}>
+        <Checkbox
+          checked={errorsOnly}
+          onChange={(event) => {
+            setErrorsOnly(event.target.checked)
+            setPage(1)
+          }}
+          style={{ marginInlineStart: 'auto' }}
+        >
           仅显示错误
         </Checkbox>
       </Flex>
@@ -55,7 +64,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
         columns={columns}
         rowKey="key"
         dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || item.error)}
-        pagination={false}
+        pagination={{ ...tablePaginationDefaults, pageSize: 50, current: page, onChange: setPage }}
         scroll={{ x: 920 }}
         locale={{ emptyText: running ? '正在执行…' : errorsOnly ? '没有错误记录' : '暂无执行记录' }}
       />

@@ -14,6 +14,18 @@ export function upsertConnection(connections: readonly Connection[], saved: Conn
   return connections.some((item) => item.id === saved.id) ? connections.map((item) => (item.id === saved.id ? saved : item)) : [...connections, saved]
 }
 
+/** 仅用已成功加载的库列表清理失效树身份，不把加载中或失败当作删库。 */
+export function explorerAfterDatabasesLoaded(layout: ExplorerLayout, connectionId: string, databases: readonly string[]): ExplorerLayout {
+  const names = new Set(databases)
+  const keep = (key: string) => {
+    const parts = JSON.parse(key) as string[]
+    return parts[1] !== connectionId || parts.length < 3 || names.has(parts[2])
+  }
+  const expanded = layout.expanded.filter(keep)
+  const selected = layout.selected.filter(keep)
+  return expanded.length === layout.expanded.length && selected.length === layout.selected.length ? layout : { ...layout, expanded, selected }
+}
+
 export function queryScopesAfterChange(tabs: WorkspaceTab[], { action, target, name }: ObjectChange): WorkspaceTab[] {
   return tabs.map((tab) => {
     if (tab.kind !== 'query' || tab.connectionId !== target.connectionId || tab.database !== target.database) return tab

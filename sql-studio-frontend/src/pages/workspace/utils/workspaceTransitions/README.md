@@ -2,6 +2,8 @@
 
 `upsertConnection(connections,saved)` 在原位置更新已有连接，新连接追加到末尾，不选择或打开连接。
 
+`explorerAfterDatabasesLoaded(layout,connectionId,databases)` 仅在有效请求成功返回最新库列表后调用，删除目标连接下已不存在数据库及全部后代的展开、选中记录；保留连接/分组、其他库与连接、搜索及滚动位置。无变更返回原对象。空列表确认成功时同样清理；加载中、失败、已失效请求不调用，避免误清布局。同名库重新出现时不会继承已删除分支的展开记录。
+
 `findExplorerPage(tabs,kind,connectionId,database,table,schema?)` 按完整范围及页面类型查找已有对象页，不匹配 SQL 或设计页。
 
 `queryScopesAfterChange(tabs,change)` 只处理目标连接/库下的 SQL 页：删库清空库表，删表清空表名，重命名更新表名；其余页保留原对象。

@@ -4,7 +4,40 @@ import test from 'node:test'
 import { explorerTableIdentity, tableInSchema } from '../src/databases/postgresql/query/index.ts'
 import { ObjectAction } from '../src/databases/typings/objectManagement/index.ts'
 import { objectNodeKey as key } from '../src/pages/workspace/utils/objectTree/index.ts'
-import { explorerAfterChange, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
+import {
+  explorerAfterChange,
+  explorerAfterDatabasesLoaded,
+  findExplorerPage,
+  pagesAfterSchemaChange,
+  queryScopesAfterChange,
+  upsertConnection
+} from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
+
+test('successful database reload removes missing database descendants so recreation starts collapsed', () => {
+  const removed = 'db.";old'
+  const branches = ['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index', 'detail-error'].map((kind) => key(kind, 'a', removed, '"public"."t"', 'id'))
+  const preserved = [key('group', '分组'), key('connection', 'a'), key('database', 'a', 'kept'), key('table', 'a', 'kept', 't'), key('database', 'b', removed)]
+  const original = { expanded: [...preserved, ...branches], selected: [branches[4]], search: 'test', top: 230 }
+  const refreshed = explorerAfterDatabasesLoaded(original, 'a', ['kept'])
+  assert.deepEqual(refreshed.expanded, preserved)
+  assert.deepEqual(refreshed.selected, [])
+  assert.equal(refreshed.search, 'test')
+  assert.equal(refreshed.top, 230)
+  assert.equal(original.expanded.length, branches.length + preserved.length)
+  const recreated = explorerAfterDatabasesLoaded(refreshed, 'a', ['kept', removed])
+  assert.equal(recreated, refreshed)
+  assert.ok(!recreated.expanded.includes(key('database', 'a', removed)))
+  assert.equal(explorerAfterChange(recreated, { action: ObjectAction.CreateDatabase, target: { connectionId: 'a', database: '', table: '' }, name: removed }), refreshed)
+})
+
+test('a successful empty database list clears only that connection and preserves unrelated selection', () => {
+  const own = key('database', 'a', 'same')
+  const others = [key('connection', 'a'), key('database', 'b', 'same')]
+  const layout = { expanded: [own, ...others], selected: [others[1]], search: '', top: 0 }
+  assert.deepEqual(explorerAfterDatabasesLoaded(layout, 'a', []), { ...layout, expanded: others })
+  assert.equal(explorerAfterDatabasesLoaded(layout, 'a', ['same']), layout)
+  assert.equal(explorerAfterDatabasesLoaded(layout, 'unrelated', []), layout)
+})
 
 test('schema rename updates only matching scopes and clears old tree branches', () => {
   const engine = { tableIdentity: explorerTableIdentity, tableInSchema }

@@ -20,6 +20,8 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 
+validateDatabases 仅在有效库列表加载成功后校验查询页范围，并通过 explorerAfterDatabasesLoaded 清理目标连接下已消失库及后代的展开/选中记录。首次打开、恢复、刷新连接和对象操作重读列表共用该回调；请求失败或加载中不清理。其他库、连接与布局保留，同名库重建保持收起。
+
 ## 本地恢复
 
 useWorkspacePersistence 以 AES-GCM 加密的 IndexedDB 快照保存 tabs/activeTab、范围/SQL、runs/resultViews、编辑器选区和滚动、对象树展开/选中/搜索/滚动、结果区高度及打开连接 ID。只传页面白名单字段，不保存连接密码/表单凭据；顶部展示正在保存/已加密保存/错误状态。

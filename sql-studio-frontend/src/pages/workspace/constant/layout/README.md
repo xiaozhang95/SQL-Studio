@@ -10,6 +10,8 @@ resultPanelLayout 为结果区只读尺寸：默认/最小 260px，编辑器预�
 
 resultSQLLayout 仅定义普通查询 SQL 单元格列宽 520px；只读 SQL 完整展开、自动换行，没有独立限高或滚动条。独立 DDL 页铺满表体，长内容由外层表体滚动。
 
+resultTabLayout.maximumVisibleTabs=8：超过 8 个数据结果集时使用 Select 切换，仅显示当前结果标签，避免批量 SELECT 产生无限增长的标签导航。执行回执不占结果标签。
+
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 
 objectTreeLayout.rowHeight=30 与既有 28px 节点内容和 2px 行距一致；scrollSaveDelay=150ms 在滚动结束后保存位置。

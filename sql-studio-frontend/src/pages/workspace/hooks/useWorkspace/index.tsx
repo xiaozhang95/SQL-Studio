@@ -15,7 +15,7 @@ import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
-import { explorerAfterChange, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
+import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
@@ -71,6 +71,7 @@ export const useWorkspace = () => {
     if (historyStore.ready && !connectionLoading && !connectionError) pruneHistory(connections.map((item) => item.id))
   }, [historyStore.ready, connectionLoading, connectionError, connections, pruneHistory])
   const validateDatabases = useCallback((id: string, databases: string[]) => {
+    setExplorer((previous) => explorerAfterDatabasesLoaded(previous, id, databases))
     setTabs((previous) =>
       previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', schema: '', table: '' } : item))
     )

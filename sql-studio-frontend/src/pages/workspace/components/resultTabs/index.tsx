@@ -1,10 +1,11 @@
-import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons'
-import { Tabs } from 'antd'
+import { CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons'
+import { Select, Tabs } from 'antd'
 
 import { appearance } from '@/constant/appearance'
 import type { RunState } from '@/typings/workspace'
 
-import { statementOutputs } from '../../utils/queryOutput'
+import { resultTabLayout } from '../../constant/layout'
+import { resultOutputs } from '../../utils/queryOutput'
 
 type Props = {
   run: RunState
@@ -14,7 +15,10 @@ type Props = {
 }
 /** 消息、摘要与逐条结果共用一层受控导航。 */
 export default function ResultTabs({ run, running, activeKey, onChange }: Props) {
-  const results = statementOutputs(run)
+  const results = resultOutputs(run)
+  const compact = results.length > resultTabLayout.maximumVisibleTabs
+  const indexedResults = results.map((entry, resultIndex) => ({ ...entry, resultIndex }))
+  const visibleResults = compact ? indexedResults.filter(({ index }) => String(index) === activeKey) : indexedResults
   return (
     <Tabs
       className="statement-result-tabs"
@@ -26,19 +30,33 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
       tabBarStyle={{ margin: 0, background: 'var(--surface-raised)' }}
       activeKey={activeKey}
       onChange={onChange}
+      tabBarExtraContent={
+        compact ? (
+          <Select
+            aria-label="选择结果集"
+            style={{ width: appearance.selectWidth }}
+            disabled={running}
+            placeholder={`选择结果集（共 ${results.length} 个）`}
+            value={results.some(({ index }) => String(index) === activeKey) ? activeKey : undefined}
+            options={indexedResults.map(({ index, resultIndex }) => ({ value: String(index), label: `结果 ${resultIndex + 1}（语句 ${index + 1}）` }))}
+            onChange={onChange}
+          />
+        ) : undefined
+      }
       items={[
         { key: 'messages', label: '消息', icon: running ? <LoadingOutlined spin /> : undefined },
         { key: 'summary', label: '摘要' },
-        ...results.map((item, index) => ({
+        ...visibleResults.map(({ item, index, resultIndex }) => ({
           key: String(index),
           disabled: running,
           label: (
             <span
-              className={`statement-result-label ${item.error ? 'is-error' : 'is-success'}`}
-              title={item.sql || run.title}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: item.error ? 'var(--ant-color-error-text)' : 'var(--ant-color-success-text)' }}
+              className="statement-result-label is-success"
+              title={`语句 ${index + 1}\n${item.sql || run.title || ''}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: 'var(--ant-color-success-text)' }}
             >
-              {item.error ? <CloseCircleOutlined /> : <CheckCircleOutlined />}结果 {index + 1}
+              <CheckCircleOutlined />
+              结果 {resultIndex + 1}
             </span>
           )
         }))

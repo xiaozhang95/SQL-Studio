@@ -12,7 +12,7 @@ import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import { statementOutputs } from '../../utils/queryOutput'
+import { defaultOutputView } from '../../utils/queryOutput'
 import DataCellEditor from '../dataCellEditor'
 import NewRowCell from '../newRowCell'
 import QueryMessages from '../queryMessages'
@@ -68,11 +68,9 @@ export default function QueryResults({ model, themeMode }: Props) {
   } | null>(null)
   // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
   const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
-  const hasResults = run ? statementOutputs(run).length > 0 : false
-  const showingResult = view === null && hasResults
+  const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
+  const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
-  const commandSucceeded = Boolean(result && !hasTable)
-  const activeKey = view ?? (hasResults ? String(resultIndex) : 'messages')
   const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
@@ -184,7 +182,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           }
         }}
       />
-      {((showingResult && !commandSucceeded) || (activeRunning && tab.kind !== 'query')) && (
+      {(showingResult || (activeRunning && tab.kind !== 'query')) && (
         <div
           className="result-toolbar"
           style={{
@@ -273,15 +271,13 @@ export default function QueryResults({ model, themeMode }: Props) {
         {activeKey === 'messages' ? (
           <QueryMessages run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
-          <QuerySummary run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QuerySummary key={run.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
           <div className="tree-loading" style={{ textAlign: 'center', padding: '28px 10px' }}>
             <LoadingOutlined spin /> 正在加载结果
           </div>
         ) : run?.error ? (
           <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{run.error}</div>} />
-        ) : commandSucceeded ? (
-          <Alert style={{ margin: 16 }} type="success" showIcon title="执行成功" description={`语句执行成功，影响 ${result?.affectedRows ?? 0} 行。`} />
         ) : result ? (
           <>
             {result.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
