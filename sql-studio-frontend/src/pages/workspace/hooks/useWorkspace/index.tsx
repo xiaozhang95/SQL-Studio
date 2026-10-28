@@ -1,6 +1,6 @@
-import type { EditorView, ViewUpdate } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { App as AntApp, Button } from 'antd'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
@@ -20,6 +20,7 @@ import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useDataExport } from '../useDataExport'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
+import { useWorkspaceEditor } from '../useWorkspaceEditor'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
 
 const emptyScope: QueryScope = { connectionId: '', database: '', schema: '', table: '' }
@@ -56,10 +57,29 @@ export const useWorkspace = () => {
   const [structureLoading, setStructureLoading] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historySearch, setHistorySearch] = useState('')
-  const editor = useRef<EditorView | null>(null)
+  const closedPages = useRef(new Set<string>())
+  const pendingDrafts = useRef(new Map<string, string>())
+  useLayoutEffect(() => {
+    for (const [id, sql] of pendingDrafts.current) if (!tabs.some((page) => page.id === id) || tabs.find((page) => page.id === id)?.sql === sql) pendingDrafts.current.delete(id)
+  }, [tabs])
+  const editorSession = useWorkspaceEditor({
+    layouts: editorLayouts,
+    commit: ({ id, sql, layout }) => {
+      if (closedPages.current.has(id)) return
+      if (sql !== undefined) {
+        pendingDrafts.current.set(id, sql)
+        setTabs((previous) => previous.map((page) => (page.id === id && page.sql !== sql ? { ...page, sql } : page)))
+      }
+      if (layout)
+        setEditorLayouts((previous) => {
+          const saved = previous[id]
+          return saved && Object.keys(layout).every((key) => saved[key as keyof EditorLayout] === layout[key as keyof EditorLayout]) ? previous : { ...previous, [id]: layout }
+        })
+    }
+  })
+  const editor = editorSession.editor
   const request = useRef<AbortController | null>(null)
   const closingScope = useRef(false)
-  const closedPages = useRef(new Set<string>())
   const executeRef = useRef<() => void>(() => {})
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, schema: selectedSchema = '', table: selectedTable } = tab
@@ -189,7 +209,11 @@ export const useWorkspace = () => {
         })
       },
       evict: (ids, expected) => {
-        const removed = new Set(ids.filter((id) => id !== activeTabRef.current && id !== runningTabId))
+        const removed = new Set(
+          ids.filter(
+            (id) => id !== activeTabRef.current && id !== runningTabId && (!pendingDrafts.current.has(id) || pendingDrafts.current.get(id) === expected.tabs.find((page) => page.id === id)?.sql)
+          )
+        )
         if (!removed.size) return []
         setTabs((previous) =>
           previous.map((page) => {
@@ -217,7 +241,7 @@ export const useWorkspace = () => {
   const running = tabBusy || !storage.pageReady
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
-  const saving = storage.saving || historyStore.saving
+  const saving = storage.saving || editorSession.pending || historyStore.saving
   useEffect(() => {
     if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
@@ -347,10 +371,15 @@ export const useWorkspace = () => {
     setTabs((previous) => previous.map((item) => (item.id === activeTab ? { ...item, ...patch } : item)))
   }
   const updateSQL = (sql: string) => updateTab({ sql })
+  function getCurrentSQL() {
+    const change = editorSession.flush()
+    return change?.id === activeTabRef.current && change.sql !== undefined ? change.sql : editorSession.read(activeTabRef.current, tab.sql)
+  }
   function exportCurrentSQL() {
-    if (!tab.sql.trim()) return
+    const sql = getCurrentSQL()
+    if (!sql.trim()) return
     try {
-      exportSQL(tab.sql, tab.title)
+      exportSQL(sql, tab.title)
     } catch {
       message.error('SQL 导出失败，请重试')
     }
@@ -373,13 +402,17 @@ export const useWorkspace = () => {
     setHistoryOpen(false)
   }
   function selectTab(id: string, discard = false) {
+    if (id === activeTabRef.current) {
+      editorSession.flush()
+      return
+    }
     if (id !== activeTab && tab.kind === 'data' && designerDirty[activeTab] && !discard) {
       modal.confirm({ title: '放弃当前表的未保存修改？', okText: '放弃并切换', cancelText: '继续编辑', onOk: () => selectTab(id, true) })
       return
     }
     const next = tabs.find((item) => item.id === id)
+    editorSession.detach()
     activeTabRef.current = id
-    editor.current = null
     setActiveTab(id)
     resetStructure(next?.kind === 'query' && Boolean(next.table))
     setHistoryOpen(false)
@@ -501,6 +534,7 @@ export const useWorkspace = () => {
     }
     closingScope.current = true
     setObjectBusy(true)
+    editorSession.flush()
     const scoped = pagesForScope(tabs, id, db).map((page) => (page.id === activeTab && page.kind === 'query' && editor.current ? { ...page, sql: editor.current.state.doc.toString() } : page))
     try {
       const affected = await storage.draftsFor(scoped)
@@ -560,9 +594,10 @@ export const useWorkspace = () => {
       else await objects.closeDatabase(id, db)
       const removed = new Set(affected.map((page) => page.id))
       removed.forEach((page) => closedPages.current.add(page))
+      editorSession.discard(removed)
       const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([key]) => !removed.has(key)))
       const remaining = tabs.filter((page) => !removed.has(page.id))
-      setTabs(remaining)
+      setTabs((previous) => previous.filter((page) => !removed.has(page.id)))
       setRuns(keep)
       setResultViews(keep)
       setEditorLayouts(keep)
@@ -915,10 +950,13 @@ export const useWorkspace = () => {
   }
   function runSelectedSQL(statement: string) {
     // 菜单使用打开时的选区快照，避免菜单拿走焦点后误执行整个草稿。
+    editorSession.flush()
     if (statement.trim()) executeCurrentSQL(statement)
   }
   function runSQL() {
-    executeCurrentSQL(getSelectedSQL() ?? tab.sql)
+    const sql = getSelectedSQL()
+    const draft = getCurrentSQL()
+    executeCurrentSQL(sql ?? draft)
   }
   useEffect(() => {
     executeRef.current = runSQL
@@ -947,8 +985,10 @@ export const useWorkspace = () => {
       if (request.current) return
       const retained = new Set(remaining.map((item) => item.id))
       const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
-      tabs.filter((page) => !retained.has(page.id)).forEach((page) => closedPages.current.add(page.id))
-      setTabs(remaining)
+      const removed = new Set(tabs.filter((page) => !retained.has(page.id)).map((page) => page.id))
+      removed.forEach((id) => closedPages.current.add(id))
+      editorSession.discard(removed)
+      setTabs((previous) => previous.filter((page) => retained.has(page.id)))
       setRuns(keep)
       setResultViews(keep)
       setEditorLayouts(keep)
@@ -965,32 +1005,10 @@ export const useWorkspace = () => {
 
   const closeTab = (key: string) => closeTabs(key)
   const cancelQuery = () => request.current?.abort()
-  const onEditorReady = (view: EditorView) => {
-    editor.current = view
-    const saved = editorLayouts[activeTab]
-    if (saved) {
-      const length = view.state.doc.length
-      view.dispatch({ selection: { anchor: Math.min(saved.anchor, length), head: Math.min(saved.head, length) } })
-      requestAnimationFrame(() => {
-        view.scrollDOM.scrollTop = saved.top
-        view.scrollDOM.scrollLeft = saved.left
-      })
-    }
-  }
-  function rememberEditor() {
-    const view = editor.current
-    const id = activeTabRef.current
-    if (!view || !id) return
-    const { anchor, head } = view.state.selection.main
-    const next = { anchor, head, top: view.scrollDOM.scrollTop, left: view.scrollDOM.scrollLeft }
-    setEditorLayouts((previous) => {
-      const saved = previous[id]
-      return saved && Object.keys(next).every((key) => saved[key as keyof EditorLayout] === next[key as keyof EditorLayout]) ? previous : { ...previous, [id]: next }
-    })
-  }
-  function onEditorUpdate(update: ViewUpdate) {
-    if (update.view === editor.current && (update.selectionSet || update.docChanged)) rememberEditor()
-  }
+  const onEditorReady = (view: EditorView) => editorSession.attach(activeTabRef.current, view)
+  const onEditorDispose = editorSession.detach
+  const rememberEditor = editorSession.remember
+  const onEditorUpdate = editorSession.update
   const onConnectionSaved = (saved: Connection) => {
     setConnectionModal(false)
     setConnections((previous) => upsertConnection(previous, saved))
@@ -1066,6 +1084,7 @@ export const useWorkspace = () => {
     setEditing,
     updateSQL,
     exportCurrentSQL,
+    getCurrentSQL,
     runSQL,
     getSelectedSQL,
     runSelectedSQL,
@@ -1099,6 +1118,7 @@ export const useWorkspace = () => {
     refreshSchema,
     cancelQuery,
     onEditorReady,
+    onEditorDispose,
     onEditorUpdate,
     rememberEditor,
     onConnectionSaved

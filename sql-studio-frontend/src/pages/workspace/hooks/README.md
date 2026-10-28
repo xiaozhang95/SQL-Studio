@@ -27,3 +27,5 @@
 - [对象树虚拟视口](useTreeViewport/README.md)：实际高度、滚动恢复及延迟保存。
 
 - [useDataExport](useDataExport/README.md)：数据库、Schema、表的结构/数据转储与独立取消。
+
+- [useWorkspaceEditor](useWorkspaceEditor/README.md)：当前编辑实例、延迟草稿同步和光标/滚动批量提交。

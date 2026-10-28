@@ -26,6 +26,7 @@ import { useDataEditing } from '../../hooks/useDataEditing'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { defaultOutputView } from '../../utils/queryOutput'
+import { exportResultRows, matchResultRows, pageResultRows } from '../../utils/resultRows'
 import DataCellEditor from '../dataCellEditor'
 import NewRowCell from '../newRowCell'
 import QueryMessages from '../queryMessages'
@@ -94,22 +95,9 @@ export default function QueryResults({ model, themeMode }: Props) {
     if (body) body.scrollTop = 0
   }, [run?.id, tablePage, resultSearch, view, viewport])
   const deferredSearch = useDeferredValue(resultSearch)
-  const rows = useMemo(() => {
-    if (!showingResult) return []
-    const search = deferredSearch.toLowerCase()
-    const existing = editing.rows
-      .map((cells, index) => ({ key: index, cells }))
-      .filter(
-        ({ cells }) =>
-          !search ||
-          cells.some((cell) =>
-            String(cell ?? 'NULL')
-              .toLowerCase()
-              .includes(search)
-          )
-      )
-    return [...editing.newRows.map((row) => ({ key: row.key, cells: row.cells })), ...existing]
-  }, [editing.rows, editing.newRows, deferredSearch, showingResult])
+  const matches = useMemo(() => (showingResult ? matchResultRows(editing.rows, deferredSearch) : null), [editing.rows, deferredSearch, showingResult])
+  const rowCount = editing.newRows.length + (matches?.length ?? editing.rows.length)
+  const rows = useMemo(() => (showingResult ? pageResultRows(editing.rows, editing.newRows, matches, tablePage) : []), [editing.rows, editing.newRows, matches, tablePage, showingResult])
   const columns = [
     {
       title: '#',
@@ -286,7 +274,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                     result &&
                     exportCSV(
                       result.columns.map((column) => column.name),
-                      rows.map((row) => row.cells)
+                      exportResultRows(editing.rows, editing.newRows, matches)
                     )
                   }
                 >
@@ -326,7 +314,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                   : undefined
               }
               columns={columns}
-              dataSource={rows.slice((tablePage - 1) * 50, tablePage * 50)}
+              dataSource={rows}
               pagination={false}
               scroll={{ x: run.kind === 'ddl' ? '100%' : 'max-content', y: bodyHeight || undefined }}
               locale={{ emptyText: result.isQuery ? '查询成功，没有匹配的数据' : `语句执行成功，影响 ${result.affectedRows} 行` }}
@@ -336,7 +324,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           <Empty className="query-empty" image={<TableOutlined className="empty-state-icon" />} description="暂无结果" style={{ margin: '20px 0' }} />
         )}
       </div>
-      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rows.length} pageSize={50} />}
+      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />}
     </ResultsDock>
   )
 }

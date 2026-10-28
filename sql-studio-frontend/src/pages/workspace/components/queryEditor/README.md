@@ -2,13 +2,13 @@
 
 补全配置由 useSQLCompletion 按当前连接组织元数据，并调用数据库适配器 completion 构造；组件不导入具体 MySQL 方言。局部 contextSQL 只保留本区域右键菜单的选区快照。
 
-编辑器 basicSetup 与 onChange/onUpdate 桥接保持稳定身份，桥接在布局 effect 更新最新回调；避免每次输入、loading 更新或树状态变化都触发 UIW 全量 reconfigure，同时保持当前页面的 SQL 和布局回调正确归属。
+编辑器 basicSetup 与 onUpdate 桥接保持稳定身份，桥接在布局 effect 更新最新回调；避免每次输入、loading 更新或树状态变化都触发 UIW 全量 reconfigure，同时保持当前页面的 SQL 和布局回调正确归属。
 
 [组件索引](../README.md) · [源码](index.tsx)
 
 仅在 kind=query 的主页面内展示，页面导航与关闭行为由 workspaceTabs 管理。本组件负责连接/库选择器、运行/取消、导入/导出、历史工具栏和 CodeMirror。
 
-每页 SQL 与范围由 model 受控保存；切页恢复草稿。左侧树与选择器独立，仅共用元数据缓存。连接必须成功加载结构才允许运行，切连接清库表，切库清表；没有表下拉。补全保留系统字体和主题，支持 Ctrl+Enter，结果页快捷键不会执行旧 SQL。
+每页范围由 model 管理，SQL 由当前 CodeMirror 实例持有并批量同步至 model；切页恢复草稿。左侧树与选择器独立，仅共用元数据缓存。连接必须成功加载结构才允许运行，切连接清库表，切库清表；没有表下拉。补全保留系统字体和主题，支持 Ctrl+Enter，结果页快捷键不会执行旧 SQL。
 
 查询结果在同一页面编辑器下方展示，重复执行替换该页最新结果，不创建额外标签。当前页执行时显示取消，其他页面执行时只应用全局操作锁。请求不传行数；MySQL/PostgreSQL SQL 窗口均显式传 allowWrite=true，支持 DDL/DML；PostgreSQL 支持 RETURNING。
 
@@ -30,4 +30,6 @@ SQL 补全浮层采用与系统 Select 一致的 colorBgElevated、colorBorderSe
 
 Schema 选择通过 selectObject 的第四参数传入显式连接/库范围；AI 接收实际连接类型，补全和执行共用该页面 schema。
 
-编辑器挂载身份仅绑定页面及连接/数据库，不绑定全局 running。关闭无关库/连接、打开对象弹框及执行状态切换只更新控件状态，保留 CodeMirror 实例、选区、滚动与撤销。
+编辑器挂载身份仅绑定页面，不绑定全局 running。关闭无关库/连接、打开对象弹框及执行状态切换只更新控件状态，保留 CodeMirror 实例、选区、滚动与撤销。
+
+编辑器value仅提供挂载初始SQL，后续输入由CodeMirror持有；不注册逐字onChange全文序列化，onUpdate提交不可变文档和布局到useWorkspaceEditor缓冲。hasSQL只在空/非空之间变化，按钮使用当前实例执行/导出。历史和AI应用继续走事务；失焦、卸载及切页同步草稿。组件仅按页面ID重挂载，连接/库变化只更新补全扩展，保留当前文本和撤销。

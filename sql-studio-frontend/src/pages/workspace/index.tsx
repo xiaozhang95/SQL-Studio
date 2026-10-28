@@ -121,13 +121,13 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
                       model.pageLoadError ? (
                         <Alert type="error" title="标签内容加载失败" description={model.pageLoadError} action={<Button onClick={model.retryPage}>重试</Button>} />
                       ) : (
-                        <div style={{ padding: 24 }}>
+                        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
                           <Spin description="正在加载当前标签…" />
                         </div>
                       )
                     ) : (
                       <>
-                        {model.tab.kind === 'query' && <QueryEditor key={JSON.stringify([model.activeTab, model.tab.connectionId, model.tab.database])} model={model} themeMode={themeMode} />}
+                        {model.tab.kind === 'query' && <QueryEditor key={model.activeTab} model={model} themeMode={themeMode} />}
                         <QueryResults model={model} themeMode={themeMode} />
                       </>
                     )}

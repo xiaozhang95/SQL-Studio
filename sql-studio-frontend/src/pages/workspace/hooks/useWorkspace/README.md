@@ -69,3 +69,5 @@ MySQL/PostgreSQL SQL 窗口的手动运行与结果刷新均显式传 allowWrite
 dataExport 独立管理导出请求和文件；数据库/Schema/表菜单显式传入目标连接与范围。关闭相同库/连接会取消该导出，关闭其他范围不影响它。查询编辑器不因 objectBusy/running 改变而重挂载；页面关闭按钮恒定占位。
 
 工作区使用分片持久化：非活动且已保存的页面仅保留标签/范围/布局；pageReady/pageLoadError/retryPage 控制当前内容等待与恢复。hydrate 按预期SQL和结果身份合并，不覆盖读取期间的新执行或已关闭页面；evict 只删除匹配已提交版本的非活动内容，保留活动/运行窗口。closeScope 在提示保存前按需读取范围内草稿，不读其他结果，防止把卸载后的占位空字符串当作丢失草稿。加载与恢复均不自动执行SQL。
+
+编辑会话由useWorkspaceEditor持有，草稿与位置250ms批量同步；runSQL/exportCurrentSQL/getCurrentSQL在操作时读取最新编辑内容，选区/右键仍使用当前选区快照。切页和范围关闭先同步，关闭页取消缓冲；关闭其他页使用函数式更新，保留活动页刚输入的SQL。pendingDrafts只保护React提交前的短暂草稿，避免持久化回包在快速切页间隙卸载新内容。QueryEditor仅按页面重挂载，范围变化重配补全且不清空当前文本。

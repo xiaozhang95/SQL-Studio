@@ -15,3 +15,6 @@
 - [纯数据对象树](explorerTree/README.md)。
 
 [对象展示兼容](objectPresentation/README.md) 为旧结构结果和对象页标题提供不执行 SQL 的 schema 展示转换。
+
+- [编辑内容同步缓冲](editorBuffer/README.md)：延迟全文读取、固定期限合并和切页同步。
+- [结果分页映射](resultRows/README.md)：筛选下标缓存、可见页对象和完整CSV数据。

@@ -28,6 +28,8 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const scopeKey = JSON.stringify([scope.connectionId, scope.database, scope.schema, scope.table, databaseType])
+  const [requestScope, setRequestScope] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const controller = useRef<AbortController | null>(null)
 
@@ -61,7 +63,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     () => () => {
       controller.current?.abort()
     },
-    []
+    [scopeKey]
   )
   const complete = useCallback(
     async (prefix: string, suffix: string, document: string, signal: AbortSignal) => {
@@ -94,7 +96,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   }
   const optimize = async (selectionOnly = false, selectedSQL?: string) => {
     const view = editor.current
-    if (!view || blocked || loading) return
+    if (!view || blocked || (loading && requestScope === scopeKey)) return
     const doc = view.state.doc
     const selection = view.state.selection.main
     if (selectionOnly && selection.empty) return
@@ -107,6 +109,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     controller.current?.abort()
     const current = new AbortController()
     controller.current = current
+    setRequestScope(scopeKey)
     setOpen(true)
     setLoading(true)
     setError('')
@@ -127,7 +130,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   }
   const apply = () => {
     const view = editor.current
-    if (!preview || !view || view !== preview.view || view.state.doc !== preview.document || blocked) {
+    if (requestScope !== scopeKey || !preview || !view || view !== preview.view || view.state.doc !== preview.document || blocked) {
       setError('原 SQL 已变化，请关闭后重新优化。')
       return
     }
@@ -138,5 +141,18 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const onEditorReady = (view: EditorView) => {
     editor.current = view
   }
-  return { onEditorReady, configured, enabled, completionLoading, extensions, error, loading, open, preview, optimize, close, apply }
+  return {
+    onEditorReady,
+    configured,
+    enabled,
+    completionLoading,
+    extensions,
+    error,
+    loading: loading && requestScope === scopeKey,
+    open: open && requestScope === scopeKey,
+    preview,
+    optimize,
+    close,
+    apply
+  }
 }

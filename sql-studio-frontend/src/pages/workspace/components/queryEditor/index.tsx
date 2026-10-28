@@ -1,5 +1,5 @@
 import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import type { ViewUpdate } from '@codemirror/view'
+import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
 import { Alert, Button, Dropdown, Upload } from 'antd'
@@ -24,7 +24,8 @@ type Props = {
     | 'activeRunning'
     | 'cancelQuery'
     | 'tab'
-    | 'updateSQL'
+    | 'getCurrentSQL'
+    | 'onEditorDispose'
     | 'runSQL'
     | 'getSelectedSQL'
     | 'runSelectedSQL'
@@ -44,19 +45,31 @@ type Props = {
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
-  const { activeTab, running, activeRunning, cancelQuery, tab, updateSQL, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
+  const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
   const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
   const [contextSQL, setContextSQL] = useState('')
+  // UIW receives the initial document only; subsequent edits stay in CodeMirror.
+  const [initialSQL] = useState(() => tab.sql)
+  const [hasSQL, setHasSQL] = useState(() => Boolean(tab.sql.length))
+  const view = useRef<EditorView | null>(null)
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
   const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...ai.extensions], [extensions, ai.extensions])
-  const callbacks = useRef({ updateSQL, onUpdate: model.onEditorUpdate })
+  const callbacks = useRef({ onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose })
   useLayoutEffect(() => {
-    callbacks.current = { updateSQL, onUpdate: model.onEditorUpdate }
-  }, [updateSQL, model.onEditorUpdate])
+    callbacks.current = { onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose }
+  }, [model.onEditorUpdate, model.onEditorDispose])
+  useLayoutEffect(
+    () => () => {
+      if (view.current) callbacks.current.dispose(view.current)
+    },
+    []
+  )
   // UIW 将回调/配置身份变化视为全量重配，输入时保持身份以保留补全与解析状态。
-  const onChange = useCallback((sql: string) => callbacks.current.updateSQL(sql), [])
-  const onUpdate = useCallback((update: ViewUpdate) => callbacks.current.onUpdate(update), [])
+  const onUpdate = useCallback((update: ViewUpdate) => {
+    if (update.docChanged) setHasSQL(Boolean(update.state.doc.length))
+    callbacks.current.onUpdate(update)
+  }, [])
   return (
     <section className="editor-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--surface)', overflow: 'hidden' }}>
       <div
@@ -87,7 +100,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
             运行
           </Button>
           {ai.configured && (
-            <Button icon={<BulbOutlined />} disabled={!tab.sql.trim() || running} onClick={() => void ai.optimize()}>
+            <Button icon={<BulbOutlined />} disabled={!hasSQL || running} onClick={() => void ai.optimize()}>
               优化
             </Button>
           )}
@@ -103,7 +116,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
               导入
             </Button>
           </Upload>
-          <Button icon={<DownloadOutlined />} disabled={!tab.sql.trim()} onClick={model.exportCurrentSQL}>
+          <Button icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL}>
             导出
           </Button>
           <Button icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory}>
@@ -131,21 +144,22 @@ export default function QueryEditor({ model, themeMode }: Props) {
           className="sql-editor"
           onContextMenuCapture={() => setContextSQL(model.getSelectedSQL() ?? '')}
           onScrollCapture={model.rememberEditor}
+          onBlurCapture={() => model.getCurrentSQL()}
           style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}
         >
           <CodeMirror
             key={activeTab}
-            value={tab.sql}
+            value={initialSQL}
             height="100%"
             style={{ height: '100%' }}
             theme={themeMode}
             extensions={editorExtensions}
-            onCreateEditor={(view) => {
-              ai.onEditorReady(view)
-              onEditorReady(view)
+            onCreateEditor={(created) => {
+              view.current = created
+              ai.onEditorReady(created)
+              onEditorReady(created)
             }}
             onUpdate={onUpdate}
-            onChange={onChange}
             basicSetup={editorSetup}
             aria-label="SQL 编辑器"
           />
