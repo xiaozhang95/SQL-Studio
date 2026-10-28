@@ -66,7 +66,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
               新建查询
             </Button>
           </div>
-          <Divider type="vertical" style={{ margin: 0 }} />
+          <Divider orientation="vertical" style={{ margin: 0 }} />
           <AISettings themeMode={themeMode} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
