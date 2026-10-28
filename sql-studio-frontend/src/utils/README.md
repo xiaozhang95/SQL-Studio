@@ -9,3 +9,5 @@
 每个实际模块单独目录并保留源码入口与 README。
 
 - [关闭前保存 SQL](sqlSave/README.md)。
+
+- [exportWriter](exportWriter/README.md)：原生文件流及有界下载兼容。

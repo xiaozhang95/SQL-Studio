@@ -23,6 +23,7 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 | GET    | `/connections/{id}/columns`   | 字段列表                                    |
 | GET    | `/connections/{id}/indexes`   | 索引列表，含唯一性、类型及按顺序排列的字段  |
 | GET    | `/connections/{id}/ddl`       | 对象建表语句                                |
+| GET | `/connections/{id}/export-data` | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
 | POST   | `/connections/{id}/query`     | 执行一条 SQL                                |
 | GET    | `/state/{section}`            | 读取配置分区                                |
 | PUT    | `/state/{section}`            | 按修订号保存配置                            |
@@ -59,3 +60,5 @@ QueryRequest/AIRequest 新增可选 schema:string。PostgreSQL 请求指定 sche
 MySQL/PostgreSQL SQL 窗口手动执行及结果刷新均显式设置 allowWrite=true，支持 DDL/DML；PostgreSQL 支持 RETURNING；API 省略该字段仍默认只读。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。
 
 MySQL 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释，避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
+
+流式导出 `GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功；约每10秒发送注释心跳。断开取消、后端独立2并发/30分钟限制、单行8MiB限制，不改变普通查询1000/5000行限制。客户端分批写入文件，失败/取消不提交文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。

@@ -1,4 +1,17 @@
-import { CloseOutlined, DownloadOutlined, EyeOutlined, LoadingOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
+import {
+  CloseOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EyeOutlined,
+  LoadingOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  SearchOutlined,
+  StopOutlined,
+  TableOutlined,
+  UndoOutlined
+} from '@ant-design/icons'
 import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
 import { useEffect, useState } from 'react'
 
@@ -61,6 +74,8 @@ export default function QueryResults({ model, themeMode }: Props) {
     onDirtyChange: model.setTableDesignerDirty,
     onResult: model.replaceTableResult
   })
+  const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
+  const selectedRows = selection.result === result ? selection.keys : []
   const [selectedView, setSelectedView] = useState<{
     pageId: string
     runId?: string
@@ -170,6 +185,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title="上次执行因页面刷新中断，已完成结果保留；未自动继续执行。" />}
+      {editing.deletionError && <Alert type="error" showIcon closable onClose={editing.clearDeletionError} title="删除数据未完成" description={editing.deletionError} />}
       <ResultTabs
         run={run}
         running={activeRunning}
@@ -209,6 +225,15 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                 >
                   新增行
+                </Button>
+                <Button
+                  icon={<DeleteOutlined />}
+                  danger
+                  disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length}
+                  title={editing.dirty ? '请先保存或放弃修改' : '删除选中的数据行'}
+                  onClick={() => editing.deleteRows(selectedRows, () => setSelection({ keys: [] }))}
+                >
+                  删除行
                 </Button>
                 <Button icon={<SaveOutlined />} type="primary" loading={editing.saving} disabled={editingBlocked || !editing.dirty} onClick={() => void editing.save()}>
                   保存
@@ -285,6 +310,16 @@ export default function QueryResults({ model, themeMode }: Props) {
               size={appearance.tableSize}
               className="data-table"
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
+              rowSelection={
+                tab.kind === 'data'
+                  ? {
+                      selectedRowKeys: selectedRows,
+                      onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
+                      preserveSelectedRowKeys: true,
+                      getCheckboxProps: (row) => ({ disabled: editingBlocked || row.key < 0 })
+                    }
+                  : undefined
+              }
               columns={columns}
               dataSource={rows.slice((tablePage - 1) * 50, tablePage * 50)}
               pagination={false}

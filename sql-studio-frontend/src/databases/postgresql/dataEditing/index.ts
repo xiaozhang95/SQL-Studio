@@ -2,6 +2,16 @@ import type { Column, QueryResult } from '../../../typings/database/index.ts'
 import { identifier, literal, relation } from '../query/index.ts'
 
 const unsupported = (column: Column) => /bytea|\[\]|geometry|geography|vector|range|record|^bit/i.test(column.type)
+export function deleteRowSQL(_database: string, table: string, columns: Column[], result: QueryResult, row: unknown[]) {
+  const keys = columns.filter((column) => column.key === 'PRI')
+  if (!keys.length) throw new Error('没有完整主键，无法安全删除这张表的数据')
+  const predicates = keys.map((column) => {
+    const index = result.columns.findIndex((field) => field.name === column.name)
+    if (index < 0 || row[index] == null || unsupported(column)) throw new Error('结果缺少可用主键，请重新打开表')
+    return `${identifier(column.name)} IS NOT DISTINCT FROM ${literal(row[index])}`
+  })
+  return `DELETE FROM ${relation(table)} WHERE ${predicates.join(' AND ')};`
+}
 export const canInsertColumn = (column: Column) => !unsupported(column) && !/GENERATED|IDENTITY/i.test(column.extra)
 export function updateCellSQL(_database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) {
   const field = columns.find((column) => column.name === result.columns[columnIndex]?.name)

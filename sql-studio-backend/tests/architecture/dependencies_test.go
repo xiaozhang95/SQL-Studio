@@ -14,7 +14,7 @@ import (
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
 		"app":        {"modules/ai": true, "deepseek": true, "statefile": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
-		"postgresql": {"model": true}, "database": {"model": true}, "config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true},
+		"postgresql": {"model": true, "rowstream": true}, "database": {"model": true}, "config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true, "rowstream": true}, "rowstream": {"model": true},
 		"httpapi":    {"modules/ai": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
 		"modules/ai": {"model": true}, "deepseek": {"model": true},
 		"statefile": {"model": true}, "modules/settings": {"model": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
@@ -58,7 +58,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if dependency == "net/http" && layer != "httpapi" && layer != "app" && layer != "deepseek" {
 				t.Errorf("%s 不得依赖 HTTP 传输层", relative)
 			}
-			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" {
+			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "rowstream" {
 				t.Errorf("%s 不得直接依赖 SQL 驱动", relative)
 			}
 			if (dependency == "os" || strings.HasPrefix(dependency, "os/")) && (strings.HasPrefix(layer, "modules/") || layer == "httpapi") {

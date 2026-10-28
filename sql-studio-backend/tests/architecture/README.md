@@ -5,3 +5,5 @@
 递归检查每个实际内部包的 README.md 与 doc.go，目录索引可以不包含 Go 源码。
 
 由 `go test ./...` 运行，不访问真实数据库。
+
+rowstream 允许依赖 model 和 database/sql，仅提供游标扫描；mysql/postgresql 可依赖它，模块与 HTTP 不得直接导入。各引擎继续独立拼接只读导出 SQL 和管理事务，不共享引擎方言。

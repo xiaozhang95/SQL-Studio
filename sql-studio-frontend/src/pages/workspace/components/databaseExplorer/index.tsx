@@ -76,6 +76,15 @@ export default function DatabaseExplorer({ model }: Props) {
           : []),
         { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
         { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        {
+          key: 'export',
+          label: '转储文件',
+          icon: <ExportOutlined />,
+          children: [
+            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
+          ]
+        },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'database') {
@@ -90,6 +99,15 @@ export default function DatabaseExplorer({ model }: Props) {
         ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema) ? [{ key: 'create-schema', label: '新建 Schema', icon: <PlusOutlined /> }] : []),
         { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
         { key: 'tables', label: engine.explorer ? '查看 Schema 列表' : '查看表列表', icon: <TableOutlined /> },
+        {
+          key: 'export',
+          label: '转储文件',
+          icon: <ExportOutlined />,
+          children: [
+            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
+          ]
+        },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'tables') {

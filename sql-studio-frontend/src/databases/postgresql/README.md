@@ -17,3 +17,5 @@ objects=undefined 表示不使用 MySQL 的库表一体能力；databaseEditor �
 对象树按数据库 → schema → 表/视图分类 → 对象名展示；schema 使用真实列表，包含空 schema，表标签只显示本层名，目标仍为完整 schema/table。
 
 查询页增加独立 schema 选择，当前 schema 传给后端执行、补全与 AI 上下文。数据库/schema 结构结果拆开列，对象页标题保留 schema 以区分同名表。[AI 引用](context/README.md) 保留完整对象身份。
+
+dumpFile 封装数据库/Schema 结构头、序列和延后外键；流式 prepareDump/dumpRows 见 dataDump。

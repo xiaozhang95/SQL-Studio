@@ -6,7 +6,6 @@ import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { CollationOption, DatabaseDefinition, FieldDefinition, ObjectChange, ObjectFormValues, ObjectTarget } from '@/databases/typings/objectManagement'
 import { executeObjectSQL, executeQuery, getColumns, getDDL } from '@/services/database'
 import type { Connection } from '@/typings/database'
-import { exportSQL } from '@/utils/sqlExport'
 
 type InitialOperation = { action: ObjectAction; target: ObjectTarget }
 type Options = {
@@ -34,7 +33,7 @@ const titles: Record<ObjectAction, string> = {
 }
 /** 元数据、表单和写入均绑定打开菜单时的显式连接与对象；普通编辑器不获得写入权限。 */
 export function useObjectManagement({ connections, blocked, onBusyChange, onChanged, initial, keepOpen = false, onDirtyChange }: Options) {
-  const { message, modal } = App.useApp()
+  const { message } = App.useApp()
   const [form] = Form.useForm<ObjectFormValues>()
   const [dialog, setDialog] = useState<Dialog>()
   const [loading, setLoading] = useState(false)
@@ -302,40 +301,6 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     }
     if (reopen && !controller.signal.aborted) await open(ObjectAction.EditTable, reopen)
   }
-  async function dump(target: ObjectTarget, includeData = false) {
-    if (blocked || request.current) return
-    const connection = connections.find((value) => value.id === target.connectionId)
-    if (!connection) return
-    const controller = new AbortController()
-    request.current = controller
-    onBusyChange(true)
-    try {
-      const result = await getDDL(connection.id, target.database, target.table, controller.signal)
-      const engine = getDatabaseAdapter(connection.type)
-      const adapter = engine.dataDump
-      let output = engine.exportDDL(target.database, target.table, result.ddl)
-      if (includeData) {
-        if (!adapter) throw new Error('该引擎暂不支持数据转储，请使用原生备份工具')
-        if (target.view) throw new Error('视图仅支持结构转储')
-        const [columns, data, metadata] = await Promise.all([
-          getColumns(connection.id, target.database, target.table, controller.signal),
-          executeQuery(connection.id, { database: target.database, sql: adapter.querySQL(target.database, target.table), limit: 5000 }, controller.signal),
-          adapter.metadataSQL
-            ? executeQuery(connection.id, { database: target.database, sql: adapter.metadataSQL(target.database, target.table), limit: 5000 }, controller.signal)
-            : Promise.resolve(undefined)
-        ])
-        const latest = await getDDL(connection.id, target.database, target.table, controller.signal)
-        const sameDefinition = (engine.objects ?? engine.tableDesign)?.sameDefinition
-        if (sameDefinition ? !sameDefinition(latest.ddl, result.ddl) : latest.ddl !== result.ddl) throw new Error('导出期间表结构发生变化，请重新导出')
-        output = adapter.dump(target.database, target.table, result.ddl, data, columns, metadata)
-      }
-      if (!controller.signal.aborted) exportSQL(output, engine.tableLabel(target.table) + (includeData ? '-structure-data' : '-structure'))
-    } catch (reason) {
-      if (!controller.signal.aborted) modal.error({ title: 'SQL 转储失败', content: reason instanceof Error ? reason.message : '请重试或使用原生备份工具' })
-    } finally {
-      release(controller)
-    }
-  }
   const initialize = useEffectEvent(() => {
     if (initial && !blocked && !request.current && !currentDialog.current) void open(initial.action, initial.target)
   })
@@ -368,7 +333,6 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     close,
     save,
     preview,
-    dump,
     invalidatePreview: () => {
       setPreviewSQL('')
       setDirty(true)

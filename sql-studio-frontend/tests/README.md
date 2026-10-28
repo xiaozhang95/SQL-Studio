@@ -38,3 +38,5 @@ PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test
 explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
 
 Schema 回归覆盖结构列表拆列、旧记录迁移、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。
+
+export-stream.test.mjs 覆盖 SSE UTF-8 跨块/心跳/完成和失败、原生文件提交/放弃、两种引擎复合主键删除和 PostgreSQL 外键延后/引号表达式。后端 mysql/postgresql export_test.go 通过真实 database/sql 扫描流程及替身驱动验证6001行分批、精度/二进制、只读及资源释放；HTTP export_test.go 验证SSE事件和显式目标。均不代表真实数据库导出回灌验证。

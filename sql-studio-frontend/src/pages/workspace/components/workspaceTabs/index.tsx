@@ -88,7 +88,8 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
             {designerDirty[item.id] ? ' *' : ''}
           </span>
         ),
-        closable: !running,
+        closable: true,
+        closeIcon: <CloseOutlined aria-disabled={running} style={{ opacity: running ? 0.35 : 1 }} />,
         destroyOnHidden: item.kind === 'table-create' || item.kind === 'table-design' ? false : true,
         children: item.kind === 'table-create' || item.kind === 'table-design' ? renderDesigner(item) : item.id === activeTab ? children : undefined
       }))}

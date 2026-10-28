@@ -36,11 +36,25 @@ export interface DatabaseExplorerAdapter {
   schemaListResult: (schemas: readonly string[]) => Pick<QueryResult, 'columns' | 'rows'>
 }
 
+export interface DumpPlan {
+  before: string
+  after: string
+  constraints?: string
+  data: (result: QueryResult) => string
+}
+
 export interface DatabaseAdapter {
+  readonly dumpFile: {
+    metadataSQL?: (database: string) => string
+    header: (database: string, schemas: string[], metadata?: QueryResult) => string
+    footer: string
+    prepare: (database: string, table: string, ddl: string, columns: Column[], metadata: QueryResult | undefined, withData: boolean) => DumpPlan
+  }
   readonly explorer?: DatabaseExplorerAdapter
   isSQLColumn: (name: string) => boolean
   canInsertColumn: (column: Column) => boolean
   insertRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, values: unknown[]) => string
+  deleteRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[]) => string
   updateCellSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) => string
   readonly profile: DatabaseProfile
   readonly objects: DatabaseObjectAdapter | undefined

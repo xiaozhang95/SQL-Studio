@@ -17,6 +17,7 @@ import { presentObjectPage, presentTableList } from '../../utils/objectPresentat
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useDatabaseObjects } from '../useDatabaseObjects'
+import { useDataExport } from '../useDataExport'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryHistory } from '../useQueryHistory'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
@@ -27,6 +28,7 @@ const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query'
 /** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
 export const useWorkspace = () => {
   const { message, modal } = AntApp.useApp()
+  const dataExport = useDataExport()
   const [connections, setConnections] = useState<Connection[]>([])
   const [connectionLoading, setConnectionLoading] = useState(true)
   const [connectionError, setConnectionError] = useState('')
@@ -514,6 +516,7 @@ export const useWorkspace = () => {
       }
       const activeScope = runs[runningTabId]?.scope || tabs.find((page) => page.id === runningTabId)
       if (activeScope?.connectionId === id && (db === undefined || activeScope.database === db)) request.current?.abort()
+      if (dataExport.busy && dataExport.state?.connectionId === id && (db === undefined || dataExport.state.database === db)) dataExport.cancel()
       // 只有服务端确认驱动资源已释放后，才删除窗口和本地元数据。
       if (db === undefined) await objects.closeConnection(id)
       else await objects.closeDatabase(id, db)
@@ -574,6 +577,11 @@ export const useWorkspace = () => {
       } catch (error) {
         message.error(error instanceof Error ? error.message : '打开数据库失败')
       }
+      return
+    }
+    if (action === 'dump' || action === 'dump-data') {
+      const target = connections.find((item) => item.id === id)
+      if (target) void dataExport.start(target, db, action === 'dump-data', undefined, schema)
       return
     }
     const scope = { connectionId: id, database: db, schema, table: '' }
@@ -700,7 +708,7 @@ export const useWorkspace = () => {
       return
     }
     if (action === 'dump' || action === 'dump-data') {
-      void objectManagement.dump(scope, action === 'dump-data')
+      void dataExport.start(target, db, action === 'dump-data', table)
       return
     }
     if (action === 'refresh') {
@@ -962,6 +970,7 @@ export const useWorkspace = () => {
     setEditing(undefined)
   }
   return {
+    dataExport,
     workspaceReady,
     storageError,
     saving,

@@ -1,5 +1,6 @@
 import type { Column, QueryResult } from '../../../typings/database/index.ts'
-import { identifier, literal, relation, tableIdentity } from '../query/index.ts'
+import type { DumpPlan } from '../../typings/index.ts'
+import { exportDDL, identifier, literal, relation, tableIdentity } from '../query/index.ts'
 
 export const querySQL = (_database: string, table: string) => `SELECT * FROM ${relation(table)};`
 /** 仅枚举目标表自有 SERIAL/IDENTITY 序列，所有值保持文本精度；不读取业务表。 */
@@ -19,7 +20,7 @@ function valueSQL(value: unknown, type: string): string {
   return literal(value)
 }
 
-export function dump(database: string, table: string, ddl: string, result: QueryResult, columns: Column[], metadata?: QueryResult): string {
+function prepare(database: string, table: string, ddl: string, result: QueryResult, columns: Column[], metadata?: QueryResult): DumpPlan {
   if (result.truncated || metadata?.truncated) throw new Error('数据超过单次导出限制（5000 行或 8 MiB），未生成不完整的文件')
   if (!metadata || !ddl.trim() || !Array.isArray(result.rows) || result.rows.length !== result.rowCount) throw new Error('转储数据或元数据不完整')
   if (/\)\s+PARTITION BY\b/i.test(ddl) || /^CREATE\s+(?:MATERIALIZED\s+)?VIEW\b/i.test(ddl.trim())) throw new Error('分区表和视图的数据请使用 pg_dump 导出')
@@ -88,27 +89,117 @@ export function dump(database: string, table: string, ddl: string, result: Query
     columns.some((column) => !result.columns.some((field) => field.name === column.name))
   )
     throw new Error('表结构与数据列不一致，请重新导出')
+  return {
+    before: [
+      `-- PostgreSQL database: ${database.replace(/[\r\n]/g, ' ')}`,
+      '-- 表结构和数据；外部类型、函数、授权等依赖需预先存在；导出期间请避免并发写入',
+      ...[...schemas].map((name) => `CREATE SCHEMA IF NOT EXISTS ${identifier(name)};`),
+      ...before,
+      ddl.trim(),
+      ...after,
+      ''
+    ].join('\n'),
+    after: resets.join('\n') + '\n',
+    data: (chunk) => dumpRows(table, chunk, columns)
+  }
+}
+
+export function dumpRows(table: string, result: QueryResult, columns: Column[]): string {
+  if (result.truncated || result.columns.length !== columns.length || columns.some((column) => !result.columns.some((field) => field.name === column.name)))
+    throw new Error('表结构与数据列不一致，请重新导出')
+  const target = relation(table)
   const fields = result.columns
     .map((field, index) => ({ field, index, definition: columns.find((column) => column.name === field.name)! }))
     .filter(({ definition }) => !/GENERATED/i.test(definition.extra))
   const overriding = fields.some(({ definition }) => /IDENTITY/i.test(definition.extra)) ? ' OVERRIDING SYSTEM VALUE' : ''
-  const inserts = result.rows.map((row) => {
-    if (row.length !== result.columns.length) throw new Error('行数据不完整')
-    return fields.length
-      ? `INSERT INTO ${target} (${fields.map(({ field }) => identifier(field.name)).join(', ')})${overriding} VALUES (${fields.map(({ field, index }) => valueSQL(row[index], field.type)).join(', ')});`
-      : `INSERT INTO ${target} DEFAULT VALUES;`
-  })
-  return [
-    `-- PostgreSQL database: ${database.replace(/[\r\n]/g, ' ')}`,
-    '-- 单表结构和数据；依赖对象需预先存在；导出期间请避免并发写入',
-    ...[...schemas].map((name) => `CREATE SCHEMA IF NOT EXISTS ${identifier(name)};`),
-    ...before,
-    ddl.trim(),
-    ...after,
-    ...inserts,
-    ...resets,
-    ''
-  ].join('\n')
+  return (
+    result.rows
+      .map((row) => {
+        if (row.length !== result.columns.length) throw new Error('行数据不完整')
+        return fields.length
+          ? `INSERT INTO ${target} (${fields.map(({ field }) => identifier(field.name)).join(', ')})${overriding} VALUES (${fields.map(({ field, index }) => valueSQL(row[index], field.type)).join(', ')});`
+          : `INSERT INTO ${target} DEFAULT VALUES;`
+      })
+      .join('\n') + '\n'
+  )
+}
+
+export function dump(database: string, table: string, ddl: string, result: QueryResult, columns: Column[], metadata?: QueryResult): string {
+  const plan = prepare(database, table, ddl, result, columns, metadata)
+  return plan.before + plan.data(result) + plan.after
+}
+
+/** 只拆 CREATE TABLE 顶层逗号，保留引号、表达式、注释文本中的内容。 */
+function deferredForeignKeys(table: string, ddl: string): { structure: string; deferred: string[] } {
+  if (!/^CREATE TABLE\s/i.test(ddl.trimStart())) return { structure: ddl, deferred: [] }
+  let depth = 0,
+    opening = -1,
+    from = 0
+  const clauses: string[] = [],
+    deferred: string[] = []
+  for (let index = 0; index < ddl.length; index++) {
+    const char = ddl[index]
+    if (char === '"' || char === "'") {
+      const quote = char
+      // pg_get_expr emits E strings when backslash escaping is needed.
+      const escape = quote === "'" && /(?:^|[^\w])e$/i.test(ddl.slice(0, index))
+      for (index++; index < ddl.length; index++) {
+        if (escape && ddl[index] === '\\') {
+          index++
+          continue
+        }
+        if (ddl[index] === quote) {
+          if (ddl[index + 1] === quote) index++
+          else break
+        }
+      }
+    } else if (char === '$') {
+      const tag = /^\$(?:[a-zA-Z_][\w]*)?\$/.exec(ddl.slice(index))?.[0]
+      if (tag) {
+        const end = ddl.indexOf(tag, index + tag.length)
+        if (end < 0) throw new Error('DDL 字符串未闭合')
+        index = end + tag.length - 1
+      }
+    } else if (char === '(') {
+      if (depth++ === 0) {
+        opening = index
+        from = index + 1
+      }
+    } else if (char === ',' && depth === 1) {
+      clauses.push(ddl.slice(from, index).trim())
+      from = index + 1
+    } else if (char === ')' && --depth === 0) {
+      clauses.push(ddl.slice(from, index).trim())
+      const retained = clauses.filter((clause) => {
+        if (!/^CONSTRAINT\s+(?:"(?:[^"]|"")*"|\S+)\s+FOREIGN KEY\s*\(/i.test(clause)) return true
+        deferred.push(`ALTER TABLE ${relation(table)} ADD ${clause};`)
+        return false
+      })
+      return { structure: ddl.slice(0, opening + 1) + '\n  ' + retained.join(',\n  ') + '\n' + ddl.slice(index), deferred }
+    }
+  }
+  throw new Error('无法解析表结构，请重新导出')
+}
+
+/** 外键在所有表与数据完成后添加，支持跨表依赖及循环外键。 */
+export function prepareDump(database: string, table: string, ddl: string, columns: Column[], metadata: QueryResult | undefined, withData: boolean): DumpPlan {
+  if (withData && /\)\s+PARTITION BY\b/i.test(ddl)) throw new Error('分区表的数据请使用 pg_dump 导出')
+  const { structure, deferred } = deferredForeignKeys(table, ddl)
+  const empty: QueryResult = {
+    columns: columns.map((column) => ({ name: column.name, type: column.type })),
+    rows: [],
+    rowCount: 0,
+    affectedRows: 0,
+    lastInsertId: '',
+    durationMs: 0,
+    truncated: false,
+    isQuery: true
+  }
+  const plan =
+    !/^CREATE\s+(?:MATERIALIZED\s+)?VIEW\b/i.test(structure.trim()) && !/\)\s+PARTITION BY\b/i.test(structure)
+      ? prepare(database, table, structure, empty, columns, metadata)
+      : { before: exportDDL(database, table, structure) + '\n', after: '', data: () => '' }
+  return { ...plan, constraints: deferred.join('\n') + '\n' }
 }
 
 export const dataDump = { querySQL, metadataSQL, dump }

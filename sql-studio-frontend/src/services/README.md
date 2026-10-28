@@ -7,3 +7,5 @@
 - [userState](userState/README.md)：Go 用户配置与浏览器迁移。
 
 - [AI 请求](ai/README.md)：SQL 续写与优化。
+
+- [dataExport](dataExport/README.md)：只读 SSE 表数据流与协议校验。

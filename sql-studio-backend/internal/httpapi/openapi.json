@@ -673,6 +673,56 @@
         }
       }
     },
+    "/connections/{id}/export-data": {
+      "get": {
+        "operationId": "streamTableExport",
+        "summary": "SSE 流式导出表数据",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "table",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE data JSON: rows(result QueryResult), done, error(error string). 心跳注释每10秒，必须收到done才成功。",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效范围"
+          },
+          "403": {
+            "description": "禁止访问"
+          }
+        }
+      }
+    },
     "/connections/{id}/query": {
       "post": {
         "operationId": "query",

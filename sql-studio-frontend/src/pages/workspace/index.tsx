@@ -6,6 +6,7 @@ import type { ThemeMode, ThemePreference } from '@/typings/theme'
 import AISettings from './components/aiSettings'
 import ConnectionModal from './components/connectionModal'
 import ConnectionSidebar from './components/connectionSidebar'
+import DataExport from './components/dataExport'
 import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
 import QueryHistory from './components/queryHistory'
@@ -116,9 +117,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
                   )}
                 >
                   <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-                    {model.tab.kind === 'query' && (
-                      <QueryEditor key={JSON.stringify([model.activeTab, model.tab.connectionId, model.tab.database, model.running])} model={model} themeMode={themeMode} />
-                    )}
+                    {model.tab.kind === 'query' && <QueryEditor key={JSON.stringify([model.activeTab, model.tab.connectionId, model.tab.database])} model={model} themeMode={themeMode} />}
                     <QueryResults model={model} themeMode={themeMode} />
                   </div>
                 </WorkspaceTabs>
@@ -131,6 +130,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
           </main>
         </div>
       )}
+      <DataExport model={model.dataExport} />
       <ObjectManagementModal manager={model.objectManagement} themeMode={themeMode} />
       <ConnectionModal open={model.connectionModal} connection={model.editing} connections={model.connections} onClose={() => model.setConnectionModal(false)} onSaved={model.onConnectionSaved} />
       <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />

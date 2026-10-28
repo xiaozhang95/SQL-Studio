@@ -98,3 +98,18 @@ func (c *Client) Schemas(ctx context.Context, connection model.Connection, datab
 	}
 	return engine.Schemas(ctx, connection, database)
 }
+
+// StreamTableData dispatches only to an explicitly supported streaming engine.
+func (c *Client) StreamTableData(ctx context.Context, connection model.Connection, ref model.TableRef, emit func(model.QueryResult) error) error {
+	engine, err := c.engine(connection)
+	if err != nil {
+		return err
+	}
+	exporter, ok := engine.(interface {
+		StreamTableData(context.Context, model.Connection, model.TableRef, func(model.QueryResult) error) error
+	})
+	if !ok {
+		return errors.New("该引擎不支持流式导出")
+	}
+	return exporter.StreamTableData(ctx, connection, ref, emit)
+}

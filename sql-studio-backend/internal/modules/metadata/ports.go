@@ -26,8 +26,9 @@ const metadataTimeout = 10 * time.Second
 type Service struct {
 	connections Connections
 	database    Database
+	exports     chan struct{}
 }
 
 func New(repository Connections, database Database) *Service {
-	return &Service{connections: repository, database: database}
+	return &Service{connections: repository, database: database, exports: make(chan struct{}, 2)}
 }

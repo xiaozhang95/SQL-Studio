@@ -37,3 +37,5 @@ GET /api/connections/:id/indexes 接受 database/table，返回只读索引列�
 POST /api/connections/:id/session 要求显式非 null 的 open 布尔值；database 省略为整个连接，显式 null、空字符串和非字符串均拒绝。关闭成功响应表示目标驱动资源已释放。session_test.go 检查输入、原始范围、超时与失败响应；Swagger 及本地列表同步维护。
 
 新增 GET /connections/{id}/schemas?database=...，返回 schema 名称数组，仅解码/转发 metadata.Schemas。
+
+GET /connections/:id/export-data?database=...&table=... 输出 SSE JSON 事件 rows(result:QueryResult)、done、error(error:string)，开始与每10秒注释心跳。只对该流动态续期写入 deadline，普通HTTP超时不变。断开连接取消模块请求，逐事件背压，无部分成功保证，只有 done 表示游标结束；无效范围400，其余运行错误通过 error事件报告。

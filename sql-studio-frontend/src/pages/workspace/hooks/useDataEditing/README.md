@@ -5,3 +5,5 @@ useDataEditing 接收固定 tab、connection、result、blocked、onBusyChange�
 addRow 读取元数据后新增独立负 key 暂存行，不要求主键；newRows/removeNewRow 管理未提交新行。默认列值为 undefined，保存省略并由数据库生成。统一保存先处理已有修改、再逐行 INSERT；成功项移除暂存，失败保留剩余。新增支持无主键基础表，视图不支持。
 
 新增行通过 newColumn/canInsert/changeNew 直接受控输入，无需双击或单元格编辑状态，内部默认值哨兵不会呈现为 undefined 文本。
+
+deleteRows(keys,onDeleted) 对已选择的现有行提供显式确认，重新读取基础表/主键信息，先验证全部主键，再依次执行单行删除；必须先保存/放弃暂存修改。仅完整可用主键可删除，视图/无主键拒绝。失败立即停止、显示已删除数，保留未删数据；成功后刷新当前页。选择跨分页保留，结果版本变化清空；取消或中途失败不承诺回滚。

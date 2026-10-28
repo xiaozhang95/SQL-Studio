@@ -19,3 +19,5 @@ readRows 的 IsQuery 由实际结果列数量决定，无列成功回执不冒�
 QueryRequest.Schema 非空时先在请求独占 sql.Conn 验证 schema 存在和 USAGE，再参数化 set_config(search_path,quoteIdentifier(schema),false)。该同一连接用于后续只读事务/显式写入；请求结束释放，不跨请求保留 schema。名称中的逗号、引号作为单个 schema 标识处理，不拼用户 SQL。
 
 DDL 在本次独占物理连接将 search_path 固定为 pg_catalog，再进行全部目录反解析，确保 SERIAL 默认值、类型/函数和索引的跨 schema 引用明确限定，避免导出文件依赖源会话搜索路径。设置和读取使用同一 sql.Conn，请求结束释放，其他查询不继承。
+
+export.go 的 StreamTableData(ctx,connection,ref,emit) 解析显式 schema/table，在只读 REPEATABLE READ 事务使用游标分批回调，保留文本精度与 BYTEA。继承库/连接关闭、取消及超时；单表快照不等于全库一致性备份。

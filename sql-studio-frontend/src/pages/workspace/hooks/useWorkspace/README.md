@@ -65,3 +65,5 @@ schemaConnections 由连接及引擎 explorer 能力 memo 化提供给对象缓�
 数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。旧对象标题/结构结果由 objectPresentation 兼容展示，恢复不重跑 SQL。
 
 MySQL/PostgreSQL SQL 窗口的手动运行与结果刷新均显式传 allowWrite=true，支持 DDL/DML，不增加只读开关或额外确认；对象数据预览保持读取请求。每条独立自动提交，批次失败停止后续语句；不支持跨请求事务或会话状态，取消不保证回滚。
+
+dataExport 独立管理导出请求和文件；数据库/Schema/表菜单显式传入目标连接与范围。关闭相同库/连接会取消该导出，关闭其他范围不影响它。查询编辑器不因 objectBusy/running 改变而重挂载；页面关闭按钮恒定占位。

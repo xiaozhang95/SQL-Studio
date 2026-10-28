@@ -8,6 +8,16 @@ const text = (value: unknown): string => {
   return hex ? "CONVERT(X'" + hex + "' USING utf8mb4)" : "''"
 }
 const unsupported = (column: Column) => /binary|blob|bit|geometry|point|polygon|linestring|vector/i.test(column.type)
+export function deleteRowSQL(database: string, table: string, columns: Column[], result: QueryResult, row: unknown[]) {
+  const keys = columns.filter((column) => column.key === 'PRI')
+  if (!keys.length) throw new Error('没有完整主键，无法安全删除这张表的数据')
+  const predicates = keys.map((column) => {
+    const index = result.columns.findIndex((field) => field.name === column.name)
+    if (index < 0 || row[index] == null || unsupported(column)) throw new Error('结果缺少可用主键，请重新打开表')
+    return 'CAST(' + name(column.name) + ' AS BINARY) <=> CAST(' + text(row[index]) + ' AS BINARY)'
+  })
+  return 'DELETE FROM ' + name(database) + '.' + name(table) + ' WHERE ' + predicates.join(' AND ') + ' LIMIT 1;'
+}
 export function updateCellSQL(database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) {
   const field = columns.find((item) => item.name === result.columns[columnIndex]?.name)
   const keys = columns.filter((item) => item.key === 'PRI')
