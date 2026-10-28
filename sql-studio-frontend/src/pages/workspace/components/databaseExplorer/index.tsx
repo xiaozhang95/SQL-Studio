@@ -58,11 +58,11 @@ export default function DatabaseExplorer({ model }: Props) {
       const connected = objects.snapshots[id]?.status === 'connected'
       items = [
         connected || objects.snapshots[id]?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
-        { key: 'refresh', label: '刷新连接', icon: <ReloadOutlined />, disabled: !connected },
         { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
         { type: 'divider' },
         { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
-        { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true }
+        { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true },
+        { key: 'refresh', label: '刷新', icon: <ReloadOutlined />, disabled: !connected }
       ]
     } else if (node.kind === 'schema') {
       items = [
