@@ -28,7 +28,7 @@ test('模块入口、README、样式归属和文档链接保持有效', () => {
     if (!/^index\.tsx?$/.test(path.basename(file))) failures.push('模块入口必须为 index.ts(x): ' + relative)
     if (!fs.existsSync(path.join(path.dirname(file), 'README.md'))) failures.push('缺少模块 README: ' + relative)
   }
-  const bases = ['docs', 'sql-studio-frontend/src', 'sql-studio-backend/internal', 'sql-studio-backend/cmd', 'sql-studio-backend/tests', '.agents/skills']
+  const bases = ['docs', 'sql-studio-frontend/src', 'sql-studio-backend/internal', 'sql-studio-backend/tests', '.agents/skills']
   const markdown = [
     path.join(root, 'AGENTS.md'),
     path.join(root, 'README.md'),

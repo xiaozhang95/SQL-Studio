@@ -588,7 +588,13 @@ export const useWorkspace = () => {
     const objectAction = actions[action]
     if (objectAction) {
       const adapter = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
-      if (!adapter.objects && !(objectAction === ObjectAction.CreateTable && adapter.tableDesign && schema) && !adapter.simpleObjects?.actions.includes(objectAction)) return
+      if (
+        !adapter.objects &&
+        !(objectAction === ObjectAction.EditDatabase && adapter.databaseEditor) &&
+        !(objectAction === ObjectAction.CreateTable && adapter.tableDesign && schema) &&
+        !adapter.simpleObjects?.actions.includes(objectAction)
+      )
+        return
       if (
         (objectAction === ObjectAction.RenameSchema || objectAction === ObjectAction.DropSchema) &&
         tabs.some((page) => page.connectionId === id && page.database === db && page.schema === schema && (page.kind === 'table-design' || page.kind === 'table-create' || designerDirty[page.id]))
@@ -785,7 +791,7 @@ export const useWorkspace = () => {
           if (controller.signal.aborted) throw new Error('请求已取消')
           entry.result = await executeQuery(
             target.id,
-            { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' && target.type === 'postgresql' ? { allowWrite: true } : {}) },
+            { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true } : {}) },
             controller.signal
           )
           if (controller.signal.aborted) throw new Error('请求已取消')

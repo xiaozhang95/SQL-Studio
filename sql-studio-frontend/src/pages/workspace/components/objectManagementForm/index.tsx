@@ -13,7 +13,7 @@ import SQLPreview from '../sqlPreview'
 
 type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
-  'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview'
+  'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview' | 'databaseDefinition'
 >
 type Props = { manager: FormManager; themeMode: ThemeMode }
 type FormField = { name: number; key: number }
@@ -27,6 +27,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const schemaForm = action === ObjectAction.CreateSchema || action === ObjectAction.RenameSchema || action === ObjectAction.DropSchema
   const charset = Form.useWatch('charset', form)
   const targetName = (schemaForm ? dialog?.target.schema : dialog?.target.table || dialog?.target.database) || ''
+  const DatabasePropertiesForm = action === ObjectAction.EditDatabase && dialog ? getDatabaseAdapter(dialog.connection.type).databaseEditor?.Form : undefined
   return (
     <>
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
@@ -60,12 +61,28 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           }
         />
       )}
-      <Form form={form} layout="vertical" disabled={loading || saving || !ready} onValuesChange={manager.invalidatePreview}>
+      <Form
+        form={form}
+        layout="horizontal"
+        labelCol={{ flex: '112px' }}
+        wrapperCol={{ flex: 1 }}
+        labelAlign="right"
+        labelWrap
+        disabled={loading || saving || !ready}
+        onValuesChange={manager.invalidatePreview}
+      >
         {destructive ? (
           <Form.Item
             name="confirmation"
             validateFirst
-            label={'输入 ' + targetName + ' 确认'}
+            label="确认名称"
+            extra={
+              <span style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
+                <span style={{ userSelect: 'none' }}>输入</span>
+                <span style={{ userSelect: 'all', overflowWrap: 'anywhere', whiteSpace: 'break-spaces' }}>{targetName}</span>
+                <span style={{ userSelect: 'none' }}>确认</span>
+              </span>
+            }
             rules={[{ required: true, message: '请输入对象名称' }, { validator: (_, value) => (value === targetName ? Promise.resolve() : Promise.reject(new Error('对象名称不匹配'))) }]}
           >
             <Input autoComplete="off" placeholder={targetName} />
@@ -87,6 +104,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
             />
           </Form.Item>
         )}
+        {DatabasePropertiesForm && manager.databaseDefinition && <DatabasePropertiesForm definition={manager.databaseDefinition} />}
         {databaseForm && dialog && getDatabaseAdapter(dialog.connection.type).objects && (
           <>
             <Form.Item name="charset" label="字符集" rules={[{ required: true }]}>

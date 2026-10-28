@@ -31,7 +31,7 @@ context 从 HTTP 一直传到驱动，不丢失取消和超时。app 创建共�
 从 `sql-studio-backend` 目录直接运行，不用启动/停止/检查包装脚本，也不提前增加容器或部署配置：
 
 ```sh
-go run ./cmd/sql-studio-backend/main.go
+go run main.go
 ```
 
 默认终端输出日志，Ctrl+C 退出；不生成后台 PID 或将日志重定向进仓库。现有运行参数按需使用环境变量，不删除程序必需配置、go.mod/go.sum 或加密数据目录。脚本自动化和部署配置等以后有实际需求再添加。

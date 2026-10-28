@@ -8,7 +8,7 @@ import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/state
 // 执行真实工作区编排函数，替换请求与 React 状态；不连接业务数据库。
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
 const implementation = source.slice(source.indexOf('  async function executeSQL('), source.indexOf('  const refreshScope ='))
-async function run(script, failSQL, cancelSQL, schema) {
+async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
   const controller = new AbortController()
   const calls = [],
     histories = [],
@@ -22,7 +22,7 @@ async function run(script, failSQL, cancelSQL, schema) {
     objects: { snapshots: { a: { status: 'connected' } } },
     running: false,
     request: { current: null },
-    getDatabaseAdapter: () => ({ splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL }),
+    getDatabaseAdapter: () => ({ splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL, tableLabel: (table) => table }),
     message: { error() {}, info() {}, success() {} },
     startRun: () => controller,
     finishRun() {},
@@ -40,7 +40,7 @@ async function run(script, failSQL, cancelSQL, schema) {
     setResultViews() {}
   }
   const execute = new Function(...Object.keys(dependencies), stripTypeScriptTypes(implementation) + '; return executeSQL')(...Object.values(dependencies))
-  await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page')
+  await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page', kind)
   return { calls, histories, results, pages }
 }
 
@@ -102,9 +102,16 @@ test('refresh reuses the executed statement schema instead of the current select
   assert.equal(calls[0][1].schema, 'executed-schema')
 })
 
-test('PostgreSQL SQL window explicitly enables writes while MySQL stays read-only', async () => {
+test('both SQL windows explicitly enable DDL and DML execution', async () => {
   const pg = await run('CREATE SCHEMA sample; INSERT INTO sample.t VALUES (1);', undefined, undefined, 'public')
   assert.ok(pg.calls.every((call) => call.allowWrite === true))
-  const mysql = await run('SELECT 1;')
-  assert.ok(mysql.calls.every((call) => call.allowWrite === undefined))
+  const mysql = await run('SET NAMES utf8mb4; CREATE TABLE sample(id INT); INSERT INTO sample VALUES(1);')
+  assert.equal(mysql.calls.length, 3)
+  assert.ok(mysql.calls.every((call) => call.allowWrite === true))
+})
+
+test('table data previews retain the default read request', async () => {
+  const output = await run('SELECT * FROM sample;', undefined, undefined, undefined, 'data')
+  assert.equal(output.calls.length, 1)
+  assert.equal(output.calls[0].allowWrite, undefined)
 })

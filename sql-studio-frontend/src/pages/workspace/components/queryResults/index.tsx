@@ -279,7 +279,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             <LoadingOutlined spin /> 正在加载结果
           </div>
         ) : run?.error ? (
-          <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<pre style={{ whiteSpace: 'pre-wrap' }}>{run.error}</pre>} />
+          <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{run.error}</div>} />
         ) : commandSucceeded ? (
           <Alert style={{ margin: 16 }} type="success" showIcon title="执行成功" description={`语句执行成功，影响 ${result?.affectedRows ?? 0} 行。`} />
         ) : result ? (

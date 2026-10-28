@@ -16,7 +16,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 选连接后提供当前连接的数据库补全；选库自动 loadTables 并共用对象缓存，补全表/视图及已加载字段，defaultSchema/defaultTable 与当前页一致。异步数据按连接隔离，范围变化只切换消费方；关闭/刷新取消旧代请求，迟到结果不能重新打开连接。数据库成功加载时只校验保存范围是否仍有效，不自动执行 SQL。
 
-完整草稿或选区由目标数据库适配器 splitStatements 完整扫描，再顺序调用现有单语句接口；表数据语句同样通过适配器 tableDataSQL 生成，工作区不维护具体引号规则。整批固定页 ID、连接、初始库、运行锁与 AbortController；每条独立保存结果和历史。失败或取消停止后续发送，保留已完成结果并提示未执行数量；请求不传 limit；PostgreSQL 查询窗口显式传 allowWrite=true，不声称此前执行被回滚。
+完整草稿或选区由目标数据库适配器 splitStatements 完整扫描，再顺序调用现有单语句接口；表数据语句同样通过适配器 tableDataSQL 生成，工作区不维护具体引号规则。整批固定页 ID、连接、初始库、运行锁与 AbortController；每条独立保存结果和历史。失败或取消停止后续发送，保留已完成结果并提示未执行数量；请求不传 limit；MySQL/PostgreSQL 查询窗口均显式传 allowWrite=true，不声称此前执行被回滚。
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 
@@ -38,7 +38,7 @@ Ctrl/Command+Enter 在 window 捕获阶段处理并停止向编辑器传播，�
 
 executeSQL 在单语句执行开始记录批次 startedAt，按完成语句更新 durationMs，最后一条或失败记录 endedAt；失败语句也保留请求耗时供消息/摘要展示。不新增后端请求，不改变失败/取消停止及结果归属边界。
 
-objectManagement 编排库表表单和写入；objectBusy 与普通查询共用界面锁，但MySQL 普通查询不传 allowWrite。对象操作后仅刷新目标连接的库列表或目标库已加载的表列表，创建库/表不自动展开，删库/表只清理关联查询范围，重命名更新查询页表范围，保留 SQL 草稿及原输出快照，不自动执行结果页查询。表刷新重新加载所属连接/库元数据，不创建新查询或执行 SELECT。
+objectManagement 编排库表表单和写入；objectBusy 与普通查询共用界面锁，SQL 窗口执行显式传 allowWrite=true，表数据预览不传。对象操作后仅刷新目标连接的库列表或目标库已加载的表列表，创建库/表不自动展开，删库/表只清理关联查询范围，重命名更新查询页表范围，保留 SQL 草稿及原输出快照，不自动执行结果页查询。表刷新重新加载所属连接/库元数据，不创建新查询或执行 SELECT。
 
 对象表单打开期间也占用界面运行锁，Ctrl+Enter 不会执行背景 SQL；表单取消后恢复原查询范围与结果。
 
@@ -62,4 +62,4 @@ schemaConnections 由连接及引擎 explorer 能力 memo 化提供给对象缓�
 
 数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。旧对象标题/结构结果由 objectPresentation 兼容展示，恢复不重跑 SQL。
 
-PostgreSQL SQL 窗口的手动运行与结果刷新显式传 allowWrite=true，允许执行 DDL/DML；对象数据预览及 MySQL 普通查询仍保持默认只读。每条独立自动提交，批次失败停止后续语句；不支持跨请求事务或会话状态，取消不保证回滚。
+MySQL/PostgreSQL SQL 窗口的手动运行与结果刷新均显式传 allowWrite=true，支持 DDL/DML，不增加只读开关或额外确认；对象数据预览保持读取请求。每条独立自动提交，批次失败停止后续语句；不支持跨请求事务或会话状态，取消不保证回滚。

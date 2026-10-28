@@ -213,34 +213,41 @@ for (const type of ['mysql', 'postgresql']) {
           assert.equal(output.batch.statements[1].result.rows[0][0], name)
           assert.equal(output.batch.statements[2].result.rows[0][0], '3')
         })
-        for (const sql of [
-          "INSERT INTO sample VALUES (3,'blocked',1)",
-          "UPDATE sample SET label='blocked' WHERE id=1",
-          'DELETE FROM sample WHERE id=1',
-          'CREATE TABLE blocked (id INT)',
-          'ALTER TABLE sample ADD blocked INT',
-          'DROP TABLE sample',
-          'TRUNCATE TABLE sample',
-          'RENAME TABLE sample TO renamed',
-          'SET autocommit=1',
-          '/*!80000 CREATE TABLE blocked AS */ SELECT 1'
-        ]) {
-          await t.test('SQL window read-only rejection: ' + sql.split(' ')[0], async () => {
-            const output = await run(sql + '; SELECT 999;')
-            assert.equal(output.calls.length, 1)
-            assert.ok(output.batch.error)
-            assert.match(output.batch.error, /后续 1 条语句未执行/)
-          })
-        }
-        await t.test('rejected DDL and DML leave the original data and structure intact', async () => {
-          assert.deepEqual((await success('SELECT id,label,amount FROM sample ORDER BY id'))[0].rows, [
-            ['1', '中文;one', '12.3400'],
+        await t.test('Navicat-style setup, table recreation, inserts, updates and deletes execute in the window', async () => {
+          const r = await success(
+            "/* Navicat-style dump */ SET NAMES utf8mb4; SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS flow; CREATE TABLE flow(id BIGINT PRIMARY KEY,label VARCHAR(100),amount DECIMAL(20,4)); INSERT INTO flow VALUES(9007199254740993,'中文;one',12.3400),(2,'',0); SELECT * FROM flow ORDER BY id; UPDATE flow SET label='changed' WHERE id=2; DELETE FROM flow WHERE id=2; UPDATE flow SET label='none' WHERE id=2; SET FOREIGN_KEY_CHECKS=1; SELECT * FROM flow;",
+            11
+          )
+          assert.equal(r[3].isQuery, false)
+          assert.equal(r[4].affectedRows, 2)
+          assert.deepEqual(r[5].rows, [
             ['2', '', '0.0000'],
-            ['9007199254740993', null, '-99.0001']
+            ['9007199254740993', '中文;one', '12.3400']
           ])
+          assert.equal(r[6].affectedRows, 1)
+          assert.equal(r[7].affectedRows, 1)
+          assert.equal(r[8].affectedRows, 0)
+          assert.deepEqual(r[10].rows, [['9007199254740993', '中文;one', '12.3400']])
+        })
+        await t.test('ALTER, RENAME, TRUNCATE, DROP and executable comments are not blocked', async () => {
+          const r = await success(
+            'ALTER TABLE flow ADD note TEXT; RENAME TABLE flow TO flow_renamed; TRUNCATE TABLE flow_renamed; SELECT COUNT(*) FROM flow_renamed; DROP TABLE flow_renamed; /*!80000 CREATE TABLE flow (id INT PRIMARY KEY,label VARCHAR(100)) */; SELECT COUNT(*) FROM flow;',
+            7
+          )
+          assert.equal(r[3].rows[0][0], '0')
+          assert.equal(r[6].rows[0][0], '0')
+        })
+        await t.test('committed writes before an error stay committed and later writes are not sent', async () => {
+          const output = await run("INSERT INTO flow VALUES(10,'kept'); INSERT INTO flow VALUES(10,'duplicate'); INSERT INTO flow VALUES(11,'never');")
+          assert.equal(output.calls.length, 2)
+          assert.match(output.batch.error, /后续 1 条语句未执行/)
+          assert.deepEqual((await success('SELECT * FROM flow'))[0].rows, [['10', 'kept']])
+        })
+        await t.test('default API read requests stay separate from explicit window runs', async () => {
+          for (const sql of ['CREATE TABLE blocked(id INT)', 'DROP TABLE sample', "INSERT INTO sample VALUES(3,'blocked',1)", 'SET autocommit=1']) await assert.rejects(query(sql), /只读/)
           assert.equal((await success('SHOW COLUMNS FROM sample'))[0].rowCount, 3)
-          const [literal] = await success("SELECT '/*! literal */' AS text_value")
-          assert.equal(literal.rows[0][0], '/*! literal */')
+          assert.equal((await success('SELECT COUNT(*) FROM sample'))[0].rows[0][0], '3')
+          assert.equal((await success("SELECT '/*! literal */' AS text_value"))[0].rows[0][0], '/*! literal */')
         })
         await t.test('binary and JSON', async () => {
           const [result] = await success("SELECT X'00FF' AS b, JSON_EXTRACT('{\"a\":2}', '$.a') AS j")

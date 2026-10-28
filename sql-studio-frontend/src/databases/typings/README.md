@@ -10,6 +10,8 @@ DatabaseProfile 约束只读类型、标签、说明、样式类、端口、图�
 
 - [对象管理契约](objectManagement/README.md)：库表表单、目标范围与引擎能力。
 
+databaseEditor? 独立声明 metadataSQL/definition/sql/Form：只读加载、运行时解码、基于原值生成单语句修改及引擎所属表单。dataDump? 声明 querySQL、可选 metadataSQL 和 dump；外层只负责显式目标读取、取消和下载，菜单按这两项能力展示编辑数据库/结构和数据，不再把它们绑定到 objects。
+
 DatabaseAdapter.updateCellSQL 根据显式库表、字段元数据和原结果生成单行更新，拒绝不完整主键或不支持字段。
 
 DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。

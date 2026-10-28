@@ -146,12 +146,13 @@ export default function DatabaseExplorer({ model }: Props) {
             !item ||
             !('key' in item) ||
             !unavailable.includes(String(item.key)) ||
+            Boolean(node.kind === 'database' && item.key === 'edit' && engine.databaseEditor) ||
             supported.some((action) => action === actionForKey[String(item.key) as keyof typeof actionForKey]) ||
             Boolean(engine.tableDesign && ((item.key === 'create-table' && node.schema) || (node.kind === 'table' && (item.key === 'create' || item.key === 'design'))))
         )
         .map((item) =>
           item && 'key' in item && item.key === 'export' && 'children' in item
-            ? { ...item, children: (item.children ?? []).filter((child) => child && 'key' in child && child.key !== 'dump-data') }
+            ? { ...item, children: (item.children ?? []).filter((child) => child && 'key' in child && (child.key !== 'dump-data' || engine.dataDump)) }
             : item
         )
     }

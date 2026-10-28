@@ -56,6 +56,6 @@ connections 是状态分区保留名称，GET/PUT /state/connections 均返回 4
 
 QueryRequest/AIRequest 新增可选 schema:string。PostgreSQL 请求指定 schema 时验证 USAGE 并在本次独占连接设置搜索路径，省略 allowWrite 的请求仍由只读事务保护；MySQL 查询拒绝非空独立 schema。
 
-PostgreSQL SQL 窗口手动执行显式设置 allowWrite=true，支持 DDL/DML 和 RETURNING；API 省略该字段仍默认只读。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。
+MySQL/PostgreSQL SQL 窗口手动执行及结果刷新均显式设置 allowWrite=true，支持 DDL/DML；PostgreSQL 支持 RETURNING；API 省略该字段仍默认只读。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。
 
 MySQL 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释，避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。

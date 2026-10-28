@@ -13,7 +13,7 @@ import (
 	"sql-studio-backend/internal/config"
 )
 
-// 启动入口只加载配置、装配应用和处理退出信号，具体业务均在 internal 中。
+// 后端根目录的唯一启动入口只加载配置、装配应用和处理退出信号，具体业务均在 internal 中。
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	cfg, err := config.Load()

@@ -1,0 +1,9 @@
+# PostgreSQL 结构和数据转储
+
+dataDump 提供 querySQL(database,table)、metadataSQL(database,table)、dump(database,table,ddl,result,columns,metadata)。前两者生成目标表查询与自有 SERIAL/IDENTITY 序列元数据 SQL；不发起请求。dump 返回可在目标数据库逐条执行的单表 SQL，使用完整 schema/table 身份，不添加 DROP 或跨库 USE。
+
+创建缺失 schema、自有 SERIAL 序列及表/约束/索引，恢复数据，再恢复序列位置。IDENTITY 使用 OVERRIDING SYSTEM VALUE，生成列由数据库重算。INT8/NUMERIC 保留文本精度，BYTEA用decode，NULL/空串、布尔、JSON/数组等可输入文本由目标列类型解析。文本用E字符串转义，不把内容拼成命令。
+
+query结果最多5000行/约8MiB，任何截断、列不一致、无序列权限、外部/共享序列或非法值均抛错，不生成部分文件。序列缓存可能使源last_value大于已使用值，恢复保留该位置。空序列恢复start且is_called=false。
+
+仅普通表可导出数据；视图仅结构，分区父表的数据转储拒绝，分区子表/外部表由后端DDL拒绝。外部类型、函数、扩展、外键目标等依赖需预先存在，不导出授权、角色或整个库。多次读取不提供并发写入下的一致备份；导出期间应避免写入，完整备份仍使用pg_dump。请求、取消、错误及下载由useObjectManagement负责。

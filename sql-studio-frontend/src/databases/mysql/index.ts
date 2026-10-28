@@ -12,6 +12,7 @@ import { splitSQLStatements, useDatabaseSQL } from './statements'
 const mysql = {
   isSQLColumn,
   objects: mysqlObjects,
+  dataDump: { querySQL: mysqlObjects.dumpQuerySQL, dump: mysqlObjects.dumpWithData },
   exportDDL: mysqlObjects.dump,
   updateCellSQL,
   insertRowSQL,

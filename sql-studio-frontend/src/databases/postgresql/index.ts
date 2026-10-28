@@ -1,6 +1,9 @@
 import type { DatabaseAdapter } from '../typings'
 import { postgresqlCompletion } from './completion'
 import { referencedTables } from './context'
+import { sql as databaseSQL, definition, metadataSQL } from './databaseProperties'
+import DatabasePropertiesForm from './databaseProperties/components/form'
+import { dataDump } from './dataDump'
 import { canInsertColumn, insertRowSQL, updateCellSQL } from './dataEditing'
 import { simpleObjects } from './objectManagement'
 import { postgresqlProfile } from './profile'
@@ -12,6 +15,8 @@ const postgresql = {
   profile: postgresqlProfile,
   explorer: { tableIdentity: explorerTableIdentity, tableInSchema, schemaListResult, referencedTables },
   objects: undefined,
+  databaseEditor: { metadataSQL, definition, sql: databaseSQL, Form: DatabasePropertiesForm },
+  dataDump,
   simpleObjects,
   tableDesign,
   canInsertColumn,

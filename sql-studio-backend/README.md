@@ -4,7 +4,7 @@
 
 Go + Gin 模块化单体：一个 Go module、进程和 HTTP 服务，连接管理、数据库对象、SQL 查询为独立业务模块。每个模块维护自己的入口、最小消费接口、规则、README、包注释和测试；模块之间不直接导入，app 在进程内注入具体实现。
 
-`cmd/sql-studio-backend/main.go` 为唯一启动入口；`internal/app` 装配模块和生命周期；`internal/httpapi` 负责路由、参数与响应；`internal/modules` 按业务拆分；`internal/model` 是共享契约；`internal/mysql` 实现 MySQL；`internal/connection` 负责加密连接仓库；`internal/config` 读取环境变量。依赖与请求边界见 [架构说明](../docs/BACKEND_ARCHITECTURE.md)，HTTP 契约见 [API](../docs/API.md)。
+根目录 [main.go](main.go) 为唯一启动入口，只加载配置、创建 app 和处理退出；`internal/app` 装配模块和生命周期；`internal/httpapi` 负责路由、参数与响应；`internal/modules` 按业务拆分；`internal/model` 是共享契约；`internal/mysql` 实现 MySQL；`internal/connection` 负责加密连接仓库；`internal/config` 读取环境变量。依赖与请求边界见 [架构说明](../docs/BACKEND_ARCHITECTURE.md)，HTTP 契约见 [API](../docs/API.md)。
 
 ## 启动
 
@@ -12,7 +12,7 @@ Go + Gin 模块化单体：一个 Go module、进程和 HTTP 服务，连接管�
 
 ```sh
 cd sql-studio-backend
-go run ./cmd/sql-studio-backend/main.go
+go run main.go
 ```
 
 服务监听 `127.0.0.1:8080`，日志直接输出终端，Ctrl+C 退出并给予在途请求 5 秒结束时间。当前不提供启停脚本、后台 PID、日志文件和部署配置。

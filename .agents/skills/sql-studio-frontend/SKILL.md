@@ -10,12 +10,24 @@ description: 开发和维护 SQL Studio 的 Vite React TypeScript Ant Design 前
 ## 五项约定
 
 1. **保留 Ant Design 默认样式。** 局部布局先用组件参数、`style` 或语义化 `styles`，用公开类型约束样式对象。确实需要原生选择器覆盖时，仅放 [app.scss](../../../sql-studio-frontend/src/app.scss)，限定业务作用域并说明原因；不在组件或其他样式文件散落 `.ant-*` 覆盖。
-2. **统一外观。** 同类控件的尺寸、边框和弧度使用 [appearance](../../../sql-studio-frontend/src/constant/appearance/README.md) 与 Ant Design token，页面尺寸进入页面 constant。已确认的全局方角、紧凑表格和成功/失败语义色集中复用，不随意新增局部外观。
+2. **统一外观。** 同类控件的尺寸、边框和弧度使用 [appearance](../../../sql-studio-frontend/src/constant/appearance/README.md) 与 Ant Design token，页面尺寸进入页面 constant。圆角沿用 Ant Design 默认 token，不设置全局 borderRadius 覆盖；紧凑表格和成功/失败语义色集中复用，不随意新增局部外观。
 3. **按功能独立模块。** 组件、hooks、常量/枚举、类型/接口、服务方法和工具各按功能建立目录，以 `index.ts(x)` 和同级 `README.md` 为入口；App/main 为框架例外。README 说明职责、导出、参数与默认值、返回值、调用方式及边界；异步模块补充错误、取消、缓存和状态归属，UI 补充受控值与回调。相关私有 helper 可留在同一功能，不为每个局部变量拆文件。迁移同步调用方、父级索引和文档，不保留旧路径转发壳。
 4. **共享只读定义与类型契约。** 复用状态、枚举值及配置集中定义，避免可变全局状态。项目启用 `erasableSyntaxOnly`，枚举优先使用 `as const` 对象和推导联合类型；使用接口、判别联合、泛型及 `satisfies` 约束契约，不用 `any` 或双重断言掩盖错误。网络及存储输入仍需运行时校验。
 5. **数据库按引擎封装。** MySQL 专属配置、SQL、补全、类型以及实际需要的组件/hooks/样式放 [databases/mysql](../../../sql-studio-frontend/src/databases/mysql/README.md) 的对应功能目录。外部通过 [DatabaseAdapter](../../../sql-studio-frontend/src/databases/typings/README.md) 和 [getDatabaseAdapter](../../../sql-studio-frontend/src/databases/README.md) 组合调用，不在通用 UI 硬编码方言、端口和图标；HTTP、分组、通用结果 UI 等保留共享层，不建立未支持引擎的空实现。
 
 页面入口和外层组件只组合与调用；表单生命周期、异步请求及业务状态进入所属 hook。页面私有实现放页面内，有多个实际使用者再上提公共层。
+
+## SQL 窗口执行
+
+MySQL/PostgreSQL SQL 窗口运行及结果刷新均允许执行查询、DDL 和 DML，不限制为只读，不增加写入开关或额外确认。表数据和元数据读取继续使用原读取请求；测试须在临时库核对真实写入及失败停止，不能以拦截写入代替功能通过。
+
+## 字体与文本
+
+普通界面文本沿用系统和 Ant Design 默认字体，不自行指定字体族、字号、字重或字间距，不引入自定义字体。提示、错误详情、消息、摘要、表单及表格均继承默认 UI 字体与组件语义样式。多行说明用普通文本容器配合 whiteSpace/overflowWrap；不得为了换行使用 pre/code，以免浏览器默认等宽字体和边距改变界面。SQL 编辑与预览保留现有统一配置，不因局部提示调整字体。样式变更要检查实际计算字体、亮暗主题、长文本和窄窗口，不只核对源码。
+
+## 表单布局
+
+所有业务表单必须“左侧文本标签、右侧输入控件”，使用 Ant Design Form horizontal、labelCol/wrapperCol 和右对齐标签；错误/帮助说明位于右侧输入下方。连接、AI、库/Schema/表管理及引擎专属属性表单统一遵守，不新增 vertical/上下排列。长对象名说明放右侧内容区，表格内无标签单元格不添加空标签列。实现后核对真实渲染、亮暗主题、长名称和窄窗口，不能仅在文档中记录却继续使用纵向布局。
 
 ## 图标与资产
 

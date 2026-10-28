@@ -28,7 +28,7 @@ description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用�
 
 ## 原生命令与验证
 
-从 `sql-studio-backend` 执行 `go run ./cmd/sql-studio-backend/main.go`，日志输出终端，Ctrl+C 退出；当前不增加启停/检查包装脚本、后台 PID 或部署配置。保留运行必需的 config、go.mod/go.sum 和有效测试；自动化配置待实际需求再添加。
+从 `sql-studio-backend` 执行 `go run main.go`，日志输出终端，Ctrl+C 退出；当前不增加启停/检查包装脚本、后台 PID 或部署配置。保留运行必需的 config、go.mod/go.sum 和有效测试；自动化配置待实际需求再添加。
 
 使用 `gofmt -w .`、`gofmt -l .`、`go test -count=1 ./...`、`go vet ./...`、`go build ./...`；架构测试约束真实包路径、模块独立与递归 README/doc.go。行为变化使用测试替身和临时目录验证。真实数据库集成默认跳过，仅在明确授权时启用，并限随机临时库，不读取业务表完成检查。
 

@@ -30,9 +30,9 @@ export type FieldDefinition = {
   extra: string
   locked?: boolean
 }
-export type ObjectFormValues = { name: string; charset: string; collation: string; fields: FieldDefinition[]; confirmation: string }
+export type ObjectFormValues = { name: string; charset: string; collation: string; fields: FieldDefinition[]; confirmation: string; owner?: string; connectionLimit?: number; comment?: string }
 export type CollationOption = { charset: string; name: string; default: boolean }
-export type DatabaseDefinition = { name: string; charset: string; collation: string }
+export type DatabaseDefinition = { name: string; charset: string; collation: string; ctype?: string; owner?: string; connectionLimit?: number; comment?: string }
 export type ObjectChange = { action: ObjectAction; target: ObjectTarget; name: string }
 export interface TableDesignAdapter {
   readonly fieldTypes: readonly string[]

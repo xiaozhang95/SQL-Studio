@@ -10,6 +10,8 @@ QueryResults 接收 model（当前页 run/result、连接信息、运行状态�
 
 结果视图保留查询耗时、筛选、CSV、错误与空结果说明。Table 使用原生 small，字段名和类型垂直展示，NULL 使用次级文字 (NULL)，二维数组按列索引保留重复列和大整数文本；结构列表按类型显示对象图标。useTableViewportLayout 分配表体高度，表体双向滚动，外部分页每页 50 行，固定在表体外并复用 tablePaginationDefaults。CSV 导出全部筛选行。翻页、筛选和结果更新回到表体顶部，切换视图重测高度。
 
+错误说明使用继承 Ant Design 默认 UI 字体的普通文本容器，保留原始换行并允许长文本换行；不使用 pre/code，避免浏览器默认等宽字体及额外段落边距。
+
 重复执行替换本批输出，失败/取消保留已完成结果。interrupted 提示刷新中断；恢复不自动执行 SQL。执行中对象页保留取消按钮，查询页取消按钮归编辑器工具栏。主页面状态色始终跟随工作区选中结果，消息/摘要切换不影响它。
 
 DDL 页和普通查询中的 SQL 定义/语句列通过 DatabaseAdapter.isSQLColumn 识别，统一使用 SQLPreview compact 高亮并提供同排复制图标，保留完整换行和定义，不进入普通单元格省略样式。覆盖 SHOW CREATE TABLE/VIEW/DATABASE/PROCEDURE/FUNCTION/TRIGGER/EVENT、SHOW TRIGGERS、information_schema 定义列及 SQL 语句记录列，具体列名见引擎 resultSQL 模块。普通查询 SQL 列宽 520px；所有 SQL 文本按内容完整展开并自动换行，不限高、不显示内部滚动条，长结果只由外层表体滚动。复制、筛选和 CSV 导出均使用完整原始值；NULL、空值和普通字段保留原展示，数据页仍可双击编辑。

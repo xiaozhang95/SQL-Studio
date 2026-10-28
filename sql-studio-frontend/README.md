@@ -16,7 +16,7 @@ pnpm dev
 
 页面只组合组件，状态、请求与取消归所属 hook。MySQL SQL/补全/对象操作经 databases 适配器调用，AI 服务商经 ai 适配器调用。查询与结果始终归属发起页面及连接，恢复本机配置不执行 SQL。
 
-Ant Design 默认优先；方角、紧凑表格等统一配置见 appearance，必要覆盖全部位于 app.scss。主题使用 defaultAlgorithm/darkAlgorithm 和原生 token，保持系统字体。工作区、历史、主题通过 Go 保存，格式见 [用户状态](../docs/USER_STATE.md)。
+Ant Design 默认优先；圆角沿用原生 token，紧凑表格等统一配置见 appearance，必要覆盖全部位于 app.scss。主题使用 defaultAlgorithm/darkAlgorithm，保持系统字体。工作区、历史、主题通过 Go 保存，格式见 [用户状态](../docs/USER_STATE.md)。
 
 检查：`pnpm format`、`pnpm lint`、`node --test tests/*.test.mjs`、`pnpm build`。结构测试包含模块 README、样式归属和本地文档链接。
 

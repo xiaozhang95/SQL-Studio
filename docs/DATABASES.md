@@ -11,11 +11,11 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前�
 
 连接和加密密码保存在本地 connections.json，密钥位于 master.key。旧连接缺少 type 时兼容 MySQL；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询页独立保存连接、数据库、表和 SQL。查询默认只读事务；每个 API 请求单语句、最长 30 秒、默认 1000 最大 5000 行、约 8 MiB 字段内容。整数/DECIMAL/NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。各条请求不共享事务、SET 或临时表，取消不表示回滚。
+每个查询页独立保存连接、数据库、表和 SQL。MySQL/PostgreSQL SQL 窗口显式允许查询、DDL 和 DML；API 未指定 allowWrite 时仍默认只读。每个 API 请求单语句、最长 30 秒、默认 1000 最大 5000 行、约 8 MiB 字段内容。整数/DECIMAL/NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。各条请求不共享事务、SET 或临时表，取消不表示回滚。
 
 MySQL 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
-PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建和删除数据库、删除或重命名表及视图、清空表。可从 schema 下新建表，并设计已有表字段；生成列和复杂默认表达式的编辑有边界，见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库属性编辑与结构数据联合转储尚未实现。DDL 是目录重建的结构参考，含约束/索引/分区键，不能替代 pg_dump 完整备份；分区子表和外部表明确提示使用 pg_dump。
+PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。表菜单支持结构和数据，保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列，最多5000行/约8MiB，截断不生成文件。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 
 真实 MySQL 和 PostgreSQL 回归分别使用随机临时库和 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 

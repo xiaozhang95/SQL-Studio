@@ -1,8 +1,9 @@
 import type { sql } from '@codemirror/lang-sql'
+import type { ComponentType } from 'react'
 
 import type { Column, DBTable, QueryResult } from '@/typings/database'
 
-import type { DatabaseObjectAdapter, ObjectAction, ObjectTarget, TableDesignAdapter } from './objectManagement'
+import type { DatabaseDefinition, DatabaseObjectAdapter, ObjectAction, ObjectFormValues, ObjectTarget, TableDesignAdapter } from './objectManagement'
 
 /** 与服务端数据库类型保持一致；常量对象兼容 erasableSyntaxOnly。 */
 export const DatabaseEngine = { MySQL: 'mysql', PostgreSQL: 'postgresql' } as const
@@ -44,6 +45,17 @@ export interface DatabaseAdapter {
   readonly profile: DatabaseProfile
   readonly objects: DatabaseObjectAdapter | undefined
   readonly tableDesign?: TableDesignAdapter
+  readonly databaseEditor?: {
+    metadataSQL: (database: string) => string
+    definition: (result: QueryResult) => DatabaseDefinition
+    sql: (database: string, values: ObjectFormValues, original: DatabaseDefinition) => string
+    Form: ComponentType<{ definition: DatabaseDefinition }>
+  }
+  readonly dataDump?: {
+    querySQL: (database: string, table: string) => string
+    metadataSQL?: (database: string, table: string) => string
+    dump: (database: string, table: string, ddl: string, result: QueryResult, columns: Column[], metadata?: QueryResult) => string
+  }
   readonly simpleObjects?: {
     readonly actions: readonly ObjectAction[]
     sql: (action: ObjectAction, target: ObjectTarget, name: string) => string

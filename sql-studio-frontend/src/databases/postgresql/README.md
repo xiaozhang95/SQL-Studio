@@ -9,8 +9,10 @@
 - [查询](query/README.md)：schema/table 身份与结构导出。
 - [补全](completion/README.md)：当前数据库的 schema 范围。
 - [数据编辑](dataEditing/README.md)：完整主键 UPDATE 与 INSERT。
+- [数据库属性](databaseProperties/README.md)：读取并编辑所有者、连接数上限和注释。
+- [结构和数据](dataDump/README.md)：单表精确值导出、SERIAL/IDENTITY 序列恢复。
 
-objects=undefined 表示尚无库属性编辑与结构数据联合转储。simpleObjects 独立提供建库、删库、删表或视图、清空表与重命名；tableDesign 提供新建表及字段增删改，边界见 [表设计](tableDesign/README.md)。均不回退 MySQL SQL。保留查询、表/视图浏览、字段、索引、DDL 结构参考和数据行编辑。exportDDL 独立于可视化对象管理。useDatabase 返回 undefined，PostgreSQL 使用连接目标切库，不模拟 USE。每条请求独立会话，事务、SET、临时表不跨语句继承。
+objects=undefined 表示不使用 MySQL 的库表一体能力；databaseEditor 独立提供库属性读取与编辑，dataDump 提供单表结构和数据转储。simpleObjects 提供建库、删库、Schema 操作、删表或视图、清空表与重命名；tableDesign 提供新建表及字段增删改，边界见 [表设计](tableDesign/README.md)。均不回退 MySQL SQL。exportDDL 独立支持结构参考导出，完整备份使用 pg_dump。useDatabase 返回 undefined，PostgreSQL 使用连接目标切库；每条请求独立会话，事务、SET、临时表不跨语句继承。
 
 对象树按数据库 → schema → 表/视图分类 → 对象名展示；schema 使用真实列表，包含空 schema，表标签只显示本层名，目标仍为完整 schema/table。
 

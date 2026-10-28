@@ -31,3 +31,5 @@ go build ./...
 ```
 
 UI 变更补充亮暗主题、长名称、伸缩布局和相关交互检查，证据保存在任务产物中。静态检查不能替代浏览器或真实数据库验证，交付时说明未覆盖范围。启动使用项目 README 中的原生命令，不增加包装脚本或部署配置。
+
+SQL 窗口真实执行回归使用 [sql-studio-sql-regression skill](../.agents/skills/sql-studio-sql-regression/SKILL.md)，包含隔离环境、自动化命令、两种引擎的 SQL 示例、浏览器选区/快捷键/取消断言及清理流程；实际通过数量与未覆盖项随本次任务交付。

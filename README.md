@@ -9,7 +9,7 @@
 | 前端 | `sql-studio-frontend` | npm package：`sql-studio-frontend` | `sql-studio-frontend` |
 | 后端 | `sql-studio-backend`  | Go module：`sql-studio-backend`    | `sql-studio-backend`  |
 
-项目级 skill 为 `sql-studio`；后端命令入口同名为 `cmd/sql-studio-backend`。
+项目级 skill 为 `sql-studio`；后端唯一程序入口为 `sql-studio-backend/main.go`。
 
 ## 功能
 
@@ -41,7 +41,7 @@ go mod download
 ```sh
 # 后端（仓库根目录执行）
 cd sql-studio-backend
-go run ./cmd/sql-studio-backend/main.go
+go run main.go
 ```
 
 ```sh
@@ -60,7 +60,7 @@ pnpm dev
 4. “放弃修改”清空尚未提交的更改；已有暂存修改时，需先保存或放弃再刷新。
 5. 在消息、摘要及结果标签之间切换查看执行情况；执行历史可搜索、复制并载入当前查询。
 
-普通查询默认只读；库表管理、数据新增和编辑通过对应操作显式提交。多语句顺序执行，失败或取消停止后续语句；已完成的写入不会因此自动回滚。
+MySQL/PostgreSQL SQL 窗口均支持查询、建表、插入、修改、删除等语句，点击运行或使用快捷键直接执行，不设置只读开关；库表管理、数据新增和编辑通过对应操作显式提交。多语句顺序执行，失败或取消停止后续语句；已完成的写入不会因此自动回滚。各语句不共享事务或 SET 会话状态。
 
 ## 本机配置
 

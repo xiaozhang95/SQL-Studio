@@ -20,7 +20,7 @@ SQL-Studio/
 │  ├─ swagger.html            独立 Swagger UI 构建入口
 │  └─ tests/                  Node 回归测试
 ├─ sql-studio-backend/
-│  ├─ cmd/sql-studio-backend/         单进程启动入口
+│  ├─ main.go                  单进程启动入口
 │  ├─ internal/app/           实现注入、HTTP 和资源生命周期
 │  ├─ internal/httpapi/       Gin 路由及内嵌 OpenAPI 契约
 │  ├─ internal/modules/       connections/metadata/query/settings/ai
@@ -55,7 +55,7 @@ flowchart LR
 
 图中依赖由 app 注入，各业务模块不直接导入兄弟模块或具体实现。页面只组合组件，异步状态归属所属 hook。MySQL 专属 SQL 和类型在引擎目录内，通用 UI 通过适配器调用。
 
-每次查询绑定发起页面和连接；前端顺序拆分多语句，后端每次只执行单语句，使用共享并发预算并传递取消。旧请求不得覆盖新范围。普通查询只读，对象/数据操作显式写入；取消不能视为已回滚。
+每次查询绑定发起页面和连接；前端顺序拆分多语句，后端每次只执行单语句，使用共享并发预算并传递取消。旧请求不得覆盖新范围。MySQL/PostgreSQL SQL 窗口均显式允许查询和写入；元数据及表数据预览沿用默认读取请求，对象/数据保存显式写入；取消不能视为已回滚。
 
 ## 持久化与运行
 

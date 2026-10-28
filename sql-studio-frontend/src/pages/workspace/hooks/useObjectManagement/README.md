@@ -14,4 +14,8 @@ dump 仅取该对象 DDL 并下载结构 SQL，不写数据库、不导出表数
 
 dump(target, includeData=false) 支持结构和数据，数据只读获取，超出 5000 行或 8 MiB 拒绝下载，避免不完整文件；生成列跳过，视图仅结构。读取与 DDL 不是事务快照，导出期间应避免并发改结构或数据。
 
-objects 缺省的引擎拒绝可视化库表管理，独立使用 adapter.exportDDL 支持结构参考导出；数据转储必须有所属引擎实现，禁止回退 MySQL。
+库编辑优先使用独立 databaseEditor 能力，返回 databaseDefinition 并填充所属表单；PostgreSQL 的所有者/连接上限/注释在一个 DO 事务内修改，原值变化拒绝旧预览，失败保留输入。其余操作继续按 objects、tableDesign、simpleObjects 分派，禁止回退其他引擎。
+
+数据转储按 engine.dataDump 读取目标表数据及可选元数据，再复查 DDL 未变化后生成文件。MySQL 复用原有实现，PostgreSQL 补充自有序列元数据、生成列和类型编码；无能力或被截断时不下载。只读读取使用 API 默认限制与取消，结果不进入 SQL 页、历史或工作区持久化；不保证并发写入下的事务快照。
+
+转储失败使用 Ant Design 错误弹窗显示具体原因，避免工作区隐藏 message 浮层后超限/不支持等错误不可见；请求取消不弹错误。

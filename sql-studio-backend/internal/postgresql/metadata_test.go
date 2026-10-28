@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"sql-studio-backend/internal/model"
+	"strings"
 	"testing"
 )
 
@@ -36,6 +37,31 @@ func TestMetadataPreservesSchemaIdentityAndExplicitDatabase(t *testing.T) {
 	}
 	if !f.rowsClosed || !f.connectionClosed {
 		t.Fatal("metadata cursor/connection leaked")
+	}
+}
+
+func TestDDLDeparsesUsingOneConnectionWithCatalogSearchPath(t *testing.T) {
+	f := &queryFixture{}
+	f.queryHandler = func(_ context.Context, statement string, _ []driver.NamedValue) (driver.Rows, error) {
+		fixture := &queryFixture{columns: []string{"ddl"}, types: []string{"TEXT"}}
+		switch {
+		case strings.Contains(statement, "c.oid::bigint,c.relkind"):
+			fixture.columns = []string{"oid", "kind", "partition"}
+			fixture.types = []string{"INT8", "TEXT", "BOOL"}
+			fixture.rows = [][]driver.Value{{int64(42), "r", false}}
+		case strings.Contains(statement, "quote_ident(a.attname)"):
+			fixture.rows = [][]driver.Value{{`id bigint DEFAULT nextval('"s"."sample_id_seq"'::regclass)`}}
+		}
+		return &fixtureRows{fixture: fixture}, nil
+	}
+	client := NewClient()
+	client.open = func(model.Connection, string) (*sql.DB, error) { return sql.OpenDB(fixtureConnector{f}), nil }
+	ddl, err := client.DDL(context.Background(), model.Connection{}, model.TableRef{Database: "db", Name: `"s"."sample"`})
+	if err != nil || !strings.Contains(ddl, `nextval('"s"."sample_id_seq"'::regclass)`) {
+		t.Fatalf("DDL failed: %s %v", ddl, err)
+	}
+	if len(f.execQueries) != 1 || f.execQueries[0] != "SET search_path TO pg_catalog" || !f.connectionClosed {
+		t.Fatal("DDL deparse search path or connection lifecycle changed")
 	}
 }
 func TestIndexesKeepActualNamesAndExpressions(t *testing.T) {

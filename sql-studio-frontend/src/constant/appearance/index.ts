@@ -8,12 +8,10 @@ export const appearance = {
   controlSize: ComponentSize.Middle,
   tableSize: ComponentSize.Small,
   navigationSize: ComponentSize.Small,
-  selectWidth: 220,
-  borderRadius: 0
+  selectWidth: 220
 } as const satisfies {
   controlSize: NonNullable<ButtonProps['size']>
   tableSize: NonNullable<TableProps['size']>
   navigationSize: NonNullable<TabsProps['size']>
   selectWidth: number
-  borderRadius: number
 }
