@@ -1,4 +1,4 @@
-# PolarDB PostgreSQL
+# PostgreSQL
 
 [统一入口](../README.md) · [源码](index.ts)
 
