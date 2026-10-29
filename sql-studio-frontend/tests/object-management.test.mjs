@@ -62,6 +62,20 @@ test('ALTER preserves untouched fields and does not recreate tables or secondary
   input.fields = structuredClone(original)
   assert.throws(() => sql(ObjectAction.EditTable, input, original), /没有变化/)
 })
+
+test('metadata types match design choices without losing precision or changing opaque type literals', () => {
+  const types = ['bigint unsigned', 'datetime', 'decimal(19,4)', 'varchar(80)', "enum('KeepCase','lower')"]
+  const original = mysqlObjects.fields(types.map((type, i) => ({ name: 'c' + i, type, nullable: 'YES', key: '', default: null, extra: '', comment: '' })))
+  assert.deepEqual(
+    original.map((field) => field.type),
+    ['BIGINT UNSIGNED', 'DATETIME', 'DECIMAL(19,4)', 'VARCHAR(80)', types[4]]
+  )
+  assert.equal(original[4].locked, true)
+  const input = values()
+  input.fields = structuredClone(original)
+  input.fields[1].type = mysqlObjects.fieldTypes.find((type) => type === 'DATETIME')
+  assert.throws(() => sql(ObjectAction.EditTable, input, original), /没有变化/)
+})
 test('column collations are preserved while unsupported generated definitions remain locked', () => {
   const columns = [{ name: 'code', type: 'varchar(50)', nullable: 'YES', key: '', default: null, extra: '', comment: '' }]
   const fields = mysqlObjects.fields(columns, 'CREATE TABLE `t` (\n  `code` varchar(50) COLLATE utf8mb4_bin DEFAULT NULL\n)')

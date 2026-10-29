@@ -17,6 +17,7 @@ html[data-theme='dark'] {
   --primary-soft: var(--ant-color-primary-bg);
   --on-primary: var(--ant-color-text-light-solid);
   --danger: var(--ant-color-error-text);
+  --inactive-icon: var(--ant-color-text-tertiary);
   --shadow: var(--ant-box-shadow-tertiary);
 
   ::selection {

@@ -129,7 +129,7 @@ function fields(columns: Column[], ddl = ''): FieldDefinition[] {
     return {
       originalName: column.name,
       name: column.name,
-      type: column.type,
+      type: typePattern.test(column.type) ? column.type.toUpperCase() : column.type,
       nullable: column.nullable === 'YES',
       primary: column.key === 'PRI',
       autoIncrement: /auto_increment/i.test(column.extra),

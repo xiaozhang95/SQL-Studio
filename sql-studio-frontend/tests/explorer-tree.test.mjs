@@ -33,6 +33,20 @@ const tables = Array.from({ length: 10000 }, (_, index) => ({ name: `t_${String(
 const snapshot = { status: 'connected', databases: ['big'], tables: { big: tables }, loadingTables: [], tableErrors: {}, details: {}, structures: {}, detailErrors: {}, error: '' }
 const snapshots = { a: snapshot, b: { ...snapshot, tables: { big: [] } } }
 
+test('database state follows successful opening, not connection status or expansion, and honors explicit close', () => {
+  const expanded = [key('group', '默认分组'), key('connection', 'a')]
+  const node = (state, closed = {}) => buildExplorerTree(connections.slice(0, 1), { a: state }, expanded, '', {}, [], closed).byKey.get(key('database', 'a', 'big'))
+  assert.equal(node({ ...snapshot, tables: {} }).databaseState, 'closed')
+  assert.match(node({ ...snapshot, tables: {} }).tooltip, /未打开/)
+  assert.equal(node({ ...snapshot, tables: {}, loadingTables: ['big'] }).databaseState, 'opening')
+  assert.equal(node({ ...snapshot, tables: { big: [] } }).databaseState, 'open')
+  assert.equal(node(snapshot).databaseState, 'open')
+  assert.equal(node(snapshot, { a: ['big'] }).databaseState, 'closed')
+  assert.equal(node({ ...snapshot, tableErrors: { big: 'permission denied' } }).databaseState, 'error')
+  assert.match(node({ ...snapshot, tableErrors: { big: 'permission denied' } }).tooltip, /permission denied/)
+  assert.ok(!expanded.includes(key('database', 'a', 'big')))
+})
+
 test('new query scope follows selected database or schema, never an unrelated page', () => {
   const layout = { tableIdentity: explorerTableIdentity }
   assert.equal(explorerQueryScope(undefined, true, layout), undefined)

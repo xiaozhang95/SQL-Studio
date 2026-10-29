@@ -2,6 +2,7 @@ import {
   ClearOutlined,
   CloseOutlined,
   CodeOutlined,
+  DatabaseFilled,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -54,9 +55,10 @@ export default function DatabaseExplorer({ model }: Props) {
         expanded,
         search,
         Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
-        connectionGroups.groups
+        connectionGroups.groups,
+        objects.closedDatabases
       ),
-    [connections, objects.snapshots, expanded, search, connectionGroups.groups]
+    [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups]
   )
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
@@ -82,8 +84,8 @@ export default function DatabaseExplorer({ model }: Props) {
     if (node.kind === 'connection') {
       const connected = objects.snapshots[id]?.status === 'connected'
       items = [
-        connected || objects.snapshots[id]?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
         { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
+        connected || objects.snapshots[id]?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
         { type: 'divider' },
         { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
         {
@@ -232,7 +234,21 @@ export default function DatabaseExplorer({ model }: Props) {
       case 'schema':
         return <FolderOutlined />
       case 'database':
-        return <DatabaseOutlined />
+        return (
+          <DatabaseFilled
+            aria-label={node.databaseState === 'open' ? '数据库已打开' : node.databaseState === 'opening' ? '数据库正在打开' : node.databaseState === 'error' ? '数据库打开失败' : '数据库未打开'}
+            style={{
+              color:
+                node.databaseState === 'open'
+                  ? 'var(--ant-color-success)'
+                  : node.databaseState === 'opening'
+                    ? 'var(--ant-color-primary)'
+                    : node.databaseState === 'error'
+                      ? 'var(--ant-color-error)'
+                      : 'var(--inactive-icon)'
+            }}
+          />
+        )
       case 'tables':
         return <TableOutlined />
       case 'views':

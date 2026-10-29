@@ -6,6 +6,8 @@ import type { QueryScope } from '@/typings/workspace'
 
 import { connectionGroupName } from '../../../../constant/connectionGroup/index.ts'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
+import { databaseOpenState } from '../exportAvailability/index.ts'
+import type { DatabaseOpenState } from '../exportAvailability/index.ts'
 import { indexDescription, objectNodeKey as key } from '../objectTree/index.ts'
 
 export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
@@ -21,6 +23,7 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   view?: boolean
   connection?: Connection
   status?: 'is-connected' | 'is-error' | 'is-closed'
+  databaseState?: DatabaseOpenState
   retry?: 'connection' | 'database' | 'table'
   children?: ExplorerNode[]
 }
@@ -39,7 +42,8 @@ export function buildExplorerTree(
   expanded: readonly string[],
   search: string,
   layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {},
-  groupNames: readonly string[] = []
+  groupNames: readonly string[] = [],
+  closedDatabases: Readonly<Record<string, readonly string[]>> = {}
 ) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
@@ -100,6 +104,9 @@ export function buildExplorerTree(
         root.children = databases.map((db) => {
           const databaseNode = make('database', db, id, db)
           databaseNode.isLeaf = false
+          databaseNode.databaseState = databaseOpenState(state, closedDatabases[id], db)
+          const stateLabel = { closed: '未打开', opening: '正在打开', open: '已打开', error: '打开失败' }[databaseNode.databaseState]
+          databaseNode.tooltip = `${db}\n${stateLabel}${state.tableErrors[db] ? '\n' + state.tableErrors[db] : ''}`
           const tables = state.tables[db]
           if (open.has(databaseNode.key) && !tables && !state.tableErrors[db]) ready = false
           if (tables) loadedKeys.push(databaseNode.key)
