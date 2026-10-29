@@ -235,7 +235,7 @@ body {
   flex: none;
 }
 // 暂存警示底色需高于原生行 hover 优先级，避免移入后丢失编辑标记。
-.data-table .ant-table-tbody > tr > .ant-table-cell.data-cell-dirty {
+.data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);
 }
 .table-pagination.ant-pagination,

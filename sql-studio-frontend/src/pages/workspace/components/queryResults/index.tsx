@@ -13,14 +13,15 @@ import {
   UndoOutlined
 } from '@ant-design/icons'
 import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import type { TableRef } from 'antd/es/table'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import type { ThemeMode } from '@/typings/theme'
 import { exportCSV } from '@/utils/csv'
 
-import { resultSQLLayout } from '../../constant/layout'
+import { resultSQLLayout, resultTableLayout } from '../../constant/layout'
 import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
@@ -90,10 +91,10 @@ export default function QueryResults({ model, themeMode }: Props) {
   const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
+  const table = useRef<TableRef>(null)
   useEffect(() => {
-    const body = viewport.current?.querySelector<HTMLElement>('.ant-table-body')
-    if (body) body.scrollTop = 0
-  }, [run?.id, tablePage, resultSearch, view, viewport])
+    table.current?.scrollTo({ top: 0 })
+  }, [run?.id, tablePage, resultSearch, view])
   const deferredSearch = useDeferredValue(resultSearch)
   const matches = useMemo(() => (showingResult ? matchResultRows(editing.rows, deferredSearch) : null), [editing.rows, deferredSearch, showingResult])
   const rowCount = editing.newRows.length + (matches?.length ?? editing.rows.length)
@@ -102,7 +103,7 @@ export default function QueryResults({ model, themeMode }: Props) {
     {
       title: '#',
       key: 'index',
-      width: 64,
+      width: resultTableLayout.indexWidth,
       fixed: 'left' as const,
       render: (
         _: unknown,
@@ -129,7 +130,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           if (tab.kind === 'data' && row.key >= 0) void editing.begin(row.key, index)
         }
       }),
-      width: run?.kind === 'ddl' ? undefined : adapter.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : 200,
+      width: run?.kind === 'ddl' ? undefined : adapter.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : resultTableLayout.columnWidth,
       render: (
         _: unknown,
         row: {
@@ -174,6 +175,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         )
     }))
   ]
+  const scrollWidth = columns.reduce((total, column) => total + (column.width ?? 0), tab.kind === 'data' ? resultTableLayout.selectionWidth : 0)
   if (!run) return null
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
@@ -285,6 +287,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           </div>
         </div>
       )}
+      {showingResult && !activeRunning && result?.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
       <div ref={viewport} className="result-scroll" tabIndex={0} aria-label="结果数据滚动区域" style={{ flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}>
         {activeKey === 'messages' ? (
           <QueryMessages run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
@@ -298,14 +301,16 @@ export default function QueryResults({ model, themeMode }: Props) {
           <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{run.error}</div>} />
         ) : result ? (
           <>
-            {result.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
             <Table
+              ref={table}
+              virtual
               size={appearance.tableSize}
               className="data-table"
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
               rowSelection={
                 tab.kind === 'data'
                   ? {
+                      columnWidth: resultTableLayout.selectionWidth,
                       selectedRowKeys: selectedRows,
                       onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
                       preserveSelectedRowKeys: true,
@@ -316,7 +321,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               columns={columns}
               dataSource={rows}
               pagination={false}
-              scroll={{ x: run.kind === 'ddl' ? '100%' : 'max-content', y: bodyHeight || undefined }}
+              scroll={{ x: scrollWidth, y: bodyHeight || 24 }}
               locale={{ emptyText: result.isQuery ? '查询成功，没有匹配的数据' : `语句执行成功，影响 ${result.affectedRows} 行` }}
             />
           </>
