@@ -138,3 +138,37 @@ func (s *Store) MoveGroup(id, group string) (model.Connection, error) {
 	}
 	return model.Connection{}, os.ErrNotExist
 }
+
+// DeleteGroup removes the folder and moves its members to the default group atomically.
+// Connection IDs, credential ciphertext and every other connection field stay unchanged.
+func (s *Store) DeleteGroup(name string) ([]string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	name, err := groupName(name)
+	if err != nil {
+		return nil, err
+	}
+	if name == model.DefaultConnectionGroup {
+		return nil, errors.New("默认分组不能删除")
+	}
+	groups := allGroups(s.items, s.groups)
+	if !containsGroup(groups, name) {
+		return nil, os.ErrNotExist
+	}
+	remaining := make([]string, 0, len(groups)-1)
+	for _, group := range groups {
+		if group != name {
+			remaining = append(remaining, group)
+		}
+	}
+	items := append([]model.Connection{}, s.items...)
+	for i := range items {
+		if model.NormalizeConnectionGroup(items[i].Group) == name {
+			items[i].Group = model.DefaultConnectionGroup
+		}
+	}
+	if err = s.persistGroups(items, remaining); err != nil {
+		return nil, err
+	}
+	return allGroups(s.items, s.groups), nil
+}

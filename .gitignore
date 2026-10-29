@@ -11,3 +11,6 @@ sql-studio-frontend/dist/
 /.vscode/
 /release/
 /sql-studio-backend/internal/webui/dist/
+
+# Service-local credentials and workspace state, wherever the service is started.
+.sql-studio/

@@ -13,3 +13,5 @@
 SetSession(ctx,id,database *string,open bool) 读取原始连接凭据，库名指定时不得为空，7 秒超时继承取消，调用引擎实际打开/关闭。nil 库表示整个连接；关闭必须等待资源释放，错误不转换为成功。
 
 连接保存/测试/列表支持 mysql、postgresql；空类型仍兼容 mysql。PostgreSQL database 字段表示维护库，密码加密与空密码保留逻辑共用原存储。未支持类型留盘且不返回列表。
+
+DeleteGroup(name) 返回 GroupState（最新分组与脱敏连接）；只更新本地归属，不关闭数据库会话、不删除连接。默认分组禁止删除。

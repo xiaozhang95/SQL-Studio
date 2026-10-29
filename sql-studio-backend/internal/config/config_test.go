@@ -44,27 +44,6 @@ func TestListenAddressOverride(t *testing.T) {
 	}
 }
 
-func TestStateDirectoryNameCompatibility(t *testing.T) {
-	home := t.TempDir()
-	current := filepath.Join(home, ".sql-studio", "state")
-	legacy := filepath.Join(home, ".sqloom", "state")
-	if defaultStateDirectory(home) != current {
-		t.Fatal("new name")
-	}
-	if err := os.MkdirAll(legacy, 0700); err != nil {
-		t.Fatal(err)
-	}
-	if defaultStateDirectory(home) != legacy {
-		t.Fatal("legacy lost")
-	}
-	if err := os.MkdirAll(current, 0700); err != nil {
-		t.Fatal(err)
-	}
-	if defaultStateDirectory(home) != current {
-		t.Fatal("new must win")
-	}
-}
-
 func TestDefaultWebDirectory(t *testing.T) {
 	t.Setenv("SQLDESK_WEB_DIR", "")
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
@@ -79,28 +58,45 @@ func TestDefaultWebDirectory(t *testing.T) {
 	}
 }
 
-func TestConnectionDataUsesUserStateDirectoryByDefault(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("HOME", home)
+func TestDefaultConfigurationFollowsStartupWorkingDirectory(t *testing.T) {
 	t.Setenv("SQLDESK_DATA_DIR", "")
 	t.Setenv("SQLDESK_STATE_DIR", "")
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
+	t.Setenv("SQLDESK_WEB_DIR", "")
+	first, second := t.TempDir(), t.TempDir()
+	for _, dir := range []string{first, second} {
+		t.Chdir(dir)
+		// A stale folder name must not override the requested startup-relative location.
+		if err := os.MkdirAll(filepath.Join(dir, ".sqloom", "state"), 0700); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := Load()
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := filepath.Join(dir, ".sql-studio", "state")
+		if cfg.StateDir != want || cfg.DataDir != want || cfg.LegacyDataDir != filepath.Join(dir, "data") {
+			t.Fatalf("cwd %s: %#v", dir, cfg)
+		}
+		if _, err := os.Stat(want); !os.IsNotExist(err) {
+			t.Fatalf("Load must not create configuration files: %v", err)
+		}
+	}
+}
+func TestRelativeConfigurationOverridesUseWorkingDirectory(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
+	t.Setenv("SQLDESK_WEB_DIR", "")
+	t.Setenv("SQLDESK_DATA_DIR", "")
+	t.Setenv("SQLDESK_STATE_DIR", "custom-state")
 	cfg, err := Load()
-	if err != nil {
-		t.Fatal(err)
+	if err != nil || cfg.StateDir != filepath.Join(dir, "custom-state") || cfg.DataDir != cfg.StateDir {
+		t.Fatal("relative state override", cfg, err)
 	}
-	if cfg.DataDir != filepath.Join(home, ".sql-studio", "state") || cfg.DataDir != cfg.StateDir || cfg.LegacyDataDir == "" {
-		t.Fatal("default data is not colocated with user state")
-	}
-	t.Setenv("SQLDESK_STATE_DIR", filepath.Join(home, "custom-state"))
+	t.Setenv("SQLDESK_DATA_DIR", "custom-connections")
 	cfg, err = Load()
-	if err != nil || cfg.DataDir != cfg.StateDir {
-		t.Fatal("data did not follow explicit state directory", err)
-	}
-	t.Setenv("SQLDESK_DATA_DIR", filepath.Join(home, "custom-connections"))
-	cfg, err = Load()
-	if err != nil || cfg.DataDir != filepath.Join(home, "custom-connections") || cfg.LegacyDataDir != "" {
-		t.Fatal("explicit data directory changed or triggered migration", err)
+	if err != nil || cfg.DataDir != filepath.Join(dir, "custom-connections") || cfg.LegacyDataDir != "" {
+		t.Fatal("relative data override", cfg, err)
 	}
 }

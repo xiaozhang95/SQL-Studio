@@ -63,7 +63,7 @@ func Migrate(source, destination string) error {
 			return e
 		}
 		if e == nil && !bytes.Equal(data, target) {
-			return fmt.Errorf("用户目录已有不同的 %s，未覆盖；请先处理两份连接配置", name)
+			return fmt.Errorf("目标配置目录已有不同的 %s，未覆盖；请先处理两份连接配置", name)
 		}
 	}
 	if err = os.MkdirAll(destination, 0700); err != nil {

@@ -256,6 +256,11 @@ export const useWorkspace = () => {
       Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || !storage.pageReady || connectionLoading || Boolean(connectionError),
     onGroupsChanged: setSavedGroups,
     onMoved: (saved) => setConnections((previous) => upsertConnection(previous, saved)),
+    onDeleted: (name) => {
+      setConnections((previous) => previous.map((item) => (connectionGroupName(item.group) === name ? { ...item, group: defaultConnectionGroup } : item)))
+      const oldKey = JSON.stringify(['group', name])
+      setExplorer((previous) => ({ ...previous, expanded: previous.expanded.filter((key) => key !== oldKey), selected: previous.selected.filter((key) => key !== oldKey) }))
+    },
     onRenamed: (name, newName) => {
       setConnections((previous) => previous.map((item) => (connectionGroupName(item.group) === name ? { ...item, group: newName } : item)))
       const oldKey = JSON.stringify(['group', name]),

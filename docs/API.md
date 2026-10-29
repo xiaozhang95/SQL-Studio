@@ -21,6 +21,7 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 | GET | `/connection-groups` | 共享分组列表，包含空分组及默认分组 |
 | POST | `/connection-groups` | `{name}` 新建独立分组，返回 string[] |
 | POST | `/connection-groups/rename` | `{name,newName}` 原子重命名及更新成员，返回 `{groups,connections}` |
+| DELETE | `/connection-groups` | 删除分组，成员移入默认分组 |
 | PATCH | `/connections/{id}/group` | `{group}` 移动连接，返回脱敏 Connection |
 | POST   | `/connections`                | 新增或更新连接                              |
 | DELETE | `/connections/{id}`           | 删除本地连接                                |
@@ -80,3 +81,5 @@ PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunSta
 已迁移后旧格式 workspace 分区写入返回409，要求旧客户端刷新；不允许旧格式覆盖或与新索引分叉。回收最多每5秒检查一次，128MiB为孤立内容回收目标（不包括当前引用），不是所有用户结果的总容量限制。
 
 连接 type 支持 mysql、mariadb 和 postgresql。MariaDB 保留独立类型，使用数据库范围，不接受独立 schema；默认只读同样拒绝 /*M! 可执行注释。显式写入的 INSERT/DELETE/REPLACE RETURNING 返回列与行，isQuery 为 true。
+
+DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],connections:Connection[]}`。原子移除自定义分组并把所有成员移到默认分组；不删除连接或改变密码/会话。默认分组 400，不存在 404，写入失败不发布内存变化。

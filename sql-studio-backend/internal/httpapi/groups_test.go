@@ -52,3 +52,44 @@ func TestGroupRoutesSharePersistedListWithoutDatabaseSession(t *testing.T) {
 		t.Fatal("move/rename not reflected in connection list")
 	}
 }
+
+func TestDeleteGroupRoutePreservesConnectionsAndRejectsReservedOrInvalidInput(t *testing.T) {
+	store, err := connection.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := store.Save(model.Connection{Name: "member", Group: "to-delete", Password: "deletion-secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := New(Services{Connections: connections.New(store, nil)})
+	call := func(body string, status int) []byte {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/api/connection-groups", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(rec, req)
+		if rec.Code != status {
+			t.Fatalf("delete: %d %s", rec.Code, rec.Body.String())
+		}
+		if strings.Contains(rec.Body.String(), "deletion-secret") || strings.Contains(rec.Body.String(), `"password"`) {
+			t.Fatal("credentials exposed")
+		}
+		return rec.Body.Bytes()
+	}
+	call(`{"name":"默认分组"}`, 400)
+	call(`{"name":"missing"}`, 404)
+	call(`{"name":"to-delete","unknown":true}`, 400)
+	call(`null`, 400)
+	var state connections.GroupState
+	if err = json.Unmarshal(call(`{"name":"to-delete"}`, 200), &state); err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Groups) != 1 || state.Groups[0] != model.DefaultConnectionGroup || len(state.Connections) != 1 || state.Connections[0].ID != saved.ID || state.Connections[0].Group != model.DefaultConnectionGroup || !state.Connections[0].HasPassword {
+		t.Fatalf("invalid delete state: %#v", state)
+	}
+	raw, err := store.Get(saved.ID)
+	if err != nil || raw.Password != "deletion-secret" {
+		t.Fatal("deleted member or credential", err)
+	}
+}

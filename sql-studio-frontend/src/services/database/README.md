@@ -17,3 +17,5 @@ getIndexes(id, database, table, signal?) 返回 Promise<DBIndex[]>；显式携�
 setConnectionSession(id, open, database?, signal?) 返回 Promise<{open:boolean}>；省略库为整个连接，指定库仅控制该库。等待后端释放驱动连接后关闭才成功，失败保留前端窗口；打开验证真实连通性。
 
 getSchemas(id,database,signal?) 调用 /connections/{id}/schemas，返回可访问的 schema 字符串数组，包含无表 schema；复用显式连接/库和取消。
+
+deleteConnectionGroup(name) DELETE /connection-groups，返回 groups 与脱敏 connections；删除组内连接移入默认分组，不删除连接。

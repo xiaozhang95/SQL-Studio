@@ -2,24 +2,12 @@
 
 [包索引](../README.md) · [架构说明](../../../docs/BACKEND_ARCHITECTURE.md)
 
-## 职责
+Load() (Config,error) 统一读取环境变量，解析目录并校验首次连接参数；自身不创建文件或访问数据库。下层只消费 Config，不重复读取系统配置。
 
-统一读取环境变量与解析数据/网页目录，校验首次连接参数。
+StateDir 默认为服务**启动工作目录**下的 `./.sql-studio/state/`，由 filepath.Abs 解析成绝对路径。与可执行文件所在目录、系统用户主目录无关；从哪个目录启动就保存到哪个目录。不会自动选择主目录或旧 `.sqloom/state`。
 
-## 约束与调用
+SQLDESK_STATE_DIR 可覆盖状态目录，SQLDESK_DATA_DIR 可覆盖连接/密钥目录；相对覆盖值同样相对于启动工作目录。DataDir 默认等于 StateDir。LegacyDataDir 只在未设置 SQLDESK_DATA_DIR 时指向启动目录 data/，由 app 使用原有校验迁移；显式连接目录不触发迁移。Load 不读取、移动或覆盖旧用户目录配置。
 
-下层通过参数接收配置，不在 handler 或业务模块 中重复读取环境变量。
+WebDir 默认空，由 webui 按构建方式选择内嵌 dist 或开发磁盘目录；SQLDESK_WEB_DIR 显式覆盖后解析为绝对路径。打包网页来源不影响配置目录。Address/SQLDESK_ADDR 默认 127.0.0.1:8080，可显式改为独立测试端口；main.go 输出实际 PID、exe、监听地址与已解析配置目录。
 
-实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
-
-StateDir/SQLDESK_STATE_DIR 默认 os.UserHomeDir()/.sql-studio/state，允许覆盖；未指定 SQLDESK_DATA_DIR 时，连接和密钥与状态使用同一目录。
-
-项目名称统一为 SQL Studio；新配置目录为 `.sql-studio/state`，已存在 `.sqloom/state` 且无新目录时继续读取旧目录。旧 `SQLDESK_*` 环境变量和浏览器存储键保留兼容。
-
-Config.DataDir 默认等于 StateDir，LegacyDataDir 仅在未设置 SQLDESK_DATA_DIR 时指向启动工作目录的 data/，app 启动前调用连接仓库迁移。显式数据目录保留原语义，LegacyDataDir 为空，不自动移动；Load 自身不写入文件。
-
-WebDir 默认空，由 webui 按构建方式选择内嵌 dist 或开发磁盘目录；仅显式设置 SQLDESK_WEB_DIR 时解析为绝对路径并覆盖默认来源。打包版不依赖启动目录寻找网页。
-
-Address/SQLDESK_ADDR 默认 `127.0.0.1:8080`，可显式改为例如 `127.0.0.1:18080`；地址有效性由 HTTP listener 在启动时检查，错误直接返回，不占用其他端口重试。
-
-main.go 输出实际 PID、exe 路径、监听地址及原配置目录，便于确认浏览器对应哪个后端。默认目录保持不变，不以更换目录处理写入被拒绝。
+首次连接环境变量保留原 SQLDESK_MYSQL_* 语义；空密码不创建初始连接，无效端口返回错误。测试覆盖不同启动工作目录、相对与绝对覆盖、无文件写入及地址/端口规则；验证使用 go test/vet/build。

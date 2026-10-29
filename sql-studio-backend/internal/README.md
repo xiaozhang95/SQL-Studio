@@ -12,7 +12,7 @@
 
 app 负责装配，httpapi → modules 的公开入口 → model；基础设施实现模块消费的接口，只依赖 model。模块之间不直接导入，单进程运行、单一启动入口。每个实际包有 README 和包注释，功能使用独立包，保留 Go 原生职责文件组织。
 
-- [用户配置文件仓库](statefile/README.md)：用户目录分区 JSON。
+- [用户配置文件仓库](statefile/README.md)：启动目录下的分区 JSON。
 
 - [DeepSeek 客户端](deepseek/README.md)：官方模型 API 传输。
 

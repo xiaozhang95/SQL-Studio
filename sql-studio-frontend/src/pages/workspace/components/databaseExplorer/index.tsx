@@ -46,7 +46,9 @@ type Props = {
 export default function DatabaseExplorer({ model }: Props) {
   const { connections, connectionGroups, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
-  const [contextMenu, setContextMenu] = useState<MenuProps>()
+  // Keep menu content mounted while closing; the trigger alone owns its visibility.
+  const [contextMenu, setContextMenu] = useState<MenuProps>({ items: [] })
+  const [menuOpen, setMenuOpen] = useState(false)
   const data = useMemo(
     () =>
       buildExplorerTree(
@@ -69,11 +71,14 @@ export default function DatabaseExplorer({ model }: Props) {
       return {
         items: [
           { key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked },
-          { key: 'rename-group', label: '重命名分组', icon: <EditOutlined />, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup }
+          { key: 'rename-group', label: '重命名分组', icon: <EditOutlined />, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup },
+          { key: 'delete-group', label: '删除分组', icon: <DeleteOutlined />, danger: true, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup }
         ],
-        onClick: ({ key }) => {
-          setContextMenu(undefined)
-          connectionGroups.open(key === 'rename-group' ? node.owner : undefined)
+        onClick: ({ key, domEvent }) => {
+          domEvent.stopPropagation()
+          setMenuOpen(false)
+          if (key === 'delete-group') connectionGroups.remove(node.owner)
+          else connectionGroups.open(key === 'rename-group' ? node.owner : undefined)
         }
       }
     const { owner: id, database: db, table } = node
@@ -217,7 +222,7 @@ export default function DatabaseExplorer({ model }: Props) {
       items,
       onClick: ({ key, domEvent }) => {
         domEvent.stopPropagation()
-        setContextMenu(undefined)
+        setMenuOpen(false)
         if (node.kind === 'connection' && key.startsWith('move-group:') && node.connection) void connectionGroups.move(node.connection, key.slice('move-group:'.length))
         else if (node.kind === 'connection') model.connectionAction(key, id)
         else if (node.kind === 'table') void model.tableAction(key, id, db, table)
@@ -305,23 +310,16 @@ export default function DatabaseExplorer({ model }: Props) {
     >
       <Input prefix={<SearchOutlined />} value={search} onChange={(event) => updateExplorer({ search: event.target.value })} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
       <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
-        <Dropdown
-          trigger={['contextMenu']}
-          open={Boolean(contextMenu)}
-          onOpenChange={(open) => {
-            if (!open) setContextMenu(undefined)
-          }}
-          menu={contextMenu}
-        >
+        <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
           <div
             style={{ height: '100%' }}
             onContextMenuCapture={(event) => {
-              setContextMenu(undefined)
               if (!(event.target as HTMLElement).closest('.ant-tree-treenode'))
                 setContextMenu({
                   items: [{ key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked }],
-                  onClick: () => {
-                    setContextMenu(undefined)
+                  onClick: ({ domEvent }) => {
+                    domEvent.stopPropagation()
+                    setMenuOpen(false)
                     connectionGroups.open()
                   }
                 })
@@ -380,11 +378,15 @@ export default function DatabaseExplorer({ model }: Props) {
                       getDatabaseAdapter(connections.find((connection) => connection.id === node.owner)?.type).explorer?.tableIdentity(node.table).schema
                     )
                 }}
-                onRightClick={({ node: value }) => {
+                onRightClick={({ event, node: value }) => {
                   const node = data.byKey.get(String(value.key))
                   if (!node) return
                   const menu = menuFor(node)
-                  if (!menu) return
+                  if (!menu) {
+                    setMenuOpen(false)
+                    event.stopPropagation()
+                    return
+                  }
                   updateExplorer({ selected: [node.key] })
                   setContextMenu(menu)
                 }}

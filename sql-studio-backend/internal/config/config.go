@@ -19,22 +19,18 @@ type Config struct {
 	InitialConnection *model.Connection
 }
 
-// Load 将相对目录解析为绝对路径；默认使用用户状态目录，旧 data 交由 app 迁移。
+// Load resolves paths against the service startup working directory, independently of the executable location.
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080"}
 	if address := os.Getenv("SQLDESK_ADDR"); address != "" {
 		cfg.Address = address
 	}
 	var err error
-	home, homeErr := os.UserHomeDir()
-	if homeErr != nil {
-		return cfg, homeErr
-	}
-	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", defaultStateDirectory(home))
+	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", filepath.Join(".sql-studio", "state"))
 	if err != nil {
 		return cfg, err
 	}
-	// 默认与布局/历史共用用户目录；显式数据目录保持原有含义，不自动搬移。
+	// 连接与密钥跟随同一启动目录；显式目录覆盖保持原有语义。
 	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", cfg.StateDir)
 	if err != nil {
 		return cfg, err
@@ -79,17 +75,4 @@ func resolveDirectory(key, fallback string) (string, error) {
 		return "", fmt.Errorf("解析 %s 目录失败: %w", key, err)
 	}
 	return path, nil
-}
-
-// 新安装使用新名称，已有旧目录继续读取，不移动或覆盖用户配置。
-func defaultStateDirectory(home string) string {
-	current := filepath.Join(home, ".sql-studio", "state")
-	if _, err := os.Stat(current); !os.IsNotExist(err) {
-		return current
-	}
-	legacy := filepath.Join(home, ".sqloom", "state")
-	if _, err := os.Stat(legacy); !os.IsNotExist(err) {
-		return legacy
-	}
-	return current
 }

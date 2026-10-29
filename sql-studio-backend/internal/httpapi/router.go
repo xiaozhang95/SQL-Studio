@@ -58,6 +58,7 @@ func New(services Services) *gin.Engine {
 	api.GET("/connection-groups", h.listGroups)
 	api.POST("/connection-groups", h.createGroup)
 	api.POST("/connection-groups/rename", h.renameGroup)
+	api.DELETE("/connection-groups", h.deleteGroup)
 	api.PATCH("/connections/:id/group", h.moveGroup)
 	api.POST("/connections", h.saveConnection)
 	api.DELETE("/connections/:id", h.deleteConnection)

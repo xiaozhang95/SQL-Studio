@@ -16,6 +16,7 @@ type Repository interface {
 	Groups() []string
 	CreateGroup(string) ([]string, error)
 	RenameGroup(string, string) ([]string, error)
+	DeleteGroup(string) ([]string, error)
 	MoveGroup(string, string) (model.Connection, error)
 }
 

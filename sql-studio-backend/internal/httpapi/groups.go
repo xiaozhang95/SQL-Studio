@@ -49,3 +49,19 @@ func (h *handler) moveGroup(c *gin.Context) {
 	}
 	respond(c, 200, connection)
 }
+
+func (h *handler) deleteGroup(c *gin.Context) {
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := decode(c, &input); err != nil {
+		fail(c, err)
+		return
+	}
+	state, err := h.connections.DeleteGroup(input.Name)
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, state)
+}

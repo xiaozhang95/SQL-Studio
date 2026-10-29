@@ -19,3 +19,11 @@ func (s *Service) RenameGroup(name, newName string) (GroupState, error) {
 func (s *Service) MoveGroup(id, group string) (model.Connection, error) {
 	return s.connections.MoveGroup(id, group)
 }
+
+func (s *Service) DeleteGroup(name string) (GroupState, error) {
+	groups, err := s.connections.DeleteGroup(name)
+	if err != nil {
+		return GroupState{}, err
+	}
+	return GroupState{Groups: groups, Connections: s.ListConnections()}, nil
+}

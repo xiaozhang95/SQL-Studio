@@ -8,6 +8,7 @@ export const getConnections = (signal?: AbortSignal) => request<Connection[]>('/
 export const getConnectionGroups = (signal?: AbortSignal) => request<string[]>('/connection-groups', { signal })
 export const createConnectionGroup = (name: string) => request<string[]>('/connection-groups', post({ name }))
 export const renameConnectionGroup = (name: string, newName: string) => request<{ groups: string[]; connections: Connection[] }>('/connection-groups/rename', post({ name, newName }))
+export const deleteConnectionGroup = (name: string) => request<{ groups: string[]; connections: Connection[] }>('/connection-groups', { ...post({ name }), method: 'DELETE' })
 export const moveConnectionGroup = (id: string, group: string) => request<Connection>(`${connectionPath(id)}/group`, { ...post({ group }), method: 'PATCH' })
 export const saveConnection = (connection: ConnectionInput) => request<Connection>('/connections', post(connection))
 export const deleteConnection = (id: string) => request<{ ok: boolean }>(connectionPath(id), { method: 'DELETE' })

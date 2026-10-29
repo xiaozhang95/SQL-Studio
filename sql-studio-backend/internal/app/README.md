@@ -12,11 +12,11 @@
 
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
 
-app.New 装配 statefile/settings。StateDir 为空兼容旧调用者回落 DataDir/state；生产 config.Load 始终提供用户目录路径。
+app.New 装配 statefile/settings。StateDir 为空兼容旧调用者回落 DataDir/state；生产 config.Load 始终提供基于启动工作目录解析的绝对路径。
 
 装配 ai.New(stateStore, repository, deepseek.New())；AI与SQL执行分别拥有并发预算。
 
-app.New 在打开连接仓库前调用 connection.Migrate(cfg.LegacyDataDir,cfg.DataDir)，迁移冲突或校验失败直接阻止启动，不回退为新空连接列表。生产默认 DataDir=StateDir，连接、密钥与布局位于同一用户目录；显式 DataDir/StateDir 配置仍保留。
+app.New 在打开连接仓库前调用 connection.Migrate(cfg.LegacyDataDir,cfg.DataDir)，迁移冲突或校验失败直接阻止启动，不回退为新空连接列表。生产默认 DataDir=StateDir，连接、密钥与布局位于同一启动工作目录下的配置目录；显式 DataDir/StateDir 配置仍保留。
 
 app 同时创建 mysql.Client 与 postgresql.Client，通过 database.New 注册，业务模块仍消费最小端口；只有装配层导入具体引擎。
 

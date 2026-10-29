@@ -158,3 +158,62 @@ func TestEmptyStoreGroupsSurviveReopenAndIncompleteDocumentIsRejected(t *testing
 		t.Fatal("incomplete document accepted for overwrite")
 	}
 }
+
+func TestDeleteGroupMovesMembersAtomicallyAndPreservesCredentials(t *testing.T) {
+	dir := t.TempDir()
+	store, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	member, err := store.Save(model.Connection{Name: "one", Group: "删除组", Password: "delete-group-secret", Type: model.TypePostgreSQL, Database: "maintenance", Host: "host", Port: 5432, TLS: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.Save(model.Connection{Name: "other", Group: "其他组", Password: "other-secret"}); err != nil {
+		t.Fatal(err)
+	}
+	before := append([]model.Connection{}, store.items...)
+	if _, err = store.CreateGroup("空组"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.DeleteGroup(" 空组 "); err != nil {
+		t.Fatal(err)
+	}
+	if containsGroup(store.Groups(), "空组") {
+		t.Fatal("empty group survived")
+	}
+	if _, err = store.DeleteGroup("删除组"); err != nil {
+		t.Fatal(err)
+	}
+	if containsGroup(store.Groups(), "删除组") {
+		t.Fatal("deleted group survived")
+	}
+	before[0].Group = model.DefaultConnectionGroup
+	if !reflect.DeepEqual(store.items, before) {
+		t.Fatal("delete modified connection fields or ciphertext")
+	}
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := reopened.Get(member.ID)
+	if err != nil || raw.Group != model.DefaultConnectionGroup || raw.Password != "delete-group-secret" || containsGroup(reopened.Groups(), "删除组") {
+		t.Fatal("group deletion not persisted", err)
+	}
+	if _, err = reopened.DeleteGroup(model.DefaultConnectionGroup); err == nil {
+		t.Fatal("default group deleted")
+	}
+	if _, err = reopened.DeleteGroup("missing"); !os.IsNotExist(err) {
+		t.Fatal("missing group accepted", err)
+	}
+	// Persistence failures must preserve both the folder and all member assignments.
+	snapshot := append([]model.Connection{}, reopened.items...)
+	groups := reopened.Groups()
+	reopened.path = filepath.Join(t.TempDir(), "missing", "connections.json")
+	if _, err = reopened.DeleteGroup("其他组"); err == nil {
+		t.Fatal("write failure ignored")
+	}
+	if !reflect.DeepEqual(reopened.items, snapshot) || !reflect.DeepEqual(reopened.Groups(), groups) {
+		t.Fatal("failed delete changed memory")
+	}
+}
