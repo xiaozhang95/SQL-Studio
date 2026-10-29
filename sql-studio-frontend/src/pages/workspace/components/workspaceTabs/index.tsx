@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { appearance } from '@/constant/appearance'
 import type { WorkspaceTab } from '@/typings/workspace'
 
+import { workspaceTabLayout } from '../../constant/layout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 
 type Props = {
@@ -23,6 +24,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
   return (
     <Tabs
       className="workspace-tabs page-tabs"
+      styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
       tabBarStyle={{ margin: 0, padding: 0, background: 'var(--surface-raised)' }}
       tabBarGutter={0}
       type="editable-card"
@@ -80,6 +82,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
         label: (
           <span
             className={`result-tab-label${selectedStatus(item) === 'error' ? ' is-error' : selectedStatus(item) === 'success' ? ' is-success' : ''}`}
+            style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             title={
               item.kind === 'table-create' || item.kind === 'table-design'
                 ? `${item.title}\n${connections.find((value) => value.id === item.connectionId)?.name || ''} / ${item.database}${item.table ? ' / ' + item.table : ''}`
