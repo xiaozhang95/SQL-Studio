@@ -6,7 +6,7 @@ import type { Column, DBTable, QueryResult } from '@/typings/database'
 import type { DatabaseDefinition, DatabaseObjectAdapter, ObjectAction, ObjectFormValues, ObjectTarget, TableDesignAdapter } from './objectManagement'
 
 /** 与服务端数据库类型保持一致；常量对象兼容 erasableSyntaxOnly。 */
-export const DatabaseEngine = { MySQL: 'mysql', PostgreSQL: 'postgresql' } as const
+export const DatabaseEngine = { MySQL: 'mysql', MariaDB: 'mariadb', PostgreSQL: 'postgresql' } as const
 export type DatabaseType = (typeof DatabaseEngine)[keyof typeof DatabaseEngine]
 
 export interface DatabaseProfile {

@@ -20,6 +20,7 @@ import (
 	"sql-studio-backend/internal/database"
 	"sql-studio-backend/internal/deepseek"
 	"sql-studio-backend/internal/httpapi"
+	"sql-studio-backend/internal/mariadb"
 	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
@@ -39,7 +40,7 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := database.New(map[string]database.Engine{model.TypeMySQL: mysql.NewClient(), model.TypePostgreSQL: postgresql.NewClient()})
+	client := database.New(map[string]database.Engine{model.TypeMySQL: mysql.NewClient(), model.TypeMariaDB: mariadb.NewClient(), model.TypePostgreSQL: postgresql.NewClient()})
 	connectionService := connections.New(repository, client)
 	// 首次初始化走同一业务校验，已有连接保持不变。
 	if len(connectionService.ListConnections()) == 0 && cfg.InitialConnection != nil {

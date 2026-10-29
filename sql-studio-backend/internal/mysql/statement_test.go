@@ -35,9 +35,23 @@ func TestReadOnlyStatementBoundary(t *testing.T) {
 		"RENAME TABLE sample TO renamed", "COMMIT", "SET autocommit=1", "CALL mutation()", "INSERT INTO sample VALUES(1)",
 		"WITH ids AS (SELECT 1) UPDATE sample SET id=2", "/*! CREATE TABLE blocked (id INT) */",
 		"/*!80000 CREATE TABLE blocked AS */ SELECT 1", "SELECT /*!80000 SQL_NO_CACHE */ 1",
+		"/*M! CREATE TABLE blocked (id INT) */", "/*M!100100 CREATE TABLE blocked AS */ SELECT 1", "SELECT /*M! SQL_NO_CACHE */ 1",
 	} {
 		if isReadOnlyStatement(statement) {
 			t.Errorf("unsafe read-only query accepted: %s", statement)
+		}
+	}
+}
+
+func TestReturningReadsRowsOnlyForTopLevelWriteClauses(t *testing.T) {
+	for _, statement := range []string{"INSERT INTO t VALUES (1) RETURNING id", "DELETE FROM t WHERE id=1 RETURNING *", "REPLACE INTO t VALUES(1) RETURNING id"} {
+		if !hasReturning(statement) || isReadOnlyStatement(statement) {
+			t.Fatalf("incorrect RETURNING classification: %s", statement)
+		}
+	}
+	for _, statement := range []string{"INSERT INTO t VALUES ('RETURNING')", "INSERT INTO t (`returning`) VALUES(1)", "DELETE FROM t /* RETURNING id */", "SELECT 'RETURNING'"} {
+		if hasReturning(statement) {
+			t.Fatalf("non-clause classified as RETURNING: %s", statement)
 		}
 	}
 }

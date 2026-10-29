@@ -44,7 +44,7 @@ func Open(c model.Connection, schema string) (*sql.DB, error) {
 }
 
 func driverConfig(c model.Connection, schema string) (*mysql.Config, error) {
-	if !model.IsMySQL(c.Type) {
+	if !model.IsMySQLProtocol(c.Type) {
 		return nil, errors.New("不支持的数据库类型")
 	}
 	cfg := mysql.NewConfig()

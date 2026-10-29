@@ -5,6 +5,7 @@
 - [本地连接仓库](connection/README.md)
 - [Gin HTTP 接口](httpapi/README.md)
 - [跨层业务契约](model/README.md)
+- [MariaDB 引擎](mariadb/README.md)：独立类型、组合 MySQL 线协议及生命周期。
 - [MySQL 协议驱动](mysql/README.md)
 - [独立业务模块](modules/README.md)：连接管理、对象结构、SQL 查询。
 

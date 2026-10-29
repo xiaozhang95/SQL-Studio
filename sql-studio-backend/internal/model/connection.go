@@ -19,6 +19,7 @@ type Connection struct {
 }
 
 const TypeMySQL = "mysql"
+const TypeMariaDB = "mariadb"
 const TypePostgreSQL = "postgresql"
 const DefaultConnectionGroup = "默认分组"
 
@@ -38,7 +39,10 @@ func NormalizeDatabaseType(value string) string {
 	return value
 }
 func SupportedDatabaseType(value string) bool {
-	return IsMySQL(value) || NormalizeDatabaseType(value) == TypePostgreSQL
+	return IsMySQLProtocol(value) || NormalizeDatabaseType(value) == TypePostgreSQL
 }
 
 func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }
+
+// IsMySQLProtocol 只描述协议复用，不改变连接保存的引擎身份。
+func IsMySQLProtocol(value string) bool { return IsMySQL(value) || value == TypeMariaDB }

@@ -21,3 +21,5 @@ app.New 在打开连接仓库前调用 connection.Migrate(cfg.LegacyDataDir,cfg.
 app 同时创建 mysql.Client 与 postgresql.Client，通过 database.New 注册，业务模块仍消费最小端口；只有装配层导入具体引擎。
 
 workspace.New(stateStore) 与 settings 共用仓库，独立模块公开分片工作区API；普通分区不能绕过workspace-index引用边界。首次迁移在请求时进行，不阻塞服务装配或改动凭据。
+
+MariaDB 单独注册 mariadb.Client；该实例组合 MySQL 协议驱动，类型保持 mariadb，关闭状态与其他引擎实例隔离。

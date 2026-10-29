@@ -33,3 +33,5 @@ tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(table
 当前展示按用户要求统一为绿色圆角底板与白色图形，MySQL 和 PostgreSQL 均使用此样式；未连接的 icon 使用灰色底板。SVG 保留源文件，通过图片 filter 显示白色，悬停和选中不改变图形颜色。此展示替代先前的品牌原色、白色衬底和状态小圆点方案。
 
 DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。deleteRowSQL 根据完整主键生成单行删除，缺少或不支持的主键直接拒绝。
+
+DatabaseEngine.MariaDB=mariadb，注册表必须提供独立 DatabaseAdapter；兼容协议能力可以显式组合，MariaDB 配置、方言与元数据差异由 mariadb 模块拥有。

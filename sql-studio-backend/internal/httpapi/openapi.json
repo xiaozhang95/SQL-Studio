@@ -1487,13 +1487,13 @@
           },
           "type": {
             "type": "string",
-            "enum": ["mysql", "postgresql", ""],
+            "enum": ["mysql", "mariadb", "postgresql", ""],
             "default": "mysql",
             "description": "省略或空字符串兼容为 mysql。"
           },
           "database": {
             "type": "string",
-            "description": "PostgreSQL 维护库，省略或留空默认 postgres；MySQL 不使用。"
+            "description": "PostgreSQL 维护库，省略或留空默认 postgres；MySQL/MariaDB 不使用。"
           },
           "tls": {
             "type": "boolean",
@@ -1587,7 +1587,7 @@
       "QueryRequest": {
         "type": "object",
         "properties": {
-          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL 不接受独立 schema。"},
+          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"},
           "database": {
             "type": "string",
             "default": ""
@@ -1606,7 +1606,7 @@
           "allowWrite": {
             "type": "boolean",
             "default": false,
-              "description": "false 使用只读事务；MySQL 另拒绝非查询语句及可执行版本注释，防止 DDL 隐式提交绕过保护。显式 true 的写入自动提交。取消不代表回滚。"
+              "description": "false 使用只读事务；MySQL/MariaDB 另拒绝非查询语句及可执行版本注释，防止 DDL 隐式提交绕过保护。显式 true 的写入自动提交。取消不代表回滚。"
           }
         },
         "required": ["sql"],
@@ -1752,7 +1752,7 @@
       "AIRequest": {
         "type": "object",
         "properties": {
-          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL 不接受独立 schema。"},
+          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"},
           "action": {
             "type": "string",
             "enum": ["complete", "optimize"]

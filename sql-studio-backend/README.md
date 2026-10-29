@@ -36,3 +36,5 @@ go build ./...
 真实 MySQL 测试位于 `tests/integration`，默认跳过；需要时在终端设置 `SQLDESK_INTEGRATION=1` 及实际连接环境变量，再运行 `go test -count=1 ./...`。它只操作随机创建的 `sqldesk_test_<随机ID>` 临时库，结束清理；运行后移除本次设置的环境变量。重构不改变 HTTP 契约、凭据格式和数据目录。
 
 PolarDB PostgreSQL 由 internal/postgresql 独立实现，经 internal/database 分派；维护库、能力范围和 schema 身份见 [数据库支持](../docs/DATABASES.md)。真实 PostgreSQL 回归设置 `SQLDESK_PG_INTEGRATION=1` 和 `SQLDESK_PG_PASSWORD`，使用本机 5432 端口、postgres 账号及 postgres 数据库；测试创建随机 schema 并在结束时清理。默认测试使用替身，不连接真实数据库。
+
+MariaDB 11.4 由 internal/mariadb 独立组装，共用 MySQL 线协议。真实回归：设置 SQLDESK_MARIADB_INTEGRATION=1、SQLDESK_MARIADB_PASSWORD，可选 SQLDESK_MARIADB_HOST/SQLDESK_MARIADB_PORT（测试默认 127.0.0.1:3307），执行 `go test -count=1 -v ./tests/integration -run TestMariaDBIntegration`。仅创建随机 sqldesk_mariadb_ 临时库，覆盖真实元数据、精确值、RETURNING、6102 行流式读取、只读边界、取消及关闭重开，并验证清理；不读取现有业务表。

@@ -24,11 +24,11 @@ func (p *probe) Execute(ctx context.Context, c model.Connection, q model.QueryRe
 	return model.QueryResult{}, ctx.Err()
 }
 func TestDispatchPreservesTargetAndRejectsUnknown(t *testing.T) {
-	mysql, pg := &probe{name: "mysql"}, &probe{name: "postgresql"}
-	registry := map[string]Engine{model.TypeMySQL: mysql, model.TypePostgreSQL: pg}
+	mysql, maria, pg := &probe{name: "mysql"}, &probe{name: "mariadb"}, &probe{name: "postgresql"}
+	registry := map[string]Engine{model.TypeMySQL: mysql, model.TypeMariaDB: maria, model.TypePostgreSQL: pg}
 	client := New(registry)
 	delete(registry, model.TypePostgreSQL)
-	for _, kind := range []string{"", model.TypeMySQL, model.TypePostgreSQL} {
+	for _, kind := range []string{"", model.TypeMySQL, model.TypeMariaDB, model.TypePostgreSQL} {
 		got, err := client.Test(context.Background(), model.Connection{ID: "target", Type: kind})
 		if err != nil || got != model.NormalizeDatabaseType(kind) {
 			t.Fatal("incorrect engine dispatch")

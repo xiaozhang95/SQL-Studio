@@ -9,3 +9,5 @@ Client 透传 connection ID、库表、请求限制、context 与原始返回值
 Engine/Client.Schemas 透传显式连接和数据库到所属引擎；不推断 schema、不改写对象名称。
 
 StreamTableData 按连接类型分派可选流式引擎能力，缺少实现时拒绝，不跨引擎回退。
+
+MariaDB 由 app 以 mariadb 显式注册，不通过 MySQL 缺省分支回退；注册表副本及目标/取消回归包含该身份。

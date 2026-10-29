@@ -23,10 +23,14 @@ func (c *Client) Execute(ctx context.Context, connection model.Connection, input
 		return model.QueryResult{}, err
 	}
 	defer release()
-	return execute(ctx, db, input.SQL, input.Limit, input.AllowWrite)
+	return executeResult(ctx, db, input.SQL, input.Limit, input.AllowWrite, connection.Type == model.TypeMariaDB && hasReturning(input.SQL))
 }
 
 func execute(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite bool) (result model.QueryResult, err error) {
+	return executeResult(ctx, db, statement, limit, allowWrite, false)
+}
+
+func executeResult(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite, returning bool) (result model.QueryResult, err error) {
 	start := time.Now()
 	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
 	result.Columns = []model.ResultColumn{}
@@ -43,7 +47,7 @@ func execute(ctx context.Context, db *sql.DB, statement string, limit int, allow
 		defer tx.Rollback()
 		return readRows(ctx, tx, statement, limit, start)
 	}
-	if isQuery(statement) {
+	if isQuery(statement) || returning {
 		return readRows(ctx, db, statement, limit, start)
 	}
 	r, e := db.ExecContext(ctx, statement)

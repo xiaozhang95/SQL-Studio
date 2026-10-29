@@ -1,5 +1,5 @@
 /** MySQL 默认转义规则：仅在字符串、标识符与注释之外按分号切分，保留原 SQL。 */
-export function splitSQLStatements(script: string): string[] {
+export function splitSQLStatements(script: string, executableComments: readonly string[] = ['!']): string[] {
   const statements: string[] = []
   let start = 0
   let quote = ''
@@ -40,7 +40,7 @@ export function splitSQLStatements(script: string): string[] {
     if (char === '/' && next === '*') {
       blockComment = true
       // MySQL 版本注释含可执行内容，不能当作空白脚本丢弃。
-      if (script[i + 2] === '!') hasSQL = true
+      if (executableComments.some((prefix) => script.startsWith(prefix, i + 2))) hasSQL = true
       i++
       continue
     }
@@ -57,7 +57,7 @@ export function splitSQLStatements(script: string): string[] {
 
 /** 仅识别完整 USE；数据库是否存在及访问权限仍由服务端验证。 */
 export function useDatabaseSQL(statement: string): string | undefined {
-  const gap = String.raw`(?:\s|/\*(?![!+])[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
+  const gap = String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
   const match = new RegExp('^' + gap + String.raw`USE\b` + gap + '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+)' + gap + ';?' + gap + '$', 'iu').exec(statement)
   if (!match) return undefined
   return match[1].startsWith('`') ? match[1].slice(1, -1).replace(/``/g, '`') : match[1]

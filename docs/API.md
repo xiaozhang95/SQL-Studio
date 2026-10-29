@@ -71,3 +71,5 @@ MySQL 默认只读请求仅接受查询类语句及 USE，并在数据库访问�
 PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunState|null}}。索引中原ref必须匹配当前版本，新增页须提供草稿；服务生成新ref，全部内容写入后才严格CAS提交索引。返回新revision/index，冲突409，失败保留旧索引。每份内容32MiB，请求96MiB+1MiB；布局与未变化内容不传全文。删除标签从index移除即可，旧孤立内容超过24小时或超过128MiB回收预算时清理，当前引用保留。不可用服务503，不回落整份保存或空草稿覆盖。
 
 已迁移后旧格式 workspace 分区写入返回409，要求旧客户端刷新；不允许旧格式覆盖或与新索引分叉。回收最多每5秒检查一次，128MiB为孤立内容回收目标（不包括当前引用），不是所有用户结果的总容量限制。
+
+连接 type 支持 mysql、mariadb 和 postgresql。MariaDB 保留独立类型，使用数据库范围，不接受独立 schema；默认只读同样拒绝 /*M! 可执行注释。显式写入的 INSERT/DELETE/REPLACE RETURNING 返回列与行，isQuery 为 true。

@@ -29,3 +29,5 @@ readRows 按返回结果列数量设置 IsQuery：无列成功是执行回执，
 QueryRequest.Schema 非空明确拒绝，避免把 PostgreSQL 范围静默用于 MySQL；省略/空值保持兼容。
 
 export.go 的 StreamTableData(ctx,connection,ref,emit) 在指定库表创建只读 REPEATABLE READ 事务，通过 rowstream 分批回调，无总行数限制；继承连接/库关闭租约、请求取消及超时。单表数据快照不等于整个数据库一致性备份，DDL/其他表由其他请求读取。
+
+MariaDB 独立引擎组合本包共享协议实现；driverConfig 明确接受 mariadb 类型并保留原类型。默认读取同时拒绝 /*! 和 /*M! 可执行注释；显式写入的顶层 INSERT/DELETE/REPLACE RETURNING 走结果读取，不丢失返回列/行。分类忽略字符串、标识符、注释和嵌套表达式中的 RETURNING 文本。

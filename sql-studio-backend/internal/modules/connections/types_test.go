@@ -14,7 +14,7 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 	svc := connections.New(repo, &stubDatabase{})
-	for _, kind := range []string{"", model.TypeMySQL, model.TypePostgreSQL} {
+	for _, kind := range []string{"", model.TypeMySQL, model.TypeMariaDB, model.TypePostgreSQL} {
 		saved, err := svc.SaveConnection(model.Connection{Type: kind, Database: "maintenance", TLS: true, Name: "test", Host: "localhost", Port: 3306, Username: "root", Password: "secret"})
 		if err != nil {
 			t.Fatal(err)
@@ -30,7 +30,7 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 			t.Fatal("stored connection lost type/TLS/password")
 		}
 	}
-	for _, kind := range []string{"mariadb", "polardb-mysql", "polardb-postgresql", "polardb-oracle", "sqlserver"} {
+	for _, kind := range []string{"polardb-mysql", "polardb-postgresql", "polardb-oracle", "sqlserver"} {
 		c := model.Connection{Type: kind, Name: "test", Host: "localhost", Port: 3306, Username: "user"}
 		if _, err := svc.SaveConnection(c); err == nil {
 			t.Fatalf("removed type accepted: %s", kind)

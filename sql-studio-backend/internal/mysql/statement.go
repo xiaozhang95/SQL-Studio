@@ -16,6 +16,20 @@ func firstKeyword(s string) string {
 		}
 		if strings.HasPrefix(s, "/*") {
 			if i := strings.Index(s, "*/"); i >= 0 {
+				prefix := 0
+				if strings.HasPrefix(s, "/*!") {
+					prefix = 3
+				}
+				if strings.HasPrefix(s, "/*M!") {
+					prefix = 4
+				}
+				if prefix > 0 {
+					inner := strings.TrimSpace(s[prefix:i])
+					inner = strings.TrimLeft(inner, "0123456789")
+					if keyword := firstKeyword(inner); keyword != "" {
+						return keyword
+					}
+				}
 				s = s[i+2:]
 				continue
 			}
@@ -78,7 +92,7 @@ func hasExecutableComment(s string, backslashEscapes bool) bool {
 			continue
 		}
 		if s[i] == '/' && i+1 < len(s) && s[i+1] == '*' {
-			if i+2 < len(s) && s[i+2] == '!' {
+			if i+2 < len(s) && (s[i+2] == '!' || (i+3 < len(s) && s[i+2] == 'M' && s[i+3] == '!')) {
 				return true
 			}
 			end := strings.Index(s[i+2:], "*/")
@@ -92,6 +106,31 @@ func hasExecutableComment(s string, backslashEscapes bool) bool {
 }
 
 func cteStatementKeyword(s string) string {
+	for _, token := range topLevelKeywords(s) {
+		switch token {
+		case "SELECT", "UPDATE", "DELETE", "INSERT", "REPLACE", "TABLE", "VALUES":
+			return token
+		}
+	}
+	return ""
+}
+
+// MariaDB 写入的 RETURNING 结果必须读取列和行；只读分类仍单独校验。
+func hasReturning(s string) bool {
+	kind := firstKeyword(s)
+	if kind != "INSERT" && kind != "DELETE" && kind != "REPLACE" {
+		return false
+	}
+	for _, token := range topLevelKeywords(s) {
+		if token == "RETURNING" {
+			return true
+		}
+	}
+	return false
+}
+
+func topLevelKeywords(s string) []string {
+	var tokens []string
 	depth := 0
 	for i := 0; i < len(s); {
 		if s[i] == '\'' || s[i] == '"' || s[i] == '`' {
@@ -123,7 +162,7 @@ func cteStatementKeyword(s string) string {
 		if s[i] == '/' && i+1 < len(s) && s[i+1] == '*' {
 			end := strings.Index(s[i+2:], "*/")
 			if end < 0 {
-				return ""
+				return tokens
 			}
 			i += end + 4
 			continue
@@ -144,15 +183,11 @@ func cteStatementKeyword(s string) string {
 				i++
 			}
 			if depth == 0 {
-				token := strings.ToUpper(s[start:i])
-				switch token {
-				case "SELECT", "UPDATE", "DELETE", "INSERT", "REPLACE", "TABLE", "VALUES":
-					return token
-				}
+				tokens = append(tokens, strings.ToUpper(s[start:i]))
 			}
 			continue
 		}
 		i++
 	}
-	return ""
+	return tokens
 }
