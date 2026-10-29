@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, LinkOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
+import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
 import { connectionGroupName } from '@/constant/connectionGroup'
@@ -84,97 +84,99 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             </Button>
           ))}
         </aside>
-        <div className="connection-settings" style={{ flex: 1, minWidth: 0, padding: '20px var(--connection-settings-padding, 28px)', minHeight: 0, overflowY: 'auto', background: 'var(--surface)' }}>
-          <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
-            <EngineIcon type={engine.value} variant="logo" />
-            <strong>{engine.label}</strong>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Tag color="blue">默认端口 {engine.port}</Tag>
-              <Tooltip title="连接凭据仅加密保存在当前电脑">
-                <Tag color="success" icon={<SafetyCertificateOutlined />}>
-                  本地加密
-                </Tag>
-              </Tooltip>
-            </div>
-          </div>
-          <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: 'auto' }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
-            <Form.Item name="type" hidden>
-              <Input />
-            </Form.Item>
-            <Tabs
-              activeKey={section}
-              onChange={setSection}
-              items={[
-                {
-                  key: 'general',
-                  label: '常规',
-                  forceRender: true,
-                  children: (
-                    <div className="connection-fields" style={{ paddingTop: 8 }}>
-                      <Form.Item name="name" label="连接名称" rules={[{ required: true, whitespace: true, message: '请输入连接名称' }]}>
-                        <Input placeholder="例如：本地开发库" />
-                      </Form.Item>
-                      <Form.Item name="group" label="连接分组">
-                        <AutoComplete
-                          placeholder="输入或选择分组，留空归入默认分组"
-                          options={groups.map((group) => ({ value: group }))}
-                          filterOption={(input, option) => input === connectionGroupName(connection?.group) || Boolean(option?.value.toLowerCase().includes(input.toLowerCase()))}
-                          allowClear
-                        />
-                      </Form.Item>
-                      <Form.Item name="host" label="主机地址" rules={[{ required: true, whitespace: true, message: '主机地址不能为空，请输入 IP 或域名' }]}>
-                        <Input placeholder="127.0.0.1" />
-                      </Form.Item>
-                      <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
-                        <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
-                      </Form.Item>
-                      {engine.database !== undefined && (
-                        <Form.Item
-                          name="database"
-                          label="维护数据库"
-                          rules={[{ required: true, whitespace: true, message: '请输入可连接的数据库' }]}
-                          extra="用于测试连接和读取数据库列表；查询可在顶部切换数据库"
-                        >
-                          <Input placeholder={engine.database} />
-                        </Form.Item>
-                      )}
-                      <Form.Item name="username" label="用户名" rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}>
-                        <Input autoComplete="username" placeholder="请输入数据库用户名" />
-                      </Form.Item>
-                      <Form.Item name="password" label="密码" extra={connection?.hasPassword ? '留空保留原密码' : undefined}>
-                        <Input.Password autoComplete="new-password" placeholder={connection?.hasPassword ? '已保存，留空不修改' : '数据库密码'} />
-                      </Form.Item>
-                    </div>
-                  )
-                },
-                {
-                  key: 'ssl',
-                  label: 'SSL',
-                  forceRender: true,
-                  children: (
-                    <div className="connection-fields" style={{ paddingTop: 8 }}>
-                      <Form.Item name="tls" label="SSL / TLS" valuePropName="checked" extra="验证服务器证书及主机名">
-                        <Switch />
-                      </Form.Item>
-                    </div>
-                  )
-                }
-              ]}
-            />
-          </Form>
-          {status &&
-            (status.type === 'error' ? (
-              <Alert className="connection-test-result" showIcon type="error" title="连接失败" description={status.message} style={{ marginTop: 16, overflowWrap: 'anywhere' }} />
-            ) : (
-              <div className="connection-test-result test-success" role="status" style={{ marginTop: 16, overflowWrap: 'anywhere', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Tag color="success" icon={<CheckCircleOutlined />}>
-                  连接成功
-                </Tag>
-                <Tooltip title={status.message}>
-                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status.message}</span>
+        <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px var(--connection-settings-padding, 28px)' }}>
+            <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
+              <EngineIcon type={engine.value} variant="logo" />
+              <strong>{engine.label}</strong>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <Tag color="blue">默认端口 {engine.port}</Tag>
+                <Tooltip title="连接凭据仅加密保存在当前电脑">
+                  <Tag color="success" icon={<SafetyCertificateOutlined />}>
+                    本地加密
+                  </Tag>
                 </Tooltip>
               </div>
-            ))}
+            </div>
+            <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: 'auto' }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
+              <Form.Item name="type" hidden>
+                <Input />
+              </Form.Item>
+              <Tabs
+                activeKey={section}
+                onChange={setSection}
+                items={[
+                  {
+                    key: 'general',
+                    label: '常规',
+                    forceRender: true,
+                    children: (
+                      <div className="connection-fields" style={{ paddingTop: 8 }}>
+                        <Form.Item name="name" label="连接名称" rules={[{ required: true, whitespace: true, message: '请输入连接名称' }]}>
+                          <Input placeholder="例如：本地开发库" />
+                        </Form.Item>
+                        <Form.Item name="group" label="连接分组">
+                          <AutoComplete
+                            placeholder="输入或选择分组，留空归入默认分组"
+                            options={groups.map((group) => ({ value: group }))}
+                            filterOption={(input, option) => input === connectionGroupName(connection?.group) || Boolean(option?.value.toLowerCase().includes(input.toLowerCase()))}
+                            allowClear
+                          />
+                        </Form.Item>
+                        <Form.Item name="host" label="主机地址" rules={[{ required: true, whitespace: true, message: '主机地址不能为空，请输入 IP 或域名' }]}>
+                          <Input placeholder="127.0.0.1" />
+                        </Form.Item>
+                        <Form.Item name="port" label="端口" rules={[{ required: true, message: '请输入端口' }]}>
+                          <InputNumber placeholder="端口" min={1} max={65535} style={{ width: '100%' }} />
+                        </Form.Item>
+                        {engine.database !== undefined && (
+                          <Form.Item
+                            name="database"
+                            label="维护数据库"
+                            rules={[{ required: true, whitespace: true, message: '请输入可连接的数据库' }]}
+                            extra="用于测试连接和读取数据库列表；查询可在顶部切换数据库"
+                          >
+                            <Input placeholder={engine.database} />
+                          </Form.Item>
+                        )}
+                        <Form.Item name="username" label="用户名" rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}>
+                          <Input autoComplete="username" placeholder="请输入数据库用户名" />
+                        </Form.Item>
+                        <Form.Item name="password" label="密码" extra={connection?.hasPassword ? '留空保留原密码' : undefined}>
+                          <Input.Password autoComplete="new-password" placeholder={connection?.hasPassword ? '已保存，留空不修改' : '数据库密码'} />
+                        </Form.Item>
+                      </div>
+                    )
+                  },
+                  {
+                    key: 'ssl',
+                    label: 'SSL',
+                    forceRender: true,
+                    children: (
+                      <div className="connection-fields" style={{ paddingTop: 8 }}>
+                        <Form.Item name="tls" label="SSL / TLS" valuePropName="checked" extra="验证服务器证书及主机名">
+                          <Switch />
+                        </Form.Item>
+                      </div>
+                    )
+                  }
+                ]}
+              />
+            </Form>
+          </div>
+          {(testing || status) && (
+            <div className="connection-test-result" style={{ flex: 'none', minWidth: 0, maxHeight: '35%', overflowY: 'auto' }}>
+              <Alert
+                banner
+                showIcon
+                role={status?.type === 'error' ? 'alert' : 'status'}
+                type={testing ? 'info' : status?.type}
+                icon={testing ? <LoadingOutlined /> : undefined}
+                title={testing ? '正在测试连接…' : `${status?.type === 'success' ? '连接成功' : '连接失败'}：${status?.message}`}
+                style={{ overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Modal>
