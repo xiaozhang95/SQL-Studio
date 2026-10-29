@@ -1,4 +1,4 @@
-import { Alert, Button, Spin } from 'antd'
+import { Spin } from 'antd'
 
 import type { useSidebarResize } from '../../hooks/useSidebarResize'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
@@ -11,8 +11,6 @@ type Props = {
     | 'connections'
     | 'connectionId'
     | 'connectionLoading'
-    | 'connectionError'
-    | 'loadConnections'
     | 'connectionAction'
     | 'openConnection'
     | 'databaseAction'
@@ -47,7 +45,6 @@ export default function ConnectionSidebar({ model, layout }: Props) {
         width: visibleWidth
       }}
     >
-      {model.connectionError && <Alert type="error" title="连接列表加载失败" description={model.connectionError} action={<Button onClick={() => void model.loadConnections()}>重试</Button>} />}
       {model.connectionLoading && !model.connections.length ? (
         <div className="tree-loading" style={{ textAlign: 'center', padding: '28px 10px' }}>
           <Spin />

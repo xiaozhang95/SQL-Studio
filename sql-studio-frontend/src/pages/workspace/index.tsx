@@ -30,6 +30,7 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
   const model = useWorkspace()
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, model.workspaceReady)
   const storageError = model.storageError || themeError
+  const noticeError = [...new Set([storageError, model.connectionError].filter(Boolean))].join('\n')
   return (
     <div
       className="app-shell"
@@ -88,7 +89,23 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
           />
         </div>
       </header>
-      {storageError && <Alert key={storageError} closable type="warning" banner title="本机配置保存不可用，当前页面仍可使用。" description={storageError} />}
+      {noticeError && (
+        <Alert
+          key={noticeError}
+          closable
+          type="warning"
+          banner
+          title={storageError ? '本机配置保存不可用，当前页面仍可使用。' : '连接列表加载失败，当前页面仍可使用。'}
+          description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{noticeError}</div>}
+          action={
+            model.connectionError ? (
+              <Button loading={model.connectionLoading} onClick={() => void model.loadConnections()}>
+                重试
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
           <Spin description="正在恢复工作区…" />
