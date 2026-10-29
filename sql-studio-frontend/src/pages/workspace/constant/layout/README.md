@@ -19,3 +19,5 @@ workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题�
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 
 objectTreeLayout.rowHeight=30 与既有 28px 节点内容和 2px 行距一致；scrollSaveDelay=150ms 在滚动结束后保存位置。
+
+sqlCompletionLayout.width=360、height=256：Ant Design 语法候选下拉的最大尺寸，实际宽度受窗口限制。

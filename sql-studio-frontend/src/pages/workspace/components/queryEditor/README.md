@@ -33,3 +33,5 @@ Schema 选择通过 selectObject 的第四参数传入显式连接/库范围；A
 编辑器挂载身份仅绑定页面，不绑定全局 running。关闭无关库/连接、打开对象弹框及执行状态切换只更新控件状态，保留 CodeMirror 实例、选区、滚动与撤销。
 
 编辑器value仅提供挂载初始SQL，后续输入由CodeMirror持有；不注册逐字onChange全文序列化，onUpdate提交不可变文档和布局到useWorkspaceEditor缓冲。hasSQL只在空/非空之间变化，按钮使用当前实例执行/导出。历史和AI应用继续走事务；失焦、卸载及切页同步草稿。组件仅按页面ID重挂载，连接/库变化只更新补全扩展，保留当前文本和撤销。
+
+SQL 语法候选使用 sqlCompletionSelect 的 Ant Design Select；useSQLCompletionPopup 将 CodeMirror 候选、当前项及光标位置同步给下拉，保留 Ctrl+Space、上下键、Enter、Escape 和鼠标选择；不会替换补全来源或编辑器焦点。

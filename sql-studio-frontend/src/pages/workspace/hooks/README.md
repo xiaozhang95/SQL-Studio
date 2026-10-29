@@ -30,3 +30,6 @@
 - [useDataExport](useDataExport/README.md)：数据库、Schema、表的结构/数据转储与独立取消。
 
 - [useWorkspaceEditor](useWorkspaceEditor/README.md)：当前编辑实例、延迟草稿同步和光标/滚动批量提交。
+
+- [useResultTableScroll](useResultTableScroll/README.md)：新增、保存及虚拟行测量后的定位。
+- [useSQLCompletionPopup](useSQLCompletionPopup/README.md)：原生补全状态与 Ant Design 候选同步。

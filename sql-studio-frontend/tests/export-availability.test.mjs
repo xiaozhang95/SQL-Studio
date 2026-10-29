@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
+import { canExportDatabase } from '../src/pages/workspace/utils/exportAvailability/index.ts'
+
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useDataExport/index.ts', import.meta.url), 'utf8')
 const implementation = stripTypeScriptTypes(source.slice(source.indexOf('export function useDataExport')).replace('export function', 'function'))
 
@@ -27,19 +29,33 @@ test('workspace checks the target connection and closed database independently o
   const workspace = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
   const start = workspace.indexOf('  const dataExport = useDataExport(')
   const code = workspace.slice(start, workspace.indexOf('\n', start))
-  const createPredicate = new Function('objects', 'useDataExport', stripTypeScriptTypes(code) + '; return dataExport')
+  const createPredicate = new Function('objects', 'useDataExport', 'canExportDatabase', stripTypeScriptTypes(code) + '; return dataExport')
   for (const status of [undefined, 'loading', 'error', 'connected']) {
     const objects = {
-      snapshots: { target: status ? { status } : undefined, active: { status: 'connected' } },
+      snapshots: { target: status ? { status, tables: {}, loadingTables: [], tableErrors: {} } : undefined, active: { status: 'connected' } },
       closedDatabases: { active: ['same database'] }
     }
-    const canExport = createPredicate(objects, (predicate) => predicate)
+    const canExport = createPredicate(objects, (predicate) => predicate, canExportDatabase)
+    assert.equal(canExport('target', 'same database'), false)
+    if (objects.snapshots.target) objects.snapshots.target.tables['same database'] = []
     assert.equal(canExport('target', 'same database'), status === 'connected')
     objects.closedDatabases.target = ['same database']
     assert.equal(canExport('target', 'same database'), false)
     objects.closedDatabases.target = ['another database']
     assert.equal(canExport('target', 'same database'), status === 'connected')
   }
+})
+
+test('unopened, loading and failed databases cannot export; successfully opened empty databases can', () => {
+  const snapshot = { status: 'connected', tables: {}, loadingTables: [], tableErrors: {} }
+  assert.equal(canExportDatabase(snapshot, [], 'db'), false)
+  snapshot.tables.db = []
+  assert.equal(canExportDatabase(snapshot, [], 'db'), true)
+  snapshot.loadingTables.push('db')
+  assert.equal(canExportDatabase(snapshot, [], 'db'), false)
+  snapshot.loadingTables = []
+  snapshot.tableErrors.db = 'failed'
+  assert.equal(canExportDatabase(snapshot, [], 'db'), false)
 })
 
 test('unavailable targets never open the picker or create export state, for every export scope and mode', async () => {

@@ -9,10 +9,12 @@ import type { ThemeMode } from '@/typings/theme'
 
 import { useAISQL } from '../../hooks/useAISQL'
 import { useSQLCompletion } from '../../hooks/useSQLCompletion'
+import { useSQLCompletionPopup } from '../../hooks/useSQLCompletionPopup'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../utils/editorAppearance'
 import ScopeSelects from '../scopeSelects'
+import SQLCompletionSelect from '../sqlCompletionSelect'
 import SQLOptimization from '../sqlOptimization'
 
 type Props = {
@@ -53,8 +55,10 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const [hasSQL, setHasSQL] = useState(() => Boolean(tab.sql.length))
   const view = useRef<EditorView | null>(null)
   const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
+  const completion = useSQLCompletionPopup()
+  const { update: updateCompletion } = completion
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
-  const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...ai.extensions], [extensions, ai.extensions])
+  const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...completion.extensions, ...ai.extensions], [extensions, completion.extensions, ai.extensions])
   const callbacks = useRef({ onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose })
   useLayoutEffect(() => {
     callbacks.current = { onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose }
@@ -66,10 +70,14 @@ export default function QueryEditor({ model, themeMode }: Props) {
     []
   )
   // UIW 将回调/配置身份变化视为全量重配，输入时保持身份以保留补全与解析状态。
-  const onUpdate = useCallback((update: ViewUpdate) => {
-    if (update.docChanged) setHasSQL(Boolean(update.state.doc.length))
-    callbacks.current.onUpdate(update)
-  }, [])
+  const onUpdate = useCallback(
+    (update: ViewUpdate) => {
+      if (update.docChanged) setHasSQL(Boolean(update.state.doc.length))
+      updateCompletion(update)
+      callbacks.current.onUpdate(update)
+    },
+    [updateCompletion]
+  )
   return (
     <section className="editor-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--surface)', overflow: 'hidden' }}>
       <div
@@ -174,6 +182,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
           )}
         </div>
       </Dropdown>
+      <SQLCompletionSelect completion={completion} />
     </section>
   )
 }

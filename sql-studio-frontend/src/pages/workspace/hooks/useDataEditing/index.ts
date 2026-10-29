@@ -179,7 +179,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       const table = tables.find((item) => item.name === tab.table)
       if (!table || table.type.includes('VIEW')) throw new Error('视图不支持新增行')
       setCell(undefined)
-      setNewRows((previous) => [...previous, { key: nextKey.current--, cells: result.columns.map(() => undefined), columns }])
+      setNewRows((previous) => [{ key: nextKey.current--, cells: result.columns.map(() => undefined), columns }, ...previous])
     } catch (error) {
       if (!controller.signal.aborted) message.error(error instanceof Error ? error.message : '新增失败')
     } finally {

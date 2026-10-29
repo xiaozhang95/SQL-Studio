@@ -18,3 +18,5 @@
 
 - [编辑内容同步缓冲](editorBuffer/README.md)：延迟全文读取、固定期限合并和切页同步。
 - [结果分页映射](resultRows/README.md)：筛选下标缓存、可见页对象和完整CSV数据。
+
+- [转储可用状态](exportAvailability/README.md)：连接和目标库成功打开后的统一门禁。

@@ -31,6 +31,7 @@ import { useTreeViewport } from '../../hooks/useTreeViewport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { buildExplorerTree } from '../../utils/explorerTree'
 import type { ExplorerNode } from '../../utils/explorerTree'
+import { canExportDatabase } from '../../utils/exportAvailability'
 import EngineIcon from '../engineIcon'
 
 type Props = {
@@ -75,7 +76,7 @@ export default function DatabaseExplorer({ model }: Props) {
       }
     const { owner: id, database: db, table } = node
     const engine = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
-    const exportDisabled = objects.snapshots[id]?.status !== 'connected' || Boolean(objects.closedDatabases[id]?.includes(db))
+    const exportDisabled = !canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db)
 
     let items: MenuProps['items']
     if (node.kind === 'connection') {
@@ -122,7 +123,7 @@ export default function DatabaseExplorer({ model }: Props) {
     } else if (node.kind === 'database') {
       items = [
         { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-        objects.closedDatabases[id]?.includes(db) ? { key: 'open', label: '打开数据库', icon: <LinkOutlined /> } : { key: 'close', label: '关闭数据库', icon: <CloseOutlined /> },
+        exportDisabled ? { key: 'open', label: '打开数据库', icon: <LinkOutlined /> } : { key: 'close', label: '关闭数据库', icon: <CloseOutlined /> },
         { type: 'divider' },
         { key: 'edit', label: '编辑数据库', icon: <EditOutlined /> },
         { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },

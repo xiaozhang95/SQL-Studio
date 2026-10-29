@@ -14,6 +14,7 @@ import { saveSQL } from '@/utils/sqlSave'
 
 import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../constant/layout'
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
+import { canExportDatabase } from '../../utils/exportAvailability'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
@@ -109,7 +110,7 @@ export const useWorkspace = () => {
   }, [])
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
-  const dataExport = useDataExport((id, db) => objects.snapshots[id]?.status === 'connected' && !objects.closedDatabases[id]?.includes(db))
+  const dataExport = useDataExport((id, db) => canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db))
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
   const setTableDesignerBusy = useCallback(
     (id: string, value: boolean) =>

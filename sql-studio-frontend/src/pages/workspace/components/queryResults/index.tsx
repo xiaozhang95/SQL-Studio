@@ -2,6 +2,7 @@ import {
   CloseOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  DownOutlined,
   EyeOutlined,
   LoadingOutlined,
   PlusOutlined,
@@ -12,9 +13,8 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Empty, Input, Pagination, Table } from 'antd'
-import type { TableRef } from 'antd/es/table'
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, Button, Dropdown, Empty, Input, Pagination, Table } from 'antd'
+import { useDeferredValue, useMemo, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
@@ -24,10 +24,12 @@ import { exportCSV } from '@/utils/csv'
 import { resultSQLLayout, resultTableLayout } from '../../constant/layout'
 import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useDataEditing } from '../../hooks/useDataEditing'
+import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { defaultOutputView } from '../../utils/queryOutput'
-import { exportResultRows, matchResultRows, pageResultRows } from '../../utils/resultRows'
+import { exportResultRows, matchResultRows, pageResultRows, selectedResultRows, sortResultRows } from '../../utils/resultRows'
+import type { ResultSort } from '../../utils/resultRows'
 import DataCellEditor from '../dataCellEditor'
 import NewRowCell from '../newRowCell'
 import QueryMessages from '../queryMessages'
@@ -78,6 +80,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   })
   const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
   const selectedRows = selection.result === result ? selection.keys : []
+  const [sorting, setSorting] = useState<{ result?: typeof result; sort?: ResultSort }>({})
+  const sort = sorting.result === result ? sorting.sort : undefined
   const [selectedView, setSelectedView] = useState<{
     pageId: string
     runId?: string
@@ -91,14 +95,16 @@ export default function QueryResults({ model, themeMode }: Props) {
   const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
-  const table = useRef<TableRef>(null)
-  useEffect(() => {
-    table.current?.scrollTo({ top: 0 })
-  }, [run?.id, tablePage, resultSearch, view])
+  const table = useResultTableScroll({ result, runId: run?.id, view, page: tablePage, search: resultSearch, sortKey: sort ? `${sort.column}:${sort.order}` : '', added: editing.newRows.length })
   const deferredSearch = useDeferredValue(resultSearch)
   const matches = useMemo(() => (showingResult ? matchResultRows(editing.rows, deferredSearch) : null), [editing.rows, deferredSearch, showingResult])
+  const sortType = sort ? result?.columns[sort.column]?.type : undefined
+  const orderedMatches = useMemo(
+    () => (showingResult ? sortResultRows(result?.rows ?? editing.rows, matches, sort, sortType) : null),
+    [result?.rows, editing.rows, matches, sort, sortType, showingResult]
+  )
   const rowCount = editing.newRows.length + (matches?.length ?? editing.rows.length)
-  const rows = useMemo(() => (showingResult ? pageResultRows(editing.rows, editing.newRows, matches, tablePage) : []), [editing.rows, editing.newRows, matches, tablePage, showingResult])
+  const rows = useMemo(() => (showingResult ? pageResultRows(editing.rows, editing.newRows, orderedMatches, tablePage) : []), [editing.rows, editing.newRows, orderedMatches, tablePage, showingResult])
   const columns = [
     {
       title: '#',
@@ -124,6 +130,9 @@ export default function QueryResults({ model, themeMode }: Props) {
         </div>
       ),
       key: String(index),
+      sorter: true,
+      sortOrder: sort?.column === index ? sort.order : null,
+      showSorterTooltip: { title: '对当前已加载的结果排序' },
       onCell: (row: { key: number }) => ({
         className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
         onDoubleClick: () => {
@@ -175,7 +184,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         )
     }))
   ]
-  const scrollWidth = columns.reduce((total, column) => total + (column.width ?? 0), tab.kind === 'data' ? resultTableLayout.selectionWidth : 0)
+  const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? 0), resultTableLayout.selectionWidth)
   if (!run) return null
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
@@ -230,7 +239,16 @@ export default function QueryResults({ model, themeMode }: Props) {
                 >
                   删除行
                 </Button>
-                <Button icon={<SaveOutlined />} type="primary" loading={editing.saving} disabled={editingBlocked || !editing.dirty} onClick={() => void editing.save()}>
+                <Button
+                  icon={<SaveOutlined />}
+                  type="primary"
+                  loading={editing.saving}
+                  disabled={editingBlocked || !editing.dirty}
+                  onClick={() => {
+                    setTablePage(1)
+                    void editing.save()
+                  }}
+                >
                   保存
                 </Button>
                 <Button icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel}>
@@ -269,19 +287,26 @@ export default function QueryResults({ model, themeMode }: Props) {
                   allowClear
                   disabled={!result}
                 />
-                <Button
-                  icon={<DownloadOutlined />}
+                <Dropdown
+                  trigger={['click']}
+                  menu={{
+                    items: [
+                      { key: 'all', label: '导出全部' },
+                      { key: 'selected', label: `导出选中（${selectedRows.length}）`, disabled: !selectedRows.length }
+                    ],
+                    onClick: ({ key }) =>
+                      result &&
+                      exportCSV(
+                        result.columns.map((column) => column.name),
+                        key === 'selected' ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches)
+                      )
+                  }}
                   disabled={!result?.isQuery || deferredSearch !== resultSearch}
-                  onClick={() =>
-                    result &&
-                    exportCSV(
-                      result.columns.map((column) => column.name),
-                      exportResultRows(editing.rows, editing.newRows, matches)
-                    )
-                  }
                 >
-                  导出 CSV
-                </Button>
+                  <Button icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch}>
+                    导出 CSV <DownOutlined />
+                  </Button>
+                </Dropdown>
               </>
             )}
           </div>
@@ -307,17 +332,19 @@ export default function QueryResults({ model, themeMode }: Props) {
               size={appearance.tableSize}
               className="data-table"
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
-              rowSelection={
-                tab.kind === 'data'
-                  ? {
-                      columnWidth: resultTableLayout.selectionWidth,
-                      selectedRowKeys: selectedRows,
-                      onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
-                      preserveSelectedRowKeys: true,
-                      getCheckboxProps: (row) => ({ disabled: editingBlocked || row.key < 0 })
-                    }
-                  : undefined
-              }
+              rowSelection={{
+                columnWidth: resultTableLayout.selectionWidth,
+                selectedRowKeys: selectedRows,
+                onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
+                preserveSelectedRowKeys: true,
+                getCheckboxProps: (row) => ({ disabled: model.running || row.key < 0 })
+              }}
+              onChange={(_, __, sorter) => {
+                const selected = Array.isArray(sorter) ? sorter[0] : sorter
+                const column = Number(selected.columnKey)
+                setSorting({ result, sort: selected.order && Number.isInteger(column) ? { column, order: selected.order } : undefined })
+                setTablePage(1)
+              }}
               columns={columns}
               dataSource={rows}
               pagination={false}

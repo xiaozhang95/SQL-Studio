@@ -253,6 +253,10 @@ body {
 .history-table .ant-table-body {
   height: var(--history-body-height);
 }
+// 候选项改由 Ant Design Select 展示，保留 CodeMirror 原生补全状态与键盘处理。
+.cm-tooltip.sql-native-completion {
+  display: none;
+}
 .result-meta .ant-tag,
 .structure-tags .ant-tag {
   margin-inline-end: 0;

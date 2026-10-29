@@ -39,3 +39,5 @@
 - [AI 服务商图标](aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
 
 - [dataExport](dataExport/README.md)：转储摘要、实时日志、进度及取消弹框。
+
+- [SQL 语法补全下拉](sqlCompletionSelect/README.md)：Ant Design Select 候选展示。
