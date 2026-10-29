@@ -22,6 +22,9 @@ type Config struct {
 // Load 将相对目录解析为绝对路径；默认使用用户状态目录，旧 data 交由 app 迁移。
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:8080"}
+	if address := os.Getenv("SQLDESK_ADDR"); address != "" {
+		cfg.Address = address
+	}
 	var err error
 	home, homeErr := os.UserHomeDir()
 	if homeErr != nil {
@@ -42,9 +45,12 @@ func Load() (Config, error) {
 			return cfg, err
 		}
 	}
-	cfg.WebDir, err = resolveDirectory("SQLDESK_WEB_DIR", "../sql-studio-frontend/dist")
-	if err != nil {
-		return cfg, err
+	// Empty means the build's default frontend source; only an explicit override uses disk.
+	if os.Getenv("SQLDESK_WEB_DIR") != "" {
+		cfg.WebDir, err = resolveDirectory("SQLDESK_WEB_DIR", "")
+		if err != nil {
+			return cfg, err
+		}
 	}
 	if password := os.Getenv("SQLDESK_MYSQL_PASSWORD"); password != "" {
 		host := os.Getenv("SQLDESK_MYSQL_HOST")

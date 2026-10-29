@@ -52,6 +52,43 @@ pnpm dev
 
 浏览器打开 `http://127.0.0.1:5173`，点击“新建连接”填写数据库信息。后端默认监听 `127.0.0.1:8080`。
 
+## 一键打包
+
+在仓库根目录用 PowerShell 执行：
+
+```powershell
+.\build.ps1
+```
+
+脚本依次执行 `pnpm install --frozen-lockfile`、前端 `pnpm build`，将最新 dist 同步到 Go 的生成资源目录，再执行 `go build -tags embedded`。默认按当前 Go 目标平台生成文件；Windows x64 产物为 `release/sql-studio-windows-amd64.exe`。
+
+```powershell
+.\release\sql-studio-windows-amd64.exe
+```
+
+启动后打开 `http://127.0.0.1:8080/`，Swagger 页面为 `http://127.0.0.1:8080/swagger.html`，接口仍使用 `/api/*`。dist 已通过 Go embed 编译进程序，可只复制这个可执行文件到其他目录运行，无需 Node.js、Go、Vite 或外部 dist。连接和配置仍保存到系统用户目录，不写进可执行文件。
+
+支持指定目标系统和架构（运行脚本需要 PowerShell、pnpm 和 Go；目标机器无需这些构建工具）：
+
+```powershell
+.\build.ps1 -TargetOS linux -TargetArch amd64
+.\build.ps1 -TargetOS darwin -TargetArch arm64
+```
+
+可选设置 `SQLDESK_WEB_DIR` 指向外部 dist，显式覆盖内嵌网页；通常无需设置。普通 `go run main.go` / 无标签 `go build` 保持开发模式，从后端工作目录读取 `../sql-studio-frontend/dist`。`release/` 与内嵌生成目录不提交，每次打包会先清理旧内嵌资源，再复制最新构建。
+
+8080 已被占用时，可先设置 `$env:SQLDESK_ADDR = '127.0.0.1:18080'` 再运行程序，随后访问对应地址；不设置时仍使用默认端口。
+
+### 启动失败与配置保存提示
+
+默认配置目录仍为当前用户的 `.sql-studio/state/`，打包后不改目录，不自动复制或创建另一份空配置。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件，不能仅凭目录属于当前用户就断言该进程可写。
+
+先确认浏览器连接的后端：程序启动日志会输出 PID、可执行文件路径、监听地址及配置目录。若 8080 已有 `go run` 的临时 main.exe，双击新的打包程序会因端口占用退出，浏览器仍然访问旧服务；先正常停止旧服务，再运行打包程序，不需要更换配置目录。
+
+Windows 打包时附带 `release/start-sql-studio-amd64.cmd`（arm64 对应同名架构），可选双击该文件启动；它运行同目录 exe，失败时暂停窗口保留错误，使用原配置目录且不提升权限。exe 本身仍可独立运行，cmd 不是必需依赖。
+
+若原目录仍出现写入拒绝，保存错误会附带实际服务进程的 PID 和 exe 路径，用于区分旧服务、受限运行环境或系统拦截。程序保持原配置与原目录，不修改 ACL、不增加启动强制写入检查、不自动切换目录。所有服务进程退出后再重新打开，避免多个后端同时写同一目录。
+
 ## 使用
 
 1. 新建并测试连接，展开左侧连接查看数据库和表。

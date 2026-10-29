@@ -32,4 +32,6 @@ go build ./...
 
 UI 变更补充亮暗主题、长名称、伸缩布局和相关交互检查，证据保存在任务产物中。静态检查不能替代浏览器或真实数据库验证，交付时说明未覆盖范围。启动使用项目 README 中的原生命令，不增加包装脚本或部署配置。
 
+用户要求的一键发布打包由仓库根目录 `build.ps1` 提供（不承担启停/巡检）；它安装锁定前端依赖并构建，将 dist 同步到 Go embed 的生成目录，再产出 release 中的独立可执行文件。具体参数见 [一键打包](../README.md#一键打包)。打包后额外运行 `go test -tags embedded -count=1 ./...`，并从独立目录启动产物验证根页面、资源、Swagger 和 API。
+
 SQL 窗口真实执行回归使用 [sql-studio-sql-regression skill](../.agents/skills/sql-studio-sql-regression/SKILL.md)，包含隔离环境、自动化命令、两种引擎的 SQL 示例、浏览器选区/快捷键/取消断言及清理流程；实际通过数量与未覆盖项随本次任务交付。

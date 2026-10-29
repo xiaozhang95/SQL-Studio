@@ -22,6 +22,7 @@
 | statefile             | 版本、修订、同进程互斥与分区 JSON 原子替换                         |
 | deepseek              | 官方 HTTPS 模型调用，不执行 SQL                                    |
 | config                | 环境变量和目录解析                                                 |
+| webui                 | 构建版内嵌前端/开发版磁盘资源、Gin 静态路由；不依赖业务模块           |
 
 modules 各自只依赖 model 与最小消费接口，不导入兄弟模块、驱动、Gin 或存储实现。app 创建一次 query/ai 服务，全请求共享其预算。架构测试递归约束依赖与 README/doc.go。
 
@@ -32,6 +33,8 @@ HTTP context 传入模块和驱动，保留取消、超时、游标与连接释�
 普通 JSON 请求限制 1 MiB，配置写入信封限制 32 MiB + 1024 字节。配置文件缺失可重建，现存文件严格 CAS，损坏或未知版本拒绝覆盖。密码不进入响应与日志；AI Key 仅保存在后端配置，响应脱敏。
 
 Go 服务默认仅监听 127.0.0.1:8080，提供构建网页及 API。退出给予在途请求 5 秒结束时间。目录、启动、环境变量和测试入口见 [后端 README](../sql-studio-backend/README.md)。
+
+仓库根目录 `build.ps1` 先构建 Vite dist，再同步到 internal/webui 的生成目录并用 embedded 标签编译。app 调用 webui.Register，以 Gin StaticFS/StaticFileFS 注册前端路由，API 命名空间优先；内嵌版不依赖运行目录的前端文件，显式 SQLDESK_WEB_DIR 可覆盖。开发构建使用磁盘 dist，不需要占位资源。
 
 rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和 database/sql，不执行 SQL 或访问HTTP/存储；mysql/postgresql 的导出方法负责方言及只读事务，metadata 负责凭据/并发/期限，httpapi 仅编码 SSE。
 

@@ -20,13 +20,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	executable, _ := os.Executable()
+	log.Printf("SQL Studio PID: %d\nExecutable: %s\nListen address: %s\nState directory: %s", os.Getpid(), executable, cfg.Address, cfg.StateDir)
 	application, err := app.New(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	log.Printf("SQL Studio: http://%s\nData directory: %s", cfg.Address, cfg.DataDir)
+	log.Printf("SQL Studio: http://%s\nData directory: %s\nState directory: %s", cfg.Address, cfg.DataDir, cfg.StateDir)
 	if err = application.Run(ctx); err != nil {
 		log.Fatal(err)
 	}

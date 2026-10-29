@@ -4,6 +4,7 @@
 - [运行配置](config/README.md)
 - [本地连接仓库](connection/README.md)
 - [Gin HTTP 接口](httpapi/README.md)
+- [前端静态资源](webui/README.md)：开发版从磁盘读取，打包版通过 Go embed 提供独立运行的前端。
 - [跨层业务契约](model/README.md)
 - [MariaDB 引擎](mariadb/README.md)：独立类型、组合 MySQL 线协议及生命周期。
 - [MySQL 协议驱动](mysql/README.md)

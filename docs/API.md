@@ -2,6 +2,8 @@
 
 Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构建版由 Go 提供 `http://127.0.0.1:8080/swagger.html`。UI 资源随前端构建，不依赖 CDN。
 
+仓库根目录 `build.ps1` 将前端 dist 内嵌进 Go 可执行文件。打包版 Gin 在 `GET /` 提供工作台、`GET /swagger.html` 提供文档页面、`GET /assets/*` 提供构建静态资源（均支持 HEAD），不依赖外部 dist；`/api` 命名空间保留给下方接口，未知 API 返回 JSON 404。静态目录不列文件，丢失资源返回 404；SQLDESK_WEB_DIR 可显式覆盖内嵌网页。
+
 [OpenAPI 3.0 契约](../sql-studio-backend/internal/httpapi/openapi.json) 是字段、请求、响应及状态码的完整说明，运行时从 `GET /api/openapi.json` 获取。修改接口同步契约和本文件；Go 测试校验三者路由一致。
 
 ## 路由

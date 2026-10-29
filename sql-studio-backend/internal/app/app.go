@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -28,11 +29,20 @@ import (
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/mysql"
 	"sql-studio-backend/internal/postgresql"
+	"sql-studio-backend/internal/webui"
 )
 
 type App struct{ server *http.Server }
 
 func New(cfg config.Config) (*App, error) {
+	stateDir := cfg.StateDir
+	if stateDir == "" {
+		stateDir = filepath.Join(cfg.DataDir, "state")
+	}
+	stateStore, err := statefile.Open(stateDir)
+	if err != nil {
+		return nil, err
+	}
 	if err := connection.Migrate(cfg.LegacyDataDir, cfg.DataDir); err != nil {
 		return nil, err
 	}
@@ -48,14 +58,6 @@ func New(cfg config.Config) (*App, error) {
 			return nil, err
 		}
 	}
-	stateDir := cfg.StateDir
-	if stateDir == "" {
-		stateDir = filepath.Join(cfg.DataDir, "state")
-	}
-	stateStore, err := statefile.Open(stateDir)
-	if err != nil {
-		return nil, err
-	}
 	router := httpapi.New(httpapi.Services{
 		Workspace:   workspace.New(stateStore),
 		Connections: connectionService,
@@ -64,13 +66,16 @@ func New(cfg config.Config) (*App, error) {
 		Metadata:    metadata.New(repository, client),
 		Queries:     query.New(repository, client),
 	})
-	web := http.FileServer(http.Dir(cfg.WebDir))
+	if err := webui.Register(router, cfg.WebDir); err != nil {
+		return nil, err
+	}
+	router.HandleMethodNotAllowed = true
 	router.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+		if c.Request.URL.Path == "/api" || strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
 			return
 		}
-		web.ServeHTTP(c.Writer, c.Request)
+		c.String(http.StatusNotFound, "404 page not found")
 	})
 	server := &http.Server{Addr: cfg.Address, Handler: router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 40 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
 	return &App{server: server}, nil
@@ -80,7 +85,7 @@ func New(cfg config.Config) (*App, error) {
 func (a *App) Run(ctx context.Context) error {
 	listener, err := net.Listen("tcp", a.server.Addr)
 	if err != nil {
-		return err
+		return fmt.Errorf("SQL Studio 无法监听 %s，请检查该端口是否已被旧的 go run 或其他后端程序占用，以及监听地址是否有效: %w", a.server.Addr, err)
 	}
 	finished := make(chan error, 1)
 	go func() { finished <- a.server.Serve(listener) }()

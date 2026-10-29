@@ -28,7 +28,7 @@ func Open(directory string) (*Store, error) {
 		return nil, errors.New("配置目录不能为空")
 	}
 	if err := os.MkdirAll(directory, 0700); err != nil {
-		return nil, err
+		return nil, directoryError(directory, err)
 	}
 	return &Store{directory: directory}, nil
 }
@@ -118,11 +118,11 @@ func (s *Store) write(ctx context.Context, name string, input model.StateWrite) 
 		return old, errors.New("配置文件超过大小限制，未覆盖原文件")
 	}
 	if err = os.MkdirAll(s.directory, 0700); err != nil {
-		return old, err
+		return old, directoryError(s.directory, err)
 	}
 	tmp, err := os.CreateTemp(s.directory, ".state-*.tmp")
 	if err != nil {
-		return old, err
+		return old, directoryError(s.directory, err)
 	}
 	defer os.Remove(tmp.Name())
 	if err = tmp.Chmod(0600); err == nil {
@@ -136,13 +136,13 @@ func (s *Store) write(ctx context.Context, name string, input model.StateWrite) 
 		err = closeErr
 	}
 	if err != nil {
-		return old, err
+		return old, directoryError(s.directory, err)
 	}
 	if err = ctx.Err(); err != nil {
 		return old, err
 	}
 	if err = os.Rename(tmp.Name(), filepath.Join(s.directory, name+".json")); err != nil {
-		return old, err
+		return old, directoryError(s.directory, err)
 	}
 	return old, nil
 }

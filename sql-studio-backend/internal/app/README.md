@@ -23,3 +23,7 @@ app 同时创建 mysql.Client 与 postgresql.Client，通过 database.New 注册
 workspace.New(stateStore) 与 settings 共用仓库，独立模块公开分片工作区API；普通分区不能绕过workspace-index引用边界。首次迁移在请求时进行，不阻塞服务装配或改动凭据。
 
 MariaDB 单独注册 mariadb.Client；该实例组合 MySQL 协议驱动，类型保持 mariadb，关闭状态与其他引擎实例隔离。
+
+装配打开原 statefile 目录，再处理连接迁移和仓库初始化，不添加启动强制写入探测。监听失败明确报告端口和旧 go run/其他进程占用的可能性；不停止其他进程、不修改配置目录或文件权限。
+
+app 调用 webui.Register(router,cfg.WebDir)，用 Gin StaticFS/StaticFileFS 注册前端路由，NoRoute 只处理未知路径。`/api` 与 `/api/*` 的未知接口始终返回 JSON 404，不会落入静态目录。空 WebDir 按构建标签选择资源：embedded 使用编译进程序的 dist，普通开发构建读取前端 dist；显式 WebDir 覆盖默认资源。资源、目录与 HTTP 方法边界由 webui 管理。

@@ -69,7 +69,7 @@ func (s *Store) part(ctx context.Context, data json.RawMessage) (string, error) 
 	}
 	tmp, err := os.CreateTemp(directory, ".part-*.tmp")
 	if err != nil {
-		return "", err
+		return "", directoryError(directory, err)
 	}
 	defer os.Remove(tmp.Name())
 	if err = tmp.Chmod(0600); err == nil {
@@ -83,13 +83,13 @@ func (s *Store) part(ctx context.Context, data json.RawMessage) (string, error) 
 		err = closeErr
 	}
 	if err != nil {
-		return "", err
+		return "", directoryError(directory, err)
 	}
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
 	if err = os.Rename(tmp.Name(), target); err != nil {
-		return "", err
+		return "", directoryError(directory, err)
 	}
 	return id, nil
 }

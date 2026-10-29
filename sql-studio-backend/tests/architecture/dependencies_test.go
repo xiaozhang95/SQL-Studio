@@ -13,11 +13,11 @@ import (
 // 将依赖方向纳入回归检查，防止后续新增接口又直接耦合数据库或文件存储。
 func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
-		"app":     {"mariadb": true, "modules/ai": true, "deepseek": true, "statefile": true, "modules/workspace": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
+		"app":     {"webui": true, "mariadb": true, "modules/ai": true, "deepseek": true, "statefile": true, "modules/workspace": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
 		"mariadb": {"mysql": true, "model": true}, "postgresql": {"model": true, "rowstream": true}, "database": {"model": true}, "config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true, "rowstream": true}, "rowstream": {"model": true},
 		"httpapi":           {"modules/ai": true, "modules/workspace": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
 		"modules/workspace": {"model": true}, "modules/ai": {"model": true}, "deepseek": {"model": true},
-		"statefile": {"model": true}, "modules/settings": {"model": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {},
+		"statefile": {"model": true}, "modules/settings": {"model": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {}, "webui": {},
 	}
 	root, err := filepath.Abs("../../internal")
 	if err != nil {
@@ -55,7 +55,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 					t.Errorf("%s 不得依赖 %s", relative, dependency)
 				}
 			}
-			if dependency == "net/http" && layer != "httpapi" && layer != "app" && layer != "deepseek" {
+			if dependency == "net/http" && layer != "httpapi" && layer != "app" && layer != "deepseek" && layer != "webui" {
 				t.Errorf("%s 不得依赖 HTTP 传输层", relative)
 			}
 			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "rowstream" {
@@ -64,7 +64,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if (dependency == "os" || strings.HasPrefix(dependency, "os/")) && (strings.HasPrefix(layer, "modules/") || layer == "httpapi") {
 				t.Errorf("%s 不得直接读取系统配置或文件", relative)
 			}
-			if strings.HasPrefix(dependency, "github.com/gin-gonic/") && layer != "httpapi" && layer != "app" {
+			if strings.HasPrefix(dependency, "github.com/gin-gonic/") && layer != "httpapi" && layer != "app" && layer != "webui" {
 				t.Errorf("%s 不得依赖 Gin 框架", relative)
 			}
 			if strings.HasPrefix(dependency, "github.com/go-sql-driver/") && layer != "mysql" {

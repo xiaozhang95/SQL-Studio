@@ -45,6 +45,13 @@ func TestBootstrapKeepsExistingCredentialsAndServesWeb(t *testing.T) {
 			t.Fatalf("%s: %d", path, rec.Code)
 		}
 	}
+	for _, path := range []string{"/api", "/api/missing"} {
+		rec := httptest.NewRecorder()
+		application.server.Handler.ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080"+path, nil))
+		if rec.Code != 404 || !strings.Contains(rec.Header().Get("Content-Type"), "application/json") || !strings.Contains(rec.Body.String(), "接口不存在") {
+			t.Fatalf("unknown API fell through to frontend: %s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if err = application.Run(ctx); err != nil {

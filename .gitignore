@@ -9,3 +9,5 @@ sql-studio-frontend/dist/
 /.refactor-backup/
 /.test-runtime/
 /.vscode/
+/release/
+/sql-studio-backend/internal/webui/dist/

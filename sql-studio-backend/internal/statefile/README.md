@@ -4,6 +4,8 @@ Open(directory) 创建私有配置目录；Read/Write 接收 context、分区名
 
 保存前重新确保目录存在；缺失文件视为新分区，允许当前会话旧revision连续重建，现存文件仍严格CAS。
 
+Open 仅确保目录存在，不添加启动强制写入检查。分区及工作区写入若被拒绝，保留系统错误并附带实际服务进程 PID、可执行文件路径和原配置目录，帮助识别旧服务或进程限制；不改目录、不改 ACL、不自动回退为空配置。
+
 connections 为保留名称，Read/Write 一律拒绝，防止统一目录中的 connections.json 通过普通状态接口读取或覆盖。master.key 不属于 JSON 状态分区。
 
 ReadWorkspace/CommitWorkspace/ReadWorkspacePart 提供分片工作区：workspace-index.json 为v2轻量索引，workspace-parts/<SHA256>.json 为不可变草稿/结果。先0600临时文件同步、重命名内容，最后以严格CAS原子替换索引；失败或取消提交前不改变旧索引。读取内容校验散列及32MiB大小。普通 Read/Write 禁止访问 workspace-index，防止绕过专用引用校验。
