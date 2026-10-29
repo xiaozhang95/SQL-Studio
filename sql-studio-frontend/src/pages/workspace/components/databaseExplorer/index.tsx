@@ -52,6 +52,7 @@ export default function DatabaseExplorer({ model }: Props) {
   function menuFor(node: ExplorerNode): MenuProps | undefined {
     const { owner: id, database: db, table } = node
     const engine = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
+    const exportDisabled = objects.snapshots[id]?.status !== 'connected' || Boolean(objects.closedDatabases[id]?.includes(db))
 
     let items: MenuProps['items']
     if (node.kind === 'connection') {
@@ -80,6 +81,7 @@ export default function DatabaseExplorer({ model }: Props) {
           key: 'export',
           label: '转储文件',
           icon: <ExportOutlined />,
+          disabled: exportDisabled,
           children: [
             { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
             { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
@@ -103,6 +105,7 @@ export default function DatabaseExplorer({ model }: Props) {
           key: 'export',
           label: '转储文件',
           icon: <ExportOutlined />,
+          disabled: exportDisabled,
           children: [
             { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
             { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
@@ -132,6 +135,7 @@ export default function DatabaseExplorer({ model }: Props) {
           key: 'export',
           label: '转储文件',
           icon: <ExportOutlined />,
+          disabled: exportDisabled,
           children: [
             { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
             { key: 'dump-data', label: '结构和数据', icon: <TableOutlined />, disabled: node.view }

@@ -2,6 +2,10 @@
 
 使用 Node 原生测试运行器，不保留根目录 scripts 包装入口。
 
+`node --test tests/table-navigation.test.mjs` 执行实际对象页面导航及 WorkspaceStore 保存逻辑，覆盖 MySQL/PostgreSQL 表与视图双击后的页面复用、保存请求契约，以及查询/结构/DDL/设计页范围隔离。view 只用于对象管理，不进入页面与执行范围；使用虚构元数据和请求替身，不访问业务数据库。
+
+`node --test tests/export-availability.test.mjs` 执行实际 useDataExport 发起逻辑，以替身文件选择器检查不可用目标在数据库、Schema、表及两种内容模式下均不创建导出状态或文件；发起时再次判断，重新打开后允许导出。浏览器另核对菜单禁用、摘要两列及窄窗口单列，不代表真实数据库导出验证。
+
 - `pnpm test:sql`：MySQL 标识符、表预览、语句拆分、引号/注释边界、历史标记去重，以及结果 SQL 定义/语句列识别和普通元数据列排除。
 - `node --test tests/structure.test.mjs`：模块入口、README、原生样式归属及本地文档链接，已纳入 `pnpm lint`。不读取 data、凭据、依赖或构建目录；后端依赖边界由原生 Go 架构测试独立检查。
 

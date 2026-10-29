@@ -29,7 +29,6 @@ const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query'
 /** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
 export const useWorkspace = () => {
   const { message, modal } = AntApp.useApp()
-  const dataExport = useDataExport()
   const [connections, setConnections] = useState<Connection[]>([])
   const [connectionLoading, setConnectionLoading] = useState(true)
   const [connectionError, setConnectionError] = useState('')
@@ -100,6 +99,7 @@ export const useWorkspace = () => {
   }, [])
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
+  const dataExport = useDataExport((id, db) => objects.snapshots[id]?.status === 'connected' && !objects.closedDatabases[id]?.includes(db))
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
   const setTableDesignerBusy = useCallback(
     (id: string, value: boolean) =>
@@ -750,12 +750,11 @@ export const useWorkspace = () => {
   async function tableAction(action: string, targetConnectionId: string, db: string, table: string, reuseTabId?: string, discard = false) {
     const target = connections.find((item) => item.id === targetConnectionId)
     if (running || request.current || !target || objects.snapshots[targetConnectionId]?.status !== 'connected') return
-    const scope = {
+    const scope: QueryScope = {
       connectionId: targetConnectionId,
       database: db,
       schema: getDatabaseAdapter(target.type).explorer?.tableIdentity(table).schema,
-      table,
-      view: Boolean(objects.snapshots[targetConnectionId]?.tables[db]?.find((value) => value.name === table)?.type.includes('VIEW'))
+      table
     }
     const actions: Partial<Record<string, ObjectAction>> = {
       design: ObjectAction.EditTable,
@@ -777,7 +776,10 @@ export const useWorkspace = () => {
         openTableDesigner(objectAction === ObjectAction.CreateTable ? 'table-create' : 'table-design', { ...scope, table: objectAction === ObjectAction.CreateTable ? '' : table })
         return
       }
-      void objectManagement.open(objectAction, scope)
+      void objectManagement.open(objectAction, {
+        ...scope,
+        view: Boolean(objects.snapshots[targetConnectionId]?.tables[db]?.find((value) => value.name === table)?.type.includes('VIEW'))
+      })
       return
     }
     if (action === 'dump' || action === 'dump-data') {

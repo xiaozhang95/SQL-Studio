@@ -21,6 +21,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
       title="转储 SQL 文件"
       open={Boolean(state)}
       width={760}
+      styles={{ body: { maxHeight: 'calc(100dvh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
       closable={!busy}
       mask={{ closable: !busy }}
       keyboard={!busy}
@@ -40,8 +41,9 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
       {state && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Descriptions
-            column={1}
+            column={{ xs: 1, sm: 2 }}
             size="small"
+            styles={{ label: { whiteSpace: 'nowrap' }, content: { minWidth: 0, overflowWrap: 'anywhere' } }}
             items={[
               { key: 'server', label: '连接', children: state.connection },
               { key: 'database', label: '数据库', children: <span style={{ overflowWrap: 'anywhere' }}>{state.database}</span> },
@@ -64,7 +66,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
           >
             {state.logs.join('\n')}
           </div>
-          <Progress percent={state.percent} status={state.status === 'error' ? 'exception' : state.status === 'completed' ? 'success' : state.status === 'running' ? 'active' : 'normal'} />
+          {state.status !== 'cancelled' && <Progress percent={state.percent} status={state.status === 'error' ? 'exception' : state.status === 'completed' ? 'success' : 'active'} />}
           {busy && <span>进度按已处理对象计算；记录数随传输实时更新。</span>}
         </div>
       )}

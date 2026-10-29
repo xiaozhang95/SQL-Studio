@@ -26,7 +26,7 @@ type ExportState = {
 }
 
 /** Export owns its request and output file; no workspace page, query lock or persisted rows. */
-export function useDataExport() {
+export function useDataExport(canExport: (connectionId: string, database: string) => boolean) {
   const [state, setState] = useState<ExportState>()
   const request = useRef<AbortController | null>(null)
   useEffect(() => () => request.current?.abort(), [])
@@ -37,7 +37,7 @@ export function useDataExport() {
     setState((previous) => (previous ? { ...previous, logs: [...previous.logs.slice(-149), value] } : previous))
   }
   async function start(connection: Connection, database: string, withData: boolean, table?: string, schema?: string) {
-    if (request.current) return
+    if (request.current || !canExport(connection.id, database)) return
     const controller = new AbortController()
     request.current = controller
     const signal = controller.signal
