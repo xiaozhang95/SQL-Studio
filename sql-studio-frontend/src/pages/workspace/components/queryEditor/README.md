@@ -16,9 +16,9 @@
 
 编辑区右键菜单使用“运行 / 优化”两个简短文案，操作仍仅针对捕获的选区。contextSQL 是打开菜单时的选区快照，避免菜单焦点变化导致误执行整页；空选区、未连接或执行中时禁用。执行逻辑与工具栏共用工作区只读接口和当前页面范围。
 
-SQL 补全浮层采用与系统 Select 一致的 colorBgElevated、colorBorderSecondary、boxShadowSecondary 和 controlItemBgActive；保留系统字体/14px 原生字号、32px 行高、方角及键盘选择，不显示 emoji 图标或斜体详情。
+SQL 补全浮层使用原生 Ant Design Select 的主题、弧度及状态背景；字体、字号、字重和行高与当前编辑区一致，选中不单独加粗。关键字与数据库对象等类型使用 Ant Design SVG 图标，不使用 emoji 或斜体详情。
 
-外层容器与工具栏布局使用组件 style；编辑器、行号、补全和 AI 建议外观由 [editorAppearance](../../utils/editorAppearance/README.md) 的 EditorView.theme 扩展提供，不再在 app.scss 覆盖 CodeMirror。
+外层容器与工具栏布局使用组件 style；编辑器、行号和 AI 建议外观由 [editorAppearance](../../utils/editorAppearance/README.md) 的 EditorView.theme 扩展提供。补全展示由 sqlCompletionSelect 提供，app.scss 仅隐藏被替代的原生候选列表。
 
 运行按钮、Ctrl+Enter 与右键选区执行共用多语句流程：只切分选中的 SQL（未选中则为完整草稿），依次执行，在本页结果选择器查看每条输出；失败或取消后停止后续语句。
 

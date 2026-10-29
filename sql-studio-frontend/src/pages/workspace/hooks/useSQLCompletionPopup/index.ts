@@ -5,7 +5,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { sqlCompletionLayout } from '../../constant/layout'
 
-type Popup = { view: EditorView; items: readonly Completion[]; selected: number | null; left: number; top: number; width: number }
+type Popup = {
+  view: EditorView
+  items: readonly Completion[]
+  selected: number | null
+  left: number
+  top: number
+  width: number
+  typography: { fontFamily: string; fontSize: string; fontWeight: string; lineHeight: string }
+}
 
 /** 补全来源、排序、快捷键和插入继续由 CodeMirror 管理，仅将候选项交给 Ant Design 展示。 */
 export function useSQLCompletionPopup() {
@@ -28,7 +36,9 @@ export function useSQLCompletionPopup() {
         const rect = view.coordsAtPos(view.state.selection.main.head)
         if (!items.length || !rect) return undefined
         const width = Math.min(sqlCompletionLayout.width, window.innerWidth - 16)
-        return { view, items, selected: selectedCompletionIndex(view.state), width, left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), top: rect.bottom + 4 }
+        const textStyle = getComputedStyle(view.contentDOM)
+        const typography = { fontFamily: textStyle.fontFamily, fontSize: textStyle.fontSize, fontWeight: textStyle.fontWeight, lineHeight: textStyle.lineHeight }
+        return { view, items, selected: selectedCompletionIndex(view.state), width, left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), top: rect.bottom + 4, typography }
       },
       write: (next) => {
         if (!mounted.current) return
@@ -39,6 +49,10 @@ export function useSQLCompletionPopup() {
             previous.left === next.left &&
             previous.top === next.top &&
             previous.width === next.width &&
+            previous.typography.fontFamily === next.typography.fontFamily &&
+            previous.typography.fontSize === next.typography.fontSize &&
+            previous.typography.fontWeight === next.typography.fontWeight &&
+            previous.typography.lineHeight === next.typography.lineHeight &&
             previous.items.length === next.items.length &&
             previous.items.every((item, index) => item === next.items[index])
             ? previous

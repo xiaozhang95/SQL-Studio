@@ -2,10 +2,12 @@
 
 [源码](index.ts)
 
-参数 scope、connections、objects、columns，返回 CodeMirror extensions 数组。scope 提供显式 connectionId/database/table；仅按该连接快照组织库→表→字段，不使用树高亮或其他连接的缓存。
+参数 scope、connections、objects、columns，返回 `{ extensions, objectKinds }`。extensions 为 CodeMirror 扩展数组，objectKinds 为数据库、Schema、表及视图的类型映射。scope 提供显式 connectionId/database/table；仅按该连接快照组织库→表→字段，不使用树高亮或其他连接的缓存。
 
 已缓存结构优先，当前选中表可回退 columns；未连接时 schema 为空。useMemo 仅依赖当前连接状态、库表及结构缓存、范围和字段；输入、滚动、树加载状态/索引缓存变化不重建扩展。方言和扩展构造交给 getDatabaseAdapter(...).completion。
 
 不发起请求或维护额外缓存，因此没有独立取消请求；元数据加载/取消仍归 useDatabaseObjects。QueryEditor 只调用本 hook 并传入编辑器。
 
 把 QueryScope.schema 映射为 SQLCompletionContext.namespace，并作为 memo 依赖；选择另一个 schema 后重建当前页补全。
+
+图标类型映射复用实际元数据和数据库适配器的 tableIdentity；同名对象类型冲突时归为通用数据库对象。字段、关键字、函数及数据类型继续使用原生 Completion.type，不改变补全文本、引号或应用行为。

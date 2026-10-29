@@ -54,7 +54,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const [initialSQL] = useState(() => tab.sql)
   const [hasSQL, setHasSQL] = useState(() => Boolean(tab.sql.length))
   const view = useRef<EditorView | null>(null)
-  const extensions = useSQLCompletion({ scope: tab, connections, objects, columns })
+  const { extensions, objectKinds } = useSQLCompletion({ scope: tab, connections, objects, columns })
   const completion = useSQLCompletionPopup()
   const { update: updateCompletion } = completion
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
@@ -182,7 +182,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
           )}
         </div>
       </Dropdown>
-      <SQLCompletionSelect completion={completion} />
+      <SQLCompletionSelect completion={completion} objectKinds={objectKinds} />
     </section>
   )
 }
