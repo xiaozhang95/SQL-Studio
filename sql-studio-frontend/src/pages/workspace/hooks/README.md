@@ -5,6 +5,7 @@
 - [useQueryHistory](useQueryHistory/README.md)：只读取当前页面连接的历史，按连接分别保存。
 - [useDatabaseObjects](useDatabaseObjects/README.md)：按连接隔离的元数据缓存、打开/关闭与取消。
 - [useConnectionForm](useConnectionForm/README.md)：连接表单、测试与保存。
+- [useConnectionGroups](useConnectionGroups/README.md)：共享分组列表的新建、重命名与连接移动。
 - [useSidebarResize](useSidebarResize/README.md)：对象栏拖动、键盘调整与宽度边界。
 - [useSQLCompletion](useSQLCompletion/README.md)：当前连接元数据组织与数据库补全扩展。
 

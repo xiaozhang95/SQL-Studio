@@ -2,6 +2,7 @@
 package connection
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -17,10 +18,11 @@ import (
 )
 
 type Store struct {
-	mu    sync.RWMutex
-	path  string
-	aead  cipher.AEAD
-	items []model.Connection
+	mu     sync.RWMutex
+	path   string
+	aead   cipher.AEAD
+	items  []model.Connection
+	groups []string
 }
 
 func newID() string {
@@ -67,7 +69,20 @@ func Open(dir string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = json.Unmarshal(data, &s.items); err != nil {
+	var document struct {
+		Connections []model.Connection `json:"connections"`
+		Groups      []string           `json:"groups"`
+	}
+	if bytes.HasPrefix(bytes.TrimSpace(data), []byte("[")) {
+		err = json.Unmarshal(data, &s.items)
+	} else {
+		err = json.Unmarshal(data, &document)
+		if err == nil && (document.Connections == nil || document.Groups == nil) {
+			err = errors.New("invalid connections document")
+		}
+		s.items, s.groups = document.Connections, document.Groups
+	}
+	if err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -124,7 +139,15 @@ func (s *Store) Get(id string) (model.Connection, error) {
 
 // persist 先写临时文件再替换配置；成功后才更新内存，避免保存失败时状态分叉。
 func (s *Store) persist(items []model.Connection) error {
-	data, err := json.MarshalIndent(items, "", "  ")
+	return s.persistGroups(items, allGroups(s.items, s.groups))
+}
+
+func (s *Store) persistGroups(items []model.Connection, groups []string) error {
+	groups = allGroups(items, groups)
+	data, err := json.MarshalIndent(struct {
+		Connections []model.Connection `json:"connections"`
+		Groups      []string           `json:"groups"`
+	}{items, groups}, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -136,12 +159,18 @@ func (s *Store) persist(items []model.Connection) error {
 		return err
 	}
 	s.items = items
+	s.groups = groups
 	return nil
 }
 
 func (s *Store) Save(c model.Connection) (model.Connection, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	group, err := groupName(model.NormalizeConnectionGroup(c.Group))
+	if err != nil {
+		return model.Connection{}, err
+	}
+	c.Group = group
 	items := append([]model.Connection{}, s.items...)
 	idx := -1
 	if c.ID != "" {

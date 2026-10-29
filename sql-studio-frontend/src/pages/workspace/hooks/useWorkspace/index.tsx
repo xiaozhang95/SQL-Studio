@@ -2,10 +2,11 @@ import type { EditorView } from '@codemirror/view'
 import { App as AntApp, Button } from 'antd'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
-import { executeQuery, getConnections, deleteConnection as removeConnection } from '@/services/database'
+import { executeQuery, getConnectionGroups, getConnections, deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
@@ -16,6 +17,7 @@ import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
+import { useConnectionGroups } from '../useConnectionGroups'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useDataExport } from '../useDataExport'
 import { useObjectManagement } from '../useObjectManagement'
@@ -30,6 +32,14 @@ const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query'
 export const useWorkspace = () => {
   const { message, modal } = AntApp.useApp()
   const [connections, setConnections] = useState<Connection[]>([])
+  const [savedGroups, setSavedGroups] = useState<string[]>([defaultConnectionGroup])
+  const groups = useMemo(
+    () => [
+      defaultConnectionGroup,
+      ...[...new Set([...savedGroups, ...connections.map((item) => connectionGroupName(item.group))])].filter((name) => name !== defaultConnectionGroup).sort((a, b) => a.localeCompare(b, 'zh-CN'))
+    ],
+    [savedGroups, connections]
+  )
   const [connectionLoading, setConnectionLoading] = useState(true)
   const [connectionError, setConnectionError] = useState('')
   const [refresh, setRefresh] = useState(0)
@@ -132,6 +142,8 @@ export const useWorkspace = () => {
     return (
       Boolean(runningTabId) ||
       objectBusy ||
+      connectionGroups.saving ||
+      Boolean(connectionGroups.dialog) ||
       Boolean(objectManagement.dialog) ||
       Object.entries(designerBusy).some(([id, busy]) => id !== page.id && busy) ||
       objects.snapshots[page.connectionId]?.status !== 'connected'
@@ -237,7 +249,20 @@ export const useWorkspace = () => {
       }
     }
   )
-  const tabBusy = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean)
+  const connectionGroups = useConnectionGroups({
+    groups,
+    blocked:
+      Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || !storage.pageReady || connectionLoading || Boolean(connectionError),
+    onGroupsChanged: setSavedGroups,
+    onMoved: (saved) => setConnections((previous) => upsertConnection(previous, saved)),
+    onRenamed: (name, newName) => {
+      setConnections((previous) => previous.map((item) => (connectionGroupName(item.group) === name ? { ...item, group: newName } : item)))
+      const oldKey = JSON.stringify(['group', name]),
+        newKey = JSON.stringify(['group', newName])
+      setExplorer((previous) => ({ ...previous, expanded: previous.expanded.map((key) => (key === oldKey ? newKey : key)), selected: previous.selected.map((key) => (key === oldKey ? newKey : key)) }))
+    }
+  })
+  const tabBusy = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || connectionGroups.saving || Boolean(connectionGroups.dialog) || Object.values(designerBusy).some(Boolean)
   const running = tabBusy || !storage.pageReady
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
@@ -295,7 +320,9 @@ export const useWorkspace = () => {
     setConnectionLoading(true)
     setConnectionError('')
     try {
-      applyConnections(await getConnections())
+      const [data, groupNames] = await Promise.all([getConnections(), getConnectionGroups()])
+      applyConnections(data)
+      setSavedGroups(groupNames)
     } catch (error) {
       setConnectionError(error instanceof Error ? error.message : '连接列表加载失败')
     } finally {
@@ -304,9 +331,12 @@ export const useWorkspace = () => {
   }, [applyConnections])
   useEffect(() => {
     const controller = new AbortController()
-    getConnections(controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) applyConnections(data)
+    Promise.all([getConnections(controller.signal), getConnectionGroups(controller.signal)])
+      .then(([data, groupNames]) => {
+        if (!controller.signal.aborted) {
+          applyConnections(data)
+          setSavedGroups(groupNames)
+        }
       })
       .catch((error) => {
         if (!controller.signal.aborted) setConnectionError(error.message)
@@ -1013,6 +1043,7 @@ export const useWorkspace = () => {
   const onEditorUpdate = editorSession.update
   const onConnectionSaved = (saved: Connection) => {
     setConnectionModal(false)
+    setSavedGroups((previous) => [...new Set([...previous, connectionGroupName(saved.group)])])
     setConnections((previous) => upsertConnection(previous, saved))
     if (editing) {
       setExplorer((previous) => ({
@@ -1029,6 +1060,7 @@ export const useWorkspace = () => {
     setEditing(undefined)
   }
   return {
+    connectionGroups,
     dataExport,
     workspaceReady,
     pageReady: storage.pageReady,

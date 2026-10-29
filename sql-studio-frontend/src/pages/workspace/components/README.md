@@ -3,6 +3,7 @@
 一个组件一个目录，入口 index.tsx，文档 README.md。
 
 - [连接弹窗](connectionModal/README.md)
+- [连接分组弹窗](connectionGroupModal/README.md)
 - [连接与对象侧栏](connectionSidebar/README.md)
 - [数据库对象树](databaseExplorer/README.md)
 - [数据库品牌图标](engineIcon/README.md)

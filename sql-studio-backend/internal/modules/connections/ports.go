@@ -13,6 +13,10 @@ type Repository interface {
 	Get(string) (model.Connection, error)
 	Save(model.Connection) (model.Connection, error)
 	Delete(string) error
+	Groups() []string
+	CreateGroup(string) ([]string, error)
+	RenameGroup(string, string) ([]string, error)
+	MoveGroup(string, string) (model.Connection, error)
 }
 
 // Database 只暴露连接管理所需的连通性测试和会话控制。

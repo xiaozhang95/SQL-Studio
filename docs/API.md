@@ -6,7 +6,7 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 
 ## 路由
 
-路径均相对于 `/api`，共 19 个操作。开发时经 Vite 同源代理访问 Go。
+路径均相对于 `/api`。开发时经 Vite 同源代理访问 Go。
 
 | 方法   | 路径                          | 说明                                        |
 | ------ | ----------------------------- | ------------------------------------------- |
@@ -16,6 +16,10 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 | GET | `/workspace/parts/{id}` | 按64位SHA256读取草稿或结果，不执行SQL |
 | GET    | `/openapi.json`               | OpenAPI 文档                                |
 | GET    | `/connections`                | 连接列表（无密码）                          |
+| GET | `/connection-groups` | 共享分组列表，包含空分组及默认分组 |
+| POST | `/connection-groups` | `{name}` 新建独立分组，返回 string[] |
+| POST | `/connection-groups/rename` | `{name,newName}` 原子重命名及更新成员，返回 `{groups,connections}` |
+| PATCH | `/connections/{id}/group` | `{group}` 移动连接，返回脱敏 Connection |
 | POST   | `/connections`                | 新增或更新连接                              |
 | DELETE | `/connections/{id}`           | 删除本地连接                                |
 | POST   | `/connections/{id}/session`   | 打开/关闭连接或数据库，关闭等待底层连接释放 |
@@ -43,6 +47,7 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:5173/swagger.html`；构
 ## 请求与行为边界
 
 - **连接**：name、host、port（1–65535）、username 必填。type 省略或空字符串按 mysql；group 留空归入默认分组。更新传 id；password 留空保留旧密码，响应不含 password，用 hasPassword 表示。测试最长 7 秒；tls=true 校验证书链和主机名。
+- **分组**：名称去首尾空白，拒绝空名称、控制字符、重名；默认分组为固定回退项，不可重命名。空分组独立保存，连接表单输入新分组后保存也会登记。重命名更新全部成员，移动只修改归属，不打开/关闭数据库会话、不修改凭据；不存在连接/原分组返回 404，不存在移动目标返回 400。
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**：GET `/connections/{id}/indexes?database=库名&table=表名` 返回 `{name,unique,type,columns:[{name,position,prefixLength,order}] }[]`。MySQL 主键名称为 PRIMARY，PostgreSQL 保留实际索引名，position 从 1 开始，prefixLength 可为 null，order 为 A（升序）、D（降序）或空字符串。表达式索引的字段名为空，仅标记为表达式，不返回表达式文本；无索引返回空数组。
 - **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。

@@ -22,6 +22,7 @@ import { Button, Dropdown, Empty, Input, Tree } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
+import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 
@@ -33,23 +34,45 @@ import type { ExplorerNode } from '../../utils/explorerTree'
 import EngineIcon from '../engineIcon'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'connections' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'>
+  model: Pick<
+    WorkspaceModel,
+    'connections' | 'connectionGroups' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'
+  >
 }
 
 /** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
 export default function DatabaseExplorer({ model }: Props) {
-  const { connections, objects, running, explorer, updateExplorer } = model
+  const { connections, connectionGroups, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
   const [contextMenu, setContextMenu] = useState<MenuProps>()
   const data = useMemo(
-    () => buildExplorerTree(connections, objects.snapshots, expanded, search, Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer]))),
-    [connections, objects.snapshots, expanded, search]
+    () =>
+      buildExplorerTree(
+        connections,
+        objects.snapshots,
+        expanded,
+        search,
+        Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
+        connectionGroups.groups
+      ),
+    [connections, objects.snapshots, expanded, search, connectionGroups.groups]
   )
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
 
   // 菜单在右键时生成，不为几千张表预建按钮、图标和闭包。
   function menuFor(node: ExplorerNode): MenuProps | undefined {
+    if (node.kind === 'group')
+      return {
+        items: [
+          { key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked },
+          { key: 'rename-group', label: '重命名分组', icon: <EditOutlined />, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup }
+        ],
+        onClick: ({ key }) => {
+          setContextMenu(undefined)
+          connectionGroups.open(key === 'rename-group' ? node.owner : undefined)
+        }
+      }
     const { owner: id, database: db, table } = node
     const engine = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
     const exportDisabled = objects.snapshots[id]?.status !== 'connected' || Boolean(objects.closedDatabases[id]?.includes(db))
@@ -62,6 +85,13 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
         { type: 'divider' },
         { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
+        {
+          key: 'move-group',
+          label: '移动到分组',
+          icon: <FolderOutlined />,
+          disabled: connectionGroups.blocked,
+          children: connectionGroups.groups.map((name) => ({ key: `move-group:${name}`, label: name, disabled: connectionGroupName(node.connection?.group) === name }))
+        },
         { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true },
         { key: 'refresh', label: '刷新', icon: <ReloadOutlined />, disabled: !connected }
       ]
@@ -185,7 +215,8 @@ export default function DatabaseExplorer({ model }: Props) {
       onClick: ({ key, domEvent }) => {
         domEvent.stopPropagation()
         setContextMenu(undefined)
-        if (node.kind === 'connection') model.connectionAction(key, id)
+        if (node.kind === 'connection' && key.startsWith('move-group:') && node.connection) void connectionGroups.move(node.connection, key.slice('move-group:'.length))
+        else if (node.kind === 'connection') model.connectionAction(key, id)
         else if (node.kind === 'table') void model.tableAction(key, id, db, table)
         else void model.databaseAction(key, id, db, undefined, node.schema)
       }
@@ -257,18 +288,31 @@ export default function DatabaseExplorer({ model }: Props) {
     >
       <Input prefix={<SearchOutlined />} value={search} onChange={(event) => updateExplorer({ search: event.target.value })} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
       <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
-        {!connections.length ? (
-          <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
-        ) : (
-          <Dropdown
-            trigger={['contextMenu']}
-            open={Boolean(contextMenu)}
-            onOpenChange={(open) => {
-              if (!open) setContextMenu(undefined)
+        <Dropdown
+          trigger={['contextMenu']}
+          open={Boolean(contextMenu)}
+          onOpenChange={(open) => {
+            if (!open) setContextMenu(undefined)
+          }}
+          menu={contextMenu}
+        >
+          <div
+            style={{ height: '100%' }}
+            onContextMenuCapture={(event) => {
+              setContextMenu(undefined)
+              if (!(event.target as HTMLElement).closest('.ant-tree-treenode'))
+                setContextMenu({
+                  items: [{ key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked }],
+                  onClick: () => {
+                    setContextMenu(undefined)
+                    connectionGroups.open()
+                  }
+                })
             }}
-            menu={contextMenu}
           >
-            <div style={{ height: '100%' }} onContextMenuCapture={() => setContextMenu(undefined)}>
+            {!data.nodes.length && !search ? (
+              <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
+            ) : (
               <Tree<ExplorerNode>
                 ref={treeRef}
                 aria-label="数据库连接树"
@@ -331,9 +375,9 @@ export default function DatabaseExplorer({ model }: Props) {
                   if (!running && keys.length) updateExplorer({ selected: keys.map(String) })
                 }}
               />
-            </div>
-          </Dropdown>
-        )}
+            )}
+          </div>
+        </Dropdown>
       </div>
     </div>
   )

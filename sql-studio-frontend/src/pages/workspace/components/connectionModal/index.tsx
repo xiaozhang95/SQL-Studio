@@ -1,6 +1,7 @@
 import { CheckCircleOutlined, LinkOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
+import { connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
 import type { Connection } from '@/typings/database'
 
@@ -10,12 +11,12 @@ import EngineIcon from '../engineIcon'
 type Props = {
   open: boolean
   connection?: Connection
-  connections: Connection[]
+  groups: string[]
   onClose: () => void
   onSaved: (connection: Connection) => void
 }
-export default function ConnectionModal({ open, connection, connections, onClose, onSaved }: Props) {
-  const { form, selectEngine, groups, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, connections, onSaved })
+export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
+  const { form, selectEngine, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   return (
     <Modal
       className="connection-dialog"
@@ -117,7 +118,7 @@ export default function ConnectionModal({ open, connection, connections, onClose
                         <AutoComplete
                           placeholder="输入或选择分组，留空归入默认分组"
                           options={groups.map((group) => ({ value: group }))}
-                          filterOption={(input, option) => Boolean(option?.value.toLowerCase().includes(input.toLowerCase()))}
+                          filterOption={(input, option) => input === connectionGroupName(connection?.group) || Boolean(option?.value.toLowerCase().includes(input.toLowerCase()))}
                           allowClear
                         />
                       </Form.Item>

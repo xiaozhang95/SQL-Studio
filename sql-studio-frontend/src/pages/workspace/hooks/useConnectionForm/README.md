@@ -4,9 +4,9 @@
 
 ## 调用与返回
 
-`({ open, connection?, connections, onSaved })`
+`({ open, connection?, groups, onSaved })`
 
-返回 form、groups、engine、busy/saving/testing、section、status、测试/保存回调及面板状态设置器。groups 固定包含首项“默认分组”，其他项从 connections 提取，去除首尾空白、去重并排序。
+返回 form、groups、engine、busy/saving/testing、section、status、测试/保存回调及面板状态设置器。groups 直接消费工作区统一分组列表，包含默认分组、自定义分组及空分组；不在表单中另行从连接派生选项。
 
 ## 生命周期与边界
 

@@ -6,6 +6,10 @@
 
 Open/List/Get/Save/Delete 管理连接，AES-GCM 加密密码并原子落盘。
 
+Groups/CreateGroup/RenameGroup/MoveGroup 管理独立分组及成员归属。connections.json 保存 `{connections:Connection[],groups:string[]}`，已有连接数组直接读取，保存时保留原 ID 和密码密文。Groups 包含默认分组和空分组；保存新连接的自由输入分组自动登记，最后一个成员移走或删除后仍保留空分组。
+
+重命名在一次文件原子替换中更新分组及全部成员；移动只更新 Group，保留其他字段及密码密文。名称去首尾空白，拒绝空名、控制字符和重复名称；默认分组不可重命名，移动目标必须已存在。不存在返回 os.ErrNotExist；写入失败不更新内存。所有操作由同一把锁串行化，不操作数据库会话。
+
 ## 约束与调用
 
 List 必须移除密码；编辑空密码保留原值；密钥丢失拒绝覆盖已有配置；不记录明文密码。

@@ -4,6 +4,7 @@ import { Alert, Button, Divider, Empty, Select, Spin } from 'antd'
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
 import AISettings from './components/aiSettings'
+import ConnectionGroupModal from './components/connectionGroupModal'
 import ConnectionModal from './components/connectionModal'
 import ConnectionSidebar from './components/connectionSidebar'
 import DataExport from './components/dataExport'
@@ -161,7 +162,14 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
       )}
       <DataExport model={model.dataExport} />
       <ObjectManagementModal manager={model.objectManagement} themeMode={themeMode} />
-      <ConnectionModal open={model.connectionModal} connection={model.editing} connections={model.connections} onClose={() => model.setConnectionModal(false)} onSaved={model.onConnectionSaved} />
+      <ConnectionGroupModal manager={model.connectionGroups} />
+      <ConnectionModal
+        open={model.connectionModal}
+        connection={model.editing}
+        groups={model.connectionGroups.groups}
+        onClose={() => model.setConnectionModal(false)}
+        onSaved={model.onConnectionSaved}
+      />
       <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
     </div>
   )

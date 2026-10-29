@@ -9,6 +9,7 @@ type Props = {
   model: Pick<
     WorkspaceModel,
     | 'connections'
+    | 'connectionGroups'
     | 'connectionId'
     | 'connectionLoading'
     | 'connectionAction'

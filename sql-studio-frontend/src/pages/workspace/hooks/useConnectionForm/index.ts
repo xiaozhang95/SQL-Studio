@@ -7,10 +7,10 @@ import type { DatabaseType } from '@/databases/typings'
 import { saveConnection, testConnection } from '@/services/database'
 import type { Connection, ConnectionInput } from '@/typings/database'
 
-type Props = { open: boolean; connection?: Connection; connections: Connection[]; onSaved: (connection: Connection) => void }
+type Props = { open: boolean; connection?: Connection; groups: string[]; onSaved: (connection: Connection) => void }
 type TestStatus = { type: 'success' | 'error'; message: string }
 /** 表单不回显已保存密码；空密码由后端按连接 ID 保留原凭据。 */
-export const useConnectionForm = ({ open, connection, connections, onSaved }: Props) => {
+export const useConnectionForm = ({ open, connection, groups, onSaved }: Props) => {
   const [form] = Form.useForm<ConnectionInput>()
   const { message } = App.useApp()
   const [saving, setSaving] = useState(false)
@@ -19,10 +19,6 @@ export const useConnectionForm = ({ open, connection, connections, onSaved }: Pr
   const [section, setSection] = useState('general')
   const engine = getDatabaseAdapter(Form.useWatch('type', form) || connection?.type).profile
   const busy = saving || testing
-  const groups = [
-    defaultConnectionGroup,
-    ...[...new Set(connections.map((item) => connectionGroupName(item.group)))].filter((group) => group !== defaultConnectionGroup).sort((a, b) => a.localeCompare(b, 'zh-CN'))
-  ]
   useEffect(() => {
     if (open) {
       const initialEngine = getDatabaseAdapter(connection?.type).profile

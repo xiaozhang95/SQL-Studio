@@ -38,7 +38,8 @@ export function buildExplorerTree(
   snapshots: Snapshots,
   expanded: readonly string[],
   search: string,
-  layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {}
+  layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {},
+  groupNames: readonly string[] = []
 ) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
@@ -61,6 +62,20 @@ export function buildExplorerTree(
   }
   const nodes: ExplorerNode[] = [],
     groups = new Map<string, ExplorerNode>()
+  const ensureGroup = (name: string) => {
+    let group = groups.get(name)
+    if (!group) {
+      group = make('group', name, name)
+      group.isLeaf = false
+      group.selectable = false
+      group.children = []
+      groups.set(name, group)
+      nodes.push(group)
+      loadedKeys.push(group.key)
+    }
+    return group
+  }
+  for (const name of groupNames) if (matches(name)) ensureGroup(name)
   let ready = true
   for (const connection of connections) {
     const id = connection.id,
@@ -195,16 +210,7 @@ export function buildExplorerTree(
       error.retry = 'connection'
       root.children = [error]
     }
-    let group = groups.get(groupName)
-    if (!group) {
-      group = make('group', groupName, groupName)
-      group.isLeaf = false
-      group.selectable = false
-      group.children = []
-      groups.set(groupName, group)
-      nodes.push(group)
-      loadedKeys.push(group.key)
-    }
+    const group = ensureGroup(groupName)
     // 关闭分组时仍保留连接根节点，搜索可以显式展开分组展示匹配项。
     group.children!.push(root)
   }

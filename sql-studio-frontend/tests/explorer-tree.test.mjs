@@ -5,6 +5,26 @@ import { explorerTableIdentity } from '../src/databases/postgresql/query/index.t
 import { buildExplorerTree, explorerQueryScope } from '../src/pages/workspace/utils/explorerTree/index.ts'
 import { objectNodeKey as key } from '../src/pages/workspace/utils/objectTree/index.ts'
 
+test('shared groups include empty folders, deduplicate member groups and filter empty folders by search', () => {
+  const connection = { id: 'group-member', name: '开发连接', group: '开发', type: 'mysql', host: 'localhost', port: 3306, username: 'test' }
+  const groups = ['默认分组', '开发', '空分组']
+  const tree = buildExplorerTree([connection], {}, [], '', {}, groups)
+  assert.deepEqual(
+    tree.nodes.map((node) => node.title),
+    groups
+  )
+  assert.equal(tree.nodes[1].children[0].owner, 'group-member')
+  assert.deepEqual(tree.nodes[2].children, [])
+  assert.equal(explorerQueryScope(tree.nodes[2], true), undefined)
+  const searched = buildExplorerTree([], {}, [], '空', {}, groups)
+  assert.deepEqual(
+    searched.nodes.map((node) => node.title),
+    ['空分组']
+  )
+  const empty = buildExplorerTree([], {}, [], '', {}, groups)
+  assert.equal(empty.nodes.length, 3)
+})
+
 const connections = [
   { id: 'a', name: 'A', group: '默认分组', host: 'fixture', port: 3306 },
   { id: 'b', name: 'B', group: '默认分组', host: 'fixture', port: 3306 }
