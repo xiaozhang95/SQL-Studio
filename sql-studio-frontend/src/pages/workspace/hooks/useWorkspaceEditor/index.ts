@@ -5,6 +5,7 @@ import type { EditorLayout } from '@/typings/workspace'
 
 import { createEditorBuffer } from '../../utils/editorBuffer'
 import type { EditorChange } from '../../utils/editorBuffer'
+import { createEditorHistory } from '../../utils/editorHistory'
 
 type Options = { layouts: Record<string, EditorLayout>; commit: (change: EditorChange) => void }
 /** Own the live editor independently of React's persisted draft and layout snapshots. */
@@ -16,11 +17,20 @@ export function useWorkspaceEditor(options: Options) {
   const editor = useRef<EditorView | null>(null)
   const owner = useRef('')
   const lastLayout = useRef<EditorLayout | undefined>(undefined)
+  const histories = useRef(createEditorHistory())
   const [pending, setPending] = useState(false)
   const buffer = useRef<ReturnType<typeof createEditorBuffer> | null>(null)
   const getBuffer = useCallback(() => (buffer.current ??= createEditorBuffer((change) => latest.current.commit(change), setPending)), [])
   const flush = useCallback(() => buffer.current?.flush(), [])
-  const discard = useCallback((ids: ReadonlySet<string>) => buffer.current?.discard(ids), [])
+  const discard = useCallback((ids: ReadonlySet<string>) => {
+    buffer.current?.discard(ids)
+    histories.current.discard(ids)
+    if (ids.has(owner.current)) {
+      editor.current = null
+      owner.current = ''
+    }
+  }, [])
+  const history = useCallback((id: string) => histories.current.restore(id), [])
   const capture = useCallback(
     (view: EditorView, changed = false) => {
       if (view !== editor.current || !owner.current) return
@@ -38,7 +48,10 @@ export function useWorkspaceEditor(options: Options) {
   const detach = useCallback(
     (view?: EditorView) => {
       if (view && view !== editor.current) return
-      if (editor.current) capture(editor.current)
+      if (editor.current) {
+        capture(editor.current)
+        histories.current.save(owner.current, editor.current.state)
+      }
       flush()
       editor.current = null
       owner.current = ''
@@ -87,5 +100,5 @@ export function useWorkspaceEditor(options: Options) {
       flush()
     }
   }, [flush, remember])
-  return { editor, pending, attach, detach, update, remember, read, flush, discard }
+  return { editor, pending, attach, detach, update, remember, read, flush, discard, history }
 }

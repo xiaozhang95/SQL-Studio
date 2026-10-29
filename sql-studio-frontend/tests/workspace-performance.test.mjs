@@ -169,6 +169,8 @@ test('editor lifecycle flushes latest text on blur/detach and ignores a stale in
   const { readFileSync } = await import('node:fs')
   const { stripTypeScriptTypes } = await import('node:module')
   const { createEditorBuffer } = await import('../src/pages/workspace/utils/editorBuffer/index.ts')
+  const { createEditorHistory } = await import('../src/pages/workspace/utils/editorHistory/index.ts')
+  const { EditorState } = await import('@codemirror/state')
   const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspaceEditor/index.ts', import.meta.url), 'utf8')
   const implementation = stripTypeScriptTypes(source.slice(source.indexOf('export function useWorkspaceEditor')).replace('export function', 'function'))
   t.mock.timers.enable({ apis: ['setTimeout'] })
@@ -178,6 +180,7 @@ test('editor lifecycle flushes latest text on blur/detach and ignores a stale in
     states = []
   const dependencies = {
     createEditorBuffer,
+    createEditorHistory,
     useRef: (value) => ({ current: value }),
     useCallback: (value) => value,
     useLayoutEffect: (fn) => fn(),
@@ -187,7 +190,7 @@ test('editor lifecycle flushes latest text on blur/detach and ignores a stale in
   }
   const hook = new Function(...Object.keys(dependencies), implementation + ';return useWorkspaceEditor')(...Object.values(dependencies))
   const session = hook({ layouts: {}, commit: (value) => commits.push(value) })
-  const view = (sql) => ({ state: { doc: { length: sql.length, toString: () => sql }, selection: { main: { anchor: 0, head: 0 } } }, scrollDOM: { scrollTop: 0, scrollLeft: 0 } })
+  const view = (sql) => ({ state: EditorState.create({ doc: sql }), scrollDOM: { scrollTop: 0, scrollLeft: 0 } })
   const a = view('SELECT latest;'),
     b = view('SELECT other;')
   session.attach('a', a)
@@ -208,6 +211,32 @@ test('editor lifecycle flushes latest text on blur/detach and ignores a stale in
   assert.equal(events.size, 0)
   t.mock.timers.tick(1000)
   assert.ok(states.includes(true) && states.includes(false))
+})
+
+test('page switches restore real CodeMirror undo/redo independently and closing releases history', async () => {
+  const { EditorState } = await import('@codemirror/state')
+  const { history, undo, redo, undoDepth } = await import('@codemirror/commands')
+  const { createEditorHistory } = await import('../src/pages/workspace/utils/editorHistory/index.ts')
+  const cache = createEditorHistory()
+  const original = EditorState.create({ doc: 'SELECT 1;', extensions: [history()] })
+  const edited = original.update({ changes: { from: original.doc.length, insert: ' -- latest tail' } }).state
+  cache.save('a', edited)
+  let restored = EditorState.create({ doc: edited.doc, extensions: [history(), ...cache.restore('a')] })
+  const target = {
+    get state() {
+      return restored
+    },
+    dispatch: (transaction) => {
+      restored = transaction.state
+    }
+  }
+  assert.equal(undo(target), true)
+  assert.equal(restored.doc.toString(), 'SELECT 1;')
+  assert.equal(redo(target), true)
+  assert.equal(restored.doc.toString(), 'SELECT 1; -- latest tail')
+  assert.equal(undoDepth(EditorState.create({ doc: edited.doc, extensions: [history(), ...cache.restore('b')] })), 0)
+  cache.discard(new Set(['a']))
+  assert.equal(undoDepth(EditorState.create({ doc: edited.doc, extensions: [history(), ...cache.restore('a')] })), 0)
 })
 
 test('run and export actions read the live draft while React still has the old snapshot', async () => {

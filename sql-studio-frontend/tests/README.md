@@ -2,6 +2,8 @@
 
 使用 Node 原生测试运行器，不保留根目录 scripts 包装入口。
 
+真实集成测试通过 `integration-steps.mjs` 的 `step(context, name, run)` 等待每个子测试回调实际完成，再继续依赖该结果的步骤或进入 finally 清理。当前 Node 24.2 环境中，单独 await context.test 不能保证这一顺序；不得在子测试仍运行时删除临时库或连接。回调失败同时标记子测试失败并终止依赖流程，finally 仍清理本轮对象。
+
 `node --test tests/table-navigation.test.mjs` 执行实际对象页面导航及 WorkspaceStore 保存逻辑，覆盖 MySQL/PostgreSQL 表与视图双击后的页面复用、保存请求契约，以及查询/结构/DDL/设计页范围隔离。view 只用于对象管理，不进入页面与执行范围；使用虚构元数据和请求替身，不访问业务数据库。
 
 `node --test tests/export-availability.test.mjs` 执行实际 useDataExport 发起逻辑，以替身文件选择器检查不可用目标在数据库、Schema、表及两种内容模式下均不创建导出状态或文件；发起时再次判断，重新打开后允许导出。浏览器另核对菜单禁用、摘要两列及窄窗口单列，不代表真实数据库导出验证。

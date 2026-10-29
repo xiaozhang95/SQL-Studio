@@ -1045,6 +1045,7 @@ export const useWorkspace = () => {
   const cancelQuery = () => request.current?.abort()
   const onEditorReady = (view: EditorView) => editorSession.attach(activeTabRef.current, view)
   const onEditorDispose = editorSession.detach
+  const getEditorHistory = editorSession.history
   const rememberEditor = editorSession.remember
   const onEditorUpdate = editorSession.update
   const onConnectionSaved = (saved: Connection) => {
@@ -1159,6 +1160,7 @@ export const useWorkspace = () => {
     cancelQuery,
     onEditorReady,
     onEditorDispose,
+    getEditorHistory,
     onEditorUpdate,
     rememberEditor,
     onConnectionSaved

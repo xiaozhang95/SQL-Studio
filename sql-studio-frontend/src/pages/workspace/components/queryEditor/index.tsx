@@ -27,6 +27,7 @@ type Props = {
     | 'cancelQuery'
     | 'tab'
     | 'getCurrentSQL'
+    | 'getEditorHistory'
     | 'onEditorDispose'
     | 'runSQL'
     | 'getSelectedSQL'
@@ -52,13 +53,17 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const [contextSQL, setContextSQL] = useState('')
   // UIW receives the initial document only; subsequent edits stay in CodeMirror.
   const [initialSQL] = useState(() => tab.sql)
+  const [initialHistory] = useState(() => model.getEditorHistory(activeTab))
   const [hasSQL, setHasSQL] = useState(() => Boolean(tab.sql.length))
   const view = useRef<EditorView | null>(null)
   const { extensions, objectKinds } = useSQLCompletion({ scope: tab, connections, objects, columns })
   const completion = useSQLCompletionPopup()
   const { update: updateCompletion } = completion
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
-  const editorExtensions = useMemo(() => [sqlEditorAppearance, ...extensions, ...completion.extensions, ...ai.extensions], [extensions, completion.extensions, ai.extensions])
+  const editorExtensions = useMemo(
+    () => [sqlEditorAppearance, ...initialHistory, ...extensions, ...completion.extensions, ...ai.extensions],
+    [initialHistory, extensions, completion.extensions, ai.extensions]
+  )
   const callbacks = useRef({ onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose })
   useLayoutEffect(() => {
     callbacks.current = { onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose }

@@ -5,6 +5,7 @@ import test from 'node:test'
 import { metadataSQL as databaseSQL, definition, sql as editSQL } from '../src/databases/postgresql/databaseProperties/index.ts'
 import { dump, metadataSQL, querySQL } from '../src/databases/postgresql/dataDump/index.ts'
 import { splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
+import { step } from './integration-steps.mjs'
 
 test('real PostgreSQL database edits and structure/data export restore into another database', { skip: process.env.SQLDESK_SQL_WINDOW_INTEGRATION !== '1', timeout: 120000 }, async (t) => {
   const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:8080/api'
@@ -33,7 +34,7 @@ test('real PostgreSQL database edits and structure/data export restore into anot
       await query('postgres', `CREATE DATABASE "${name}"`, true)
       created.push(name)
     }
-    await t.test('load/edit database connection limit and comments, reject stale preview', async () => {
+    await step(t, 'load/edit database connection limit and comments, reject stale preview', async () => {
       const original = definition(await query('postgres', databaseSQL(source)))
       assert.equal(original.name, source)
       const values = { name: source, charset: '', collation: '', fields: [], confirmation: '', owner: original.owner, connectionLimit: 37, comment: "回归';\\$sql_studio_database$" }
@@ -46,7 +47,7 @@ test('real PostgreSQL database edits and structure/data export restore into anot
       await query('postgres', editSQL(source, { ...values, connectionLimit: -1, comment: '' }, updated), true)
       assert.equal(definition(await query('postgres', databaseSQL(source))).comment, '')
     })
-    await t.test('invalid owner rolls back the other property changes in the same transaction', async () => {
+    await step(t, 'invalid owner rolls back the other property changes in the same transaction', async () => {
       const original = definition(await query('postgres', databaseSQL(source)))
       const values = { name: source, charset: '', collation: '', fields: [], confirmation: '', owner: 'missing_role_' + suffix, connectionLimit: 7, comment: 'must roll back' }
       await assert.rejects(query('postgres', editSQL(source, values, original), true), /role|角色/i)
@@ -65,7 +66,7 @@ test('real PostgreSQL database edits and structure/data export restore into anot
       true
     )
     let output = ''
-    await t.test('export SERIAL/IDENTITY/generated columns, precise values and restore elsewhere', async () => {
+    await step(t, 'export SERIAL/IDENTITY/generated columns, precise values and restore elsewhere', async () => {
       const parameters = new URLSearchParams({ database: source, table })
       const ddl = await api(`/connections/${connection.id}/ddl?${parameters}`)
       const columns = await api(`/connections/${connection.id}/columns?${parameters}`)
@@ -80,7 +81,7 @@ test('real PostgreSQL database edits and structure/data export restore into anot
       const inserted = await query(destination, `INSERT INTO ${table}(amount) VALUES(2) RETURNING id,identity_id,calc`, true)
       assert.deepEqual(inserted.rows[0], ['3', '16', '4.000000'])
     })
-    await t.test('zero-row and no-sequence tables remain restorable', async () => {
+    await step(t, 'zero-row and no-sequence tables remain restorable', async () => {
       await query(source, 'CREATE TABLE "s.quote".empty_table (v text)', true)
       const target = '"s.quote"."empty_table"',
         parameters = new URLSearchParams({ database: source, table: target })
