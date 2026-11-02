@@ -98,7 +98,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 </Tooltip>
               </div>
             </div>
-            <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: 'auto' }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
+            <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
               <Form.Item name="type" hidden>
                 <Input />
               </Form.Item>

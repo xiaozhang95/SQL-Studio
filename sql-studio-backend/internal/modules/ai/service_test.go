@@ -155,3 +155,33 @@ func TestCompletionIncludesCommentsAndExplicitScopeWithoutCredentials(t *testing
 		}
 	}
 }
+
+type dialectConnection string
+
+func (d dialectConnection) Get(string) (model.Connection, error) {
+	return model.Connection{Name: "dialect test", Type: string(d), Password: "private-password"}, nil
+}
+
+func TestMariaDBReturningOptimizationUsesDistinctDialect(t *testing.T) {
+	for _, engine := range []string{model.TypeMySQL, model.TypeMariaDB, model.TypePostgreSQL} {
+		t.Run(engine, func(t *testing.T) {
+			sql := "REPLACE INTO sample VALUES (1) RETURNING id"
+			g := &generator{content: `{"sql":"` + sql + `","explanation":"保持原语句"}`}
+			s := New(repository{}, dialectConnection(engine), g)
+			result, err := s.Assist(context.Background(), model.AIRequest{Action: "optimize", ConnectionID: "target", SQL: sql, Connection: &model.AIConnectionContext{Type: "forged"}})
+			if err != nil || result.SQL != sql {
+				t.Fatal(result, err)
+			}
+			var received model.AIRequest
+			if err := json.Unmarshal([]byte(g.messages[1].Content), &received); err != nil || received.Connection == nil || received.Connection.Type != engine || received.SQL != sql {
+				t.Fatal("lost authoritative engine or SQL", err, received)
+			}
+			if strings.Contains(g.messages[1].Content, "private-password") || strings.Contains(g.messages[1].Content, "forged") {
+				t.Fatal("unsafe context")
+			}
+			if !strings.Contains(g.messages[0].Content, "mariadb") || !strings.Contains(g.messages[0].Content, "REPLACE and DELETE support RETURNING") {
+				t.Fatal("MariaDB dialect support omitted from system instructions")
+			}
+		})
+	}
+}
