@@ -199,7 +199,7 @@ SQL Studio 是面向本机单用户的数据库工作台，提供数据库连接
 - 构建版由同一个 Go 服务提供页面与 API，目标机器无需 Node、Vite、Go 或外部 dist。
 - 默认监听 127.0.0.1:8080，可用 SQLDESK_ADDR 改地址；SQLDESK_WEB_DIR 可覆盖静态资源目录。
 - 构建脚本支持指定 windows/linux/darwin 与 amd64/arm64；不据此宣称本次已完成全部平台运行验证。
-- Windows 可选 CMD 启动入口保留启动失败信息；普通用户配置按启动工作目录解析。
+- Windows 构建仅生成独立 EXE，不额外生成 CMD 启动文件；普通用户配置按启动工作目录解析。
 - 提供本地 Swagger UI、OpenAPI JSON、健康检查及连接、对象、查询、工作区、状态、AI 接口。
 - 默认仅面向本机单用户，包含本机 Host/跨站请求检查，不提供开放 CORS 或多人账号体系。
 

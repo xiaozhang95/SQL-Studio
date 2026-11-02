@@ -81,22 +81,3 @@ try {
 }
 Write-Host "Built: $outputFile"
 Write-Host 'Run the executable, then open http://127.0.0.1:8080/ . No external dist is needed.'
-if ($TargetOS -eq 'windows') {
-    $executableName = [System.IO.Path]::GetFileName($outputFile)
-    $launcherFile = Join-Path $releaseRoot "start-sql-studio-$TargetArch.cmd"
-    $launcherContent = @"
-@echo off
-setlocal
-title SQL Studio
-"%~dp0$executableName"
-set "SQLSTUDIO_EXIT=%ERRORLEVEL%"
-if not "%SQLSTUDIO_EXIT%"=="0" (
-    echo.
-    echo SQL Studio exited with an error. See the message above.
-    pause
-)
-exit /b %SQLSTUDIO_EXIT%
-"@
-    Set-Content -LiteralPath $launcherFile -Value $launcherContent -Encoding Ascii
-    Write-Host "Optional double-click launcher (keeps startup errors visible): $launcherFile"
-}
