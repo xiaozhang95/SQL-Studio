@@ -15,7 +15,6 @@ import QueryResults from './components/queryResults'
 import SaveStatus from './components/saveStatus'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { useDesktopLifecycle } from './hooks/useDesktopLifecycle'
 import { useSidebarResize } from './hooks/useSidebarResize'
 import { useWorkspace } from './hooks/useWorkspace'
 
@@ -32,13 +31,6 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
   const model = useWorkspace()
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, model.workspaceReady)
   const storageError = model.storageError || themeError
-  useDesktopLifecycle({
-    ready: model.workspaceReady && themeReady,
-    saving: model.saving || themeSaving,
-    error: storageError,
-    blocked: model.tabBusy || model.dataExport.busy || Object.values(model.designerDirty).some(Boolean),
-    flush: model.flushEditor
-  })
   const noticeError = [...new Set([storageError, model.connectionError].filter(Boolean))].join('\n')
   return (
     <div

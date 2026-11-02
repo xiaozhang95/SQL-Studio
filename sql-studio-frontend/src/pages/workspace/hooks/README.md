@@ -33,4 +33,3 @@
 
 - [useResultTableScroll](useResultTableScroll/README.md)：新增、保存及虚拟行测量后的定位。
 - [useSQLCompletionPopup](useSQLCompletionPopup/README.md)：原生补全状态与 Ant Design 候选同步。
-- [useDesktopLifecycle](useDesktopLifecycle/README.md)：Electron 退出前同步草稿并等待本机保存。
