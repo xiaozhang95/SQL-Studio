@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Dropdown, Empty, Input, Pagination, Table } from 'antd'
+import { Alert, Button, Dropdown, Empty, Input, Pagination, Spin, Table } from 'antd'
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
@@ -313,7 +313,23 @@ export default function QueryResults({ model, themeMode }: Props) {
         </div>
       )}
       {showingResult && !activeRunning && result?.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
-      <div ref={viewport} className="result-scroll" tabIndex={0} aria-label="结果数据滚动区域" style={{ flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}>
+      <div
+        ref={viewport}
+        className="result-scroll"
+        tabIndex={0}
+        aria-label="结果数据滚动区域"
+        aria-busy={editing.saving}
+        style={{ position: 'relative', flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}
+      >
+        {editing.saving && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            <Spin size="small" /> 正在保存并刷新数据…
+          </div>
+        )}
         {activeKey === 'messages' ? (
           <QueryMessages run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
@@ -327,6 +343,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         ) : result ? (
           <>
             <Table
+              style={{ visibility: editing.saving ? 'hidden' : undefined }}
               ref={table}
               virtual
               size={appearance.tableSize}
