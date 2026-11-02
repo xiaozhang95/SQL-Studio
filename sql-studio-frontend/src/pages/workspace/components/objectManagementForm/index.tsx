@@ -10,6 +10,7 @@ import type { ThemeMode } from '@/typings/theme'
 
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
 import SQLPreview from '../sqlPreview'
+import TemporalInput from '../temporalInput'
 
 type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
@@ -201,7 +202,26 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                       />
                     )
                 },
-                { title: '默认值', width: 160, render: (_, row) => item(row, 'defaultValue', <Input placeholder="请输入默认值" disabled={locked(row)} />) },
+                {
+                  title: '默认值',
+                  width: 200,
+                  render: (_, row) => (
+                    <Form.Item noStyle shouldUpdate>
+                      {() =>
+                        item(
+                          row,
+                          'defaultValue',
+                          <TemporalInput
+                            placeholder="请输入默认值"
+                            disabled={locked(row)}
+                            label="字段默认值"
+                            fieldType={form.getFieldValue(['fields', row.name, 'defaultMode']) === 'literal' ? form.getFieldValue(['fields', row.name, 'type']) : ''}
+                          />
+                        )
+                      }
+                    </Form.Item>
+                  )
+                },
                 {
                   title: '注释',
                   width: 160,

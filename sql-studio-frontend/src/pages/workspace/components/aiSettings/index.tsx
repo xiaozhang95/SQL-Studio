@@ -40,7 +40,7 @@ export default function AISettings({ themeMode }: { themeMode: ThemeMode }) {
         }}
       >
         {model.error && <Alert type="error" title={model.error} style={{ marginBottom: 16 }} />}
-        <Form layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: 1 }} labelAlign="right" disabled={model.loading || model.busy}>
+        <Form layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} labelAlign="right" labelWrap disabled={model.loading || model.busy}>
           <Form.Item label="API Key" required={!model.configured}>
             <Input.Password
               value={model.apiKey}
@@ -50,7 +50,11 @@ export default function AISettings({ themeMode }: { themeMode: ThemeMode }) {
               aria-label="API Key"
             />
           </Form.Item>
-          <Form.Item label="模型">
+          <Form.Item
+            label="模型"
+            validateStatus={model.modelsError ? 'error' : undefined}
+            help={model.modelsError ? <span style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{model.modelsError}</span> : undefined}
+          >
             <Space.Compact style={{ width: '100%' }}>
               <Select
                 value={model.models.length ? model.model : undefined}
@@ -80,7 +84,6 @@ export default function AISettings({ themeMode }: { themeMode: ThemeMode }) {
               />
             </Space.Compact>
           </Form.Item>
-          {model.modelsError && <Alert type="error" title={model.modelsError} style={{ marginBottom: 16 }} />}
           <Form.Item label="代码补全">
             <Switch checked={model.completionEnabled} onChange={model.setCompletionEnabled} aria-label="代码补全" />
           </Form.Item>

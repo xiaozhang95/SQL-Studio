@@ -15,7 +15,7 @@ type Options = {
   onDirtyChange: (id: string, dirty: boolean) => void
   onResult: (id: string, result: QueryResult) => void
 }
-type Cell = { row: number; column: number; value: string; isNull: boolean; nullable: boolean; columns: Column[] }
+type Cell = { row: number; column: number; type: string; value: string; isNull: boolean; nullable: boolean; columns: Column[] }
 /** 仅对象数据页显式保存；每次打开编辑重新检查主键与对象类型，写入后读取服务端真实值。 */
 export function useDataEditing({ tab, connection, result, blocked, onBusyChange, onDirtyChange, onResult }: Options) {
   const { message, modal } = App.useApp()
@@ -74,6 +74,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         if (!field || !adapter.canInsertColumn(field)) throw new Error('该字段由数据库生成或暂不支持编辑')
       } else adapter.updateCellSQL(tab.database, tab.table, columns, result, result.rows[row], column, original === null ? null : String(original))
       setCell({
+        type: columns.find((item) => item.name === result.columns[column].name)?.type ?? '',
         row,
         column,
         value: draft?.value ?? (original == null ? '' : String(original)),

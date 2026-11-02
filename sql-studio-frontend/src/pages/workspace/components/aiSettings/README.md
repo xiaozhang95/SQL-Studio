@@ -9,3 +9,5 @@ AISettings({themeMode}) 顶部按钮按profile展示DeepSeek文字及官方图�
 页脚右侧依次为取消、移除配置、保存（移除仅已配置Key时可用）；移除期间禁用表单及关闭操作，移除后允许重新配置。
 
 模型选择器提供请选择模型的placeholder；Key保留按是否已配置区分的现有占位符。
+
+模型获取失败使用模型 Form.Item 的 help/validateStatus，在右侧选择框下方展示原生校验说明，与输入控件左边缘对齐，不另插入占满整行的 Alert。长错误可换行，控件列使用 flex:1 1 0/minWidth:0，避免撑开横向表单；全局配置读取或保存错误继续显示顶部 Alert。
