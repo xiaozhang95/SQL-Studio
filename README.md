@@ -119,6 +119,23 @@ MySQL/MariaDB/PostgreSQL SQL 窗口均支持查询、建表、插入、修改、
 
 使用说明：[数据库连接](docs/DATABASES.md) · [用户配置格式](docs/USER_STATE.md)
 
+测试数据：根目录 `sql/` 仅包含 [MySQL](sql/mysql.sql)、[MariaDB](sql/mariadb.sql)、[PostgreSQL / PolarDB](sql/postgresql.sql) 三份完整 demo。每份依次创建 `sql_studio_demo` 库、4 张业务表，并通过多行 `INSERT ... VALUES` 和 `INSERT ... SELECT` 批量插入 21,100 行虚构数据（客户 1,000、商品 100、订单 5,000、明细 15,000），最后展示行数与金额校验结果。
+
+在仓库根目录选择对应引擎执行一条命令即可，地址、端口和用户名按实际连接修改，密码由客户端提示输入：
+
+```sh
+# MySQL
+mysql --host=127.0.0.1 --port=3306 --user=root --password --default-character-set=utf8mb4 < sql/mysql.sql
+
+# MariaDB（这里使用本机开发映射端口 3307，默认服务端口通常为 3306）
+mariadb --host=127.0.0.1 --port=3307 --user=root --password --default-character-set=utf8mb4 < sql/mariadb.sql
+
+# PostgreSQL / PolarDB PostgreSQL
+psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --file=sql/postgresql.sql
+```
+
+需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。脚本经过离线检查，尚未在真实数据库上执行。
+
 首次升级会将后端旧 data/ 中的 connections.json 和 master.key 校验后迁入启动目录下的配置目录；两者字节与密码解密均通过后才清理旧文件。目标已有不同数据时停止，不覆盖或合并。SQLDESK_STATE_DIR 覆盖统一目录，SQLDESK_DATA_DIR 仍可显式指定独立连接目录，此时不自动迁移。迁移只在后端单进程启动时进行，升级前先停止旧服务。
 
 配置路径按服务启动时的工作目录确定，而非可执行文件所在目录。例如从 `/work/project` 启动，默认写入 `/work/project/.sql-studio/state/`；从另一目录启动会使用另一份配置。旧用户目录不会自动导入或删除；如需沿用，停止旧服务后整体复制原 state 目录（包括密钥和工作区分片）到新路径，或显式指定 SQLDESK_STATE_DIR。
