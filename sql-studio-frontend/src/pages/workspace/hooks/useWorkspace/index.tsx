@@ -1047,6 +1047,10 @@ export const useWorkspace = () => {
   const onEditorDispose = editorSession.detach
   const getEditorHistory = editorSession.history
   const rememberEditor = editorSession.remember
+  const flushEditor = () => {
+    editorSession.remember()
+    editorSession.flush()
+  }
   const onEditorUpdate = editorSession.update
   const onConnectionSaved = (saved: Connection) => {
     setConnectionModal(false)
@@ -1163,6 +1167,7 @@ export const useWorkspace = () => {
     getEditorHistory,
     onEditorUpdate,
     rememberEditor,
+    flushEditor,
     onConnectionSaved
   }
 }

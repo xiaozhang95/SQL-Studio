@@ -14,3 +14,5 @@ sql-studio-frontend/dist/
 
 # Service-local credentials and workspace state, wherever the service is started.
 .sql-studio/
+sql-studio-desktop/node_modules/
+sql-studio-desktop/runtime/

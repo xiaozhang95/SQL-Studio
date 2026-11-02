@@ -1,5 +1,7 @@
 # 前端回归
 
+`node --test tests/desktop-lifecycle.test.mjs` 执行真实 Electron 退出等待流程，检查编辑缓冲先同步、保存完成前不关闭，以及加载、错误、未保存操作和超时保护；原生窗口和进程退出另在桌面包实测。普通浏览器不依赖 preload。
+
 使用 Node 原生测试运行器，不保留根目录 scripts 包装入口。
 
 真实集成测试通过 `integration-steps.mjs` 的 `step(context, name, run)` 等待每个子测试回调实际完成，再继续依赖该结果的步骤或进入 finally 清理。当前 Node 24.2 环境中，单独 await context.test 不能保证这一顺序；不得在子测试仍运行时删除临时库或连接。回调失败同时标记子测试失败并终止依赖流程，finally 仍清理本轮对象。

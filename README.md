@@ -8,8 +8,11 @@
 | ---- | --------------------- | ---------------------------------- | --------------------- |
 | 前端 | `sql-studio-frontend` | npm package：`sql-studio-frontend` | `sql-studio-frontend` |
 | 后端 | `sql-studio-backend`  | Go module：`sql-studio-backend`    | `sql-studio-backend`  |
+| 桌面封装 | `sql-studio-desktop` | npm package：`sql-studio-desktop` | `sql-studio` |
 
 项目级 skill 为 `sql-studio`；后端唯一程序入口为 `sql-studio-backend/main.go`。
+
+桌面封装入口为 [sql-studio-desktop](sql-studio-desktop/README.md)，使用 Electron 内置窗口并自动管理专属 Go 后端。
 
 ## 功能
 
@@ -53,6 +56,19 @@ pnpm dev
 浏览器打开 `http://127.0.0.1:5173`，点击“新建连接”填写数据库信息。后端默认监听 `127.0.0.1:8080`。
 
 ## 一键打包
+
+### Electron Windows 桌面版
+
+在 `sql-studio-desktop` 目录执行：
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm dist
+```
+
+自动构建前端和内嵌后端，生成 `release/electron/` 下的 Windows x64 安装包与免安装版。Electron、npm 依赖及打包工具二进制已配置 npmmirror 镜像。运行产物直接打开桌面窗口，后台服务使用本机随机端口，配置默认保存在 `%APPDATA%/SQL Studio/state`，不写入安装目录，也不自动迁移浏览器版配置。开发启动与参数见 [桌面说明](sql-studio-desktop/README.md)。
+
+### 原 Go 独立程序
 
 在仓库根目录用 PowerShell 执行：
 
