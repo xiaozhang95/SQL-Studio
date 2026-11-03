@@ -9,7 +9,7 @@ export function AnswerContent({ text }: { text: string }) {
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
       {answerTables(text).map((part, index) => {
-        if (part.kind === 'table') return <QueryResult key={index} title="回答结果" value={part.value} showExport={false} />
+        if (part.kind === 'table') return <QueryResult key={index} value={part.value} showExport={false} showHeader={false} />
         if (part.kind === 'code') return <CodeBlock key={index} text={part.text} language={part.language} />
         const content = part.text.trim()
         return content ? (

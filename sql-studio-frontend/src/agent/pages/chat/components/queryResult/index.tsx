@@ -18,6 +18,7 @@ interface Props {
   title?: string
   tool?: string
   showExport?: boolean
+  showHeader?: boolean
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
   const { token } = theme.useToken()
@@ -41,14 +42,14 @@ export function QueryResult({ showExport = true, ...props }: Props) {
     </ConfigProvider>
   )
 }
-function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
+function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const { token } = theme.useToken()
-  const cardTitle = (
+  const cardTitle = showHeader ? (
     <Space size="small">
       <DatabaseOutlined style={{ color: token.colorPrimary }} />
       <Typography.Text>{title}</Typography.Text>
     </Space>
-  )
+  ) : undefined
   const result = readResult(value)
   if (isObject(value) && value.isQuery === false)
     return (
@@ -99,12 +100,14 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
         size="small"
         title={cardTitle}
         extra={
-          <Space size="middle">
-            <Typography.Text type="secondary">
-              {rows.length} 行 · {result.columns.length} 列
-            </Typography.Text>
-            <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
-          </Space>
+          showHeader && (
+            <Space size="middle">
+              <Typography.Text type="secondary">
+                {rows.length} 行 · {result.columns.length} 列
+              </Typography.Text>
+              <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
+            </Space>
+          )
         }
         styles={{ body: { padding: 0 } }}
         style={{ minWidth: 0 }}
@@ -178,7 +181,7 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
   }
   if (Array.isArray(value) && value.every((v) => typeof v === 'string'))
     return (
-      <Card size="small" title={cardTitle} extra={`${value.length} 项`} styles={{ body: { padding: 0 } }}>
+      <Card size="small" title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined} styles={{ body: { padding: 0 } }}>
         <Table
           size={APPEARANCE.tableSize}
           bordered
@@ -215,7 +218,7 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
       render: (v: unknown) => <Tooltip title={cellText(v)}>{cellText(v)}</Tooltip>
     }))
     return (
-      <Card size="small" title={cardTitle} extra={`${value.length} 项`} styles={{ body: { padding: 0 } }}>
+      <Card size="small" title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined} styles={{ body: { padding: 0 } }}>
         <Table
           size={APPEARANCE.tableSize}
           bordered
