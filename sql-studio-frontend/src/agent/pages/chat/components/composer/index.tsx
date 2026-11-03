@@ -1,6 +1,6 @@
-import { ArrowUpOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, KeyOutlined, LockOutlined, StopOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, KeyOutlined, LockOutlined, StopOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
-import { Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
+import { Button, Dropdown, Flex, Form, theme, Tooltip, Typography } from 'antd'
 import type { FormInstance } from 'antd'
 
 import type { TokenUsage } from '../../../../typings/chat'
@@ -64,10 +64,35 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   trigger={['click']}
                   placement="topLeft"
                   menu={{
+                    selectable: true,
                     selectedKeys: [mode],
                     items: [
-                      { key: 'readonly', icon: <LockOutlined />, label: '只读模式' },
-                      { key: 'write', icon: <EditOutlined />, label: '完全访问模式' }
+                      {
+                        key: 'readonly',
+                        icon: <LockOutlined />,
+                        label: (
+                          <Flex vertical gap={token.marginXXS} style={{ paddingBlock: token.paddingXXS }}>
+                            <Flex justify="space-between" gap="middle">
+                              <span>只读模式</span>
+                              {mode === 'readonly' && <CheckOutlined />}
+                            </Flex>
+                            <Typography.Text type="secondary">查询数据、查看数据库结构</Typography.Text>
+                          </Flex>
+                        )
+                      },
+                      {
+                        key: 'write',
+                        icon: <EditOutlined />,
+                        label: (
+                          <Flex vertical gap={token.marginXXS} style={{ paddingBlock: token.paddingXXS }}>
+                            <Flex justify="space-between" gap="middle">
+                              <span>完全访问模式</span>
+                              {mode === 'write' && <CheckOutlined />}
+                            </Flex>
+                            <Typography.Text type="secondary">新增、修改及结构调整，逐次确认</Typography.Text>
+                          </Flex>
+                        )
+                      }
                     ],
                     onClick: ({ key }) => {
                       if (key === 'readonly' || key === 'write') onModeChange(key)
@@ -75,17 +100,18 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   }}
                 >
                   <Button
-                    type="text"
                     aria-label="操作模式"
                     disabled={busy || settingsBusy}
                     icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
-                    style={{ color: mode === 'write' ? token.colorWarning : token.colorPrimary, paddingInline: token.paddingXS }}
+                    style={mode === 'write' ? { color: token.colorWarning, borderColor: token.colorWarning } : undefined}
                   >
                     {mode === 'write' ? '完全访问模式' : '只读模式'}
-                    <DownOutlined />
+                    <DownOutlined style={{ color: token.colorTextTertiary }} />
                   </Button>
                 </Dropdown>
-                <Tooltip title={usage ? `1M上下文 · 输入 ${usage.promptTokens || '—'} token` : '只读模式仅查询；完全访问模式会实际修改数据，删除始终禁止执行。'}>
+                <Tooltip
+                  title={`只读模式仅查询；完全访问模式可修改数据及结构，执行前逐次确认，操作可能不可撤销。删除和清空始终禁止执行。${usage ? ` 1M上下文 · 输入 ${usage.promptTokens || '—'} token` : ''}`}
+                >
                   <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined style={{ color: token.colorTextTertiary }} />} />
                 </Tooltip>
               </Flex>
@@ -97,9 +123,9 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   menu={{
                     selectedKeys: aiStatus ? [aiStatus.model] : [],
                     items: [
-                      ...(aiStatus?.models.map((m) => ({ key: m.id, label: m.name, icon: <DeepSeekLogo size={18} />, disabled: !aiStatus.configured })) ?? []),
+                      ...(aiStatus?.models.map((m) => ({ key: m.id, label: m.name, icon: <DeepSeekLogo size={CHAT.modelMenuIconSize} />, disabled: !aiStatus.configured })) ?? []),
                       { type: 'divider' },
-                      { key: 'configure', label: 'DeepSeek 配置', icon: <KeyOutlined /> }
+                      { key: 'configure', label: 'DeepSeek 配置', icon: <KeyOutlined style={{ fontSize: CHAT.modelMenuIconSize }} /> }
                     ],
                     onClick: ({ key }) => {
                       if (key === 'configure') onConfigure()
@@ -107,7 +133,13 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     }
                   }}
                 >
-                  <Button type="text" aria-label="当前模型" disabled={busy || settingsBusy || !aiStatus} icon={<DeepSeekLogo size={20} />} style={{ paddingInline: token.paddingXS }}>
+                  <Button
+                    type="text"
+                    aria-label="当前模型"
+                    disabled={busy || settingsBusy || !aiStatus}
+                    icon={<DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
+                    style={{ paddingInline: token.paddingXS }}
+                  >
                     {aiStatus?.models.find((m) => m.id === aiStatus.model)?.name ?? 'DeepSeek'}
                     <DownOutlined style={{ color: token.colorTextTertiary }} />
                   </Button>

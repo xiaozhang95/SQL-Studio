@@ -102,3 +102,11 @@ Workspace与Agent共用PageHeader，56px、workspace-inset、surface背景和右
 末尾遮挡与代码字体修复：内容高度变化不再自动取消跟随，用户滚动才取消；高度测量变化对齐末尾，输入区不压缩且补12px间距。隔离8116长回复追加后bottomGap=0，生成状态bottom=484、输入区top=508，不重叠；代码计算字体与ant-app一致，14px。截图screenshots/agent-bottom-visible.png；无模型/数据库调用，临时文件与服务清理。前端检查及build通过，保留既有警告。
 
 表格与错误宽度修正：Bubble body显式100%宽度及minWidth=0，页面错误区去左右padding。隔离8117真实TurnContent浏览器测量Alert left160/right1120，表格内容left162/right1119（卡片边框内），结果满宽；截图screenshots/agent-table-width-aligned.png。旧后端拒绝mode显示明确重启提示。前端10项检查/build通过；无模型/数据库调用，临时页与服务清理。
+
+内联写入确认：新增和更新的逐次确认从弹窗迁移到当前回复下方的Ant Design卡片，保持一次性确认接口和后端等待协议。13项前端检查通过，新增真实hook控制流测试覆盖等待不提交、重复确认/取消锁、失败反馈、取消、中止/流结束/卸载清理和迟到响应隔离。浏览器隔离展示页使用真实hook、Transcript和确认卡片，核对INSERT/UPDATE完整只读高亮SQL、确认/取消、提交禁用、失败留卡片、停止移除卡片、无执行弹窗；亮暗主题和390px窄窗口无横向溢出。API使用请求替身，未执行真实SQL或模型调用，临时展示文件已清理。
+
+模式切换弹窗外观：完全访问确认加宽到720px并垂直居中，使用主题warning边框/Alert、分段权限与逐次确认说明、禁止删除提示和原生danger按钮。13项前端检查及构建通过。隔离真实hook浏览器验证亮暗主题、取消保持只读、模拟确认切换和切回只读，390px窗口弹窗374px且无页面横向溢出；不更改实际配置、不调用模型或数据库，临时展示文件已清理。
+
+Agent内容间距统一：CHAT.spacing使用原生middle（16px）区隔文字、表格、代码、过程和结果等内容块，small（8px）组织元数据和操作组；移除代码块外margin、过程/状态外padding、导出按钮固定margin及文本边界多余空白。隔离真实TurnContent/AnswerContent/QueryResult/WriteConfirmation浏览器核对连续文字-表格-文字-代码、连续代码/表格、两项工具步骤、长参数和确认卡片；亮暗及390px窄窗口测得所有正文块间距16px、同一左边线，工具元数据8px，详情到结果/结果到导出16px，确认卡片各内容16px，文档宽390px无横向溢出。使用固定演示数据，不调用模型或数据库，临时文件已清理。
+
+Agent配置适用范围：公共AISettings新增showCompletionSetting可选参数，默认true；Agent传false隐藏SQL工作区专属代码补全开关。隔离浏览器使用真实组件及配置hook验证Agent无开关、工作区仍显示并可切换、Agent保存分别保留原completionEnabled=false及true；亮暗与390px窄窗口无横向溢出。API使用替身，不修改真实配置或Key，临时展示文件已清理。

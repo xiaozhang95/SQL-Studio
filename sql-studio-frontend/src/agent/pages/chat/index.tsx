@@ -11,6 +11,7 @@ import { Composer } from './components/composer'
 import { History } from './components/history'
 import { Transcript } from './components/transcript'
 import { Welcome } from './components/welcome'
+import { WriteConfirmation } from './components/writeConfirmation'
 import { CHAT } from './constant/chat'
 import { useChat } from './hooks/chat'
 import { useOperationMode } from './hooks/operationMode'
@@ -98,15 +99,15 @@ export function ChatPage({
           onRename={chat.renameHistory}
         />
         <Flex vertical style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-          <Flex vertical className="agent-conversation-column" style={{ width: 'calc(100% - 64px)', maxWidth: CHAT.conversationMaxWidth, marginInline: 'auto', flex: 1, minHeight: 0 }}>
+          <Flex vertical className="agent-conversation-column" style={{ width: '100%', flex: 1, minHeight: 0 }}>
             {errors.length > 0 && (
-              <Flex vertical gap="small" role="region" aria-label="页面错误" style={{ paddingBlock: token.paddingSM, width: '100%', flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
+              <Flex vertical gap="small" role="region" aria-label="页面错误" style={{ ...CHAT.content, paddingBlock: token.paddingSM, flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
                 {errors.map((error) => (
                   <Alert key={error} type="error" showIcon title={error} />
                 ))}
               </Flex>
             )}
-            {ai.notice && <Alert type="success" title={ai.notice} closable onClose={ai.dismissNotice} style={{ marginBottom: token.margin }} />}
+            {ai.notice && <Alert type="success" title={ai.notice} closable onClose={ai.dismissNotice} style={{ ...CHAT.content, marginBottom: token.margin }} />}
             <div
               className="chat-transcript-region"
               style={{
@@ -118,7 +119,7 @@ export function ChatPage({
                 alignItems: chat.entries.length === 0 ? 'center' : 'stretch'
               }}
             >
-              <div style={{ ...CHAT.content, height: chat.entries.length ? '100%' : undefined }}>
+              <div style={chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
                 {chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (
@@ -130,6 +131,11 @@ export function ChatPage({
                     expanded={workspace.state.expanded}
                     onExpanded={(expanded) => workspace.update({ expanded })}
                     onEdit={chat.editQuestion}
+                    confirmation={
+                      chat.confirmWrite.pending && (
+                        <WriteConfirmation value={chat.confirmWrite.pending} submitting={chat.confirmWrite.submitting} error={chat.confirmWrite.error} onDecide={chat.confirmWrite.decide} />
+                      )
+                    }
                   />
                 )}
               </div>
@@ -145,6 +151,7 @@ export function ChatPage({
               <div style={CHAT.content}>
                 <AISettings
                   themeMode={dark ? 'dark' : 'light'}
+                  showCompletionSetting={false}
                   trigger={(show) => (
                     <Composer
                       mode={operation.mode}

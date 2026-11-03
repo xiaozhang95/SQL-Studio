@@ -8,5 +8,6 @@ renameHistory只替换索引信息，不改变当前消息/草稿/展开状态�
 
 editQuestion(text)将已有问题回填当前输入框、同步本机草稿并聚焦；执行或管理会话中不回填。由用户修改并再次发送，不改写原问题。
 
+写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。等待仍受本轮总超时约束；恢复历史不重新显示已过期确认卡片。模式提示不替代逐次确认。
 
-写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。等待仍受本轮总超时约束；恢复历史不重新弹出已过期确认。模式提示不替代逐次确认。
+useChat.confirmWrite公开当前待确认明细、提交状态、错误及决策回调，页面将其组合为最后一轮回复下方的确认卡片；等待时status显示“等待确认数据库操作”，不再发起执行确认弹窗。

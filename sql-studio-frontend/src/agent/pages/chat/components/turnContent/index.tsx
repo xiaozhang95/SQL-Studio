@@ -1,6 +1,6 @@
 import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
-import { Alert, Button, Divider, Flex, Space, Spin, theme, Tooltip, Typography } from 'antd'
+import { Alert, Button, Divider, Flex, Spin, theme, Tooltip, Typography } from 'antd'
 import { Fragment } from 'react'
 
 import type { Entry } from '../../../../typings/chat'
@@ -54,7 +54,7 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
   }
   const sections = blocks(entries)
   return (
-    <Flex vertical gap="small" style={{ width: '100%', paddingBottom: token.padding }}>
+    <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0, paddingBottom: token.padding }}>
       {sections.map((block) => {
         const first = block.entries[0]
         if (block.type === 'footer')
@@ -63,7 +63,7 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
               {chatErrors(block.entries).map((error) => (
                 <Alert key={error} type="error" showIcon title={error} />
               ))}
-              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} busy={locked} onEdit={onEdit} />
+              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} />
             </Fragment>
           )
         if (block.type === 'thinking')
@@ -87,55 +87,52 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
           )
         if (block.type === 'tools')
           return (
-            <Flex key={first.id} vertical gap="small" style={{ minWidth: 0 }}>
-              {
-                <ProcessCard
-                  title={`执行过程 · ${block.entries.length} 项操作`}
-                  icon={<CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
-                  expanded={expanded.includes(`tools-${first.id}`)}
-                  onExpand={(open) => change(`tools-${first.id}`, open)}
-                >
-                  <Space orientation="vertical" style={{ width: '100%' }}>
-                    {block.entries.map((e, index) => (
-                      <div key={e.id}>
-                        <Typography.Text type="secondary">
-                          {index + 1}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
+            <ProcessCard
+              key={first.id}
+              title={`执行过程 · ${block.entries.length} 项操作`}
+              icon={<CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
+              expanded={expanded.includes(`tools-${first.id}`)}
+              onExpand={(open) => change(`tools-${first.id}`, open)}
+            >
+              <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
+                {block.entries.map((e, index) => (
+                  <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
+                    <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                      <Typography.Text type="secondary">
+                        {index + 1}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
+                      </Typography.Text>
+                      <div>
+                        <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
+                        <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
+                          {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
                         </Typography.Text>
-                        <div>
-                          <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
-                          <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
-                            {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
-                          </Typography.Text>
-                        </div>
-                        {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && (
-                          <>
-                            <div>
-                              <Typography.Text type="secondary">请求参数</Typography.Text>
-                            </div>
-                            <Typography.Paragraph
-                              copyable={{ text: e.text }}
-                              style={{
-                                whiteSpace: 'pre-wrap',
-                                overflowWrap: 'anywhere',
-                                margin: 0
-                              }}
-                            >
-                              {e.text}
-                            </Typography.Paragraph>
-                          </>
-                        )}
-                        {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} />}
                       </div>
-                    ))}
-                  </Space>
-                </ProcessCard>
-              }
-            </Flex>
+                      {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && (
+                        <Flex vertical gap={CHAT.spacing.detail}>
+                          <Typography.Text type="secondary">请求参数</Typography.Text>
+                          <Typography.Paragraph
+                            copyable={{ text: e.text }}
+                            style={{
+                              whiteSpace: 'pre-wrap',
+                              overflowWrap: 'anywhere',
+                              margin: 0
+                            }}
+                          >
+                            {e.text}
+                          </Typography.Paragraph>
+                        </Flex>
+                      )}
+                    </Flex>
+                    {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} />}
+                  </Flex>
+                ))}
+              </Flex>
+            </ProcessCard>
           )
         return block.entries.map((e) => {
           const user = e.role === 'user'
           return (
-            <Fragment key={e.id}>
+            <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ width: '100%', minWidth: 0 }}>
               <Bubble
                 placement={user ? 'end' : 'start'}
                 variant={user ? 'filled' : 'borderless'}
@@ -163,7 +160,7 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
                 }
               />
               {user && (
-                <Flex justify="end" align="center" gap="small">
+                <Flex justify="end" align="center" gap={CHAT.spacing.detail} wrap>
                   {e.createdAt && <Typography.Text type="secondary">{new Date(e.createdAt).toLocaleString('zh-CN', { hour12: false })}</Typography.Text>}
                   <Tooltip title="编辑问题">
                     <Button type="text" size="small" aria-label="编辑问题" disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
@@ -171,13 +168,13 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
                   <Typography.Text copyable={{ text: e.text, tooltips: ['复制问题', '已复制'] }} />
                 </Flex>
               )}
-              {user && <Divider style={{ marginBlock: token.marginXXS }} />}
-            </Fragment>
+              {user && <Divider style={{ margin: 0 }} />}
+            </Flex>
           )
         })
       })}
       {busy && (
-        <Flex align="center" gap="small">
+        <Flex align="center" gap={CHAT.spacing.detail}>
           <Spin indicator={<LoadingOutlined spin />} size="small" />
           <Typography.Text type="secondary">{status || '正在思考…'}</Typography.Text>
         </Flex>

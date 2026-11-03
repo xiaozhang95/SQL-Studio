@@ -52,3 +52,5 @@ workspace-split.test.mjs 覆盖100页轻量索引、仅活动页读取、布局/
 workspace-performance.test.mjs 还验证编辑缓冲的延迟全文读取、连续更新截止提交、切页/导出同步、位置更新不读SQL、关闭取消及分页原始行key/NULL搜索/全量CSV。浏览器另验证立即运行、选区快捷键、切页保留和历史事务，替身不代表真实数据库执行。
 
 MariaDB：`node --test tests/mariadb.test.mjs` 检查 MariaSQL 扩展、可执行注释、USE、默认字符串/NULL/表达式及排序规则别名，均不访问数据库；真实驱动/HTTP 回归见后端 tests/integration/mariadb_test.go。
+
+agent.test.mjs中的内联写入确认测试执行真实useWriteConfirmation控制逻辑，替换React状态与fetch，覆盖等待不提交、一次性ID/决定请求、重复提交、失败重试/取消、中止/结束/卸载清理和迟到响应隔离。浏览器另以真实hook、Transcript和WriteConfirmation组合验证卡片、SQL只读预览、按钮禁用、错误、确认/取消/停止与亮暗/窄窗口；确认接口使用隔离替身，不访问真实数据库。

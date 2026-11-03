@@ -1,0 +1,3 @@
+# 写入确认契约
+
+WriteConfirmationRequest为live SSE提供的逐次写入确认明细：approvalId是后端绑定目标和SQL的一次性标识，connection/database为目标名称，objects为对象列表，sql为完整SQL。所有字段必填；由useWriteConfirmation运行时校验，不作为前端可编辑SQL，不保存为可恢复的确认状态。

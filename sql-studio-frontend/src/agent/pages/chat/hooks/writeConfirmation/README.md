@@ -1,3 +1,5 @@
 # useWriteConfirmation
 
-接收live SSE write_confirmation事件并显示逐次执行确认。弹窗包含连接、库、涉及对象和SQL只读高亮，确认/取消调用同源POST /api/agent/write-confirmation，一次性approvalId绑定后端当前工具。请求失败留在弹窗；取消不执行且后端终止本轮；中止、超时、卸载销毁弹窗，不能恢复旧记录重新确认。不发起真实SQL，仅提交用户决定。
+接收live SSE write_confirmation事件并管理逐次执行确认。返回pending（WriteConfirmationRequest或null）、submitting、error，以及show(value:unknown,signal:AbortSignal)、decide(allow:boolean)、close()。show校验明细并替换当前待确认请求；ChatPage通过WriteConfirmation将连接、库、对象和SQL显示为当前回复下方的卡片，不弹窗。
+
+decide调用同源POST /api/agent/write-confirmation，一次性approvalId绑定后端当前工具；提交期间以ref锁定，阻止重复确认或确认/取消并发。请求失败显示卡片内错误并允许手动重试；取消不执行且后端终止本轮。中止、超时、流结束清空卡片，卸载释放监听，迟到响应不能清除新确认卡片。历史不恢复确认，不自动提交或重试，不直接执行SQL。

@@ -1,5 +1,8 @@
 import type { CSSProperties } from 'react'
 
+const conversationMaxWidth = 960
+const transcriptInset = 32
+
 export const CHAT = {
   maxQuestionLength: 2000,
   maxTitleLength: 80,
@@ -30,13 +33,18 @@ export const CHAT = {
     query_readonly: '查询结果'
   } as Readonly<Record<string, string>>,
   headerHeight: 56,
-  transcriptInset: 32,
-  conversationMaxWidth: 960,
+  transcriptInset,
+  conversationMaxWidth,
   modelSelectorWidth: 192,
+  modelMenuIconSize: 18,
+  modelTriggerIconSize: 20,
+  modeConfirmationWidth: 720,
+  spacing: { block: 'middle', detail: 'small' },
   composerRows: { minRows: 4, maxRows: 10 },
   content: {
-    width: '100%',
-    margin: 0,
+    width: `calc(100% - ${transcriptInset * 2}px)`,
+    maxWidth: conversationMaxWidth,
+    marginInline: 'auto',
     minWidth: 0
   } satisfies CSSProperties
 } as const

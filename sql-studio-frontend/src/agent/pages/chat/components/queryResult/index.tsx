@@ -1,10 +1,11 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Alert, Card, Collapse, ConfigProvider, Descriptions, Space, Table, theme, Tooltip, Typography } from 'antd'
+import { Alert, Card, Collapse, ConfigProvider, Descriptions, Flex, Space, Table, theme, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 import { isObject } from '../../../../utils/json'
 import { cellText, readResult } from '../../../../utils/queryResult'
+import { CHAT } from '../../constant/chat'
 import { ExportExcel } from '../exportExcel'
 
 interface Row {
@@ -16,9 +17,11 @@ interface Props {
   sql?: string
   title?: string
   tool?: string
+  showExport?: boolean
 }
-export function QueryResult(props: Props) {
+export function QueryResult({ showExport = true, ...props }: Props) {
   const { token } = theme.useToken()
+  if (isObject(props.value) && typeof props.value.error === 'string') return null
   return (
     <ConfigProvider
       theme={{
@@ -31,10 +34,10 @@ export function QueryResult(props: Props) {
         }
       }}
     >
-      <div style={{ width: '100%', minWidth: 0 }}>
+      <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
         <ResultContent {...props} />
-        <ExportExcel value={props.value} title={props.title ?? '查询结果'} />
-      </div>
+        {showExport && <ExportExcel value={props.value} title={props.title ?? '查询结果'} />}
+      </Flex>
     </ConfigProvider>
   )
 }
@@ -47,7 +50,6 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
     </Space>
   )
   const result = readResult(value)
-  if (isObject(value) && typeof value.error === 'string') return null
   if (isObject(value) && value.isQuery === false)
     return (
       <Card size="small" title={cardTitle}>
@@ -243,8 +245,7 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
           overflowWrap: 'anywhere',
           maxHeight: APPEARANCE.resultPreviewHeight,
           overflow: 'auto',
-          margin: 0,
-          padding: token.paddingXS
+          margin: 0
         }}
       >
         {JSON.stringify(value, null, 2)}

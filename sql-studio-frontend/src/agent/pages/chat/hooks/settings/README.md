@@ -1,3 +1,5 @@
 # Agent模型状态
 
 useAISettings只管理status/busy/error/notice和chooseModel，不管理Key或弹窗。订阅共享ai-settings-saved、窗口focus及页面重新可见事件，从同一ai分区刷新脱敏状态；新请求取消旧请求，迟到或卸载响应不覆盖。chooseModel用空Key更新模型，保留workspace已保存Key，完成广播共享配置事件。配置表单直接复用公共AISettings及useAISettings，不另建Agent Key配置。
+
+Agent调用AISettings时传showCompletionSetting=false，仅展示API Key及模型，隐藏SQL工作区专属的代码补全开关；不改变已保存的completionEnabled。

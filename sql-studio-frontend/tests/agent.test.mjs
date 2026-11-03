@@ -297,3 +297,135 @@ test('Markdown回答转换为表格，精确字符串保留', async () => {
     false
   )
 })
+
+async function confirmationHarness(fetch) {
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/writeConfirmation/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\n/gm, '')
+  const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
+  const slots = []
+  const cleanups = []
+  let cursor = 0
+  const hook = new Function('exports', 'useState', 'useRef', 'useEffect', 'isObject', 'fetch', code + '; return exports.useWriteConfirmation')(
+    {},
+    (initial) => {
+      const index = cursor++
+      if (!(index in slots)) slots[index] = initial
+      return [
+        slots[index],
+        (value) => {
+          slots[index] = value
+        }
+      ]
+    },
+    (initial) => {
+      const index = cursor++
+      if (!(index in slots)) slots[index] = { current: initial }
+      return slots[index]
+    },
+    (effect) => {
+      const index = cursor++
+      if (!(index in slots)) {
+        slots[index] = true
+        cleanups.push(effect())
+      }
+    },
+    (value) => value !== null && typeof value === 'object' && !Array.isArray(value),
+    fetch
+  )
+  return {
+    render: () => {
+      cursor = 0
+      return hook()
+    },
+    unmount: () => cleanups.forEach((cleanup) => cleanup?.())
+  }
+}
+
+const confirmationRequest = {
+  approvalId: 'test-approval',
+  connection: '隔离测试连接',
+  database: 'fixture',
+  objects: ['items'],
+  sql: "UPDATE items SET name = 'sample' WHERE id = 1"
+}
+
+test('内联写入确认等待用户决定，拦截重复提交且仅发送一次性ID与决定', async () => {
+  const calls = []
+  let resolve
+  const harness = await confirmationHarness((url, init) => {
+    calls.push({ url, ...init })
+    return new Promise((done) => {
+      resolve = done
+    })
+  })
+  const signal = new AbortController().signal
+  harness.render().show(confirmationRequest, signal)
+  assert.deepEqual(harness.render().pending, confirmationRequest)
+  assert.equal(calls.length, 0)
+  const submission = harness.render().decide(true)
+  await harness.render().decide(false)
+  assert.equal(harness.render().submitting, true)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].url, '/api/agent/write-confirmation')
+  assert.equal(calls[0].method, 'POST')
+  assert.deepEqual(JSON.parse(calls[0].body), { approvalId: confirmationRequest.approvalId, allow: true })
+  resolve(Response.json({ ok: true }))
+  await submission
+  assert.equal(harness.render().pending, null)
+  await harness.render().decide(true)
+  assert.equal(calls.length, 1)
+  harness.unmount()
+})
+
+test('内联确认失败留在卡片，用户可取消；中止、过期流和卸载不能再次提交', async () => {
+  const calls = []
+  const harness = await confirmationHarness(async (_url, init) => {
+    calls.push(JSON.parse(init.body))
+    return calls.length === 1 ? Response.json({ error: '确认失败，请重试' }, { status: 503 }) : Response.json({ ok: true })
+  })
+  const controller = new AbortController()
+  harness.render().show(confirmationRequest, controller.signal)
+  await harness.render().decide(true)
+  assert.equal(harness.render().error, '确认失败，请重试')
+  assert.equal(harness.render().submitting, false)
+  assert.deepEqual(harness.render().pending, confirmationRequest)
+  await harness.render().decide(false)
+  assert.deepEqual(calls[1], { approvalId: confirmationRequest.approvalId, allow: false })
+  assert.equal(harness.render().pending, null)
+  harness.render().show(confirmationRequest, controller.signal)
+  controller.abort()
+  assert.equal(harness.render().pending, null)
+  harness.render().show(confirmationRequest, controller.signal)
+  assert.equal(harness.render().pending, null)
+  await harness.render().decide(true)
+  assert.equal(calls.length, 2)
+  harness.render().show(confirmationRequest, new AbortController().signal)
+  harness.render().close()
+  await harness.render().decide(true)
+  harness.render().show(confirmationRequest, new AbortController().signal)
+  harness.unmount()
+  await harness.render().decide(true)
+  assert.equal(calls.length, 2)
+})
+
+test('旧确认的迟到响应不清除新卡片，损坏明细不显示或提交', async () => {
+  let resolve
+  const harness = await confirmationHarness(
+    () =>
+      new Promise((done) => {
+        resolve = done
+      })
+  )
+  const previous = new AbortController()
+  const current = new AbortController()
+  harness.render().show(confirmationRequest, previous.signal)
+  const submission = harness.render().decide(true)
+  const next = { ...confirmationRequest, approvalId: 'next-approval' }
+  harness.render().show(next, current.signal)
+  previous.abort()
+  resolve(Response.json({ ok: true }))
+  await submission
+  assert.deepEqual(harness.render().pending, next)
+  assert.equal(harness.render().submitting, false)
+  assert.throws(() => harness.render().show({ ...next, objects: [42] }, current.signal), /无效/)
+  harness.unmount()
+})

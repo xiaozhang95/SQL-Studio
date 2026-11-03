@@ -1,10 +1,12 @@
 import { ArrowDownOutlined } from '@ant-design/icons'
 import { Button, theme } from 'antd'
 import { useMemo } from 'react'
+import type { ReactNode } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
 import type { Entry } from '../../../../typings/chat'
 import { conversationRounds } from '../../../../utils/conversationRounds'
+import { CHAT } from '../../constant/chat'
 import { useVirtualTranscript } from '../../hooks/virtualTranscript'
 import { RoundNavigation } from '../roundNavigation'
 import { TurnContent } from '../turnContent'
@@ -16,8 +18,9 @@ interface Props {
   expanded: string[]
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
+  confirmation?: ReactNode
 }
-export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit }: Props) {
+export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
   const scroll = useVirtualTranscript(rounds)
@@ -48,11 +51,12 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
           <div
             data-chat-round={round.id}
             style={{
-              width: '100%',
+              ...CHAT.content,
               paddingBlock: token.paddingXS
             }}
           >
             <TurnContent locked={busy} entries={round.entries} busy={busy && index === rounds.length - 1} status={status} expanded={expanded} onExpanded={onExpanded} onEdit={onEdit} />
+            {index === rounds.length - 1 && confirmation}
           </div>
         )}
       />

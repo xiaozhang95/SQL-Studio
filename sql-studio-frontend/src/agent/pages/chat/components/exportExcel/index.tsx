@@ -3,6 +3,7 @@ import { Alert, Button, Flex } from 'antd'
 import { useState } from 'react'
 
 import { excelData } from '../../../../utils/excelData'
+import { CHAT } from '../../constant/chat'
 
 export function ExportExcel({ value, title }: { value: unknown; title: string }) {
   const [busy, setBusy] = useState(false)
@@ -39,7 +40,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
     }
   }
   return (
-    <Flex vertical align="start" gap="small" style={{ marginTop: 12 }}>
+    <Flex vertical align="start" gap={CHAT.spacing.detail}>
       <Button type="primary" icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
         导出 Excel{data.truncated ? '（当前截断结果）' : ''}
       </Button>

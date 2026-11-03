@@ -8,7 +8,15 @@ import type { ThemeMode } from '@/typings/theme'
 
 import AIProviderIcon from '../aiProviderIcon'
 
-export default function AISettings({ themeMode, trigger }: { themeMode: ThemeMode; trigger?: (show: () => Promise<void>) => ReactNode }) {
+export default function AISettings({
+  themeMode,
+  trigger,
+  showCompletionSetting = true
+}: {
+  themeMode: ThemeMode
+  trigger?: (show: () => Promise<void>) => ReactNode
+  showCompletionSetting?: boolean
+}) {
   const model = useAISettings()
   return (
     <>
@@ -89,9 +97,11 @@ export default function AISettings({ themeMode, trigger }: { themeMode: ThemeMod
               />
             </Space.Compact>
           </Form.Item>
-          <Form.Item label="代码补全">
-            <Switch checked={model.completionEnabled} onChange={model.setCompletionEnabled} aria-label="代码补全" />
-          </Form.Item>
+          {showCompletionSetting && (
+            <Form.Item label="代码补全">
+              <Switch checked={model.completionEnabled} onChange={model.setCompletionEnabled} aria-label="代码补全" />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </>

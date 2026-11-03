@@ -243,7 +243,8 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       form.scrollToField('question', { focus: true })
     },
     entries,
-    status,
+    status: confirmWrite.pending ? '等待确认数据库操作' : status,
+    confirmWrite,
     busy: busy || loading || managing,
     deleteHistory,
     loading,

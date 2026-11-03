@@ -6,4 +6,6 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 - [components](components/README.md)
 - [constant](constant/README.md)
 
-会话标题位于顶栏中央。聊天轮次及输入区共用CHAT.conversationMaxWidth（1120px）居中列及transcriptInset左边距；窄屏使用100%可用宽度，导航位于独立边栏，不挤入正文。
+会话标题位于顶栏中央。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用CHAT.content，按conversationMaxWidth（960px）居中并保留两侧transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
+
+完全访问模式的逐次写入确认通过WriteConfirmation卡片显示在当前回复下方，提供目标明细、完整SQL、确认/取消及错误反馈，不打开执行确认弹窗；模式切换确认仍沿用原有流程。
