@@ -100,7 +100,7 @@ export function ChatPage({
         <Flex vertical style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <Flex vertical className="agent-conversation-column" style={{ width: 'calc(100% - 64px)', maxWidth: CHAT.conversationMaxWidth, marginInline: 'auto', flex: 1, minHeight: 0 }}>
             {errors.length > 0 && (
-              <Flex vertical gap="small" role="region" aria-label="页面错误" style={{ padding: token.paddingSM, flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
+              <Flex vertical gap="small" role="region" aria-label="页面错误" style={{ paddingBlock: token.paddingSM, width: '100%', flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
                 {errors.map((error) => (
                   <Alert key={error} type="error" showIcon title={error} />
                 ))}
@@ -137,6 +137,8 @@ export function ChatPage({
             <div
               style={{
                 width: '100%',
+                flexShrink: 0,
+                paddingTop: token.paddingSM,
                 paddingBottom: token.padding
               }}
             >

@@ -22,7 +22,14 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
   const rounds = useMemo(() => conversationRounds(entries), [entries])
   const scroll = useVirtualTranscript(rounds)
   return (
-    <div style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}>
+    <div
+      onWheel={scroll.onReadHistory}
+      onTouchMove={scroll.onReadHistory}
+      onKeyDown={(e) => {
+        if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) scroll.onReadHistory()
+      }}
+      style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}
+    >
       <RoundNavigation rounds={rounds} onJump={scroll.jump} />
       <Virtuoso
         className="chat-scroll"
@@ -36,6 +43,7 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
         atBottomStateChange={scroll.onBottom}
         rangeChanged={scroll.onRange}
         followOutput={(atBottom) => (atBottom ? 'auto' : false)}
+        totalListHeightChanged={scroll.onHeight}
         itemContent={(index, round) => (
           <div
             data-chat-round={round.id}

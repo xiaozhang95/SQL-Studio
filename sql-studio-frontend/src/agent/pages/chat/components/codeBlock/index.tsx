@@ -22,9 +22,13 @@ export function CodeBlock({ text, language }: { text: string; language: string }
     return [
       lang,
       EditorView.lineWrapping,
-      EditorView.theme({ '&': { backgroundColor: token.colorBgContainer, color: token.colorText }, '.cm-scroller': { overflow: 'auto' }, '.cm-content': { padding: '12px' } })
+      EditorView.theme({
+        '&': { backgroundColor: token.colorBgContainer, color: token.colorText, fontSize: `${token.fontSize}px`, fontFamily: token.fontFamily },
+        '.cm-scroller': { overflow: 'auto', fontFamily: token.fontFamily, fontSize: `${token.fontSize}px`, lineHeight: String(token.lineHeight) },
+        '.cm-content': { padding: '12px', fontFamily: token.fontFamily }
+      })
     ]
-  }, [language, token.colorBgContainer, token.colorText])
+  }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight])
   return (
     <Card
       size="small"

@@ -98,3 +98,7 @@ Workspace与Agent共用PageHeader，56px、workspace-inset、surface背景和右
 回答代码块：围栏识别返回code片段，SQL/JSON/JS/TS/Python使用只读CodeMirror高亮，其他语言安全代码展示；语言标题和复制按钮，未闭合围栏按流式代码渲染，JSON二维结果优先表格。前端10项检查及build通过，新增闭合/未闭合SQL代码解析断言。隔离8114浏览器确认SQL关键字和标识符实际不同颜色，点击复制按钮显示已复制；未执行代码或请求模型。截图screenshots/agent-code-highlight.png，临时页面和服务已清理。
 
 逐次执行确认验证：后端相关模块测试/vet/build通过，新增等待不执行、允许一次执行、取消不执行、重放拒绝、取消context清理测试；-race因环境CGO未启用未执行，不作为race通过。前端10项检查/build通过。隔离8115真实hook展示页核对连接/数据库/users表及高亮UPDATE SQL、确认和取消按钮，截图screenshots/agent-write-execution-confirm.png。UI只核对展示，实际批准/取消写入由后端替身测试验证；未执行真实SQL，展示文件与服务已清理。
+
+末尾遮挡与代码字体修复：内容高度变化不再自动取消跟随，用户滚动才取消；高度测量变化对齐末尾，输入区不压缩且补12px间距。隔离8116长回复追加后bottomGap=0，生成状态bottom=484、输入区top=508，不重叠；代码计算字体与ant-app一致，14px。截图screenshots/agent-bottom-visible.png；无模型/数据库调用，临时文件与服务清理。前端检查及build通过，保留既有警告。
+
+表格与错误宽度修正：Bubble body显式100%宽度及minWidth=0，页面错误区去左右padding。隔离8117真实TurnContent浏览器测量Alert left160/right1120，表格内容left162/right1119（卡片边框内），结果满宽；截图screenshots/agent-table-width-aligned.png。旧后端拒绝mode显示明确重启提示。前端10项检查/build通过；无模型/数据库调用，临时页与服务清理。

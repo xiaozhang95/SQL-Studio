@@ -17,7 +17,7 @@ export function useVirtualTranscript(rounds: ConversationRound[]) {
     if (!following.current) return
     const frame = requestAnimationFrame(() => {
       if (newQuestion) list.current?.scrollToIndex({ index: rounds.length - 1, align: 'end' })
-      else list.current?.autoscrollToBottom()
+      else list.current?.scrollToIndex({ index: rounds.length - 1, align: 'end' })
     })
     return () => cancelAnimationFrame(frame)
   }, [rounds])
@@ -32,8 +32,14 @@ export function useVirtualTranscript(rounds: ConversationRound[]) {
     atBottom,
     jump,
     onBottom: (bottom: boolean) => {
-      following.current = bottom
+      if (bottom) following.current = true
       setAtBottom(bottom)
+    },
+    onReadHistory: () => {
+      following.current = false
+    },
+    onHeight: () => {
+      if (following.current) list.current?.scrollToIndex({ index: rounds.length - 1, align: 'end' })
     },
     onRange: ({ startIndex }: { startIndex: number }) => setActiveIndex(startIndex),
     toLatest: () => {

@@ -139,7 +139,11 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
               <Bubble
                 placement={user ? 'end' : 'start'}
                 variant={user ? 'filled' : 'borderless'}
-                styles={{ root: { width: user ? undefined : '100%' }, content: { padding: user ? token.paddingSM : 0, maxWidth: '100%', width: user ? undefined : '100%' } }}
+                styles={{
+                  root: { width: user ? undefined : '100%' },
+                  body: { width: user ? undefined : '100%', maxWidth: '100%', minWidth: 0 },
+                  content: { padding: user ? token.paddingSM : 0, maxWidth: '100%', width: user ? undefined : '100%' }
+                }}
                 content={
                   !user ? (
                     <AnswerContent text={e.text} />
