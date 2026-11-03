@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "lint": "pnpm typecheck && oxlint && node --test tests/structure.test.mjs",
+    "lint": "pnpm typecheck && oxlint && node --test tests/structure.test.mjs tests/agent.test.mjs",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
+    "@ant-design/x": "2.5.0",
     "@codemirror/autocomplete": "6.20.4",
     "@codemirror/commands": "6.11.1",
     "@codemirror/lang-sql": "^6.10.0",

@@ -9,3 +9,5 @@ AI配置增加model和completionEnabled，旧记录未设置续写开关默认tr
 RemoveAI(ctx,revision)通过CAS清空Key、模型并关闭续写，保留配置修订号以阻止旧窗口回写；可随后重新配置新Key。
 
 connections 为保留分区，ValidSection/Read/Write 均拒绝，由连接仓库单独管理；与 statefile 的防护保持一致。
+
+AgentStatus/UpdateAgent/ClearAgent使用同一个ai分区，读取脱敏、空Key保留、当前模型兼容、清除与原AI配置同步。不会建立第二份Key或覆盖代码补全开关。

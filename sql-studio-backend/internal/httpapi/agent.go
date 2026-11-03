@@ -1,0 +1,74 @@
+package httpapi
+
+import (
+	"errors"
+	"github.com/gin-gonic/gin"
+	"net/http"
+	model "sql-studio-backend/internal/model/agent"
+	agent "sql-studio-backend/internal/modules/agent"
+)
+
+type agentHandler struct{ chat *agent.Service }
+
+func agentResponse(c *gin.Context, v interface{}, err error) {
+	if errors.Is(err, model.ErrConflict) {
+		respond(c, 409, gin.H{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, v)
+}
+func registerAgent(api *gin.RouterGroup, s Services) {
+	a := api.Group("/agent")
+	a.Use(func(c *gin.Context) {
+		if s.Agent == nil || s.AgentLayout == nil || s.Settings == nil {
+			respond(c, http.StatusServiceUnavailable, gin.H{"error": "Agent服务未装配"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	})
+	a.GET("/sessions", func(c *gin.Context) { v, e := s.Agent.List(c.Request.Context()); agentResponse(c, v, e) })
+	a.POST("/sessions", func(c *gin.Context) {
+		if e := decodeLimit(c, &struct{}{}, 32*1024); e != nil {
+			fail(c, e)
+			return
+		}
+		v, e := s.Agent.Create(c.Request.Context())
+		agentResponse(c, gin.H{"id": v}, e)
+	})
+	a.GET("/sessions/:id", func(c *gin.Context) { v, e := s.Agent.View(c.Request.Context(), c.Param("id")); agentResponse(c, v, e) })
+	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Param("id"))) })
+	a.POST("/chat", (&agentHandler{s.Agent}).stream)
+	a.GET("/workspace", func(c *gin.Context) { v, e := s.AgentLayout.Read(c.Request.Context()); agentResponse(c, v, e) })
+	a.PUT("/workspace", func(c *gin.Context) {
+		var input struct {
+			Revision *uint64       `json:"revision"`
+			State    *model.Layout `json:"state"`
+		}
+		if e := decodeLimit(c, &input, 32*1024); e != nil {
+			fail(c, e)
+			return
+		}
+		if input.Revision == nil || input.State == nil {
+			fail(c, errors.New("必须提供revision和state"))
+			return
+		}
+		v, e := s.AgentLayout.Save(c.Request.Context(), *input.Revision, *input.State)
+		agentResponse(c, v, e)
+	})
+	a.GET("/settings", func(c *gin.Context) { v, e := s.Settings.AgentStatus(c.Request.Context()); agentResponse(c, v, e) })
+	a.PUT("/settings", func(c *gin.Context) {
+		var input model.AIUpdate
+		if e := decodeLimit(c, &input, 32*1024); e != nil {
+			fail(c, e)
+			return
+		}
+		v, e := s.Settings.UpdateAgent(c.Request.Context(), input)
+		agentResponse(c, v, e)
+	})
+	a.DELETE("/settings", func(c *gin.Context) { v, e := s.Settings.ClearAgent(c.Request.Context()); agentResponse(c, v, e) })
+}

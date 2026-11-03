@@ -41,3 +41,7 @@ rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和
 modules/workspace 只依赖model和仓库消费接口；statefile实现分片、旧工作区后端迁移、CAS索引提交及旧内容回收。布局/范围是轻量索引，草稿与结果按SHA256独立保存，GET索引不解析返回所有结果，PUT响应也不回传结果。原子性边界为最后的索引替换，崩溃可能留下孤立内容但不会让索引指向尚未写完的内容；旧 workspace.json 原样保留。
 
 MariaDB 由 internal/mariadb 组合共享 MySQL 线协议，app 以独立 mariadb 类型注册。只有 mariadb 可以依赖 mysql 的协议客户端；业务模块继续只消费 model 与自身接口，不直接导入具体引擎。MariaDB 拥有独立生命周期状态。
+
+## 数据库Agent
+
+modules/agent与modules/agentlayout只依赖model/agent。agentstate、deepseek/agent分别实现持久化及官方模型流；app注入现有metadata/query，不引入第二个Go module或内部HTTP。详细边界见[Agent](AGENT.md)。

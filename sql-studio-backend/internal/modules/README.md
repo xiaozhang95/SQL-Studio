@@ -13,3 +13,6 @@
 - [ai](ai/README.md)：SQL 灰色续写和手动优化，独立并发与取消。
 
 - [workspace](workspace/README.md)：分片工作区索引、按需内容和增量提交。
+
+- [agent](agent/README.md)：纯聊天工具编排。
+- [agentlayout](agentlayout/README.md)：Agent本地布局，恢复不执行工具。

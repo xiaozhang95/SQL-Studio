@@ -43,3 +43,5 @@ GET /connections/:id/export-data?database=...&table=... 输出 SSE JSON 事件 r
 GET/PUT /workspace 和 GET /workspace/parts/:id 调用独立workspace模块。GET只返回轻量索引，PUT要求显式revision并只提交变化的drafts/results，最多96MiB+1MiB信封，单份内容32MiB；冲突409。Part返回原始JSON并no-store，散列无效400、丢失404、损坏400。不在HTTP读写文件或执行SQL。
 
 DELETE /connection-groups 接收 {name:string}，调用 connections.DeleteGroup 并返回 GroupState；沿用单 JSON、未知字段、同源限制及 400/404 错误映射。
+
+/api/agent路由调用Agent、布局与共享settings公开方法；流式端点每10秒心跳并独立续期写截止时间，断开取消后等待最终保存完成。布局冲突409，普通请求32KiB，严格JSON/同源规则不变。

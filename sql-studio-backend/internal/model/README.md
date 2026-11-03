@@ -33,3 +33,5 @@ QueryRequest.Schema 和 AIRequest.Schema 是可选 schema 字段，区别于物�
 workspace.go 定义v2 WorkspacePage/WorkspaceIndex/WorkspaceDocument/WorkspaceCommit：标签元数据与草稿/结果散列引用、布局、修订号及仅变化部分的提交。结果为不执行的JSON对象，草稿为文本；不包含连接密码。
 
 TypeMariaDB=mariadb，为独立的受支持连接身份；IsMySQLProtocol 仅描述 MySQL/MariaDB 线协议复用，不把 MariaDB 归一化成 MySQL。
+
+- [agent](agent/README.md)：Agent工具、模型流与会话契约；独立子包避免与SQL结果/配置同名类型冲突。

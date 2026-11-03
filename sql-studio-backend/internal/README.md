@@ -22,3 +22,6 @@ app 负责装配，httpapi → modules 的公开入口 → model；基础设施�
 - [rowstream](rowstream/README.md)：两种引擎共用的有界导出游标扫描，仅依赖 model/database/sql。
 
 工作区分片保存由 [workspace模块](modules/workspace/README.md) 编排，基础设施见 [statefile](statefile/README.md)，与数据库引擎和查询执行隔离。
+
+- [Agent业务](modules/agent/README.md)、[Agent布局](modules/agentlayout/README.md)、[Agent契约](model/agent/README.md)。
+- [Agent记录](agentstate/README.md)、[思考流传输](deepseek/agent/README.md)。

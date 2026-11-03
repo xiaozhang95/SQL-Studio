@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	agent "sql-studio-backend/internal/modules/agent"
+	agentlayout "sql-studio-backend/internal/modules/agentlayout"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
 	"sql-studio-backend/internal/modules/metadata"
@@ -16,6 +18,8 @@ import (
 
 // Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
 type Services struct {
+	Agent       *agent.Service
+	AgentLayout *agentlayout.Service
 	Workspace   *workspace.Service
 	AI          *ai.Service
 	Connections *connections.Service
@@ -39,6 +43,7 @@ func New(services Services) *gin.Engine {
 	_ = router.SetTrustedProxies(nil)
 	router.Use(gin.Recovery(), localOnly)
 	api := router.Group("/api")
+	registerAgent(api, services)
 	api.GET("/openapi.json", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Data(http.StatusOK, "application/json; charset=utf-8", openAPISpec)

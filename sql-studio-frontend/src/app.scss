@@ -390,3 +390,53 @@ body {
   width: 8px;
   flex-basis: 8px;
 }
+
+/* Agent conversation layout and scoped scrollbars. */
+/* Message scroll region; native component appearance follows Ant Design tokens. */
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+/* Scoped thin scrollbars for replies, process text and query result viewports. */
+.chat-scroll,
+.chat-scroll * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ant-color-fill-secondary) transparent;
+}
+.chat-scroll::-webkit-scrollbar,
+.chat-scroll *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.chat-scroll::-webkit-scrollbar-thumb,
+.chat-scroll *::-webkit-scrollbar-thumb {
+  background: var(--ant-color-fill-secondary);
+  border-radius: 6px;
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover,
+.chat-scroll *::-webkit-scrollbar-thumb:hover {
+  background: var(--ant-color-fill);
+}
+.chat-scroll::-webkit-scrollbar-track,
+.chat-scroll *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  height: 100%;
+}
+.chat-history-toggle {
+  display: none;
+}
+@media (max-width: 760px) {
+  .chat-sidebar {
+    display: none;
+  }
+  .chat-history-toggle {
+    display: inline-flex;
+  }
+}

@@ -1,4 +1,4 @@
-import { CodeOutlined, MoonOutlined, PlusOutlined, SunOutlined } from '@ant-design/icons'
+import { CodeOutlined, CommentOutlined, MoonOutlined, PlusOutlined, SunOutlined } from '@ant-design/icons'
 import { Alert, Button, Divider, Empty, Select, Spin } from 'antd'
 
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
@@ -19,6 +19,7 @@ import { useSidebarResize } from './hooks/useSidebarResize'
 import { useWorkspace } from './hooks/useWorkspace'
 
 type Props = {
+  onOpenAgent: () => void
   themeReady: boolean
   themeSaving: boolean
   themeError?: string
@@ -27,7 +28,7 @@ type Props = {
   onThemeChange: (preference: ThemePreference) => void
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
+export default function Workspace({ onOpenAgent, themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
   const model = useWorkspace()
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, model.workspaceReady)
   const storageError = model.storageError || themeError
@@ -70,6 +71,9 @@ export default function Workspace({ themeMode, themePreference, onThemeChange, t
           </div>
           <Divider orientation="vertical" style={{ margin: 0 }} />
           <AISettings themeMode={themeMode} />
+          <Button icon={<CommentOutlined />} onClick={onOpenAgent}>
+            Agent
+          </Button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />

@@ -83,3 +83,20 @@ PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunSta
 连接 type 支持 mysql、mariadb 和 postgresql。MariaDB 保留独立类型，使用数据库范围，不接受独立 schema；默认只读同样拒绝 /*M! 可执行注释。显式写入的 INSERT/DELETE/REPLACE RETURNING 返回列与行，isQuery 为 true。
 
 DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],connections:Connection[]}`。原子移除自定义分组并把所有成员移到默认分组；不删除连接或改变密码/会话。默认分组 400，不存在 404，写入失败不发布内存变化。
+
+## 数据库 Agent
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/agent/sessions` | 会话索引 |
+| POST | `/agent/sessions` | 创建会话 |
+| GET | `/agent/sessions/{id}` | 恢复事件 |
+| DELETE | `/agent/sessions/{id}` | 删除空闲会话 |
+| POST | `/agent/chat` | SSE思考、工具与回答 |
+| GET | `/agent/workspace` | 恢复Agent布局 |
+| PUT | `/agent/workspace` | CAS保存Agent布局 |
+| GET | `/agent/settings` | 读取共享DeepSeek脱敏配置 |
+| PUT | `/agent/settings` | 更新共享Key与模型 |
+| DELETE | `/agent/settings` | 清除共享DeepSeek配置 |
+
+同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与SQL续写共用ai分区，空Key保留已有值。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。

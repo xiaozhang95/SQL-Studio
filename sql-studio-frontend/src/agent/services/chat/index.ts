@@ -1,0 +1,123 @@
+import type { ChatEvent, TokenUsage } from '../../typings/chat'
+import type { ConversationInfo } from '../../typings/workspace'
+import { isObject } from '../../utils/json'
+
+async function json(path: string, init?: RequestInit): Promise<unknown> {
+  const r = await fetch(path, init)
+  const v: unknown = await r.json()
+  if (!r.ok) throw new Error(isObject(v) && typeof v.error === 'string' ? v.error : '本地会话请求失败')
+  return v
+}
+export async function create(signal: AbortSignal): Promise<string> {
+  const v = await json('/api/agent/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+    signal
+  })
+  if (!isObject(v) || typeof v.id !== 'string') throw new Error('会话响应无效')
+  return v.id
+}
+function info(v: unknown): ConversationInfo {
+  if (!isObject(v) || typeof v.id !== 'string' || typeof v.title !== 'string' || typeof v.revision !== 'number' || typeof v.updatedAt !== 'string' || typeof v.status !== 'string')
+    throw new Error('会话索引无效')
+  return {
+    id: v.id,
+    title: v.title,
+    revision: v.revision,
+    status: v.status,
+    updatedAt: v.updatedAt
+  }
+}
+export async function list(signal?: AbortSignal): Promise<ConversationInfo[]> {
+  const v = await json('/api/agent/sessions', { signal })
+  if (!Array.isArray(v)) throw new Error('会话索引无效')
+  return v.map(info)
+}
+export async function view(id: string, signal: AbortSignal): Promise<{ events: ChatEvent[]; busy: boolean }> {
+  const v = await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { signal })
+  if (!isObject(v) || !Array.isArray(v.events) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
+  return { events: v.events.map(decodeEvent), busy: v.busy }
+}
+export async function remove(id: string) {
+  await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+const kinds = ['user', 'status', 'context', 'model_start', 'reasoning_delta', 'answer_delta', 'tool_start', 'tool_result', 'answer', 'usage', 'error', 'turn_end', 'done', 'heartbeat'] as const
+export function decodeEvent(v: unknown): ChatEvent {
+  if (!isObject(v) || typeof v.type !== 'string') throw new Error('事件无效')
+  const kind = kinds.find((k) => k === v.type)
+  if (!kind) throw new Error('未知事件')
+  for (const key of ['text', 'tool', 'arguments']) if (v[key] !== undefined && typeof v[key] !== 'string') throw new Error('事件内容无效')
+  let usage: TokenUsage | undefined
+  if (v.usage !== undefined) {
+    const u = v.usage
+    if (
+      !isObject(u) ||
+      typeof u.promptTokens !== 'number' ||
+      typeof u.completionTokens !== 'number' ||
+      typeof u.window !== 'number' ||
+      (u.estimatedTokens !== undefined && typeof u.estimatedTokens !== 'number')
+    )
+      throw new Error('用量事件无效')
+    usage = {
+      promptTokens: u.promptTokens,
+      completionTokens: u.completionTokens,
+      window: u.window,
+      estimatedTokens: typeof u.estimatedTokens === 'number' ? u.estimatedTokens : undefined
+    }
+  }
+  return {
+    type: kind,
+    text: typeof v.text === 'string' ? v.text : undefined,
+    tool: typeof v.tool === 'string' ? v.tool : undefined,
+    arguments: typeof v.arguments === 'string' ? v.arguments : undefined,
+    result: v.result,
+    usage
+  }
+}
+export async function chat(sessionId: string, message: string, signal: AbortSignal, onEvent: (e: ChatEvent) => void) {
+  const r = await fetch('/api/agent/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, message }),
+    signal
+  })
+  if (!r.ok || !r.body) throw new Error('无法启动聊天')
+  if (!r.headers.get('Content-Type')?.includes('text/event-stream')) throw new Error('服务器不支持SSE，请重启新版Agent')
+  const reader = r.body.getReader()
+  const decoder = new TextDecoder()
+  let pending = ''
+  let data: string[] = []
+  let finished = false
+  const line = (s: string) => {
+    if (s.endsWith('\r')) s = s.slice(0, -1)
+    if (s === '') {
+      if (data.length) {
+        const event = decodeEvent(JSON.parse(data.join('\n')))
+        if (event.type === 'done') finished = true
+        onEvent(event)
+        data = []
+      }
+    } else if (s.startsWith('data:')) data.push(s.slice(5).replace(/^ /, ''))
+  }
+  try {
+    while (true) {
+      const part = await reader.read()
+      if (part.done) break
+      pending += decoder.decode(part.value, { stream: true })
+      if (pending.length > 1024 * 1024) throw new Error('事件过大')
+      let p: number
+      while ((p = pending.indexOf('\n')) >= 0) {
+        line(pending.slice(0, p))
+        pending = pending.slice(p + 1)
+      }
+    }
+    pending += decoder.decode()
+    if (pending) line(pending)
+    line('')
+    if (!finished) throw new Error('连接中断，当前回复未完成')
+  } finally {
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
+  }
+}

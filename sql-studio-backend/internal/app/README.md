@@ -27,3 +27,5 @@ MariaDB 单独注册 mariadb.Client；该实例组合 MySQL 协议驱动，类�
 装配打开原 statefile 目录，再处理连接迁移和仓库初始化，不添加启动强制写入探测。监听失败明确报告端口和旧 go run/其他进程占用的可能性；不停止其他进程、不修改配置目录或文件权限。
 
 app 调用 webui.Register(router,cfg.WebDir)，用 Gin StaticFS/StaticFileFS 注册前端路由，NoRoute 只处理未知路径。`/api` 与 `/api/*` 的未知接口始终返回 JSON 404，不会落入静态目录。空 WebDir 按构建标签选择资源：embedded 使用编译进程序的 dist，普通开发构建读取前端 dist；显式 WebDir 覆盖默认资源。资源、目录与 HTTP 方法边界由 webui 管理。
+
+Agent在同一app装配；agentDatabase直接组合现有连接/元数据/共享query实例，无内部HTTP。agentCredentials从statefile的ai分区逐次读取。Agent从空记录开始，不读取独立项目数据，详见[Agent](../../../docs/AGENT.md)。

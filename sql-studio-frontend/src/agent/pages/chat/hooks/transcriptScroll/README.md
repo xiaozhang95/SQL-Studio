@@ -1,0 +1,3 @@
+# useTranscriptScroll
+
+传入entries/busy，返回末尾元素ref。靠近消息末尾时按动画帧跟随新增内容，用户向上滚动后停止跟随，不为每个token触发smooth动画；滚回底部或发送新问题恢复跟随。监听器与动画帧卸载清理。Transcript按会话key重建，恢复会话从末尾开始，无网络请求或持久化。

@@ -1,0 +1,3 @@
+# 聊天输入
+
+实际使用Ant Design X Sender，value通过现有Form草稿受控；onChange最多2000字符，通过onDraftChange保存到Go布局。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留蓝色只读Tag、带蓝鲸模型Select与发送按钮；模型菜单含配置API Key入口，先关闭菜单再打开弹窗。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。

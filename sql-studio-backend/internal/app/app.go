@@ -8,6 +8,10 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"sql-studio-backend/internal/agentstate"
+	agentstream "sql-studio-backend/internal/deepseek/agent"
+	agent "sql-studio-backend/internal/modules/agent"
+	agentlayout "sql-studio-backend/internal/modules/agentlayout"
 	"sql-studio-backend/internal/modules/settings"
 	"sql-studio-backend/internal/modules/workspace"
 	"sql-studio-backend/internal/statefile"
@@ -58,13 +62,21 @@ func New(cfg config.Config) (*App, error) {
 			return nil, err
 		}
 	}
+	prefs := settings.New(stateStore)
+	agentDir := filepath.Join(stateDir, "agent")
+	agentStore := localstate.New(agentDir)
+	metadataService := metadata.New(repository, client)
+	queryService := query.New(repository, client)
+	agentService := agent.New(agentstream.New(agentCredentials{stateStore}), agentDatabase{connectionService, metadataService, queryService}, agentStore)
 	router := httpapi.New(httpapi.Services{
+		Agent:       agentService,
+		AgentLayout: agentlayout.New(agentStore),
 		Workspace:   workspace.New(stateStore),
 		Connections: connectionService,
 		AI:          ai.New(stateStore, repository, deepseek.New()),
-		Settings:    settings.New(stateStore),
-		Metadata:    metadata.New(repository, client),
-		Queries:     query.New(repository, client),
+		Settings:    prefs,
+		Metadata:    metadataService,
+		Queries:     queryService,
 	})
 	if err := webui.Register(router, cfg.WebDir); err != nil {
 		return nil, err

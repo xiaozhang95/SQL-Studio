@@ -150,7 +150,9 @@
       "get": {
         "operationId": "health",
         "summary": "服务健康（不测试数据库）",
-        "tags": ["服务"],
+        "tags": [
+          "服务"
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -179,7 +181,9 @@
       "get": {
         "operationId": "openAPI",
         "summary": "OpenAPI 文档",
-        "tags": ["服务"],
+        "tags": [
+          "服务"
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -592,7 +596,9 @@
       "get": {
         "operationId": "listConnections",
         "summary": "连接列表（无密码）",
-        "tags": ["连接"],
+        "tags": [
+          "连接"
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -622,7 +628,9 @@
       "post": {
         "operationId": "saveConnection",
         "summary": "新增或更新连接",
-        "tags": ["连接"],
+        "tags": [
+          "连接"
+        ],
         "description": "普通请求最多 1 MiB。更新时空密码保留；不返回密码。",
         "requestBody": {
           "required": true,
@@ -682,7 +690,9 @@
       "delete": {
         "operationId": "deleteConnection",
         "summary": "删除本地连接",
-        "tags": ["连接"],
+        "tags": [
+          "连接"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -705,7 +715,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["ok"]
+                  "required": [
+                    "ok"
+                  ]
                 }
               }
             }
@@ -747,7 +759,9 @@
       "post": {
         "operationId": "testConnection",
         "summary": "测试表单连接，返回版本",
-        "tags": ["连接"],
+        "tags": [
+          "连接"
+        ],
         "description": "最长 7 秒；编辑时空密码复用已保存凭据。",
         "requestBody": {
           "required": true,
@@ -771,7 +785,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["version"]
+                  "required": [
+                    "version"
+                  ]
                 }
               }
             }
@@ -813,7 +829,9 @@
       "get": {
         "operationId": "databases",
         "summary": "数据库名称列表",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "description": "最长 10 秒，继承请求取消。",
         "parameters": [
           {
@@ -876,7 +894,9 @@
       "get": {
         "operationId": "schemas",
         "summary": "schema列表",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -946,7 +966,9 @@
       "get": {
         "operationId": "tables",
         "summary": "表和视图列表",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1016,7 +1038,9 @@
       "get": {
         "operationId": "columns",
         "summary": "字段列表",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1094,7 +1118,9 @@
       "get": {
         "operationId": "ddl",
         "summary": "对象建表语句",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1133,7 +1159,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["ddl"]
+                  "required": [
+                    "ddl"
+                  ]
                 }
               }
             }
@@ -1225,7 +1253,9 @@
       "post": {
         "operationId": "query",
         "summary": "执行一条 SQL",
-        "tags": ["查询"],
+        "tags": [
+          "查询"
+        ],
         "description": "最长 30 秒，全进程 4 并发；默认 1000 行、最多 5000 行、约 8 MiB 字段内容。截断时 truncated=true，保留重复列名和精确数值文本。",
         "parameters": [
           {
@@ -1305,7 +1335,9 @@
       "get": {
         "operationId": "readState",
         "summary": "读取配置分区",
-        "tags": ["配置"],
+        "tags": [
+          "配置"
+        ],
         "description": "workspace、history、appearance、ai 等独立分区；缺失返回 revision=0,data=null；ai 响应省略 apiKey。",
         "parameters": [
           {
@@ -1365,7 +1397,9 @@
       "put": {
         "operationId": "writeState",
         "summary": "按修订号保存配置",
-        "tags": ["配置"],
+        "tags": [
+          "配置"
+        ],
         "description": "data 必须为对象、最多 32 MiB，HTTP 信封最多 32 MiB + 1024 字节。已存在分区严格 CAS；缺失分区允许按会话旧 revision 重建。ai 数据遵守 AIConfig，响应脱敏。",
         "parameters": [
           {
@@ -1447,7 +1481,9 @@
       "post": {
         "operationId": "assist",
         "summary": "SQL 续写或优化",
-        "tags": ["AI"],
+        "tags": [
+          "AI"
+        ],
         "description": "续写 12 秒，优化 30 秒；与模型发现共享 4 并发；只发送 SQL 上下文和结构，无数据库凭据或查询结果；不执行 SQL。",
         "requestBody": {
           "required": true,
@@ -1527,7 +1563,9 @@
       "post": {
         "operationId": "aiModels",
         "summary": "获取服务商模型列表",
-        "tags": ["AI"],
+        "tags": [
+          "AI"
+        ],
         "description": "10 秒超时，使用本次 Key 或已保存 Key；真实请求 DeepSeek，不回传 Key。",
         "requestBody": {
           "required": true,
@@ -1600,7 +1638,9 @@
       "delete": {
         "operationId": "removeAI",
         "summary": "清除 AI 配置并关闭续写",
-        "tags": ["AI"],
+        "tags": [
+          "AI"
+        ],
         "description": "保留并递增修订号，防止旧窗口回写已移除的 Key。",
         "requestBody": {
           "required": true,
@@ -1670,7 +1710,9 @@
       "get": {
         "operationId": "listIndexes",
         "summary": "索引列表（按字段顺序，包含主键）",
-        "tags": ["元数据"],
+        "tags": [
+          "元数据"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1749,7 +1791,9 @@
       "post": {
         "operationId": "setConnectionSession",
         "summary": "打开或关闭连接/数据库",
-        "tags": ["连接"],
+        "tags": [
+          "连接"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1767,7 +1811,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["open"],
+                  "required": [
+                    "open"
+                  ],
                   "properties": {
                     "open": {
                       "type": "boolean"
@@ -1815,7 +1861,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["open"],
+                "required": [
+                  "open"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "open": {
@@ -1831,6 +1879,396 @@
           }
         }
       }
+    },
+    "/agent/sessions": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "会话索引",
+        "operationId": "agent_get__agent_sessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "创建会话",
+        "operationId": "agent_post__agent_sessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/sessions/{id}": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "恢复事件",
+        "operationId": "agent_get__agent_sessions__id_",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{48}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "删除空闲会话",
+        "operationId": "agent_delete__agent_sessions__id_",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{48}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      }
+    },
+    "/agent/chat": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "SSE思考、工具与回答",
+        "operationId": "agent_post__agent_chat",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/workspace": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "恢复Agent布局",
+        "operationId": "agent_get__agent_workspace",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "CAS保存Agent布局",
+        "operationId": "agent_put__agent_workspace",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/settings": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "读取共享DeepSeek脱敏配置",
+        "operationId": "agent_get__agent_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "更新共享Key与模型",
+        "operationId": "agent_put__agent_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "清除共享DeepSeek配置",
+        "operationId": "agent_delete__agent_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求或业务失败"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          },
+          "409": {
+            "description": "布局修订冲突"
+          },
+          "503": {
+            "description": "模块未装配"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1842,25 +2280,37 @@
             "type": "string"
           }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       },
       "Health": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["ok"]
+            "enum": [
+              "ok"
+            ]
           },
           "service": {
             "type": "string",
-            "enum": ["SQL Studio"]
+            "enum": [
+              "SQL Studio"
+            ]
           },
           "framework": {
             "type": "string",
-            "enum": ["gin"]
+            "enum": [
+              "gin"
+            ]
           }
         },
-        "required": ["status", "service", "framework"]
+        "required": [
+          "status",
+          "service",
+          "framework"
+        ]
       },
       "Connection": {
         "type": "object",
@@ -1871,7 +2321,12 @@
           },
           "type": {
             "type": "string",
-            "enum": ["mysql", "mariadb", "postgresql", ""],
+            "enum": [
+              "mysql",
+              "mariadb",
+              "postgresql",
+              ""
+            ],
             "default": "mysql",
             "description": "省略或空字符串兼容为 mysql。"
           },
@@ -1911,10 +2366,17 @@
             "readOnly": true
           }
         },
-        "required": ["name", "host", "port", "username"],
+        "required": [
+          "name",
+          "host",
+          "port",
+          "username"
+        ],
         "additionalProperties": false
       },
-      "SchemaName": {"type": "string"},
+      "SchemaName": {
+        "type": "string"
+      },
       "Table": {
         "type": "object",
         "properties": {
@@ -1929,7 +2391,11 @@
             "type": "string"
           }
         },
-        "required": ["name", "type", "comment"]
+        "required": [
+          "name",
+          "type",
+          "comment"
+        ]
       },
       "Column": {
         "type": "object",
@@ -1942,7 +2408,10 @@
           },
           "nullable": {
             "type": "string",
-            "enum": ["YES", "NO"]
+            "enum": [
+              "YES",
+              "NO"
+            ]
           },
           "key": {
             "type": "string"
@@ -1971,7 +2440,10 @@
       "QueryRequest": {
         "type": "object",
         "properties": {
-          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"},
+          "schema": {
+            "type": "string",
+            "description": "可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"
+          },
           "database": {
             "type": "string",
             "default": ""
@@ -1990,10 +2462,12 @@
           "allowWrite": {
             "type": "boolean",
             "default": false,
-              "description": "false 使用只读事务；MySQL/MariaDB 另拒绝非查询语句及可执行版本注释，防止 DDL 隐式提交绕过保护。显式 true 的写入自动提交。取消不代表回滚。"
+            "description": "false 使用只读事务；MySQL/MariaDB 另拒绝非查询语句及可执行版本注释，防止 DDL 隐式提交绕过保护。显式 true 的写入自动提交。取消不代表回滚。"
           }
         },
-        "required": ["sql"],
+        "required": [
+          "sql"
+        ],
         "additionalProperties": false
       },
       "QueryResult": {
@@ -2011,7 +2485,10 @@
                   "type": "string"
                 }
               },
-              "required": ["name", "type"]
+              "required": [
+                "name",
+                "type"
+              ]
             }
           },
           "rows": {
@@ -2061,7 +2538,9 @@
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["deepseek"]
+            "enum": [
+              "deepseek"
+            ]
           },
           "model": {
             "type": "string",
@@ -2086,14 +2565,18 @@
             "description": "省略时保留旧值，首次默认 true。"
           }
         },
-        "required": ["provider"]
+        "required": [
+          "provider"
+        ]
       },
       "StateDocument": {
         "type": "object",
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "enum": [1]
+            "enum": [
+              1
+            ]
           },
           "revision": {
             "type": "integer",
@@ -2115,7 +2598,12 @@
             "additionalProperties": true
           }
         },
-        "required": ["schemaVersion", "revision", "updatedAt", "data"]
+        "required": [
+          "schemaVersion",
+          "revision",
+          "updatedAt",
+          "data"
+        ]
       },
       "StateWrite": {
         "type": "object",
@@ -2130,16 +2618,25 @@
             "description": "最多 32 MiB；ai 分区遵守 AIConfig，密钥仅后端保存。"
           }
         },
-        "required": ["revision", "data"],
+        "required": [
+          "revision",
+          "data"
+        ],
         "additionalProperties": false
       },
       "AIRequest": {
         "type": "object",
         "properties": {
-          "schema": {"type":"string","description":"可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"},
+          "schema": {
+            "type": "string",
+            "description": "可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"
+          },
           "action": {
             "type": "string",
-            "enum": ["complete", "optimize"]
+            "enum": [
+              "complete",
+              "optimize"
+            ]
           },
           "connectionId": {
             "type": "string",
@@ -2204,12 +2701,17 @@
                   "maxItems": 128
                 }
               },
-              "required": ["name", "columns"]
+              "required": [
+                "name",
+                "columns"
+              ]
             },
             "maxItems": 12
           }
         },
-        "required": ["action"],
+        "required": [
+          "action"
+        ],
         "additionalProperties": false
       },
       "AIResult": {
@@ -2232,7 +2734,9 @@
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["deepseek"]
+            "enum": [
+              "deepseek"
+            ]
           },
           "apiKey": {
             "type": "string",
@@ -2241,7 +2745,9 @@
             "description": "省略时使用后端保存的 Key。"
           }
         },
-        "required": ["provider"],
+        "required": [
+          "provider"
+        ],
         "additionalProperties": false
       },
       "AIModel": {
@@ -2254,7 +2760,10 @@
             "type": "string"
           }
         },
-        "required": ["id", "name"]
+        "required": [
+          "id",
+          "name"
+        ]
       },
       "Revision": {
         "type": "object",
@@ -2264,12 +2773,19 @@
             "minimum": 0
           }
         },
-        "required": ["revision"],
+        "required": [
+          "revision"
+        ],
         "additionalProperties": false
       },
       "Index": {
         "type": "object",
-        "required": ["name", "unique", "type", "columns"],
+        "required": [
+          "name",
+          "unique",
+          "type",
+          "columns"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -2296,7 +2812,12 @@
       },
       "IndexColumn": {
         "type": "object",
-        "required": ["name", "position", "prefixLength", "order"],
+        "required": [
+          "name",
+          "position",
+          "prefixLength",
+          "order"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -2313,7 +2834,11 @@
           },
           "order": {
             "type": "string",
-            "enum": ["A", "D", ""],
+            "enum": [
+              "A",
+              "D",
+              ""
+            ],
             "description": "升序、降序或不适用"
           }
         }
