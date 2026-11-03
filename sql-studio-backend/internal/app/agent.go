@@ -58,6 +58,13 @@ func (d agentDatabase) Execute(ctx context.Context, target agentmodel.Target, na
 		if strings.TrimSpace(sql) == "" || len(sql) > 16000 {
 			return nil, errors.New("SQL为空或过长")
 		}
+		engine, scopeErr := d.agentTargetEngine(target.ConnectionID)
+		if scopeErr != nil {
+			return nil, scopeErr
+		}
+		if err := agent.ValidateReadSQL(sql, engine, target.Database); err != nil {
+			return nil, err
+		}
 		value, err = d.queries.Query(ctx, target.ConnectionID, model.QueryRequest{Database: target.Database, SQL: sql, Limit: 100, AllowWrite: false})
 	default:
 		return nil, errors.New("不支持的工具")
@@ -102,9 +109,30 @@ func (d agentDatabase) Write(ctx context.Context, target agentmodel.Target, sql 
 	if err := agent.ValidateWriteSQL(sql); err != nil {
 		return nil, err
 	}
+	engine, err := d.agentTargetEngine(target.ConnectionID)
+	if err != nil {
+		return nil, err
+	}
+	if err := agent.ValidateSQLScope(sql, engine, target.Database); err != nil {
+		return nil, err
+	}
 	value, err := d.queries.Query(ctx, target.ConnectionID, model.QueryRequest{Database: target.Database, SQL: sql, Limit: 100, AllowWrite: true})
 	if err != nil {
 		return nil, agentDatabaseError(err)
 	}
 	return json.Marshal(value)
+}
+
+// Re-read the current engine: a discovered connection may have been edited
+// while the model was generating or waiting for a write confirmation.
+func (d agentDatabase) agentTargetEngine(id string) (string, error) {
+	if d.connections == nil { // Minimal executor fixtures omit connection discovery.
+		return "", nil
+	}
+	for _, c := range d.connections.ListConnections() {
+		if c.ID == id {
+			return c.Type, nil
+		}
+	}
+	return "", errors.New("连接已不存在，请重新发现目标")
 }

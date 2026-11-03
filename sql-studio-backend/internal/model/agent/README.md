@@ -7,3 +7,5 @@ workspace.go定义会话模型历史/事件/摘要、轻量索引和布局修订
 Conversation.CustomTitle记录显式重命名，用于阻止首条用户消息覆盖手动名称；不包含在轻量索引中。
 
 Event.createdAt为可选RFC3339时间，user事件由服务端写入UTC发送时间并随会话保存。旧事件允许缺失。
+
+write_confirmation的objects包含本条SQL的目标及源对象名，保留标识符引号并去重；用户可在回复下方卡片核对全部对象与完整SQL，历史确认ID不可重新提交。

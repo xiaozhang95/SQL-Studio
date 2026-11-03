@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"regexp"
 	model "sql-studio-backend/internal/model/agent"
 )
 
@@ -46,13 +45,7 @@ func (s *Service) approveWrite(ctx context.Context, state *toolState, sql string
 			connection = c.Name
 		}
 	}
-	identifier := "(?:\"(?:[^\"]|\"\")*\"|`(?:[^`]|``)*`|[A-Za-z_][A-Za-z0-9_]*)"
-	pattern := "(?i)(?:UPDATE|INTO|TABLE|VIEW|INDEX)\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(" + identifier + "(?:\\s*\\.\\s*" + identifier + ")*)"
-	objects := regexp.MustCompile(pattern).FindStringSubmatch(sql)
-	names := []string{}
-	if len(objects) > 1 {
-		names = append(names, objects[1])
-	}
+	names := approvalObjects(sql)
 	value, _ := json.Marshal(struct {
 		ID         string   `json:"approvalId"`
 		Connection string   `json:"connection"`

@@ -121,6 +121,10 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		if state.target.ConnectionID == "" || state.target.Database == "" {
 			return nil, errors.New("请先确定数据库")
 		}
+		connection, _ := findConnection(state.connections, state.target.ConnectionID)
+		if err := ValidateSQLScope(args.SQL, connection.Type, state.target.Database); err != nil {
+			return nil, err
+		}
 		writer, ok := s.db.(WriteDatabase)
 		if !ok {
 			return nil, errors.New("写入能力未装配")
@@ -138,6 +142,10 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 			SQL string `json:"sql"`
 		}
 		if err := decode(call.Function.Arguments, &args); err != nil {
+			return nil, err
+		}
+		connection, _ := findConnection(state.connections, state.target.ConnectionID)
+		if err := ValidateReadSQL(args.SQL, connection.Type, state.target.Database); err != nil {
 			return nil, err
 		}
 		return s.run(ctx, state.target, call.Function.Name, "", args.SQL)

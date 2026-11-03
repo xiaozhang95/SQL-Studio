@@ -76,13 +76,37 @@ func ValidateWriteSQL(sql string) error {
 	default:
 		return deny
 	}
-	for _, token := range tokens {
-		switch token {
-		case "DELETE", "DROP", "TRUNCATE", "REPLACE", "CALL", "DO", "EXEC", "EXECUTE", "PREPARE", "FUNCTION", "PROCEDURE", "TRIGGER", "EVENT", "RULE", "COPY", "LOAD", "OUTFILE", "DUMPFILE":
+	// Full access covers data and schema objects, not accounts, server settings,
+	// extensions or filesystem/replication administration.
+	if tokens[0] == "CREATE" || tokens[0] == "ALTER" {
+		object := 1
+		for object < len(tokens) && (tokens[object] == "TEMP" || tokens[object] == "TEMPORARY" || tokens[object] == "UNIQUE" || tokens[object] == "UNLOGGED" || tokens[object] == "MATERIALIZED" || tokens[object] == "FULLTEXT" || tokens[object] == "SPATIAL") {
+			object++
+		}
+		if object >= len(tokens) {
+			return deny
+		}
+		switch tokens[object] {
+		case "DATABASE", "SCHEMA", "TABLE", "VIEW", "INDEX", "SEQUENCE", "TYPE", "DOMAIN":
+		default:
 			return deny
 		}
 	}
-	return nil
+	for _, token := range tokens {
+		switch token {
+		case "DELETE", "DROP", "TRUNCATE", "REPLACE", "CALL", "EXEC", "EXECUTE", "PREPARE", "FUNCTION", "PROCEDURE", "TRIGGER", "EVENT", "RULE", "COPY", "LOAD", "OUTFILE", "DUMPFILE", "DISCARD", "DETACH", "IMPORT":
+			return deny
+		}
+	}
+	parsed, err := agentSQLTokens(sql)
+	if err != nil {
+		return err
+	}
+	relations, err := agentRelations(parsed, "", false)
+	if err != nil {
+		return err
+	}
+	return validateAgentCalls(parsed, relations.columnLists)
 }
 
 func writeTool() model.Tool {
