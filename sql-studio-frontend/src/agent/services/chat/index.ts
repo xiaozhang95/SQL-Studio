@@ -57,7 +57,23 @@ export async function ensureHistory(signal?: AbortSignal): Promise<ConversationI
   }
   return items
 }
-const kinds = ['user', 'status', 'context', 'model_start', 'reasoning_delta', 'answer_delta', 'tool_start', 'tool_result', 'answer', 'usage', 'error', 'turn_end', 'done', 'heartbeat'] as const
+const kinds = [
+  'user',
+  'status',
+  'context',
+  'model_start',
+  'reasoning_delta',
+  'answer_delta',
+  'tool_start',
+  'write_confirmation',
+  'tool_result',
+  'answer',
+  'usage',
+  'error',
+  'turn_end',
+  'done',
+  'heartbeat'
+] as const
 export function decodeEvent(v: unknown): ChatEvent {
   if (!isObject(v) || typeof v.type !== 'string') throw new Error('事件无效')
   const kind = kinds.find((k) => k === v.type)
@@ -91,11 +107,11 @@ export function decodeEvent(v: unknown): ChatEvent {
     usage
   }
 }
-export async function chat(sessionId: string, message: string, signal: AbortSignal, onEvent: (e: ChatEvent) => void) {
+export async function chat(sessionId: string, message: string, signal: AbortSignal, onEvent: (e: ChatEvent) => void, mode: 'readonly' | 'write' = 'readonly') {
   const r = await fetch('/api/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, message }),
+    body: JSON.stringify({ sessionId, message, mode }),
     signal
   })
   if (!r.ok || !r.body) throw new Error('无法启动聊天')

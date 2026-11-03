@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (s *Service) execute(ctx context.Context, state *toolState, call model.ToolCall) (json.RawMessage, error) {
+func (s *Service) execute(ctx context.Context, state *toolState, call model.ToolCall, emitters ...func(model.Event) error) (json.RawMessage, error) {
 	switch call.Function.Name {
 	case "list_connections":
 		if err := decode(call.Function.Arguments, &struct{}{}); err != nil {
@@ -105,6 +105,34 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 			return nil, err
 		}
 		return s.run(ctx, state.target, call.Function.Name, args.Table, "")
+	case "execute_write":
+		if !state.allowWrite {
+			return nil, errors.New("当前只读模式不允许新增或修改")
+		}
+		var args struct {
+			SQL string `json:"sql"`
+		}
+		if err := decode(call.Function.Arguments, &args); err != nil {
+			return nil, err
+		}
+		if err := ValidateWriteSQL(args.SQL); err != nil {
+			return nil, err
+		}
+		if state.target.ConnectionID == "" || state.target.Database == "" {
+			return nil, errors.New("请先确定数据库")
+		}
+		writer, ok := s.db.(WriteDatabase)
+		if !ok {
+			return nil, errors.New("写入能力未装配")
+		}
+		var emit func(model.Event) error
+		if len(emitters) > 0 {
+			emit = emitters[0]
+		}
+		if err := s.approveWrite(ctx, state, args.SQL, emit); err != nil {
+			return nil, err
+		}
+		return writer.Write(ctx, state.target, args.SQL)
 	case "query_readonly":
 		var args struct {
 			SQL string `json:"sql"`

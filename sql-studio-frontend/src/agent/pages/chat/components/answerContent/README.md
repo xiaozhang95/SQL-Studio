@@ -1,0 +1,3 @@
+# AnswerContent
+
+text为助手回答，通过answerTables解析有效JSON二维表格及Markdown管道表格，渲染为QueryResult，支持Excel导出。其他文本安全显示，不执行HTML。损坏JSON和代码示例保留原文。模型表格不作为SQL执行。

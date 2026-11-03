@@ -6,7 +6,22 @@ export interface TokenUsage {
 }
 export interface ChatEvent {
   createdAt?: string
-  type: 'user' | 'status' | 'context' | 'model_start' | 'reasoning_delta' | 'answer_delta' | 'tool_start' | 'tool_result' | 'answer' | 'usage' | 'error' | 'turn_end' | 'done' | 'heartbeat'
+  type:
+    | 'user'
+    | 'status'
+    | 'context'
+    | 'model_start'
+    | 'reasoning_delta'
+    | 'answer_delta'
+    | 'tool_start'
+    | 'write_confirmation'
+    | 'tool_result'
+    | 'answer'
+    | 'usage'
+    | 'error'
+    | 'turn_end'
+    | 'done'
+    | 'heartbeat'
   text?: string
   tool?: string
   arguments?: string

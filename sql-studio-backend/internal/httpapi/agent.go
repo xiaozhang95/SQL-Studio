@@ -62,6 +62,21 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 		agentResponse(c, v, err)
 	})
 	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Param("id"))) })
+	a.POST("/write-confirmation", func(c *gin.Context) {
+		var input struct {
+			ID    string `json:"approvalId"`
+			Allow *bool  `json:"allow"`
+		}
+		if err := decodeLimit(c, &input, 4096); err != nil {
+			fail(c, err)
+			return
+		}
+		if input.Allow == nil {
+			fail(c, errors.New("缺少确认结果"))
+			return
+		}
+		agentResponse(c, struct{}{}, s.Agent.ConfirmWrite(input.ID, *input.Allow))
+	})
 	a.POST("/chat", (&agentHandler{s.Agent}).stream)
 	a.GET("/workspace", func(c *gin.Context) { v, e := s.AgentLayout.Read(c.Request.Context()); agentResponse(c, v, e) })
 	a.PUT("/workspace", func(c *gin.Context) {

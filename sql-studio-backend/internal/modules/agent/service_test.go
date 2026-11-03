@@ -64,7 +64,7 @@ func TestPureChatDiscoveryQueryAndContinuation(t *testing.T) {
 		if len(tools) != 6 {
 			t.Fatal("missing discovery tools")
 		}
-		if step == 6 && !strings.Contains(m[len(m)-1].Content, "9007199254740993") {
+		if step == 6 && !strings.Contains(m[len(m)-2].Content, "9007199254740993") {
 			t.Fatal("lost result precision")
 		}
 		if step >= len(script) {
@@ -166,5 +166,32 @@ func TestCancellationPropagates(t *testing.T) {
 	err := s.Chat(ctx, id, "停止", func(model.Event) error { return nil })
 	if !errors.Is(err, context.Canceled) || db.calls != 0 || s.sessions[id].busy {
 		t.Fatal("cancellation failed")
+	}
+}
+
+func TestCurrentModeOverridesHistoricalReadonlyFailure(t *testing.T) {
+	ctx := context.Background()
+	s := New(generatorFunc(func(_ context.Context, m []model.Message, tools []model.Tool) (model.Message, error) {
+		if !strings.Contains(m[len(m)-1].Content, "完全访问") {
+			t.Fatal("missing authoritative mode")
+		}
+		found := false
+		for _, tool := range tools {
+			if tool.Function.Name == "execute_write" {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatal("write tool missing")
+		}
+		return model.Message{Role: "assistant", Content: "完成"}, nil
+	}), &fakeDB{})
+	id, err := s.Create(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.sessions[id].messages = append(s.sessions[id].messages, model.Message{Role: "assistant", Content: "历史环境只读，不能插入"})
+	if err = s.ChatMode(ctx, id, "现在继续", "write", func(model.Event) error { return nil }); err != nil {
+		t.Fatal(err)
 	}
 }

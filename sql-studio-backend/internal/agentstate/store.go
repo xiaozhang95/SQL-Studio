@@ -245,6 +245,7 @@ func (s *Store) workspace(ctx context.Context) (model.Workspace, error) {
 			ActiveID *string   `json:"activeId"`
 			Draft    *string   `json:"draft"`
 			Expanded *[]string `json:"expanded"`
+			Mode     string    `json:"mode"`
 		} `json:"state"`
 	}
 	err := read(filepath.Join(s.dir, "layout.json"), &raw)
@@ -261,7 +262,10 @@ func (s *Store) workspace(ctx context.Context) (model.Workspace, error) {
 	if (*state.ActiveID != "" && !validID.MatchString(*state.ActiveID)) || len(*state.Draft) > 8000 || len(*state.Expanded) > 1024 {
 		return fallback, errors.New("本地布局范围无效")
 	}
-	return model.Workspace{SchemaVersion: 1, Revision: *raw.Revision, UpdatedAt: *raw.UpdatedAt, State: model.Layout{ActiveID: *state.ActiveID, Draft: *state.Draft, Expanded: *state.Expanded}}, nil
+	if state.Mode != "" && state.Mode != "readonly" && state.Mode != "write" {
+		return model.Workspace{}, errors.New("保存的操作模式无效")
+	}
+	return model.Workspace{SchemaVersion: 1, Revision: *raw.Revision, UpdatedAt: *raw.UpdatedAt, State: model.Layout{Mode: state.Mode, ActiveID: *state.ActiveID, Draft: *state.Draft, Expanded: *state.Expanded}}, nil
 }
 func (s *Store) WriteWorkspace(ctx context.Context, input model.Workspace) (model.Workspace, error) {
 	s.mu.Lock()

@@ -11,6 +11,13 @@ import (
 )
 
 func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Event) error) (turnErr error) {
+	return s.ChatMode(ctx, id, text, "readonly", emit)
+}
+
+func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func(model.Event) error) (turnErr error) {
+	if mode != "readonly" && mode != "write" {
+		return errors.New("无效操作模式")
+	}
 	if strings.TrimSpace(text) == "" || len(text) > 8000 {
 		return errors.New("消息不能为空，且最多 8000 字节")
 	}
@@ -26,7 +33,12 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 	}
 	v.busy = true
 	messages := append([]model.Message(nil), v.messages...)
+	// Existing conversations must use current tool and result-format rules.
+	if len(messages) > 0 && messages[0].Role == "system" {
+		messages[0].Content = systemPrompt()
+	}
 	state := v.state.clone()
+	state.allowWrite = mode == "write"
 	summary := v.summary
 	v.status = "running"
 	if !v.customTitle && v.title == "新建会话" {
@@ -104,11 +116,18 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 		if err := emit(model.Event{Type: "model_start"}); err != nil {
 			return err
 		}
+		definitions := tools()
+		modePrompt := "当前只读模式，禁止写入。"
+		if state.allowWrite {
+			definitions = append(definitions, writeTool())
+			modePrompt = "用户已启用完全访问模式，允许使用execute_write进行非删除的数据与结构操作，禁止任何删除、清空、删对象和间接执行删除。"
+		}
+		request = append(request, model.Message{Role: "system", Content: modePrompt + " 当前请求的模式是本轮唯一权限依据；历史对话、旧工具错误或摘要中的只读说明不代表当前模式。不得据此拒绝当前允许的操作。"})
 		var m model.Message
 		if streaming, ok := s.model.(StreamingGenerator); ok {
-			m, err = streaming.GenerateStream(ctx, request, tools(), emit)
+			m, err = streaming.GenerateStream(ctx, request, definitions, emit)
 		} else {
-			m, err = s.model.Generate(ctx, request, tools())
+			m, err = s.model.Generate(ctx, request, definitions)
 		}
 		if err != nil {
 			return err
@@ -132,7 +151,10 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 			if err = emit(model.Event{Type: "tool_start", Tool: call.Function.Name, Arguments: call.Function.Arguments}); err != nil {
 				return err
 			}
-			result, toolErr := s.execute(ctx, &state, call)
+			result, toolErr := s.execute(ctx, &state, call, emit)
+			if errors.Is(toolErr, errWriteCancelled) {
+				return toolErr
+			}
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}

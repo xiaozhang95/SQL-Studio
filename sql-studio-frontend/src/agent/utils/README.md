@@ -8,3 +8,7 @@
 - [inputSubmission](inputSubmission/README.md)：Enter发送及IME保护。
 
 - [conversationRounds](conversationRounds/README.md)：对话轮次分组与导航摘要。
+
+- [excelData](excelData/README.md)：Excel表格数据转换。
+
+- [answerTables](answerTables/README.md)：JSON与Markdown回答表格解析。

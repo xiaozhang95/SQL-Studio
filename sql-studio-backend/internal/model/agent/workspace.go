@@ -47,6 +47,7 @@ type ConversationView struct {
 	Busy   bool    `json:"busy"`
 }
 type Layout struct {
+	Mode     string   `json:"mode,omitempty"`
 	ActiveID string   `json:"activeId"`
 	Draft    string   `json:"draft"`
 	Expanded []string `json:"expanded"`

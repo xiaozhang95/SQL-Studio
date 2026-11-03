@@ -165,7 +165,7 @@ func TestGinRouteParametersAndConnectionTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 	router := New(testServices(store))
-	if routes := router.Routes(); len(routes) != 39 {
+	if routes := router.Routes(); len(routes) != 40 {
 		t.Fatalf("unexpected Gin routes: %d", len(routes))
 	}
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080/api/connections", strings.NewReader(`{"type":"mysql","tls":true,"name":"cloud","host":"db.example","port":3306,"username":"user","password":"secret"}`))

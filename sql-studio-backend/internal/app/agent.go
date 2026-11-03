@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sql-studio-backend/internal/model"
 	agentmodel "sql-studio-backend/internal/model/agent"
+	agent "sql-studio-backend/internal/modules/agent"
 	"sql-studio-backend/internal/modules/connections"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
@@ -95,4 +96,15 @@ func (c agentCredentials) Credentials(ctx context.Context) (agentmodel.AICredent
 		selected = agentmodel.DeepSeekModel
 	}
 	return agentmodel.AICredentials{APIKey: cfg.APIKey, Model: selected}, nil
+}
+
+func (d agentDatabase) Write(ctx context.Context, target agentmodel.Target, sql string) (json.RawMessage, error) {
+	if err := agent.ValidateWriteSQL(sql); err != nil {
+		return nil, err
+	}
+	value, err := d.queries.Query(ctx, target.ConnectionID, model.QueryRequest{Database: target.Database, SQL: sql, Limit: 100, AllowWrite: true})
+	if err != nil {
+		return nil, agentDatabaseError(err)
+	}
+	return json.Marshal(value)
 }

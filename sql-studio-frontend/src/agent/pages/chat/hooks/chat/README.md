@@ -7,3 +7,6 @@ renameHistory只替换索引信息，不改变当前消息/草稿/展开状态�
 恢复不执行模型或SQL；SSE经applyEvent还原，取消保留已输出片段。草稿与展开状态交给workspace保存，历史折叠抽屉由historyOpen控制。
 
 editQuestion(text)将已有问题回填当前输入框、同步本机草稿并聚焦；执行或管理会话中不回填。由用户修改并再次发送，不改写原问题。
+
+
+写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。等待仍受本轮总超时约束；恢复历史不重新弹出已过期确认。模式提示不替代逐次确认。

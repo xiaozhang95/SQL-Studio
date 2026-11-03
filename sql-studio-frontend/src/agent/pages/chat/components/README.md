@@ -14,3 +14,8 @@
 
 - [turnContent](turnContent/README.md)：单轮消息、过程、结果和错误。
 - [roundNavigation](roundNavigation/README.md)：问题刻度预览和完整问题列表。
+
+- [answerContent](answerContent/README.md)：结构化最终回答。
+- [exportExcel](exportExcel/README.md)：当前结果Excel导出。
+
+- [codeBlock](codeBlock/README.md)：回答代码高亮与复制。

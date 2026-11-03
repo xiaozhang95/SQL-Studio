@@ -21,6 +21,9 @@ func (s *Service) Read(ctx context.Context) (model.Workspace, error) {
 var id = regexp.MustCompile(`^[a-f0-9]{48}$`)
 
 func (s *Service) Save(ctx context.Context, revision uint64, state model.Layout) (model.Workspace, error) {
+	if state.Mode != "" && state.Mode != "readonly" && state.Mode != "write" {
+		return model.Workspace{}, errors.New("操作模式无效")
+	}
 	if (state.ActiveID != "" && !id.MatchString(state.ActiveID)) || len(state.Draft) > 8000 || len(state.Expanded) > 1024 {
 		return model.Workspace{}, errors.New("布局范围或草稿超限")
 	}

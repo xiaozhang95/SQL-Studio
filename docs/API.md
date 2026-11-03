@@ -103,3 +103,7 @@ DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],co
 同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与SQL续写共用ai分区，空Key保留已有值。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。
 
 会话重命名去除首尾空白，限1–80字符且不含控制字符；手动命名持久保存，不再用首条消息覆盖。首次空历史及删除最后一条后，前端调用ensure创建并选中默认“新建会话”，不执行模型或数据库工具。
+
+Agent操作模式：POST /api/agent/chat 增加mode（readonly默认，write为完全访问模式，允许非删除数据及结构操作）。任何模式拒绝DELETE/DROP/TRUNCATE/REPLACE和DDL；删除仅提供命令及风险提示，不自动执行。刷新和往返工作台恢复上次确认的模式。支持单条INSERT/UPDATE/CREATE/ALTER/COMMENT及表达式和子查询；多语句、存储程序、动态SQL不执行，以防绕过删除限制；取消不保证回滚。查询回答提示生成真实二维JSON表格，前端校验后展示，支持导出当前已加载结果xlsx，截断明确提示。
+
+| POST | `/agent/write-confirmation` | body: approvalId、allow；确认或取消当前待执行操作，过期/重复拒绝 |

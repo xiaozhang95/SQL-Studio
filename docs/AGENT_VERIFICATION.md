@@ -80,3 +80,21 @@ react-virtuoso动态高度按轮次虚拟化；600轮隔离组件浏览器实际
 Workspace与Agent共用PageHeader，56px、workspace-inset、surface背景和右侧16px间距一致，Agent顶栏铺满并有返回工作区按钮。隔离8108正式服务浏览器验证返回后workspace新建连接/查询/DeepSeek/Agent均保留。截图：[统一顶栏](screenshots/agent-shared-header.png)。测试未访问业务数据库或调用模型。保留已有effect警告，虚拟列表引用传递有oxlint react(refs)提示。
 
 居中复核：隔离8109浏览器1280px视口，主区域left=232/right=1280，输入框left=308/right=1204，左右留白均76px。统一960px容器、对称32px内距；虚拟列表取消额外stable滚动槽占位。构建通过，截图screenshots/agent-centered-layout.png。本次空会话位置实测，不作为有消息列表位置实测。
+
+## 读写模式、结构化回答和Excel
+
+只读/新增修改模式每次切换确认，mode随本轮请求发送；后端默认readonly，模式不可由工具参数覆盖。write只暴露execute_write，严格完整匹配单表INSERT VALUES及带等值WHERE的UPDATE，拒绝删除/DDL/表达式/子查询/跨库/多语句；两层校验后复用query allowWrite。删除仅系统提示生成命令和风险说明，由用户自行执行。已有数据库触发器及约束仍按数据库配置运行，未承诺写入无间接副作用。
+
+全后端go test -count=1 ./...、vet/build通过，新增写入语法与权限测试（只读拒绝、允许修改、删除拒绝且写入调用数不增加）。真实数据库默认集成跳过，本轮未用真实模型及业务库。前端9项检查及build通过，保留此前effect/ref警告。
+
+最终回答提示采用有效json代码块columns/rows，运行时校验渲染表格；其他文本安全显示。Excel懒加载exceljs，导出当前已获取结果，不重新查询或把模型文字当SQL执行。浏览器隔离展示页验证开启写入确认、切回只读提示、取消保持模式和JSON表格；实际下载xlsx后读取验证大整数9007199254740993不丢精度、=1+1是文本类型而非公式、NULL为空，截断结果明确标注。截图：[模式确认](screenshots/agent-write-mode-confirm.png)。临时展示页及服务已清理。
+
+输入底栏精简：模式和模型改为内容自适应Dropdown按钮，移除模型最小192px与模式Tag选择器，说明独立显示。lint（9项）及build通过；隔离8111正式main.go浏览器确认模式文字完整、无提示遮挡，模型菜单及配置入口可见。截图screenshots/agent-footer-refined.png；未访问真实模型或业务数据库。
+
+完全访问模式修正：界面与风险确认改为完全访问模式，允许单条非删除INSERT/UPDATE/CREATE/ALTER/COMMENT，不再限定简单等值UPDATE；拒绝DELETE/DROP/TRUNCATE/REPLACE及存储程序、动态SQL、多语句等绕过路径。相关后端模块测试/vet/build与前端检查/build通过，未执行真实数据库修改。规则已写入项目sql-studio及sql-studio-backend SKILL.md，普通SQL工作台不受此Agent约定影响。本轮未重跑浏览器。
+
+模式持久化修复：mode加入Go布局模型和严格文件解码，前端直接读写workspace模式，旧布局默认只读；切换确认才保存。每次模型请求在历史消息后追加当前权限说明，旧只读错误不覆盖当前模式。新增落盘重建恢复及模型模式优先测试通过，相关后端测试/build与前端10项检查/build通过。隔离8113正式服务浏览器确认切换完全访问后，立即返回工作台、重新进入Agent再刷新仍保持完全访问。截图screenshots/agent-mode-restored.png。未调用真实模型或执行数据库修改。
+
+回答代码块：围栏识别返回code片段，SQL/JSON/JS/TS/Python使用只读CodeMirror高亮，其他语言安全代码展示；语言标题和复制按钮，未闭合围栏按流式代码渲染，JSON二维结果优先表格。前端10项检查及build通过，新增闭合/未闭合SQL代码解析断言。隔离8114浏览器确认SQL关键字和标识符实际不同颜色，点击复制按钮显示已复制；未执行代码或请求模型。截图screenshots/agent-code-highlight.png，临时页面和服务已清理。
+
+逐次执行确认验证：后端相关模块测试/vet/build通过，新增等待不执行、允许一次执行、取消不执行、重放拒绝、取消context清理测试；-race因环境CGO未启用未执行，不作为race通过。前端10项检查/build通过。隔离8115真实hook展示页核对连接/数据库/users表及高亮UPDATE SQL、确认和取消按钮，截图screenshots/agent-write-execution-confirm.png。UI只核对展示，实际批准/取消写入由后端替身测试验证；未执行真实SQL，展示文件与服务已清理。

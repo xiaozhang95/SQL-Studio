@@ -27,6 +27,7 @@ type session struct {
 	used        time.Time
 }
 type toolState struct {
+	allowWrite  bool
 	target      model.Target
 	connections []model.Connection
 	databases   map[string][]string
@@ -41,16 +42,17 @@ func (v toolState) clone() toolState {
 }
 
 type Service struct {
-	mu       sync.Mutex
-	sessions map[string]*session
-	model    Generator
-	db       Database
-	slots    chan struct{}
-	repo     Repository
+	approvals map[string]*pendingApproval
+	mu        sync.Mutex
+	sessions  map[string]*session
+	model     Generator
+	db        Database
+	slots     chan struct{}
+	repo      Repository
 }
 
 func New(g Generator, db Database, repositories ...Repository) *Service {
-	s := &Service{sessions: map[string]*session{}, model: g, db: db, slots: make(chan struct{}, 2)}
+	s := &Service{approvals: map[string]*pendingApproval{}, sessions: map[string]*session{}, model: g, db: db, slots: make(chan struct{}, 2)}
 	if len(repositories) > 0 {
 		s.repo = repositories[0]
 	}

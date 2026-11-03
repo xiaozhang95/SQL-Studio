@@ -7,8 +7,9 @@ import type { ChatEvent, Entry, TokenUsage } from '../../../../typings/chat'
 import type { ConversationInfo } from '../../../../typings/workspace'
 import { applyEvent } from '../../../../utils/chatEvents'
 import { CHAT } from '../../constant/chat'
+import { useWriteConfirmation } from '../writeConfirmation'
 
-export function useChat(workspace: WorkspaceController) {
+export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'write' = 'readonly') {
   const [entries, setEntries] = useState<Entry[]>([])
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
@@ -68,7 +69,13 @@ export function useChat(workspace: WorkspaceController) {
     void initialize()
     return () => c.abort()
   }, [workspace.ready, form])
+  const confirmWrite = useWriteConfirmation()
   function event(e: ChatEvent) {
+    if (e.type === 'write_confirmation' && active.current) {
+      confirmWrite.show(e.result, active.current.signal)
+      return
+    }
+    if (e.type === 'error' || e.type === 'done') confirmWrite.close()
     setEntries((old) => applyEvent(old, e))
     if (e.type === 'status') setStatus(e.text ?? '')
     if (e.type === 'tool_start') setStatus(`${CHAT.tools[e.tool ?? ''] ?? '正在处理'}…`)
@@ -204,9 +211,15 @@ export function useChat(workspace: WorkspaceController) {
         session.current = await api.create(c.signal)
         latestWorkspace.current.update({ activeId: session.current })
       }
-      await api.chat(session.current, text, c.signal, (e) => {
-        if (mounted.current) event(e)
-      })
+      await api.chat(
+        session.current,
+        text,
+        c.signal,
+        (e) => {
+          if (mounted.current) event(e)
+        },
+        mode
+      )
     } catch (e) {
       if (mounted.current)
         event({

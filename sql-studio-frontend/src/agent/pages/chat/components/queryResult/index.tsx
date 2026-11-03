@@ -5,6 +5,7 @@ import type { TableColumnsType } from 'antd'
 import { APPEARANCE } from '../../../../constant/appearance'
 import { isObject } from '../../../../utils/json'
 import { cellText, readResult } from '../../../../utils/queryResult'
+import { ExportExcel } from '../exportExcel'
 
 interface Row {
   key: number
@@ -30,7 +31,10 @@ export function QueryResult(props: Props) {
         }
       }}
     >
-      <ResultContent {...props} />
+      <div style={{ width: '100%', minWidth: 0 }}>
+        <ResultContent {...props} />
+        <ExportExcel value={props.value} title={props.title ?? '查询结果'} />
+      </div>
     </ConfigProvider>
   )
 }
@@ -44,6 +48,19 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
   )
   const result = readResult(value)
   if (isObject(value) && typeof value.error === 'string') return null
+  if (isObject(value) && value.isQuery === false)
+    return (
+      <Card size="small" title={cardTitle}>
+        <Descriptions
+          size="small"
+          column={1}
+          items={[
+            { key: 'affected', label: '影响行数', children: String(value.affectedRows ?? 0) },
+            { key: 'id', label: '新增ID', children: String(value.lastInsertId || '—') }
+          ]}
+        />
+      </Card>
+    )
   if (result) {
     const columns: TableColumnsType<Row> = [
       {

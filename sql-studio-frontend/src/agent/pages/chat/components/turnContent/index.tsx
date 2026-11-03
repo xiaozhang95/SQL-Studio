@@ -7,6 +7,7 @@ import type { Entry } from '../../../../typings/chat'
 import { chatErrors } from '../../../../utils/chatEvents'
 import { readSQL } from '../../../../utils/queryResult'
 import { CHAT } from '../../constant/chat'
+import { AnswerContent } from '../answerContent'
 import { ProcessCard } from '../processCard'
 import { QueryResult } from '../queryResult'
 import { RoundFooter } from '../roundFooter'
@@ -138,19 +139,23 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
               <Bubble
                 placement={user ? 'end' : 'start'}
                 variant={user ? 'filled' : 'borderless'}
-                styles={{ content: { padding: user ? token.paddingSM : 0, maxWidth: '100%' } }}
+                styles={{ root: { width: user ? undefined : '100%' }, content: { padding: user ? token.paddingSM : 0, maxWidth: '100%', width: user ? undefined : '100%' } }}
                 content={
-                  <Typography.Paragraph
-                    style={{
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
-                      margin: 0,
-                      maxWidth: '100%'
-                    }}
-                  >
-                    {e.text}
-                    {e.incomplete && <Typography.Text type="secondary">（未完成）</Typography.Text>}
-                  </Typography.Paragraph>
+                  !user ? (
+                    <AnswerContent text={e.text} />
+                  ) : (
+                    <Typography.Paragraph
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'anywhere',
+                        margin: 0,
+                        maxWidth: '100%'
+                      }}
+                    >
+                      {e.text}
+                      {e.incomplete && <Typography.Text type="secondary">（未完成）</Typography.Text>}
+                    </Typography.Paragraph>
+                  )
                 }
               />
               {user && (

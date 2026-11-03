@@ -2169,7 +2169,23 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "readonly",
+                      "write"
+                    ],
+                    "default": "readonly"
+                  }
+                }
               }
             }
           }
@@ -2356,6 +2372,55 @@
           },
           "503": {
             "description": "模块未装配"
+          }
+        }
+      }
+    },
+    "/agent/write-confirmation": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "确认或取消当前待执行数据库操作",
+        "operationId": "agent_post__agent_write_confirmation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "approvalId",
+                  "allow"
+                ],
+                "properties": {
+                  "approvalId": {
+                    "type": "string"
+                  },
+                  "allow": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收确认结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效、过期或已处理"
+          },
+          "403": {
+            "description": "本机同源校验失败"
           }
         }
       }

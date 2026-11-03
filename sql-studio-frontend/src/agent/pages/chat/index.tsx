@@ -13,6 +13,7 @@ import { Transcript } from './components/transcript'
 import { Welcome } from './components/welcome'
 import { CHAT } from './constant/chat'
 import { useChat } from './hooks/chat'
+import { useOperationMode } from './hooks/operationMode'
 import { useAISettings } from './hooks/settings'
 
 export function ChatPage({
@@ -28,7 +29,8 @@ export function ChatPage({
   themePreference: ThemePreference
   onBack: () => void
 }) {
-  const chat = useChat(workspace)
+  const operation = useOperationMode(workspace)
+  const chat = useChat(workspace, operation.mode)
   const ai = useAISettings()
   const { token } = theme.useToken()
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
@@ -143,6 +145,8 @@ export function ChatPage({
                   themeMode={dark ? 'dark' : 'light'}
                   trigger={(show) => (
                     <Composer
+                      mode={operation.mode}
+                      onModeChange={operation.change}
                       form={chat.form}
                       busy={chat.busy}
                       settingsBusy={ai.busy}

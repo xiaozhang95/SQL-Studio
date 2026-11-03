@@ -270,3 +270,30 @@ test('POST SSE解码支持UTF8分包，并拒绝没有done的断流', async () =
     globalThis.fetch = original
   }
 })
+
+test('Markdown回答转换为表格，精确字符串保留', async () => {
+  let source = await fs.readFile(new URL('../src/agent/utils/answerTables/index.ts', import.meta.url), 'utf8')
+  let result = await fs.readFile(new URL('../src/agent/utils/queryResult/index.ts', import.meta.url), 'utf8')
+  result = result
+    .replace(/import \{ isObject \} from ['"][^'"]+['"]/, 'function isObject(v: unknown): v is Record<string, unknown> { return v !== null && typeof v === "object" && !Array.isArray(v); }')
+    .replace(/export /g, '')
+  source = source.replace(/import \{ readResult \} from ['"][^'"]+['"]/, result)
+  const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
+  const { answerTables } = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'))
+  const parts = answerTables('数据库如下\n| 数据库 | 说明 |\n|---|---|\n| `demo` | 业务库 |\n| 9007199254740993 | NULL |\n说明')
+  assert.deepEqual(parts.find((p) => p.kind === 'table').value.rows, [
+    ['demo', '业务库'],
+    ['9007199254740993', 'NULL']
+  ])
+  assert.equal(parts.at(-1).text, '说明')
+  assert.deepEqual(answerTables('```sql\nSELECT 1;\n```'), [{ kind: 'code', language: 'sql', text: 'SELECT 1;' }])
+  assert.deepEqual(answerTables('```sql\nSELECT 1;'), [{ kind: 'code', language: 'sql', text: 'SELECT 1;' }])
+  assert.equal(
+    answerTables('```sql\n|a|b|\n|---|---|\n|1|2|\n```').some((p) => p.kind === 'table'),
+    false
+  )
+  assert.equal(
+    answerTables('```json\n{bad}\n```').some((p) => p.kind === 'table'),
+    false
+  )
+})

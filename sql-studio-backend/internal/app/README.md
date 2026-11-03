@@ -29,3 +29,5 @@ MariaDB 单独注册 mariadb.Client；该实例组合 MySQL 协议驱动，类�
 app 调用 webui.Register(router,cfg.WebDir)，用 Gin StaticFS/StaticFileFS 注册前端路由，NoRoute 只处理未知路径。`/api` 与 `/api/*` 的未知接口始终返回 JSON 404，不会落入静态目录。空 WebDir 按构建标签选择资源：embedded 使用编译进程序的 dist，普通开发构建读取前端 dist；显式 WebDir 覆盖默认资源。资源、目录与 HTTP 方法边界由 webui 管理。
 
 Agent在同一app装配；agentDatabase直接组合现有连接/元数据/共享query实例，无内部HTTP。agentCredentials从statefile的ai分区逐次读取。Agent从空记录开始，不读取独立项目数据，详见[Agent](../../../docs/AGENT.md)。
+
+Agent操作模式：POST /api/agent/chat 增加mode（readonly默认，write为完全访问模式，允许非删除数据及结构操作）。任何模式拒绝DELETE/DROP/TRUNCATE/REPLACE和DDL；删除仅提供命令及风险提示，不自动执行。刷新和往返工作台恢复上次确认的模式。支持单条INSERT/UPDATE/CREATE/ALTER/COMMENT及表达式和子查询；多语句、存储程序、动态SQL不执行，以防绕过删除限制；取消不保证回滚。查询回答提示生成真实二维JSON表格，前端校验后展示，支持导出当前已加载结果xlsx，截断明确提示。

@@ -14,10 +14,18 @@ func (h *agentHandler) stream(c *gin.Context) {
 	w, r := c.Writer, c.Request
 	var input struct {
 		SessionID string `json:"sessionId"`
+		Mode      string `json:"mode"`
 		Message   string `json:"message"`
 	}
 	if err := decodeLimit(c, &input, 32*1024); err != nil {
 		fail(c, err)
+		return
+	}
+	if input.Mode == "" {
+		input.Mode = "readonly"
+	}
+	if input.Mode != "readonly" && input.Mode != "write" {
+		fail(c, fmt.Errorf("无效操作模式"))
 		return
 	}
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
@@ -48,7 +56,7 @@ func (h *agentHandler) stream(c *gin.Context) {
 		}
 	}()
 	go func() {
-		done <- h.chat.Chat(ctx, input.SessionID, input.Message, func(e model.Event) error {
+		done <- h.chat.ChatMode(ctx, input.SessionID, input.Message, input.Mode, func(e model.Event) error {
 			select {
 			case events <- e:
 				return nil

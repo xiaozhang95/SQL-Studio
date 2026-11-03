@@ -47,3 +47,6 @@ DELETE /connection-groups 接收 {name:string}，调用 connections.DeleteGroup 
 /api/agent路由调用Agent、布局与共享settings公开方法；流式端点每10秒心跳并独立续期写截止时间，断开取消后等待最终保存完成。布局冲突409，普通请求32KiB，严格JSON/同源规则不变。
 
 POST /agent/sessions支持可选ensure=true，仅在空列表创建默认会话；PATCH /agent/sessions/:id接收{title}并返回索引信息，严格JSON、同源和32KiB限制沿用现有Agent路由。
+
+
+写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。等待仍受本轮总超时约束；恢复历史不重新弹出已过期确认。模式提示不替代逐次确认。
