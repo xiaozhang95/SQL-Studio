@@ -36,7 +36,7 @@ func (s *Service) loadLocked(ctx context.Context, id string) (*session, error) {
 		return nil, err
 	}
 	s.evictLocked()
-	v := &session{revision: r.Revision, title: r.Title, status: r.Status, events: r.Events, messages: r.Messages, summary: r.Summary, used: time.Now(), state: toolState{target: r.State.Target, connections: r.State.Connections, databases: r.State.Databases}}
+	v := &session{revision: r.Revision, title: r.Title, customTitle: r.CustomTitle, status: r.Status, events: r.Events, messages: r.Messages, summary: r.Summary, used: time.Now(), state: toolState{target: r.State.Target, connections: r.State.Connections, databases: r.State.Databases}}
 	if v.state.databases == nil {
 		v.state.databases = make(map[string][]string)
 	}
@@ -51,7 +51,7 @@ func (s *Service) saveLocked(ctx context.Context, id string, v *session) error {
 	if s.repo == nil {
 		return nil
 	}
-	r, err := s.repo.Save(ctx, model.Conversation{ID: id, Revision: v.revision, Title: v.title, Status: v.status, Messages: v.messages, Events: v.events, Summary: v.summary, State: model.DiscoveryState{Target: v.state.target, Connections: v.state.connections, Databases: v.state.databases}})
+	r, err := s.repo.Save(ctx, model.Conversation{ID: id, Revision: v.revision, Title: v.title, CustomTitle: v.customTitle, Status: v.status, Messages: v.messages, Events: v.events, Summary: v.summary, State: model.DiscoveryState{Target: v.state.target, Connections: v.state.connections, Databases: v.state.databases}})
 	if err != nil {
 		return err
 	}

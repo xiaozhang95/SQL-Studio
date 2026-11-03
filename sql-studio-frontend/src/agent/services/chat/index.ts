@@ -5,14 +5,18 @@ import { isObject } from '../../utils/json'
 async function json(path: string, init?: RequestInit): Promise<unknown> {
   const r = await fetch(path, init)
   const v: unknown = await r.json()
-  if (!r.ok) throw new Error(isObject(v) && typeof v.error === 'string' ? v.error : '本地会话请求失败')
+  if (!r.ok) {
+    const message = isObject(v) && typeof v.error === 'string' ? v.error : '本地会话请求失败'
+    if (message === 'json: unknown field "ensure"') throw new Error('当前运行的 Go 后端尚未更新，请停止旧进程，在 sql-studio-backend 目录重新运行 go run main.go，然后刷新页面。')
+    throw new Error(message)
+  }
   return v
 }
-export async function create(signal: AbortSignal): Promise<string> {
+export async function create(signal?: AbortSignal, ensure = false): Promise<string> {
   const v = await json('/api/agent/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: '{}',
+    body: JSON.stringify(ensure ? { ensure: true } : {}),
     signal
   })
   if (!isObject(v) || typeof v.id !== 'string') throw new Error('会话响应无效')
@@ -42,6 +46,17 @@ export async function view(id: string, signal: AbortSignal): Promise<{ events: C
 export async function remove(id: string) {
   await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
+export async function rename(id: string, title: string): Promise<ConversationInfo> {
+  return info(await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) }))
+}
+export async function ensureHistory(signal?: AbortSignal): Promise<ConversationInfo[]> {
+  let items = await list(signal)
+  if (items.length === 0) {
+    await create(signal, true)
+    items = await list(signal)
+  }
+  return items
+}
 const kinds = ['user', 'status', 'context', 'model_start', 'reasoning_delta', 'answer_delta', 'tool_start', 'tool_result', 'answer', 'usage', 'error', 'turn_end', 'done', 'heartbeat'] as const
 export function decodeEvent(v: unknown): ChatEvent {
   if (!isObject(v) || typeof v.type !== 'string') throw new Error('事件无效')
@@ -68,6 +83,7 @@ export function decodeEvent(v: unknown): ChatEvent {
   }
   return {
     type: kind,
+    createdAt: typeof v.createdAt === 'string' && Number.isFinite(Date.parse(v.createdAt)) ? v.createdAt : undefined,
     text: typeof v.text === 'string' ? v.text : undefined,
     tool: typeof v.tool === 'string' ? v.tool : undefined,
     arguments: typeof v.arguments === 'string' ? v.arguments : undefined,

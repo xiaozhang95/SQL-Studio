@@ -118,3 +118,37 @@ func TestMergedAgentDecodeAndNamespace(t *testing.T) {
 		t.Fatal("local protection missing")
 	}
 }
+
+func TestAgentEnsureAndRenameRoute(t *testing.T) {
+	services, _ := agentFixture(t, agentTestModel{})
+	router := New(services)
+	request := func(method, path, body string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(method, "http://127.0.0.1:8080/api/agent"+path, strings.NewReader(body)))
+		return w
+	}
+	first := request("POST", "/sessions", `{"ensure":true}`)
+	var created struct {
+		ID string `json:"id"`
+	}
+	if first.Code != 200 || json.Unmarshal(first.Body.Bytes(), &created) != nil || created.ID == "" {
+		t.Fatal(first.Code, first.Body.String())
+	}
+	again := request("POST", "/sessions", `{"ensure":true}`)
+	if again.Code != 200 || again.Body.String() != first.Body.String() {
+		t.Fatal("ensure created another record")
+	}
+	for _, body := range []string{`null`, `{"title":""}`, `{"title":"name","allowWrite":true}`, `{"title":"name"} {}`} {
+		if w := request("PATCH", "/sessions/"+created.ID, body); w.Code != 400 {
+			t.Fatal(body, w.Code)
+		}
+	}
+	renamed := request("PATCH", "/sessions/"+created.ID, `{"title":"我的会话"}`)
+	if renamed.Code != 200 || !strings.Contains(renamed.Body.String(), "我的会话") {
+		t.Fatal(renamed.Code, renamed.Body.String())
+	}
+	restored := request("GET", "/sessions/"+created.ID, "")
+	if restored.Code != 200 || !strings.Contains(restored.Body.String(), "我的会话") {
+		t.Fatal("rename not visible")
+	}
+}

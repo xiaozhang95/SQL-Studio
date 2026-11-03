@@ -1,4 +1,17 @@
 import type { ChatEvent, Entry } from '../../typings/chat'
+import { isObject } from '../json'
+
+export function chatErrors(entries: Entry[]): string[] {
+  return [
+    ...new Set(
+      entries.flatMap((entry) => {
+        if (entry.role === 'error') return [entry.text]
+        if (entry.role === 'tool' && isObject(entry.result) && typeof entry.result.error === 'string') return [entry.result.error]
+        return []
+      })
+    )
+  ]
+}
 
 export function applyEvent(entries: Entry[], event: ChatEvent): Entry[] {
   let next = entries.map((e) => ({ ...e }))
@@ -10,7 +23,7 @@ export function applyEvent(entries: Entry[], event: ChatEvent): Entry[] {
       text,
       ...extra
     })
-  if (event.type === 'user') add('user', event.text ?? '')
+  if (event.type === 'user') add('user', event.text ?? '', { createdAt: event.createdAt })
   if (event.type === 'model_start' || event.type === 'turn_end' || event.type === 'done') next = next.map((e) => ({ ...e, streaming: false }))
   if (event.type === 'reasoning_delta' || event.type === 'answer_delta') {
     const role = event.type === 'reasoning_delta' ? 'thinking' : 'assistant'
@@ -40,7 +53,7 @@ export function applyEvent(entries: Entry[], event: ChatEvent): Entry[] {
   }
   if (event.type === 'error') {
     next = next.map((e) => (e.streaming ? { ...e, streaming: false, incomplete: true } : e))
-    add('assistant', `本轮未完成：${event.text ?? '请求失败'}`, {
+    add('error', `本轮未完成：${event.text ?? '请求失败'}`, {
       incomplete: true
     })
   }

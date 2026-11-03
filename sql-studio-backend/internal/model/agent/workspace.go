@@ -23,15 +23,16 @@ type DiscoveryState struct {
 	Databases   map[string][]string `json:"databases"`
 }
 type Conversation struct {
-	ID        string         `json:"id"`
-	Revision  uint64         `json:"revision"`
-	Title     string         `json:"title"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	Status    string         `json:"status"`
-	Messages  []Message      `json:"messages"`
-	Events    []Event        `json:"events"`
-	State     DiscoveryState `json:"state"`
-	Summary   ContextSummary `json:"summary"`
+	ID          string         `json:"id"`
+	Revision    uint64         `json:"revision"`
+	Title       string         `json:"title"`
+	CustomTitle bool           `json:"customTitle,omitempty"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	Status      string         `json:"status"`
+	Messages    []Message      `json:"messages"`
+	Events      []Event        `json:"events"`
+	State       DiscoveryState `json:"state"`
+	Summary     ContextSummary `json:"summary"`
 }
 type ConversationInfo struct {
 	ID        string    `json:"id"`

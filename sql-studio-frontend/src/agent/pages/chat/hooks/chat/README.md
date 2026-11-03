@@ -1,7 +1,9 @@
-# useChat
+# 会话生命周期
 
-useChat(workspace)拥有消息Form、SSE事件、当前会话、历史Drawer和取消。启动按Go布局恢复activeId与草稿，读取历史不调用模型/数据库。send首条按需创建本地会话，流事件经applyEvent生成思考、回答与工具记录；失败保留片段。新对话只切换到空对话，不删除旧记录。历史按需读取索引、选择时加载完整事件。
+useChat(workspace)管理Form、SSE、历史列表与创建/删除/重命名。初始化先ensureHistory，空列表由后端原子创建默认会话，优先恢复activeId，否则选中首条，再只读加载事件。createNew立即创建、刷新索引并选中，不等待首条消息。删除当前会话选中剩余首条，删除最后一条自动确保新的默认会话；删除其他会话保留当前内容和草稿。
 
-草稿通过onDraftChange交给workspace保存；展开状态与主题由workspace持有。deleteHistory调用删除API，删除当前会话时清空消息、草稿、展开键与activeId；删除其他会话保留当前内容。执行、加载或删除期间禁止历史切换/新建/删除与重复发送。卸载取消请求。读取失败显示错误，不自动覆盖磁盘。
+renameHistory只替换索引信息，不改变当前消息/草稿/展开状态；服务端保存手动命名。mutation ref阻止重复点击，historyVersion丢弃跨变更的旧列表响应。错误显示并保留已有内容，创建/选择/删除/重命名期间禁止重复变更；卸载取消流和初始化请求，StrictMode不会重复创建默认项。
 
-左侧列表在布局加载后读取，并在每轮结束刷新；refreshHistory显式刷新，historyLoading控制反馈。桌面常驻列表，窄屏通过historyOpen管理左抽屉。
+恢复不执行模型或SQL；SSE经applyEvent还原，取消保留已输出片段。草稿与展开状态交给workspace保存，历史折叠抽屉由historyOpen控制。
+
+editQuestion(text)将已有问题回填当前输入框、同步本机草稿并聚焦；执行或管理会话中不回填。由用户修改并再次发送，不改写原问题。

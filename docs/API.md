@@ -89,9 +89,10 @@ DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],co
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/agent/sessions` | 会话索引 |
-| POST | `/agent/sessions` | 创建会话 |
+| POST | `/agent/sessions` | 创建会话，{ensure:true}仅在空列表原子创建默认会话 |
 | GET | `/agent/sessions/{id}` | 恢复事件 |
 | DELETE | `/agent/sessions/{id}` | 删除空闲会话 |
+| PATCH | `/agent/sessions/{id}` | {title}重命名空闲会话，返回更新后的索引信息 |
 | POST | `/agent/chat` | SSE思考、工具与回答 |
 | GET | `/agent/workspace` | 恢复Agent布局 |
 | PUT | `/agent/workspace` | CAS保存Agent布局 |
@@ -100,3 +101,5 @@ DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],co
 | DELETE | `/agent/settings` | 清除共享DeepSeek配置 |
 
 同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与SQL续写共用ai分区，空Key保留已有值。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。
+
+会话重命名去除首尾空白，限1–80字符且不含控制字符；手动命名持久保存，不再用首条消息覆盖。首次空历史及删除最后一条后，前端调用ensure创建并选中默认“新建会话”，不执行模型或数据库工具。

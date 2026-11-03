@@ -30,13 +30,13 @@
 
 操作文案采用简短动作：预览、复制、运行选中内容、转储文件；语句结果提示使用“执行语句”，文件格式与技术错误说明按需保留 SQL。
 
-- [saveStatus](saveStatus/README.md)：配置恢复、保存、成功与失败状态。
+- [saveStatus](../../../components/saveStatus/README.md)：配置恢复、保存、成功与失败状态。
 
-- [AI 配置](aiSettings/README.md)：顶部模型与 API Key 弹窗。
+- [AI 配置](../../../components/aiSettings/README.md)：顶部模型与 API Key 弹窗。
 
 - [SQL 优化预览](sqlOptimization/README.md)：原文、建议和说明。
 
-- [AI 服务商图标](aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
+- [AI 服务商图标](../../../components/aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
 
 - [dataExport](dataExport/README.md)：转储摘要、实时日志、进度及取消弹框。
 

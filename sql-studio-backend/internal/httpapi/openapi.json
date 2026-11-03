@@ -1917,7 +1917,7 @@
         "tags": [
           "Agent"
         ],
-        "summary": "创建会话",
+        "summary": "创建会话；ensure=true时仅在空列表创建",
         "operationId": "agent_post__agent_sessions",
         "parameters": [],
         "responses": {
@@ -1949,7 +1949,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "ensure": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "空列表原子创建默认会话，有会话时返回已有ID"
+                  }
+                }
               }
             }
           }
@@ -2038,6 +2046,88 @@
           },
           "503": {
             "description": "模块未装配"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "重命名空闲会话并保存",
+        "operationId": "agentRenameSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{48}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "description": "去除首尾空白，拒绝空白或控制字符"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新后的会话索引信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "名称无效或会话正在执行"
+          },
+          "403": {
+            "description": "本机同源保护"
+          },
+          "404": {
+            "description": "会话不存在"
+          },
+          "409": {
+            "description": "修订冲突"
           }
         }
       }

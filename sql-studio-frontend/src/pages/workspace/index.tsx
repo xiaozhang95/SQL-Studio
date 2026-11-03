@@ -1,9 +1,11 @@
 import { CodeOutlined, CommentOutlined, MoonOutlined, PlusOutlined, SunOutlined } from '@ant-design/icons'
 import { Alert, Button, Divider, Empty, Select, Spin } from 'antd'
 
+import AISettings from '@/components/aiSettings'
+import PageHeader from '@/components/pageHeader'
+import SaveStatus from '@/components/saveStatus'
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
-import AISettings from './components/aiSettings'
 import ConnectionGroupModal from './components/connectionGroupModal'
 import ConnectionModal from './components/connectionModal'
 import ConnectionSidebar from './components/connectionSidebar'
@@ -12,7 +14,6 @@ import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
-import SaveStatus from './components/saveStatus'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
 import { useSidebarResize } from './hooks/useSidebarResize'
@@ -38,62 +39,52 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
       className="app-shell"
       style={{ height: '100dvh', minWidth: 900, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--layout)' }}
     >
-      <header
-        className="topbar"
-        style={{
-          minHeight: 56,
-          flex: 'none',
-          padding: '0 var(--workspace-inset)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--surface)',
-          borderBottom: '1px solid var(--border)',
-          userSelect: 'none'
-        }}
+      <PageHeader
+        actions={
+          <>
+            {' '}
+            <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />
+            <Select
+              aria-label="界面主题"
+              placeholder="选择界面主题"
+              disabled={!themeReady}
+              className="theme-select"
+              value={themePreference}
+              onChange={onThemeChange}
+              prefix={themeMode === 'dark' ? <MoonOutlined /> : <SunOutlined />}
+              options={[
+                { value: 'system', label: '跟随系统' },
+                { value: 'light', label: '亮色模式' },
+                { value: 'dark', label: '暗黑模式' }
+              ]}
+              style={{ width: 144 }}
+            />
+          </>
+        }
       >
-        <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)' }}>
-          <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              disabled={model.running || !model.workspaceReady}
-              onClick={() => {
-                model.setEditing(undefined)
-                model.setConnectionModal(true)
-              }}
-            >
-              新建连接
-            </Button>
-            <Button icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
-              新建查询
-            </Button>
-          </div>
-          <Divider orientation="vertical" style={{ margin: 0 }} />
-          <AISettings themeMode={themeMode} />
-          <Button icon={<CommentOutlined />} onClick={onOpenAgent}>
-            Agent
+        {' '}
+        <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            disabled={model.running || !model.workspaceReady}
+            onClick={() => {
+              model.setEditing(undefined)
+              model.setConnectionModal(true)
+            }}
+          >
+            新建连接
+          </Button>
+          <Button icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
+            新建查询
           </Button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />
-          <Select
-            aria-label="界面主题"
-            placeholder="选择界面主题"
-            disabled={!themeReady}
-            className="theme-select"
-            value={themePreference}
-            onChange={onThemeChange}
-            prefix={themeMode === 'dark' ? <MoonOutlined /> : <SunOutlined />}
-            options={[
-              { value: 'system', label: '跟随系统' },
-              { value: 'light', label: '亮色模式' },
-              { value: 'dark', label: '暗黑模式' }
-            ]}
-            style={{ width: 144 }}
-          />
-        </div>
-      </header>
+        <Divider orientation="vertical" style={{ margin: 0 }} />
+        <AISettings themeMode={themeMode} />
+        <Button icon={<CommentOutlined />} onClick={onOpenAgent}>
+          Agent
+        </Button>
+      </PageHeader>
       {noticeError && (
         <Alert
           key={noticeError}

@@ -6,3 +6,5 @@
 
 - [queryResult](queryResult/README.md)：二维结果校验、精确值展示和SQL提取。
 - [inputSubmission](inputSubmission/README.md)：Enter发送及IME保护。
+
+- [conversationRounds](conversationRounds/README.md)：对话轮次分组与导航摘要。

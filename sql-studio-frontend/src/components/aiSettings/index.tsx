@@ -1,19 +1,24 @@
 import { ReloadOutlined } from '@ant-design/icons'
 import { Alert, Button, Form, Input, Modal, Select, Space, Switch } from 'antd'
+import type { ReactNode } from 'react'
 
 import { getAIAdapter } from '@/ai'
+import { useAISettings } from '@/hooks/useAISettings'
 import type { ThemeMode } from '@/typings/theme'
 
-import { useAISettings } from '../../hooks/useAISettings'
 import AIProviderIcon from '../aiProviderIcon'
 
-export default function AISettings({ themeMode }: { themeMode: ThemeMode }) {
+export default function AISettings({ themeMode, trigger }: { themeMode: ThemeMode; trigger?: (show: () => Promise<void>) => ReactNode }) {
   const model = useAISettings()
   return (
     <>
-      <Button icon={<AIProviderIcon provider={model.provider} themeMode={themeMode} />} onClick={() => void model.show()}>
-        {getAIAdapter(model.provider).profile.label}
-      </Button>
+      {trigger ? (
+        trigger(model.show)
+      ) : (
+        <Button icon={<AIProviderIcon provider={model.provider} themeMode={themeMode} />} onClick={() => void model.show()}>
+          {getAIAdapter(model.provider).profile.label}
+        </Button>
+      )}
       <Modal
         title="DeepSeek 配置"
         open={model.open}

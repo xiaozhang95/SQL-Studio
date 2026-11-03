@@ -82,8 +82,8 @@ func (c *Client) Generate(ctx context.Context, messages []model.Message, tools [
 }
 func validate(m model.Message, finish string) (model.Message, error) {
 	var zero model.Message
-	if m.Role != "assistant" || len(m.ToolCalls) > 4 {
-		return zero, errors.New("DeepSeek 消息或工具数量无效")
+	if m.Role != "assistant" {
+		return zero, errors.New("DeepSeek 消息角色无效")
 	}
 	if len(m.ToolCalls) > 0 {
 		if finish != "tool_calls" {

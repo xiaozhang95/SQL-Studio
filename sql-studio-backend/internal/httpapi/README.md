@@ -45,3 +45,5 @@ GET/PUT /workspace 和 GET /workspace/parts/:id 调用独立workspace模块。GE
 DELETE /connection-groups 接收 {name:string}，调用 connections.DeleteGroup 并返回 GroupState；沿用单 JSON、未知字段、同源限制及 400/404 错误映射。
 
 /api/agent路由调用Agent、布局与共享settings公开方法；流式端点每10秒心跳并独立续期写截止时间，断开取消后等待最终保存完成。布局冲突409，普通请求32KiB，严格JSON/同源规则不变。
+
+POST /agent/sessions支持可选ensure=true，仅在空列表创建默认会话；PATCH /agent/sessions/:id接收{title}并返回索引信息，严格JSON、同源和32KiB限制沿用现有Agent路由。

@@ -1,5 +1,3 @@
-# useAISettings
+# Agent模型状态
 
-管理模型配置读取、Modal开关、受控Form、保存/清除、busy/error/notice。初始化GET可取消；show将Key清空并填充已保存模型，close/save成功重置敏感输入。已有配置留空保留Key，clear使聊天回到待配置状态。保存反馈只表示本机持久化成功，不进行付费模型测试。无浏览器持久化。
-
-模型选项来自status.models，用户可选DeepSeek Flash/Pro；底部chooseModel使用空Key提交已有模型配置，保留已存Key，成功后更新选中项；清除Key后保留模型选择。
+useAISettings只管理status/busy/error/notice和chooseModel，不管理Key或弹窗。订阅共享ai-settings-saved、窗口focus及页面重新可见事件，从同一ai分区刷新脱敏状态；新请求取消旧请求，迟到或卸载响应不覆盖。chooseModel用空Key更新模型，保留workspace已保存Key，完成广播共享配置事件。配置表单直接复用公共AISettings及useAISettings，不另建Agent Key配置。

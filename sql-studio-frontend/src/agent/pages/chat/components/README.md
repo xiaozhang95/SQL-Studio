@@ -4,9 +4,13 @@
 - [transcript](transcript/README.md)：纯文本消息与操作详情。
 - [queryResult](queryResult/README.md)：结果表格与元数据展示。
 
-- [settings](settings/README.md)：模型设置弹窗。
 - [welcome](welcome/README.md)：欢迎区和示例问题。
 
 - [history](history/README.md)：本地对话历史。
 - [deepseekLogo](deepseekLogo/README.md)：官方蓝鲸标志。
 - [processCard](processCard/README.md)：可折叠、隐藏的过程卡片。
+
+- [roundFooter](roundFooter/README.md)：每轮回答底部的操作和状态。
+
+- [turnContent](turnContent/README.md)：单轮消息、过程、结果和错误。
+- [roundNavigation](roundNavigation/README.md)：问题刻度预览和完整问题列表。

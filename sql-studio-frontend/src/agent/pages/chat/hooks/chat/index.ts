@@ -12,8 +12,10 @@ export function useChat(workspace: WorkspaceController) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
-  const [loading, setLoading] = useState(Boolean(workspace.state.activeId))
-  const [deleting, setDeleting] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [managing, setManaging] = useState(false)
+  const mutation = useRef(false)
+  const historyVersion = useRef(0)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [history, setHistory] = useState<ConversationInfo[]>([])
@@ -23,7 +25,6 @@ export function useChat(workspace: WorkspaceController) {
   const session = useRef('')
   const active = useRef<AbortController | null>(null)
   const mounted = useRef(true)
-  const loaded = useRef(false)
   const latestWorkspace = useRef(workspace)
   const initialState = useRef(workspace.state)
   useLayoutEffect(() => {
@@ -37,49 +38,36 @@ export function useChat(workspace: WorkspaceController) {
     }
   }, [])
   useEffect(() => {
-    if (!workspace.ready || loaded.current) return
-    loaded.current = true
-    const c = new AbortController()
-    session.current = initialState.current.activeId
-    form.setFieldsValue({ question: initialState.current.draft })
-    if (session.current) {
-      api
-        .view(session.current, c.signal)
-        .then((v) => {
-          if (c.signal.aborted) return
-          setEntries(v.events.reduce(applyEvent, []))
-          const lastUsage = [...v.events].reverse().find((e) => e.usage)?.usage
-          setUsage(lastUsage ?? null)
-          if (v.busy) setError('该对话正在另一个窗口执行，待完成后重新打开历史记录。')
-        })
-        .catch((e: Error) => {
-          if (!c.signal.aborted) setError(e.message)
-        })
-        .finally(() => {
-          if (!c.signal.aborted) setLoading(false)
-        })
-    }
-    return () => {
-      c.abort()
-      loaded.current = false
-    }
-  }, [workspace.ready, form])
-  useEffect(() => {
     if (!workspace.ready) return
     const c = new AbortController()
-    api
-      .list(c.signal)
-      .then((v) => {
-        if (!c.signal.aborted) setHistory(v)
-      })
-      .catch((e: Error) => {
-        if (!c.signal.aborted) setError(e.message)
-      })
-      .finally(() => {
-        if (!c.signal.aborted) setHistoryLoading(false)
-      })
+    async function initialize() {
+      try {
+        const items = await api.ensureHistory(c.signal)
+        const initial = initialState.current
+        const selected = items.find((i) => i.id === initial.activeId)?.id ?? items[0]?.id
+        if (!selected) throw new Error('无法创建默认会话')
+        const view = await api.view(selected, c.signal)
+        if (c.signal.aborted) return
+        setHistory(items)
+        session.current = selected
+        setEntries(view.events.reduce(applyEvent, []))
+        setUsage([...view.events].reverse().find((e) => e.usage)?.usage ?? null)
+        const same = !initial.activeId || initial.activeId === selected
+        form.setFieldsValue({ question: same ? initial.draft : '' })
+        latestWorkspace.current.update({ activeId: selected, draft: same ? initial.draft : '', expanded: same ? initial.expanded : [] })
+        if (view.busy) setError('该对话正在另一个窗口执行，待完成后重新打开历史记录。')
+      } catch (cause) {
+        if (!c.signal.aborted) setError(cause instanceof Error ? cause.message : '读取会话失败')
+      } finally {
+        if (!c.signal.aborted) {
+          setLoading(false)
+          setHistoryLoading(false)
+        }
+      }
+    }
+    void initialize()
     return () => c.abort()
-  }, [workspace.ready])
+  }, [workspace.ready, form])
   function event(e: ChatEvent) {
     setEntries((old) => applyEvent(old, e))
     if (e.type === 'status') setStatus(e.text ?? '')
@@ -91,41 +79,86 @@ export function useChat(workspace: WorkspaceController) {
         estimatedTokens: u.estimatedTokens ?? old?.estimatedTokens
       }))
   }
-  function resetConversation() {
-    session.current = ''
-    setEntries([])
+  function activate(id: string, events: ChatEvent[] = []) {
+    session.current = id
+    setEntries(events.reduce(applyEvent, []))
+    setUsage([...events].reverse().find((e) => e.usage)?.usage ?? null)
     setError('')
-    setUsage(null)
     setStatus('')
     form.resetFields()
-    latestWorkspace.current.update({ activeId: '', draft: '', expanded: [] })
+    latestWorkspace.current.update({ activeId: id, draft: '', expanded: [] })
   }
-  function clear() {
-    if (active.current || loading || deleting) return
-    resetConversation()
+  async function createNew() {
+    if (active.current || loading || mutation.current) return
+    mutation.current = true
+    historyVersion.current++
+    setManaging(true)
+    setError('')
+    try {
+      const id = await api.create()
+      const items = await api.list()
+      if (!mounted.current) return
+      setHistory(items)
+      activate(id)
+      setHistoryOpen(false)
+    } catch (cause) {
+      if (mounted.current) setError(cause instanceof Error ? cause.message : '新建会话失败')
+    } finally {
+      mutation.current = false
+      if (mounted.current) setManaging(false)
+    }
   }
   async function deleteHistory(id: string) {
-    if (active.current || loading || deleting) return
-    setDeleting(true)
+    if (active.current || loading || mutation.current) return
+    mutation.current = true
+    historyVersion.current++
+    setManaging(true)
     setError('')
     try {
       await api.remove(id)
-      setHistory((old) => old.filter((i) => i.id !== id))
-      if (session.current === id) resetConversation()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '删除会话失败')
-      throw e
+      const items = await api.ensureHistory()
+      const selected = items.find((i) => i.id === session.current)?.id ?? items[0]?.id
+      if (!selected) throw new Error('无法恢复会话列表')
+      const next = session.current !== selected ? await api.view(selected, new AbortController().signal) : null
+      if (!mounted.current) return
+      setHistory(items)
+      if (next) activate(selected, next.events)
+    } catch (cause) {
+      if (mounted.current) setError(cause instanceof Error ? cause.message : '删除会话失败')
+      throw cause
     } finally {
-      setDeleting(false)
+      mutation.current = false
+      if (mounted.current) setManaging(false)
+    }
+  }
+  async function renameHistory(id: string, title: string) {
+    if (active.current || loading || mutation.current) throw new Error('请等待当前操作完成')
+    mutation.current = true
+    historyVersion.current++
+    setManaging(true)
+    try {
+      const renamed = await api.rename(id, title)
+      if (mounted.current) setHistory((old) => old.map((item) => (item.id === id ? renamed : item)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
+    } finally {
+      mutation.current = false
+      if (mounted.current) setManaging(false)
     }
   }
   async function refreshHistory() {
+    if (mutation.current) return
+    const version = historyVersion.current
+    const previous = session.current
     setHistoryLoading(true)
     try {
-      const items = await api.list()
-      if (mounted.current) setHistory(items)
-    } catch (e) {
-      if (mounted.current) setError(e instanceof Error ? e.message : '读取历史失败')
+      const items = await api.ensureHistory()
+      if (!mounted.current || version !== historyVersion.current || previous !== session.current) return
+      setHistory(items)
+      if (!items.some((item) => item.id === session.current) && items[0]) {
+        const view = await api.view(items[0].id, new AbortController().signal)
+        if (mounted.current && version === historyVersion.current && previous === session.current) activate(items[0].id, view.events)
+      }
+    } catch (cause) {
+      if (mounted.current) setError(cause instanceof Error ? cause.message : '读取历史失败')
     } finally {
       if (mounted.current) setHistoryLoading(false)
     }
@@ -135,7 +168,7 @@ export function useChat(workspace: WorkspaceController) {
     void refreshHistory()
   }
   async function selectHistory(id: string) {
-    if (active.current || loading || deleting) return
+    if (active.current || loading || mutation.current) return
     const c = new AbortController()
     setLoading(true)
     setError('')
@@ -158,12 +191,12 @@ export function useChat(workspace: WorkspaceController) {
     }
   }
   async function send({ question: text }: { question: string }) {
-    if (active.current || loading || deleting || !workspace.ready || !text.trim()) return
+    if (active.current || loading || mutation.current || !workspace.ready || !text.trim()) return
     const c = new AbortController()
     active.current = c
     setBusy(true)
     setError('')
-    setEntries((old) => applyEvent(old, { type: 'user', text }))
+    setEntries((old) => applyEvent(old, { type: 'user', text, createdAt: new Date().toISOString() }))
     form.resetFields()
     workspace.update({ draft: '' })
     try {
@@ -190,15 +223,22 @@ export function useChat(workspace: WorkspaceController) {
     }
   }
   return {
+    editQuestion: (text: string) => {
+      if (active.current || loading || mutation.current) return
+      form.setFieldValue('question', text)
+      latestWorkspace.current.update({ draft: text })
+      form.scrollToField('question', { focus: true })
+    },
     entries,
     status,
-    busy: busy || loading || deleting,
+    busy: busy || loading || managing,
     deleteHistory,
     loading,
     error,
     usage,
     form,
-    clear,
+    createNew,
+    renameHistory,
     send,
     stop: () => active.current?.abort(),
     historyOpen,

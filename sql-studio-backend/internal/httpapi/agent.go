@@ -33,14 +33,34 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 	})
 	a.GET("/sessions", func(c *gin.Context) { v, e := s.Agent.List(c.Request.Context()); agentResponse(c, v, e) })
 	a.POST("/sessions", func(c *gin.Context) {
-		if e := decodeLimit(c, &struct{}{}, 32*1024); e != nil {
+		var input struct {
+			Ensure bool `json:"ensure"`
+		}
+		if e := decodeLimit(c, &input, 32*1024); e != nil {
 			fail(c, e)
 			return
 		}
-		v, e := s.Agent.Create(c.Request.Context())
+		var v string
+		var e error
+		if input.Ensure {
+			v, e = s.Agent.Ensure(c.Request.Context())
+		} else {
+			v, e = s.Agent.Create(c.Request.Context())
+		}
 		agentResponse(c, gin.H{"id": v}, e)
 	})
 	a.GET("/sessions/:id", func(c *gin.Context) { v, e := s.Agent.View(c.Request.Context(), c.Param("id")); agentResponse(c, v, e) })
+	a.PATCH("/sessions/:id", func(c *gin.Context) {
+		var input struct {
+			Title string `json:"title"`
+		}
+		if err := decodeLimit(c, &input, 32*1024); err != nil {
+			fail(c, err)
+			return
+		}
+		v, err := s.Agent.Rename(c.Request.Context(), c.Param("id"), input.Title)
+		agentResponse(c, v, err)
+	})
 	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Param("id"))) })
 	a.POST("/chat", (&agentHandler{s.Agent}).stream)
 	a.GET("/workspace", func(c *gin.Context) { v, e := s.AgentLayout.Read(c.Request.Context()); agentResponse(c, v, e) })

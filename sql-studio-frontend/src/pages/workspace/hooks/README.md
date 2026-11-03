@@ -21,7 +21,7 @@
 
 - [useDataEditing](useDataEditing/README.md)：表数据单元格显式保存、主键和原值冲突校验。
 
-- [useAISettings](useAISettings/README.md)：读取与保存 AI 配置。
+- [useAISettings](../../../hooks/useAISettings/README.md)：读取与保存 AI 配置。
 
 - [useAISQL](useAISQL/README.md)：AI 续写扩展、优化请求和应用。
 

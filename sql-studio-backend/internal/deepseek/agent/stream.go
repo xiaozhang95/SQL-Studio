@@ -139,8 +139,8 @@ func parseStream(ctx context.Context, reader io.Reader, emit func(model.Event) e
 			}
 		}
 		for _, part := range d.Calls {
-			if part.Index < 0 || part.Index > 3 {
-				return model.Message{}, errors.New("工具调用数量超限")
+			if part.Index < 0 {
+				return model.Message{}, errors.New("工具调用索引无效")
 			}
 			if part.Index > len(m.ToolCalls) {
 				return model.Message{}, errors.New("工具片段顺序无效")

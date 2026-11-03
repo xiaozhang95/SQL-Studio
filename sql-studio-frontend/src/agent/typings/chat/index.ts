@@ -5,6 +5,7 @@ export interface TokenUsage {
   window: number
 }
 export interface ChatEvent {
+  createdAt?: string
   type: 'user' | 'status' | 'context' | 'model_start' | 'reasoning_delta' | 'answer_delta' | 'tool_start' | 'tool_result' | 'answer' | 'usage' | 'error' | 'turn_end' | 'done' | 'heartbeat'
   text?: string
   tool?: string
@@ -13,8 +14,9 @@ export interface ChatEvent {
   usage?: TokenUsage
 }
 export interface Entry {
+  createdAt?: string
   id: number
-  role: 'user' | 'assistant' | 'tool' | 'thinking'
+  role: 'user' | 'assistant' | 'tool' | 'thinking' | 'error'
   text: string
   result?: unknown
   tool?: string

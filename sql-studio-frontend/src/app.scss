@@ -440,3 +440,20 @@ body {
     display: inline-flex;
   }
 }
+.agent-header-title { --header-title-offset: 116px; }
+@media (max-width: 760px) { .agent-header-title { --header-title-offset: 0px; } }
+.agent-conversation-column .chat-scroll { scrollbar-width: none; }
+.agent-conversation-column .chat-scroll::-webkit-scrollbar { width: 0; }
+.chat-round-navigation { inset-inline-start: 232px; }
+@media (max-width: 760px) { .chat-round-navigation { inset-inline-start: 0; } }
+
+/* Question navigation hover and keyboard focus retain a clear click target. */
+.chat-round-marker { cursor: pointer; }
+.chat-round-marker span {
+  transition: width var(--ant-motion-duration-mid, 0.2s) var(--ant-motion-ease-in-out, ease-in-out), background-color var(--ant-motion-duration-mid, 0.2s) var(--ant-motion-ease-in-out, ease-in-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-round-marker span { transition: none; }
+}
+.chat-round-marker:hover span, .chat-round-marker:focus-visible span { width: 22px !important; background: var(--ant-color-primary) !important; }
+.chat-round-marker:focus-visible { outline: 1px solid var(--ant-color-primary); outline-offset: 2px; }

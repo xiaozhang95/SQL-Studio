@@ -26,6 +26,30 @@ func (d *fakeDB) Execute(_ context.Context, target model.Target, _, _, _ string)
 
 type generatorFunc func(context.Context, []model.Message, []model.Tool) (model.Message, error)
 
+func TestChatContinuesBeyondFormerCallAndRoundLimits(t *testing.T) {
+	steps, executed := 0, 0
+	s := New(generatorFunc(func(context.Context, []model.Message, []model.Tool) (model.Message, error) {
+		steps++
+		if steps <= 20 {
+			return call("list_connections", `{}`), nil
+		}
+		return model.Message{Role: "assistant", Content: "完成"}, nil
+	}), &fakeDB{})
+	id, err := s.Create(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.Chat(context.Background(), id, "检查连接", func(e model.Event) error {
+		if e.Type == "tool_result" {
+			executed++
+		}
+		return nil
+	})
+	if err != nil || executed != 20 || steps != 21 {
+		t.Fatal(steps, executed, err)
+	}
+}
+
 func (f generatorFunc) Generate(ctx context.Context, m []model.Message, t []model.Tool) (model.Message, error) {
 	return f(ctx, m, t)
 }

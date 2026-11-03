@@ -6,21 +6,25 @@ import (
 	"encoding/hex"
 	"errors"
 	"sql-studio-backend/internal/model/agent"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 type session struct {
-	revision   uint64
-	title      string
-	status     string
-	events     []model.Event
-	summary    model.ContextSummary
-	checkpoint time.Time
-	state      toolState
-	messages   []model.Message
-	busy       bool
-	used       time.Time
+	revision    uint64
+	title       string
+	customTitle bool
+	status      string
+	events      []model.Event
+	summary     model.ContextSummary
+	checkpoint  time.Time
+	state       toolState
+	messages    []model.Message
+	busy        bool
+	used        time.Time
 }
 type toolState struct {
 	target      model.Target
@@ -55,6 +59,34 @@ func New(g Generator, db Database, repositories ...Repository) *Service {
 
 // Create starts an unbound conversation without accessing a database.
 func (s *Service) Create(ctx context.Context) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.createLocked(ctx)
+}
+
+// Ensure creates only when the persistent index is empty, including concurrent callers.
+func (s *Service) Ensure(ctx context.Context) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if s.repo != nil {
+		items, err := s.repo.List(ctx)
+		if err != nil {
+			return "", err
+		}
+		if len(items) > 0 {
+			return items[0].ID, nil
+		}
+	} else {
+		for id := range s.sessions {
+			return id, nil
+		}
+	}
+	return s.createLocked(ctx)
+}
+func (s *Service) createLocked(ctx context.Context) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
@@ -63,15 +95,36 @@ func (s *Service) Create(ctx context.Context) (string, error) {
 		return "", err
 	}
 	id := hex.EncodeToString(token[:])
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.evictLocked()
-	s.sessions[id] = &session{state: toolState{databases: make(map[string][]string)}, messages: []model.Message{{Role: "system", Content: systemPrompt()}}, used: time.Now(), title: "新对话", status: "idle"}
+	s.sessions[id] = &session{state: toolState{databases: make(map[string][]string)}, messages: []model.Message{{Role: "system", Content: systemPrompt()}}, used: time.Now(), title: "新建会话", status: "idle"}
 	if err := s.saveLocked(ctx, id, s.sessions[id]); err != nil {
 		delete(s.sessions, id)
 		return "", err
 	}
 	return id, nil
+}
+
+func (s *Service) Rename(ctx context.Context, id, title string) (model.ConversationInfo, error) {
+	title = strings.TrimSpace(title)
+	if title == "" || utf8.RuneCountInString(title) > 80 || strings.IndexFunc(title, unicode.IsControl) >= 0 {
+		return model.ConversationInfo{}, errors.New("会话名称须为1到80个字符，不能包含换行或控制字符")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	v, err := s.loadLocked(ctx, id)
+	if err != nil {
+		return model.ConversationInfo{}, err
+	}
+	if v.busy {
+		return model.ConversationInfo{}, errors.New("请先停止当前请求再重命名")
+	}
+	oldTitle, oldCustom := v.title, v.customTitle
+	v.title, v.customTitle = title, true
+	if err = s.saveLocked(ctx, id, v); err != nil {
+		v.title, v.customTitle = oldTitle, oldCustom
+		return model.ConversationInfo{}, err
+	}
+	return info(id, v), nil
 }
 func (s *Service) Delete(id string) error {
 	s.mu.Lock()

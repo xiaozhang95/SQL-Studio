@@ -22,7 +22,7 @@ export function QueryResult(props: Props) {
     <ConfigProvider
       theme={{
         components: {
-          Card: { headerBg: token.colorPrimaryBg },
+          Card: { headerBg: token.colorFillAlter },
           Table: {
             headerColor: token.colorText,
             rowHoverBg: token.colorPrimaryBg
@@ -43,7 +43,7 @@ function ResultContent({ value, sql, title = '查询结果', tool }: Props) {
     </Space>
   )
   const result = readResult(value)
-  if (isObject(value) && typeof value.error === 'string') return <Alert type="error" showIcon title={`${title}未完成`} description={value.error} />
+  if (isObject(value) && typeof value.error === 'string') return null
   if (result) {
     const columns: TableColumnsType<Row> = [
       {

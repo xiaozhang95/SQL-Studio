@@ -1,3 +1,9 @@
 # 聊天输入
 
-实际使用Ant Design X Sender，value通过现有Form草稿受控；onChange最多2000字符，通过onDraftChange保存到Go布局。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留蓝色只读Tag、带蓝鲸模型Select与发送按钮；模型菜单含配置API Key入口，先关闭菜单再打开弹窗。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
+实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存草稿到Go布局，normalize保留2000字符上限。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留蓝色只读Tag、带蓝鲸模型Select与发送按钮；模型菜单含共享DeepSeek配置入口，先关闭菜单再打开弹窗。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
+
+输入区默认4行、最多10行（CHAT.composerRows），沿用默认字体，以原生styles提供更宽松的内边距、淡背景；根容器和输入内容不显示边框、焦点描边或阴影。仅影响Agent Sender，保留其他控件默认边框。
+
+底部模型Select使用默认尺寸、borderless外观，无边框和背景色；当前值和所有模型选项统一展示蓝鲸图标。下拉配置按钮左对齐，使用钥匙图标，菜单宽度跟随选择器。字体沿用Ant Design默认值。
+
+回车通过onKeyDown直接读取当前Form字段并调用submit，不依赖隐藏的Sender内置发送按钮状态；阻止Sender重复提交。Shift+Enter和修饰键保留默认行为，IME组合输入和229键码不发送。

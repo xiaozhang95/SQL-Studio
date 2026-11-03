@@ -24,3 +24,35 @@ export async function settings(method: 'GET' | 'PUT' | 'DELETE', input?: AIUpdat
     models
   }
 }
+
+// A mounted Agent must observe changes made by the shared workspace configuration.
+export function observeSettings(onStatus: (value: AIStatus) => void, onError: (error: Error) => void) {
+  let current: AbortController | undefined
+  let disposed = false
+  function refresh() {
+    current?.abort()
+    const controller = new AbortController()
+    current = controller
+    void settings('GET', undefined, controller.signal)
+      .then((value) => {
+        if (!disposed && !controller.signal.aborted) onStatus(value)
+      })
+      .catch((error: unknown) => {
+        if (!disposed && !controller.signal.aborted) onError(error instanceof Error ? error : new Error('读取共享AI配置失败'))
+      })
+  }
+  function visible() {
+    if (document.visibilityState === 'visible') refresh()
+  }
+  window.addEventListener('ai-settings-saved', refresh)
+  window.addEventListener('focus', refresh)
+  document.addEventListener('visibilitychange', visible)
+  refresh()
+  return () => {
+    disposed = true
+    current?.abort()
+    window.removeEventListener('ai-settings-saved', refresh)
+    window.removeEventListener('focus', refresh)
+    document.removeEventListener('visibilitychange', visible)
+  }
+}

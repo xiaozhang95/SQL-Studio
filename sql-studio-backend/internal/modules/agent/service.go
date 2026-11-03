@@ -29,14 +29,14 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 	state := v.state.clone()
 	summary := v.summary
 	v.status = "running"
-	if v.title == "新对话" {
+	if !v.customTitle && v.title == "新建会话" {
 		title := []rune(text)
 		if len(title) > 40 {
 			title = title[:40]
 		}
 		v.title = string(title)
 	}
-	v.events = append(v.events, model.Event{Type: "user", Text: text})
+	v.events = append(v.events, model.Event{Type: "user", Text: text, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano)})
 	if err := s.saveLocked(ctx, id, v); err != nil {
 		v.busy = false
 		s.mu.Unlock()
@@ -89,8 +89,10 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 	ctx, cancel := context.WithTimeout(ctx, 180*time.Second)
 	defer cancel()
 	messages = append(messages, model.Message{Role: "user", Content: text})
-	calls := 0
-	for round := 0; round < maxModelRounds; round++ {
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		request, nextSummary, err := s.prepare(ctx, messages, summary, state.target, inputBudget, emit)
 		if err != nil {
 			return err
@@ -127,10 +129,6 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 			return nil
 		}
 		for _, call := range m.ToolCalls {
-			if calls >= maxToolCalls {
-				return errors.New("达到本轮工具次数上限，请缩小问题范围")
-			}
-			calls++
 			if err = emit(model.Event{Type: "tool_start", Tool: call.Function.Name, Arguments: call.Function.Arguments}); err != nil {
 				return err
 			}
@@ -153,5 +151,4 @@ func (s *Service) Chat(ctx context.Context, id, text string, emit func(model.Eve
 			messages = append(messages, model.Message{Role: "tool", ToolCallID: call.ID, Content: content})
 		}
 	}
-	return errors.New("达到本轮分析次数上限，请缩小问题范围；已展示的查询结果仍然有效")
 }

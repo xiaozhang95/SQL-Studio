@@ -1,5 +1,21 @@
 # Transcript
 
-受控entries/busy/status/expanded/onExpanded；用户消息靠右，思考与执行共用带官方蓝鲸的ProcessCard，支持折叠和单独隐藏。隐藏后“显示过程”恢复全部过程卡片；所有查询结果始终在过程卡片外展示，隐藏执行过程不隐藏查询数据。Typography继承Ant Design默认字号，文本保留换行并安全显示。useTranscriptScroll只在接近末尾时跟随，用户上滚时保留阅读位置。无网络请求。
+受控entries/busy/status/expanded/onExpanded；用户消息靠右，思考与执行共用带官方蓝鲸的ProcessCard，仅支持标题折叠，不提供隐藏和恢复按钮；旧隐藏键不再影响展示。查询结果位于各自执行步骤内部，收起执行过程会一起折叠结果。Typography继承Ant Design默认字号，文本保留换行并安全显示。react-virtuoso按轮次虚拟渲染，动态测量高度；useVirtualTranscript在末尾跟随、用户上滚后保留位置；新问题回到末尾，左侧RoundNavigation提供刻度预览与完整问题列表搜索跳转。单轮显示由TurnContent负责。错误条目不作为聊天气泡渲染，查询错误也不在结果区重复显示，按用户提问划分轮次，在各自回答末尾呈现。无网络请求。
 
-官方思考与回答分区，未完成片段明确标识。展开键thinking-ID/tools-ID及隐藏键hidden-thinking-ID/hidden-tools-ID一起保存在Go布局expanded中；刷新恢复，不删除记录。恢复重用相同事件折叠逻辑，不伪造思考内容。
+官方思考与回答分区，未完成片段明确标识。展开键thinking-ID/tools-ID保存在Go布局expanded中；刷新恢复，不删除记录。恢复重用相同事件折叠逻辑，不伪造思考内容。
+
+思考正文、执行步骤、参数及结果统一恢复Ant Design默认字号（默认14px），不单独缩小；过程标题图标也使用fontSize token对应尺寸。消息块间距使用small。
+
+每条用户提问气泡之后显示Ant Design Divider，横线铺满消息区域，以主题默认颜色区分提问与后续过程，纵向marginXXS，回答不添加横线。
+
+每个执行步骤显示工具实际名称及请求参数，均提供复制按钮；不展示原始响应JSON，结果继续使用步骤内部的表格或结构化卡片。SQL预览保留复制按钮。
+
+请求参数为空白或空JSON对象（包含对象内空白）时，不展示参数标题、内容和复制按钮；有实际参数时保持展示与复制。
+
+执行步骤附带对应Go HTTP方法及路由模板并支持复制；映射核对httpapi/router.go，集中在CHAT.toolEndpoints。明确当前为进程内调用，:id是连接ID占位符；use_database仅切换上下文，无独立HTTP端点，不伪造地址。
+
+用户问题气泡下方提供编辑和复制；onEdit(text)交由useChat.editQuestion回填Form并保存草稿、聚焦输入框。编辑不改历史记录、不自动发送；执行中禁用编辑，复制保持可用。
+
+提问操作行显示createdAt对应的本地日期时间，后端UTC时间随user事件持久化，发送时即时展示客户端时间。旧记录无时间则不显示，不以当前时间伪造。
+
+错误按相邻用户问题分组，在下一条用户提问之前输出该轮错误；最后一轮在其内容之后输出。同一轮去重，跨轮不去重；继续提问不会将历史错误移到新回答下方。

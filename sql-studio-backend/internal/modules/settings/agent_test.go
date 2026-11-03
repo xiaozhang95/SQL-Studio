@@ -40,3 +40,35 @@ func TestAgentAndSQLUseSameAIConfig(t *testing.T) {
 		t.Fatal(status, err)
 	}
 }
+
+func TestWorkspaceKeyIsVisibleToAgentAndModelChangeKeepsCompletionSetting(t *testing.T) {
+	ctx := context.Background()
+	repo := &aiRepository{}
+	s := New(repo)
+	_, err := s.Write(ctx, "ai", model.StateWrite{Data: json.RawMessage(`{"provider":"deepseek","apiKey":"workspace-fixture-key","model":"deepseek-flash","completionEnabled":false}`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, err := s.AgentStatus(ctx)
+	if err != nil || !status.Configured || status.Model != "deepseek-flash" {
+		t.Fatal(status, err)
+	}
+	public, _ := json.Marshal(status)
+	if strings.Contains(string(public), "workspace-fixture-key") {
+		t.Fatal("secret exposed")
+	}
+	if _, err = s.UpdateAgent(ctx, agentmodel.AIUpdate{Model: "deepseek-v4-pro"}); err != nil {
+		t.Fatal(err)
+	}
+	var raw model.AIConfig
+	if json.Unmarshal(repo.doc.Data, &raw) != nil || raw.APIKey != "workspace-fixture-key" || raw.CompletionEnabled == nil || *raw.CompletionEnabled {
+		t.Fatal("Agent overwrote shared key or completion preference")
+	}
+	if _, err = s.RemoveAI(ctx, repo.doc.Revision); err != nil {
+		t.Fatal(err)
+	}
+	status, err = s.AgentStatus(ctx)
+	if err != nil || status.Configured {
+		t.Fatal("removed workspace key remained configured", err)
+	}
+}

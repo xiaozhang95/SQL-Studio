@@ -37,6 +37,7 @@ type ToolDefinition struct {
 	Parameters  json.RawMessage `json:"parameters"`
 }
 type Event struct {
+	CreatedAt string          `json:"createdAt,omitempty"`
 	Type      string          `json:"type"`
 	Text      string          `json:"text,omitempty"`
 	Tool      string          `json:"tool,omitempty"`

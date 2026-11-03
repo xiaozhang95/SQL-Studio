@@ -3,12 +3,25 @@ package deepseek
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )
+
+func TestStreamAcceptsMoreThanFourToolCalls(t *testing.T) {
+	var raw strings.Builder
+	for i := 0; i < 8; i++ {
+		fmt.Fprintf(&raw, "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":%d,\"id\":\"tool-%d\",\"type\":\"function\",\"function\":{\"name\":\"list_connections\",\"arguments\":\"{}\"}}]}}]}\n\n", i, i)
+	}
+	raw.WriteString("data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]\n\n")
+	m, err := parseStream(context.Background(), strings.NewReader(raw.String()), func(model.Event) error { return nil })
+	if err != nil || len(m.ToolCalls) != 8 {
+		t.Fatal(len(m.ToolCalls), err)
+	}
+}
 
 func TestStreamingThinkingToolFragmentsAndUsage(t *testing.T) {
 	frames := []string{

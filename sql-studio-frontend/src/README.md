@@ -33,3 +33,6 @@ App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 READM
 MySQL 对象树按“数据库 → 表 → 表名 → 字段/索引”组织；PostgreSQL 在数据库下增加 schema 层，再展示表/视图分类和对象名，展开表按需读取元数据，主键用钥匙图标。索引悬停显示唯一性、类型和组成字段；视图维持既有功能，独立分组。
 
 - [数据库Agent](agent/README.md)：Ant Design X聊天、思考与只读数据库工具。
+- [公共组件](components/README.md)：工作区和Agent共用的展示能力。
+
+公共PageHeader统一workspace和Agent顶栏高度、间距、背景和保存状态布局，Agent在左侧提供返回工作区入口。
