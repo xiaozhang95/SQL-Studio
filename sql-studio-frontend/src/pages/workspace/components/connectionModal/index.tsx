@@ -76,7 +76,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               aria-pressed={profile.value === engine.value}
               disabled={busy || Boolean(connection && profile.value !== engine.value)}
               onClick={() => selectEngine(profile.value)}
-              style={{ border: 0, boxShadow: 'none', height: 'auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }}
+              style={{ height: 'auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }}
             >
               <EngineIcon type={profile.value} variant="logo" size={32} />
               <span>{profile.label}</span>
@@ -87,7 +87,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px var(--connection-settings-padding, 28px)' }}>
             <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
               <EngineIcon type={engine.value} variant="logo" />
-              <strong>{engine.label}</strong>
+              <span>{engine.label}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <Tag color="blue">默认端口 {engine.port}</Tag>
                 <Tooltip title="连接凭据仅加密保存在当前电脑">

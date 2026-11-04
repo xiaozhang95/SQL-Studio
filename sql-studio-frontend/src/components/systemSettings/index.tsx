@@ -59,7 +59,6 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
             classNames={{ root: 'system-settings-menu' }}
             trigger={['click']}
             styles={{
-              root: { border: `${token.lineWidth}px solid ${token.colorBorder}`, borderRadius: token.borderRadiusLG, background: token.colorBgElevated, overflow: 'hidden' },
               itemContent: { display: 'flex', alignItems: 'center', flex: 1 }
             }}
             menu={{

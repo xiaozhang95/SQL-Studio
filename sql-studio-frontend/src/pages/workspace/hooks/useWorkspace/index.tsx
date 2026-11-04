@@ -162,7 +162,11 @@ export const useWorkspace = () => {
   const result = useMemo(() => (tab.kind === 'structure' && !tab.table ? presentTableList(run?.result, adapter, tab.schema) : run?.result), [run?.result, adapter, tab.kind, tab.table, tab.schema])
   const resultSearch = resultViews[activeTab]?.search || ''
   const tablePage = resultViews[activeTab]?.page || 1
-  const openedKey = JSON.stringify(Object.keys(objects.snapshots).sort())
+  const openedKey = JSON.stringify(
+    Object.keys(objects.snapshots)
+      .filter((id) => objects.snapshots[id].status === 'connected')
+      .sort()
+  )
   const openedConnections = useMemo(() => JSON.parse(openedKey) as string[], [openedKey])
   const snapshot = useMemo<WorkspaceSnapshot>(
     () => ({
@@ -195,7 +199,14 @@ export const useWorkspace = () => {
       setRuns(restoredRuns)
       setResultViews(saved.resultViews)
       setEditorLayouts(saved.editorLayouts)
-      setExplorer(saved.explorer)
+      const restoredConnectionIds = new Set(saved.openedConnections)
+      setExplorer({
+        ...saved.explorer,
+        expanded: saved.explorer.expanded.filter((key) => {
+          const [kind, owner] = JSON.parse(key) as string[]
+          return kind === 'group' || restoredConnectionIds.has(owner)
+        })
+      })
       setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
       setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : sidebarLayout.defaultWidth)
       setRestoringConnections(saved.openedConnections)

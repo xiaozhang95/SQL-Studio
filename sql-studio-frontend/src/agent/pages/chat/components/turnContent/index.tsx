@@ -123,7 +123,7 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
                         </Flex>
                       )}
                     </Flex>
-                    {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} />}
+                    {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
                   </Flex>
                 ))}
               </Flex>

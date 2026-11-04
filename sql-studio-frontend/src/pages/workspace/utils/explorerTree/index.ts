@@ -212,10 +212,14 @@ export function buildExplorerTree(
         byKey.delete(root.key)
         continue
       }
-    } else if (state?.error && open.has(root.key)) {
-      const error = placeholder('error', state.error, id, '')
-      error.retry = 'connection'
-      root.children = [error]
+    } else if (state?.status === 'error') {
+      // 本次加载已结束；阻止 Tree 因受控展开状态重复 loadData，重试由显式入口触发。
+      loadedKeys.push(root.key)
+      if (state.error && open.has(root.key)) {
+        const error = placeholder('error', state.error, id, '')
+        error.retry = 'connection'
+        root.children = [error]
+      }
     }
     const group = ensureGroup(groupName)
     // 关闭分组时仍保留连接根节点，搜索可以显式展开分组展示匹配项。

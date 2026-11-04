@@ -86,7 +86,6 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
               <Flex align="center" justify="space-between" gap="small" wrap>
                 <Flex align="center" gap={token.marginXXS}>
                   <Dropdown
-                    styles={{ root: { border: `1px solid ${token.colorBorder}`, borderRadius: token.borderRadiusLG, background: token.colorBgElevated } }}
                     trigger={['click']}
                     placement="topLeft"
                     menu={{
@@ -136,7 +135,6 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                 </Flex>
                 <Flex align="center" gap={token.marginXS}>
                   <Dropdown
-                    styles={{ root: { border: `1px solid ${token.colorBorder}`, borderRadius: token.borderRadiusLG, background: token.colorBgElevated } }}
                     trigger={['click']}
                     placement="topRight"
                     menu={{

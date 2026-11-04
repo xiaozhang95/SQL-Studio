@@ -18,6 +18,10 @@ model 通过 Pick 消费 connections、objects、running，以及 connectionActi
 
 连接右键依次提供新建数据库、打开/关闭、编辑、移动到分组、删除，“刷新”位于菜单最底部；加载中可关闭以取消请求。数据库右键提供新建查询、查看表列表、刷新结构；表/视图提供新建查询、查询数据、查询结构、查看 DDL。菜单均有图标，携带完整原始连接/库/表范围，停止冒泡；不依赖先点击选中，执行期间禁用。
 
+连接失败节点同时提供“打开连接”和“关闭连接”：前者手动重试，后者复用范围关闭流程取消请求、清理错误及展开状态。数据库服务离线也可调用关闭接口；关闭不删除连接配置，现有草稿确认和关闭失败保留窗口规则不变。
+
+失败连接在 Tree 的 loadedKeys 中表示本次加载已结束，阻止受控展开状态自动重复调用 loadData；这不表示连接成功，图标及功能权限仍依据 error/connected 状态。
+
 树体独立滚动，选中态及 hover 使用 Ant Design 原生 primary/controlItemBgHover token。
 
 双击通过原生 Tree expandAction=doubleClick 与箭头共用展开、loadData 和加载状态；表可展开字段和索引，视图保持叶节点。图标容器统一 flex 居中，连接图标外层也使用 flex，覆盖原生 inline-block 的基线偏移；图标和文字在最小 28px 的选中背景内垂直居中，上下各留 2px，节点不额外加 padding-block；覆盖原生 margin-bottom 为 2px，行距约 30px。

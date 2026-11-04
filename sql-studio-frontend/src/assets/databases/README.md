@@ -10,4 +10,6 @@ postgresql.svg 使用 [PostgreSQL 官方单色白色大象图标](https://wiki.p
 
 当前展示统一为绿色圆角底板与白色图形，MySQL 和 PostgreSQL 均使用此样式；未连接的 icon 保留圆角方形底板和白色图形，底板与未打开数据库图标共用 --inactive-icon（text-tertiary）主题色。SVG 保留源文件，图形通过图片 filter 显示白色，悬停和选中不改变图形颜色。
 
+engineIcon 将半透明灰色先合成到主题容器底色 --surface 上，避免亮暗主题的选中背景混入灰色底板；资源路径、SVG 源色和白色图形处理保持不变。
+
 [mariadb.svg](mariadb.svg) 使用 [Simple Icons MariaDB 图标](https://github.com/simple-icons/simple-icons/blob/develop/icons/mariadb.svg)（Simple Icons，CC0），从 jsDelivr simple-icons v15 发布包取得，保留原始 24×24 路径。调用者为 mariadb/profile，经 engineIcon 用于类型选择、表单、对象树及连接选择；沿用现有绿色底板与白色图形。

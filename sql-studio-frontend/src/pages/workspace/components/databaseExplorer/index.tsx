@@ -87,10 +87,12 @@ export default function DatabaseExplorer({ model }: Props) {
 
     let items: MenuProps['items']
     if (node.kind === 'connection') {
-      const connected = objects.snapshots[id]?.status === 'connected'
+      const status = objects.snapshots[id]?.status
+      const connected = status === 'connected'
       items = [
         { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
-        connected || objects.snapshots[id]?.status === 'loading' ? { key: 'close', label: '关闭连接', icon: <CloseOutlined /> } : { key: 'open', label: '打开连接', icon: <LinkOutlined /> },
+        ...(!connected && status !== 'loading' ? [{ key: 'open', label: '打开连接', icon: <LinkOutlined /> }] : []),
+        ...(status ? [{ key: 'close', label: '关闭连接', icon: <CloseOutlined /> }] : []),
         { type: 'divider' },
         { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
         {

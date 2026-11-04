@@ -12,4 +12,4 @@
 
 弹窗边框和连接弹窗头部/底栏分隔线全部在 app.scss，主题色来自 Ant Design token，不在组件中另写覆盖。遮罩使用 mask.closable；onCancel、onSaved 由调用者管理开关和保存后刷新。
 
-数据库类型选项使用原生 Button primary/text，无边框和阴影；选中保持 primary 背景，未选中透明、hover 使用原生背景，aria-pressed 提供选中语义。
+数据库类型选项使用原生 Button primary/text，边框、阴影、选中和 hover 外观沿用组件默认值；仅设置图标所需的行高及图文排列，aria-pressed 提供选中语义。引擎名称沿用默认文字，不额外加粗。

@@ -1,6 +1,7 @@
 import { DatabaseOutlined } from '@ant-design/icons'
 import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, theme, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
+import type { ReactNode } from 'react'
 
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 
@@ -31,6 +32,22 @@ export function QueryResult({ showExport = true, ...props }: Props) {
     </Flex>
   )
 }
+
+/** 表格自身提供边框，外层只组织可选标题与内容，避免再叠 Card 外框。 */
+function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: ReactNode; children: ReactNode }) {
+  return (
+    <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
+      {(title || extra) && (
+        <Flex align="center" justify="space-between" gap={CHAT.spacing.detail} wrap>
+          {title}
+          {extra}
+        </Flex>
+      )}
+      {children}
+    </Flex>
+  )
+}
+
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const { token } = theme.useToken()
   const cardTitle = showHeader ? (
@@ -85,8 +102,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       ...Object.fromEntries(row.map((v, j) => [String(j), v]))
     }))
     return (
-      <Card
-        size="small"
+      <ResultTable
         title={cardTitle}
         extra={
           showHeader && (
@@ -98,8 +114,6 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             </Space>
           )
         }
-        styles={{ body: { padding: 0 } }}
-        style={{ minWidth: 0 }}
       >
         {result.truncated && <Alert type="warning" showIcon title="结果已截断，统计全量请使用聚合查询。" banner />}
         <Table<Row>
@@ -147,7 +161,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             ]}
           />
         )}
-      </Card>
+      </ResultTable>
     )
   }
   if (tool === 'use_database' && isObject(value) && isObject(value.target)) {
@@ -170,7 +184,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   }
   if (Array.isArray(value) && value.every((v) => typeof v === 'string'))
     return (
-      <Card size="small" title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined} styles={{ body: { padding: 0 } }}>
+      <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
           size={APPEARANCE.tableSize}
           bordered
@@ -185,7 +199,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             y: value.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
           }}
         />
-      </Card>
+      </ResultTable>
     )
   if (Array.isArray(value) && value.length > 0 && value.every(isObject)) {
     const keys = [...new Set(value.flatMap((v) => Object.keys(v)))].filter((k) => tool !== 'list_connections' || k !== 'id')
@@ -208,7 +222,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       render: (v: unknown) => <Tooltip title={cellText(v)}>{cellText(v)}</Tooltip>
     }))
     return (
-      <Card size="small" title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined} styles={{ body: { padding: 0 } }}>
+      <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
           size={APPEARANCE.tableSize}
           bordered
@@ -228,7 +242,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             y: value.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
           }}
         />
-      </Card>
+      </ResultTable>
     )
   }
   return (

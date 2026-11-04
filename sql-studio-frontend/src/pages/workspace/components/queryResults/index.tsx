@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Dropdown, Empty, Input, Pagination, Spin, Table } from 'antd'
+import { Alert, Button, Dropdown, Empty, Input, Pagination, Spin, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
@@ -123,9 +123,9 @@ export default function QueryResults({ model, themeMode }: Props) {
         <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
           {column.name}
           {column.type && (
-            <span className="column-type" style={{ color: 'var(--ant-color-text-secondary)', fontWeight: 'normal' }}>
-              {column.type.toLowerCase()}
-            </span>
+            <Typography.Text className="column-type" type="secondary">
+              {column.type}
+            </Typography.Text>
           )}
         </div>
       ),
@@ -162,9 +162,9 @@ export default function QueryResults({ model, themeMode }: Props) {
             <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} />
           </div>
         ) : row.cells[index] === null ? (
-          <span className="cell-null" style={{ color: 'var(--ant-color-text-secondary)', fontWeight: 'normal' }}>
+          <Typography.Text className="cell-null" type="secondary">
             (NULL)
-          </span>
+          </Typography.Text>
         ) : (
           <span
             className={run?.kind === 'structure' && column.name === '表名' ? 'database-object-name' : undefined}
