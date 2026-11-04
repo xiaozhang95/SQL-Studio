@@ -40,8 +40,16 @@ export async function list(signal?: AbortSignal): Promise<ConversationInfo[]> {
 }
 export async function view(id: string, signal: AbortSignal): Promise<{ events: ChatEvent[]; busy: boolean }> {
   const v = await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { signal })
+  signal.throwIfAborted()
   if (!isObject(v) || !Array.isArray(v.events) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
-  return { events: v.events.map(decodeEvent), busy: v.busy }
+  const events: ChatEvent[] = []
+  for (let offset = 0; offset < v.events.length; offset += 256) {
+    signal.throwIfAborted()
+    for (let i = offset; i < Math.min(offset + 256, v.events.length); i++) events.push(decodeEvent(v.events[i]))
+    if (offset + 256 < v.events.length) await new Promise<void>((resolve) => setTimeout(resolve, 0))
+  }
+  signal.throwIfAborted()
+  return { events, busy: v.busy }
 }
 export async function remove(id: string) {
   await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })

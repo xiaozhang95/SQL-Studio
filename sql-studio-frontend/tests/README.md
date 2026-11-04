@@ -54,3 +54,7 @@ workspace-performance.test.mjs 还验证编辑缓冲的延迟全文读取、连�
 MariaDB：`node --test tests/mariadb.test.mjs` 检查 MariaSQL 扩展、可执行注释、USE、默认字符串/NULL/表达式及排序规则别名，均不访问数据库；真实驱动/HTTP 回归见后端 tests/integration/mariadb_test.go。
 
 agent.test.mjs中的内联写入确认测试执行真实useWriteConfirmation控制逻辑，替换React状态与fetch，覆盖等待不提交、一次性ID/决定请求、重复提交、失败重试/取消、中止/结束/卸载清理和迟到响应隔离。浏览器另以真实hook、Transcript和WriteConfirmation组合验证卡片、SQL只读预览、按钮禁用、错误、确认/取消/停止与亮暗/窄窗口；确认接口使用隔离替身，不访问真实数据库。
+
+Agent历史切换回归使用真实useChat控制逻辑与替身接口，覆盖连续选择取消、迟到响应、卸载、失败重试、重复选择和首次内容加载时改选；restoreEvents覆盖12,000条事件、分批取消、输入不可变及工具/增量/错误语义。这些属于控制逻辑测试，不代表真实浏览器性能或数据库验证。
+
+历史DOM分段展示测试覆盖首次最近8轮、上滑边界局部加载状态、每批前插8轮、重复触发合并、阅读时不拉回末尾、导航下标转换、新消息跟随和卸载取消计时；Virtuoso真实像素锚点仍需浏览器验收。

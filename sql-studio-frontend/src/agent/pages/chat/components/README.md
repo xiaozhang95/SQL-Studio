@@ -20,3 +20,5 @@
 
 - [codeBlock](codeBlock/README.md)：回答代码高亮与复制。
 - [writeConfirmation](writeConfirmation/README.md)：回复下方的逐次写入确认卡片。
+
+- [conversationLoading](conversationLoading/README.md)：首次读取与历史轮次边界共用的单行局部加载提示。

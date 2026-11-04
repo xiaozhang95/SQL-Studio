@@ -5,7 +5,7 @@ import type { WorkspaceController } from '../../../../hooks/workspace'
 import * as api from '../../../../services/chat'
 import type { ChatEvent, Entry, TokenUsage } from '../../../../typings/chat'
 import type { ConversationInfo } from '../../../../typings/workspace'
-import { applyEvent } from '../../../../utils/chatEvents'
+import { applyEvent, restoreEvents } from '../../../../utils/chatEvents'
 import { CHAT } from '../../constant/chat'
 import { useWriteConfirmation } from '../writeConfirmation'
 
@@ -14,6 +14,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [initializing, setInitializing] = useState(true)
   const [managing, setManaging] = useState(false)
   const mutation = useRef(false)
   const historyVersion = useRef(0)
@@ -25,6 +26,9 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   const [form] = Form.useForm<{ question: string }>()
   const session = useRef('')
   const active = useRef<AbortController | null>(null)
+  const reading = useRef<AbortController | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const [initializeAttempt, setInitializeAttempt] = useState(0)
   const mounted = useRef(true)
   const latestWorkspace = useRef(workspace)
   const initialState = useRef(workspace.state)
@@ -36,6 +40,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     return () => {
       mounted.current = false
       active.current?.abort()
+      reading.current?.abort()
     }
   }, [])
   useEffect(() => {
@@ -47,28 +52,35 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
         const initial = initialState.current
         const selected = items.find((i) => i.id === initial.activeId)?.id ?? items[0]?.id
         if (!selected) throw new Error('无法创建默认会话')
-        const view = await api.view(selected, c.signal)
         if (c.signal.aborted) return
         setHistory(items)
+        setHistoryLoading(false)
+        reading.current = c
+        setInitializing(false)
         session.current = selected
-        setEntries(view.events.reduce(applyEvent, []))
-        setUsage([...view.events].reverse().find((e) => e.usage)?.usage ?? null)
         const same = !initial.activeId || initial.activeId === selected
         form.setFieldsValue({ question: same ? initial.draft : '' })
         latestWorkspace.current.update({ activeId: selected, draft: same ? initial.draft : '', expanded: same ? initial.expanded : [] })
-        if (view.busy) setError('该对话正在另一个窗口执行，待完成后重新打开历史记录。')
+        const view = await api.view(selected, c.signal)
+        if (view.busy) throw new Error('该对话正在另一个窗口执行，请稍后重试。')
+        const restored = await restoreEvents(view.events, c.signal)
+        if (c.signal.aborted) return
+        setEntries(restored)
+        setUsage([...view.events].reverse().find((e) => e.usage)?.usage ?? null)
       } catch (cause) {
-        if (!c.signal.aborted) setError(cause instanceof Error ? cause.message : '读取会话失败')
+        if (!c.signal.aborted) setLoadError(cause instanceof Error ? cause.message : '读取会话失败')
       } finally {
         if (!c.signal.aborted) {
+          if (reading.current === c) reading.current = null
           setLoading(false)
+          setInitializing(false)
           setHistoryLoading(false)
         }
       }
     }
     void initialize()
     return () => c.abort()
-  }, [workspace.ready, form])
+  }, [workspace.ready, form, initializeAttempt])
   const confirmWrite = useWriteConfirmation()
   function event(e: ChatEvent) {
     if (e.type === 'write_confirmation' && active.current) {
@@ -86,9 +98,27 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
         estimatedTokens: u.estimatedTokens ?? old?.estimatedTokens
       }))
   }
-  function activate(id: string, events: ChatEvent[] = []) {
+  async function activate(id: string, events: ChatEvent[] = []) {
+    reading.current?.abort()
+    const controller = new AbortController()
+    reading.current = controller
+    setLoading(true)
+    let restored: Entry[]
+    try {
+      restored = await restoreEvents(events, controller.signal)
+    } catch (cause) {
+      if (controller.signal.aborted) return
+      throw cause
+    } finally {
+      if (reading.current === controller) {
+        reading.current = null
+        if (mounted.current) setLoading(false)
+      }
+    }
+    if (!mounted.current || controller.signal.aborted) return
+    setLoadError('')
     session.current = id
-    setEntries(events.reduce(applyEvent, []))
+    setEntries(restored)
     setUsage([...events].reverse().find((e) => e.usage)?.usage ?? null)
     setError('')
     setStatus('')
@@ -106,7 +136,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       const items = await api.list()
       if (!mounted.current) return
       setHistory(items)
-      activate(id)
+      await activate(id)
       setHistoryOpen(false)
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : '新建会话失败')
@@ -129,7 +159,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       const next = session.current !== selected ? await api.view(selected, new AbortController().signal) : null
       if (!mounted.current) return
       setHistory(items)
-      if (next) activate(selected, next.events)
+      if (next) await activate(selected, next.events)
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : '删除会话失败')
       throw cause
@@ -152,7 +182,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     }
   }
   async function refreshHistory() {
-    if (mutation.current) return
+    if (mutation.current || reading.current || loading) return
     const version = historyVersion.current
     const previous = session.current
     setHistoryLoading(true)
@@ -162,7 +192,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       setHistory(items)
       if (!items.some((item) => item.id === session.current) && items[0]) {
         const view = await api.view(items[0].id, new AbortController().signal)
-        if (mounted.current && version === historyVersion.current && previous === session.current) activate(items[0].id, view.events)
+        if (mounted.current && version === historyVersion.current && previous === session.current) await activate(items[0].id, view.events)
       }
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : '读取历史失败')
@@ -174,31 +204,46 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     setHistoryOpen(true)
     void refreshHistory()
   }
-  async function selectHistory(id: string) {
-    if (active.current || loading || mutation.current) return
+  async function selectHistory(id: string, retry = false) {
+    if (active.current || mutation.current || !workspace.ready) return
+    if (session.current === id && !retry) return
+    reading.current?.abort()
     const c = new AbortController()
+    reading.current = c
+    historyVersion.current++
+    session.current = id
+    setEntries([])
+    setUsage(null)
+    setStatus('')
     setLoading(true)
     setError('')
-    try {
-      const v = await api.view(id, c.signal)
-      if (v.busy) {
-        setError('该对话正在执行，请稍后重新打开。')
-        return
-      }
-      session.current = id
-      setEntries(v.events.reduce(applyEvent, []))
-      setUsage([...v.events].reverse().find((e) => e.usage)?.usage ?? null)
-      setHistoryOpen(false)
+    setLoadError('')
+    if (!retry) {
       form.resetFields()
-      workspace.update({ activeId: id, draft: '', expanded: [] })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '读取记录失败')
+      latestWorkspace.current.update({ activeId: id, draft: '', expanded: [] })
+    }
+    setHistoryOpen(false)
+    try {
+      // Let the selected title and loading placeholder paint before reading content.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      c.signal.throwIfAborted()
+      const v = await api.view(id, c.signal)
+      if (v.busy) throw new Error('该对话正在执行，请稍后重试。')
+      const restored = await restoreEvents(v.events, c.signal)
+      if (!mounted.current || c.signal.aborted || reading.current !== c || session.current !== id) return
+      setEntries(restored)
+      setUsage([...v.events].reverse().find((e) => e.usage)?.usage ?? null)
+    } catch (cause) {
+      if (mounted.current && !c.signal.aborted && reading.current === c) setLoadError(cause instanceof Error ? cause.message : '读取记录失败')
     } finally {
-      setLoading(false)
+      if (mounted.current && reading.current === c) {
+        reading.current = null
+        setLoading(false)
+      }
     }
   }
   async function send({ question: text }: { question: string }) {
-    if (active.current || loading || mutation.current || !workspace.ready || !text.trim()) return
+    if (active.current || reading.current || loading || loadError || mutation.current || !workspace.ready || !text.trim()) return
     const c = new AbortController()
     active.current = c
     setBusy(true)
@@ -237,15 +282,24 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   }
   return {
     editQuestion: (text: string) => {
-      if (active.current || loading || mutation.current) return
+      if (active.current || reading.current || loading || loadError || mutation.current) return
       form.setFieldValue('question', text)
       latestWorkspace.current.update({ draft: text })
       form.scrollToField('question', { focus: true })
     },
+    loadError,
+    retryHistory: () => {
+      if (session.current) return selectHistory(session.current, true)
+      setInitializing(true)
+      setLoading(true)
+      setLoadError('')
+      setInitializeAttempt((value) => value + 1)
+    },
+    historyBusy: busy || managing || !workspace.ready || initializing,
     entries,
     status: confirmWrite.pending ? '等待确认数据库操作' : status,
     confirmWrite,
-    busy: busy || loading || managing,
+    busy: busy || loading || managing || Boolean(loadError),
     deleteHistory,
     loading,
     error,

@@ -37,7 +37,7 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
   return (
     <div
       className="app-shell"
-      style={{ height: '100dvh', minWidth: 900, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--layout)' }}
+      style={{ height: '100dvh', minWidth: 900, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--surface)' }}
     >
       <PageHeader
         actions={

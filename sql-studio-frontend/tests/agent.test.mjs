@@ -299,7 +299,7 @@ test('Markdown回答转换为表格，精确字符串保留', async () => {
 })
 
 async function confirmationHarness(fetch) {
-  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/writeConfirmation/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\n/gm, '')
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/writeConfirmation/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
   const slots = []
   const cleanups = []
@@ -428,4 +428,330 @@ test('旧确认的迟到响应不清除新卡片，损坏明细不显示或提�
   assert.equal(harness.render().submitting, false)
   assert.throws(() => harness.render().show({ ...next, objects: [42] }, current.signal), /无效/)
   harness.unmount()
+})
+
+test('历史批量还原保持增量、工具配对、最终回答及错误语义，且不修改事件', async () => {
+  const { restoreEvents, applyEvent } = await moduleAt('utils/chatEvents/index.ts')
+  const events = [
+    { type: 'user', text: '问题', createdAt: '2026-11-04T00:00:00Z' },
+    { type: 'reasoning_delta', text: '思考' },
+    { type: 'tool_start', tool: 'query', arguments: 'A' },
+    { type: 'tool_start', tool: 'query', arguments: 'B' },
+    { type: 'tool_result', tool: 'query', result: { rows: [2] } },
+    { type: 'tool_result', tool: 'query', result: { rows: [1] } },
+    { type: 'answer_delta', text: '临时回答' },
+    { type: 'answer', text: '完整回答' },
+    { type: 'answer_delta', text: '未完成片段' },
+    { type: 'error', text: '中断' },
+    { type: 'done' }
+  ]
+  const before = structuredClone(events)
+  const restored = await restoreEvents(events, new AbortController().signal)
+  assert.deepEqual(restored, events.reduce(applyEvent, []))
+  assert.deepEqual(
+    restored.filter((entry) => entry.role === 'tool').map((entry) => entry.result.rows),
+    [[1], [2]]
+  )
+  assert.equal(restored.at(-2).incomplete, true)
+  assert.deepEqual(events, before)
+})
+
+test('长历史还原让出事件循环，可在批次之间取消，不返回部分记录', async () => {
+  const { restoreEvents } = await moduleAt('utils/chatEvents/index.ts')
+  const events = Array.from({ length: 12000 }, (_, i) => ({ type: 'user', text: String(i) }))
+  const controller = new AbortController()
+  const pending = restoreEvents(events, controller.signal)
+  setTimeout(() => controller.abort(), 0)
+  await assert.rejects(pending, { name: 'AbortError' })
+  const restored = await restoreEvents(events, new AbortController().signal)
+  assert.equal(restored.length, events.length)
+  assert.equal(restored.at(-1).id, 12000)
+  assert.equal(restored.at(-1).text, '11999')
+})
+
+async function chatHarness(view, initialView) {
+  const events = await moduleAt('utils/chatEvents/index.ts')
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/chat/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
+  const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
+  const slots = [],
+    cleanups = []
+  let cursor = 0
+  const state = (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = initial
+    return [
+      slots[index],
+      (value) => {
+        slots[index] = typeof value === 'function' ? value(slots[index]) : value
+      }
+    ]
+  }
+  const ref = (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = { current: initial }
+    return slots[index]
+  }
+  const effect = (callback) => {
+    const index = cursor++
+    if (!(index in slots)) {
+      slots[index] = true
+      cleanups.push(callback())
+    }
+  }
+  const workspace = {
+    ready: true,
+    state: { activeId: '', draft: '', expanded: [] },
+    update(patch) {
+      this.state = { ...this.state, ...patch }
+    }
+  }
+  const form = { resetFields() {}, setFieldsValue() {} }
+  const hook = new Function(
+    'exports',
+    'Form',
+    'useEffect',
+    'useLayoutEffect',
+    'useRef',
+    'useState',
+    'api',
+    'applyEvent',
+    'restoreEvents',
+    'CHAT',
+    'useWriteConfirmation',
+    code + '; return exports.useChat'
+  )(
+    {},
+    { useForm: () => [form] },
+    effect,
+    effect,
+    ref,
+    state,
+    {
+      ensureHistory: async () => [{ id: 'initial' }],
+      view: (id, signal) => (id === 'initial' ? (initialView ? initialView(signal) : Promise.resolve({ busy: false, events: [] })) : view(id, signal))
+    },
+    events.applyEvent,
+    events.restoreEvents,
+    { tools: {} },
+    () => ({ pending: null })
+  )
+  const render = () => {
+    cursor = 0
+    return hook(workspace)
+  }
+  render()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  return { render, workspace, unmount: () => cleanups.forEach((cleanup) => cleanup?.()) }
+}
+
+test('连续选择取消旧请求，迟到历史不能覆盖目标会话，卸载取消读取', async () => {
+  const requests = []
+  const harness = await chatHarness((id, signal) => new Promise((resolve) => requests.push({ id, signal, resolve })))
+  const first = harness.render().selectHistory('A')
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  const second = harness.render().selectHistory('B')
+  assert.equal(requests[0].signal.aborted, true)
+  assert.equal(harness.workspace.state.activeId, 'B')
+  assert.deepEqual(harness.render().entries, [])
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  requests[1].resolve({ busy: false, events: [{ type: 'user', text: 'B消息' }] })
+  await second
+  requests[0].resolve({ busy: false, events: [{ type: 'user', text: 'A消息' }] })
+  await first
+  assert.equal(harness.render().entries[0].text, 'B消息')
+  assert.equal(harness.render().loading, false)
+  const third = harness.render().selectHistory('C')
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  harness.unmount()
+  assert.equal(requests[2].signal.aborted, true)
+  requests[2].resolve({ busy: false, events: [{ type: 'user', text: 'C消息' }] })
+  await third
+  assert.deepEqual(harness.render().entries, [])
+})
+
+test('加载失败保留选中项，可重试并切换其他会话；重复选择不读取', async () => {
+  let calls = 0
+  const harness = await chatHarness(async () => {
+    if (++calls === 1) throw new Error('读取失败')
+    return { busy: false, events: [{ type: 'user', text: '恢复成功' }] }
+  })
+  await harness.render().selectHistory('A')
+  assert.equal(harness.workspace.state.activeId, 'A')
+  assert.equal(harness.render().loadError, '读取失败')
+  assert.equal(harness.render().historyBusy, false)
+  await harness.render().retryHistory()
+  assert.equal(harness.render().loadError, '')
+  assert.equal(harness.render().entries[0].text, '恢复成功')
+  await harness.render().selectHistory('A')
+  assert.equal(calls, 2)
+  await harness.render().selectHistory('B')
+  assert.equal(calls, 3)
+  assert.equal(harness.workspace.state.activeId, 'B')
+  harness.unmount()
+})
+
+test('首次恢复先显示索引，内容未完成时可以改选并取消初始读取', async () => {
+  let complete, initialSignal
+  const harness = await chatHarness(
+    async () => ({ busy: false, events: [{ type: 'user', text: '新目标' }] }),
+    (signal) => {
+      initialSignal = signal
+      return new Promise((resolve) => {
+        complete = resolve
+      })
+    }
+  )
+  assert.equal(harness.render().loading, true)
+  assert.equal(harness.render().historyLoading, false)
+  assert.equal(harness.render().historyBusy, false)
+  await harness.render().selectHistory('B')
+  assert.equal(initialSignal.aborted, true)
+  complete({ busy: false, events: [{ type: 'user', text: '旧初始内容' }] })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(harness.render().entries[0].text, '新目标')
+  assert.equal(harness.render().loading, false)
+  harness.unmount()
+})
+
+async function transcriptHarness(count = 25) {
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/virtualTranscript/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
+  const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
+  const slots = [],
+    effects = [],
+    timers = new Map(),
+    frames = new Map(),
+    calls = []
+  let cursor = 0,
+    next = 0,
+    rounds = Array.from({ length: count }, (_, id) => ({ id, entries: [], question: String(id), summary: '' }))
+  const state = (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = initial
+    return [
+      slots[index],
+      (value) => {
+        slots[index] = typeof value === 'function' ? value(slots[index]) : value
+      }
+    ]
+  }
+  const ref = (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = { current: initial }
+    return slots[index]
+  }
+  const memo = (factory) => {
+    cursor++
+    return factory()
+  }
+  const effect = (callback, deps) => {
+    const index = cursor++
+    const prior = slots[index]
+    if (!prior || deps.some((value, i) => value !== prior.deps[i])) {
+      effects.push(() => {
+        prior?.cleanup?.()
+        slots[index] = { deps, cleanup: callback() }
+      })
+    }
+  }
+  const schedule = (map, callback) => {
+    const id = ++next
+    map.set(id, callback)
+    return id
+  }
+  const hook = new Function(
+    'exports',
+    'useState',
+    'useRef',
+    'useMemo',
+    'useLayoutEffect',
+    'startTransition',
+    'CHAT',
+    'setTimeout',
+    'clearTimeout',
+    'requestAnimationFrame',
+    'cancelAnimationFrame',
+    code + '; return exports.useVirtualTranscript'
+  )(
+    {},
+    state,
+    ref,
+    memo,
+    effect,
+    (callback) => callback(),
+    { historyBatchSize: 8, historyLoadingDelay: 80 },
+    (callback) => schedule(timers, callback),
+    (id) => timers.delete(id),
+    (callback) => schedule(frames, callback),
+    (id) => frames.delete(id)
+  )
+  const render = () => {
+    cursor = 0
+    const result = hook(rounds)
+    result.list.current = { scrollToIndex: (location) => calls.push(location) }
+    effects.splice(0).forEach((callback) => callback())
+    const pending = [...frames.values()]
+    frames.clear()
+    pending.forEach((callback) => callback())
+    return result
+  }
+  return {
+    render,
+    calls,
+    timers,
+    flush: () => {
+      const pending = [...timers.values()]
+      timers.clear()
+      pending.forEach((callback) => callback())
+    },
+    append: () => {
+      rounds = [...rounds, { id: rounds.length, entries: [], question: 'new', summary: '' }]
+    },
+    unmount: () => slots.forEach((slot) => slot?.cleanup?.())
+  }
+}
+
+test('上滑边界先显示局部loading再分批前插，重复触发合并且不拉回末尾', async () => {
+  const harness = await transcriptHarness()
+  let scroll = harness.render()
+  assert.equal(scroll.first, 17)
+  assert.equal(scroll.visibleRounds.length, 8)
+  harness.calls.length = 0
+  scroll.onTop(true)
+  assert.equal(harness.timers.size, 0)
+  scroll.onReadHistory()
+  scroll = harness.render()
+  assert.equal(scroll.loadingHistory, true)
+  assert.equal(scroll.first, 17)
+  scroll.loadOlder()
+  assert.equal(harness.timers.size, 1)
+  harness.flush()
+  scroll = harness.render()
+  assert.equal(scroll.loadingHistory, false)
+  assert.equal(scroll.first, 9)
+  assert.equal(scroll.visibleRounds.length, 16)
+  assert.equal(harness.calls.length, 0)
+  scroll.loadOlder()
+  harness.unmount()
+  assert.equal(harness.timers.size, 0)
+})
+
+test('分批历史完整导航保持原始索引，回到最新与新消息跟随使用相对索引', async () => {
+  const harness = await transcriptHarness()
+  let scroll = harness.render()
+  scroll.jump(2)
+  scroll = harness.render()
+  assert.equal(scroll.first, 0)
+  assert.deepEqual(harness.calls.at(-1), { index: 2, align: 'start' })
+  scroll.toLatest()
+  assert.deepEqual(harness.calls.at(-1), { index: 24, align: 'end' })
+  harness.append()
+  harness.render()
+  assert.deepEqual(harness.calls.at(-1), { index: 25, align: 'end' })
+  harness.unmount()
+  const short = await transcriptHarness(3)
+  scroll = short.render()
+  assert.equal(scroll.first, 0)
+  scroll.loadOlder()
+  assert.equal(short.timers.size, 0)
+  short.unmount()
 })

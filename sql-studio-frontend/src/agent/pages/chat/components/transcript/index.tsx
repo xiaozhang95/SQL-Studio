@@ -8,6 +8,7 @@ import type { Entry } from '../../../../typings/chat'
 import { conversationRounds } from '../../../../utils/conversationRounds'
 import { CHAT } from '../../constant/chat'
 import { useVirtualTranscript } from '../../hooks/virtualTranscript'
+import { ConversationLoading } from '../conversationLoading'
 import { RoundNavigation } from '../roundNavigation'
 import { TurnContent } from '../turnContent'
 
@@ -20,6 +21,27 @@ interface Props {
   onEdit: (text: string) => void
   confirmation?: ReactNode
 }
+interface HistoryContext {
+  hasOlder: boolean
+  loading: boolean
+  onLoad: () => void
+}
+function HistoryBoundary({ context }: { context?: HistoryContext }) {
+  return (
+    <div style={{ ...CHAT.content, height: CHAT.historyBoundaryHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {!context?.hasOlder ? null : context.loading ? (
+        <ConversationLoading />
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <Button type="text" onClick={context.onLoad}>
+            加载更早的消息
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+const transcriptComponents = { Header: HistoryBoundary }
 export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
@@ -38,12 +60,16 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
         className="chat-scroll"
         ref={scroll.list}
         style={{ height: '100%', width: '100%', scrollbarGutter: 'auto' }}
-        data={rounds}
+        data={scroll.visibleRounds}
+        firstItemIndex={scroll.first}
+        components={transcriptComponents}
+        context={{ hasOlder: scroll.first > 0, loading: scroll.loadingHistory, onLoad: scroll.loadOlder }}
         computeItemKey={(_, round) => round.id}
-        initialTopMostItemIndex={{ index: rounds.length - 1, align: 'end' }}
+        initialTopMostItemIndex={{ index: scroll.visibleRounds.length - 1, align: 'end' }}
         increaseViewportBy={{ top: 300, bottom: 400 }}
         atBottomThreshold={96}
         atBottomStateChange={scroll.onBottom}
+        atTopStateChange={scroll.onTop}
         rangeChanged={scroll.onRange}
         followOutput={(atBottom) => (atBottom ? 'auto' : false)}
         totalListHeightChanged={scroll.onHeight}

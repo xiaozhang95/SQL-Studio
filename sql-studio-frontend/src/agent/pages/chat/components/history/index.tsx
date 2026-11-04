@@ -11,6 +11,7 @@ interface Props {
   items: ConversationInfo[]
   activeId: string
   busy: boolean
+  selecting: boolean
   loading: boolean
   onClose: () => void
   onSelect: (id: string) => Promise<void>
@@ -28,7 +29,7 @@ export function History(props: Props) {
       <aside
         className="chat-sidebar"
         style={{
-          background: token.colorBgLayout,
+          background: token.colorBgContainer,
           borderRight: `1px solid ${token.colorBorderSecondary}`
         }}
       >
@@ -75,7 +76,7 @@ export function History(props: Props) {
     </>
   )
 }
-function HistoryContents({ items, activeId, busy, loading, onSelect, onNew, onRefresh, onClose, onDelete, onRenameOpen }: Props & { onRenameOpen: (item: ConversationInfo) => void }) {
+function HistoryContents({ items, activeId, busy, selecting, loading, onSelect, onNew, onRefresh, onClose, onDelete, onRenameOpen }: Props & { onRenameOpen: (item: ConversationInfo) => void }) {
   const { token } = theme.useToken()
   return (
     <Flex
@@ -91,7 +92,7 @@ function HistoryContents({ items, activeId, busy, loading, onSelect, onNew, onRe
       <Button
         type="primary"
         icon={<PlusOutlined />}
-        disabled={busy}
+        disabled={busy || selecting}
         onClick={() => {
           onNew()
           onClose()
@@ -126,9 +127,9 @@ function HistoryContents({ items, activeId, busy, loading, onSelect, onNew, onRe
                       {i.title}
                     </Typography.Text>
                     <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      <Button type="text" size="small" aria-label={'重命名会话 ' + i.title} disabled={busy} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                      <Popconfirm title="删除这条会话？" description="将删除本机保存的消息和查询结果。" okText="删除" cancelText="取消" onConfirm={() => onDelete(i.id)} disabled={busy}>
-                        <Button danger type="text" size="small" aria-label={'删除会话 ' + i.title} disabled={busy} icon={<DeleteOutlined />} />
+                      <Button type="text" size="small" aria-label={'重命名会话 ' + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
+                      <Popconfirm title="删除这条会话？" description="将删除本机保存的消息和查询结果。" okText="删除" cancelText="取消" onConfirm={() => onDelete(i.id)} disabled={busy || selecting}>
+                        <Button danger type="text" size="small" aria-label={'删除会话 ' + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
                       </Popconfirm>
                     </span>
                   </Flex>

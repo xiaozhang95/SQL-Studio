@@ -8,6 +8,7 @@ import type { ThemePreference } from '@/typings/theme'
 
 import type { WorkspaceController } from '../../hooks/workspace'
 import { Composer } from './components/composer'
+import { ConversationLoading } from './components/conversationLoading'
 import { History } from './components/history'
 import { Transcript } from './components/transcript'
 import { Welcome } from './components/welcome'
@@ -79,7 +80,7 @@ export function ChatPage({
         }
       >
         {' '}
-        <Button aria-label="返回工作区" icon={<ArrowLeftOutlined />} onClick={onBack} disabled={chat.busy}>
+        <Button aria-label="返回工作区" icon={<ArrowLeftOutlined />} onClick={onBack} disabled={chat.historyBusy}>
           返回工作区
         </Button>
         <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />
@@ -89,7 +90,8 @@ export function ChatPage({
           open={chat.historyOpen}
           items={chat.history}
           activeId={workspace.state.activeId}
-          busy={chat.busy}
+          busy={chat.historyBusy}
+          selecting={chat.loading}
           loading={chat.historyLoading}
           onClose={chat.closeHistory}
           onSelect={chat.selectHistory}
@@ -120,7 +122,11 @@ export function ChatPage({
               }}
             >
               <div style={chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
-                {chat.entries.length === 0 ? (
+                {chat.loading ? (
+                  <ConversationLoading label="正在加载会话" />
+                ) : chat.loadError ? (
+                  <Alert type="error" showIcon title="会话加载失败" description={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>重试</Button>} />
+                ) : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (
                   <Transcript

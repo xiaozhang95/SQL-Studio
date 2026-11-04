@@ -4,6 +4,9 @@ const conversationMaxWidth = 960
 const transcriptInset = 32
 
 export const CHAT = {
+  historyBatchSize: 8,
+  historyLoadingDelay: 80,
+  historyBoundaryHeight: 48,
   maxQuestionLength: 2000,
   maxTitleLength: 80,
   toolEndpoints: {
