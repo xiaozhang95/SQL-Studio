@@ -75,6 +75,14 @@ body {
   }
 }
 
+// 手动渲染的下拉箭头与 Ant Design 子菜单保持同一颜色和尺寸。
+.dropdown-chevron {
+  font-size: var(--ant-font-size-icon);
+}
+.ant-btn:not(:disabled) .dropdown-chevron {
+  color: var(--ant-color-icon);
+}
+
 // 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
 * {
   scrollbar-width: thin;
@@ -269,7 +277,23 @@ body {
 .data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);
 }
-// Agent 结果由 Table section 绘制闭合外框，单元格只绘制内部分隔线。
+// 内容卡片与查询结果使用闭合外框；圆角由 Ant Design 提供。
+.ant-card.content-frame,
+.ant-table-wrapper .ant-table.ant-table-bordered > .agent-result-grid {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--ant-border-radius-lg);
+}
+.ant-card.code-panel,
+.ant-table-wrapper .ant-table.ant-table-bordered > .agent-result-grid {
+  overflow: hidden;
+}
+.ant-card.code-panel > .ant-card-body {
+  padding: 0;
+}
+
+// 表格单元格仅绘制内部分隔线，分页复用公共底栏并省去相邻边线。
 .ant-table-wrapper .ant-table.ant-table-bordered > .agent-result-grid {
   > :is(.ant-table-content, .ant-table-header, .ant-table-body) > table > :is(thead, tbody) > tr > :is(th, td):last-child {
     border-inline-end: 0;
@@ -290,6 +314,9 @@ body {
   padding: 8px var(--workspace-inset);
   border-top: 1px solid var(--border);
   background: var(--surface);
+}
+.sql-studio-theme .ant-table-wrapper .ant-table-pagination.agent-result-pagination {
+  border-top: 0;
 }
 .history-table .ant-table-body {
   height: var(--history-body-height);
@@ -431,11 +458,47 @@ body {
   flex-basis: 8px;
 }
 
-/* Agent conversation layout and scoped scrollbars. */
-/* Message scroll region; native component appearance follows Ant Design tokens. */
+// Agent 消息区和 Sender 共用工作区分隔线，输入框的圆角沿用 Sender。
+.ant-divider.chat-turn-divider {
+  margin: 0;
+  border-block-start: 1px solid var(--border);
+}
+.ant-sender.chat-sender {
+  border-color: var(--border);
+  box-shadow: none;
+  background: var(--ant-color-fill-quaternary);
+}
+.chat-sender .chat-sender-content {
+  padding: var(--ant-padding);
+}
+.chat-sender .chat-sender-input {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+.chat-sender .chat-sender-footer {
+  padding-inline: var(--ant-padding);
+  padding-block-end: var(--ant-padding);
+}
+.ant-btn.chat-mode-write:not(:disabled) {
+  color: var(--ant-color-warning);
+  border-color: var(--ant-color-warning);
+}
+.chat-mode-hint {
+  color: var(--ant-color-icon);
+}
+// Think 的展开区由 Card 绘制外框。
+.ant-think .chat-process-content {
+  margin-inline-start: 0;
+  margin-block-start: var(--ant-margin-xs);
+  padding: 0;
+  border-inline-start: 0;
+}
+
 .chat-scroll {
   flex: 1;
   min-height: 0;
+  width: 100%;
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;

@@ -34,6 +34,11 @@ export function History(props: Props) {
   const keyword = search.trim().toLowerCase()
   const items = keyword ? props.items.filter(({ title }) => title.toLowerCase().includes(keyword)) : props.items
   const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show }
+  const refreshAction = (
+    <Tooltip title="刷新历史">
+      <Button type="text" size="small" aria-label="刷新历史" icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
+    </Tooltip>
+  )
   return (
     <>
       <aside
@@ -46,7 +51,15 @@ export function History(props: Props) {
           borderRight: '1px solid var(--border)'
         }}
       >
-        <HistoryContents {...contentsProps} />
+        <HistoryContents
+          {...contentsProps}
+          header={
+            <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS }}>
+              <Typography.Text type="secondary">历史会话</Typography.Text>
+              {refreshAction}
+            </Flex>
+          }
+        />
         <div
           className="sidebar-resizer"
           role="separator"
@@ -60,7 +73,7 @@ export function History(props: Props) {
           style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
         />
       </aside>
-      <Drawer title="历史会话" placement="left" size={280} open={open} onClose={onClose} styles={{ body: { padding: 0 } }}>
+      <Drawer title="历史会话" extra={refreshAction} placement="left" size={280} open={open} onClose={onClose} styles={{ body: { padding: 0 } }}>
         <HistoryContents {...contentsProps} />
       </Drawer>
       <Modal
@@ -108,13 +121,13 @@ function HistoryContents({
   selecting,
   loading,
   onSelect,
-  onRefresh,
   onDelete,
   onRenameOpen,
   search,
   onSearchChange,
-  footer
-}: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void }) {
+  footer,
+  header
+}: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
   const { token } = theme.useToken()
   return (
     <Flex
@@ -129,12 +142,7 @@ function HistoryContents({
       }}
     >
       <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="搜索会话标题" aria-label="搜索会话标题" allowClear />
-      <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS }}>
-        <Typography.Text type="secondary">历史会话</Typography.Text>
-        <Tooltip title="刷新历史">
-          <Button type="text" size="small" aria-label="刷新历史" icon={<ReloadOutlined />} onClick={() => void onRefresh()} disabled={loading} />
-        </Tooltip>
-      </Flex>
+      {header}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
@@ -145,7 +153,7 @@ function HistoryContents({
               onActiveChange={(key) => {
                 if (!busy) void onSelect(key)
               }}
-              styles={{ root: { padding: 0 }, item: { paddingInline: 8 } }}
+              styles={{ root: { padding: 0 }, item: { paddingInline: token.paddingXS } }}
               items={items.map((i) => ({
                 key: i.id,
                 disabled: busy,

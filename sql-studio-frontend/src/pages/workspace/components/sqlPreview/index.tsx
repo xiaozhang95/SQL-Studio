@@ -36,7 +36,7 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
   const editor = <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly style={{ flex: 1, minWidth: 0 }} basicSetup={previewSetup} aria-label="SQL 文本" />
   if (panel)
     return (
-      <Card size="small" title={title} extra={copyButton} styles={{ body: { padding: 0 } }} style={{ minWidth: 0 }}>
+      <Card size="small" className="content-frame code-panel" title={title} extra={copyButton}>
         <div className="output-sql-preview" style={{ minWidth: 0 }}>
           {editor}
         </div>

@@ -304,7 +304,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                   disabled={!result?.isQuery || deferredSearch !== resultSearch}
                 >
                   <Button icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch}>
-                    导出 CSV <DownOutlined />
+                    导出 CSV <DownOutlined aria-hidden="true" className="dropdown-chevron" />
                   </Button>
                 </Dropdown>
               </>

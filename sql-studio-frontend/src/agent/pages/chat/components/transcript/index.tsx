@@ -45,16 +45,7 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
         <Button size="small" shape="circle" aria-label="上一轮" title="上一轮" icon={<ArrowUpOutlined />} onClick={previous} disabled={activeIndex === 0 || loading} />
         <Button size="small" shape="circle" aria-label="下一轮" title="下一轮" icon={<ArrowDownOutlined />} onClick={next} disabled={latest || loading} />
       </Flex>
-      <div
-        ref={viewportRef}
-        className="chat-scroll"
-        role="region"
-        aria-label="当前轮对话"
-        aria-busy={loading}
-        tabIndex={0}
-        onScroll={onScroll}
-        style={{ flex: 1, minHeight: 0, width: '100%', overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}
-      >
+      <div ref={viewportRef} className="chat-scroll" role="region" aria-label="当前轮对话" aria-busy={loading} tabIndex={0} onScroll={onScroll}>
         {loading ? (
           <ContentLoading label={'正在加载第 ' + (activeIndex + 1) + ' 轮对话…'} />
         ) : round ? (

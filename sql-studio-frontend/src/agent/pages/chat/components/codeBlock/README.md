@@ -4,4 +4,4 @@ text/language受控的只读代码预览。复用CodeMirror，支持SQL、JSON�
 
 代码区域字体、字号、行高均使用当前Ant Design token，不采用CodeMirror默认等宽字体；语法高亮与复制保留。
 
-代码卡片与查询结果表格共用 CHAT.blockFrame 的边框、圆角和满宽布局。代码内容裁切在圆角内，长代码仍可在编辑器内滚动。与相邻内容的间隔由 AnswerContent 或 WriteConfirmation 控制。
+代码卡片、查询结果表格和工作区的 SQL 预览面板共用 app.scss 的外框规则。代码内容裁切在圆角内，长代码仍可在编辑器内滚动。与相邻内容的间隔由 AnswerContent 或 WriteConfirmation 控制。

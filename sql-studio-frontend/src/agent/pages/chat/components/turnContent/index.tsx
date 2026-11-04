@@ -174,7 +174,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                   <Typography.Text copyable={{ text: e.text, tooltips: ['复制问题', '已复制'] }} />
                 </Flex>
               )}
-              {user && <Divider style={{ margin: 0, borderBlockStart: '1px solid var(--border)' }} />}
+              {user && <Divider className="chat-turn-divider" />}
             </Flex>
           )
         })

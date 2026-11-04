@@ -8,4 +8,4 @@ memo 复用相同内容/主题的预览，basicSetup 保持稳定，避免输入
 
 所有调用完整显示 SQL，保留换行并自动折行；不提供固定高度、最大高度或首行截断参数，不产生编辑器内部滚动条。结果表格、消息区、历史抽屉和对象/优化弹窗各自负责外层滚动。容器布局使用组件 style，编辑器内部使用 [editorAppearance](../../utils/editorAppearance/README.md) 的 CodeMirror 原生样式扩展。
 
-compact 在 SQL 首行旁显示复制图标；panel 使用原生 small Card 标题栏放置 title 和复制按钮。默认展示在 SQL 上方显示标题与复制按钮。复制始终使用原始全文，成功或失败通过 AntApp message 反馈；无异步请求、缓存或可变业务状态。
+compact 在 SQL 首行旁显示复制图标。panel 使用 small Card 标题栏放置 title 和复制按钮，与 Agent 代码卡片共用 app.scss 的外框。默认展示在 SQL 上方显示标题与复制按钮。复制使用原始全文，通过 AntApp message 反馈结果。

@@ -3,6 +3,7 @@ import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, theme, Tooltip
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 
 import { APPEARANCE } from '../../../../constant/appearance'
@@ -49,7 +50,7 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
   )
 }
 
-const tableFrame = { classNames: { section: 'agent-result-grid' }, styles: { section: CHAT.blockFrame, pagination: { root: { borderTop: 0 } } } } as const
+const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
 
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const { token } = theme.useToken()
@@ -62,7 +63,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   const result = readResult(value)
   if (isObject(value) && value.isQuery === false)
     return (
-      <Card size="small" title={cardTitle}>
+      <Card size="small" className="content-frame" title={cardTitle}>
         <Descriptions
           size="small"
           column={1}
@@ -120,9 +121,9 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       >
         {result.truncated && <Alert type="warning" showIcon title="结果已截断，统计全量请使用聚合查询。" banner />}
         <Table<Row>
-          {...tableFrame}
+          classNames={resultTableClassNames}
           aria-label="查询结果"
-          size={APPEARANCE.tableSize}
+          size={appearance.tableSize}
           bordered
           tableLayout="fixed"
           columns={columns}
@@ -170,7 +171,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   }
   if (tool === 'use_database' && isObject(value) && isObject(value.target)) {
     return (
-      <Card size="small" title={cardTitle}>
+      <Card size="small" className="content-frame" title={cardTitle}>
         <Descriptions
           size="small"
           column={1}
@@ -190,8 +191,8 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     return (
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
-          {...tableFrame}
-          size={APPEARANCE.tableSize}
+          classNames={resultTableClassNames}
+          size={appearance.tableSize}
           bordered
           columns={[{ title: '名称', dataIndex: 'name', key: 'name' }]}
           dataSource={value.map((name, i) => ({ key: i, name }))}
@@ -229,8 +230,8 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     return (
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
-          {...tableFrame}
-          size={APPEARANCE.tableSize}
+          classNames={resultTableClassNames}
+          size={appearance.tableSize}
           bordered
           tableLayout="fixed"
           columns={columns}
@@ -252,7 +253,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     )
   }
   return (
-    <Card size="small" title={cardTitle}>
+    <Card size="small" className="content-frame" title={cardTitle}>
       <Typography.Paragraph
         style={{
           whiteSpace: 'pre-wrap',

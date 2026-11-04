@@ -20,6 +20,7 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
   return (
     <Card
       size="small"
+      className="content-frame"
       role="region"
       aria-label={writing ? '数据库操作确认' : '继续操作确认'}
       title={
@@ -28,7 +29,6 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
           <span>{title}</span>
         </Space>
       }
-      style={{ width: '100%', minWidth: 0 }}
     >
       <Flex vertical gap={CHAT.spacing.block}>
         {writing ? (

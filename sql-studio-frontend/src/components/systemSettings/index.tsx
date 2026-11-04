@@ -103,9 +103,6 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
               if (visible) setConnection('checking')
               setOpen(visible)
             }}
-            styles={{
-              itemContent: { display: 'flex', alignItems: 'center', flex: 1 }
-            }}
             menu={{
               selectable: false,
               items: [
@@ -166,7 +163,7 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
             <Button block aria-haspopup="menu" aria-expanded={open} icon={<SettingOutlined />} style={{ height: '100%', justifyContent: 'flex-start', paddingInline: token.paddingSM }}>
               <Flex align="center" justify="space-between" flex={1}>
                 系统设置
-                <TriggerArrow aria-hidden="true" style={{ color: token.colorIcon }} />
+                <TriggerArrow aria-hidden="true" className="dropdown-chevron" />
               </Flex>
             </Button>
           </Dropdown>

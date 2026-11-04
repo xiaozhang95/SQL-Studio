@@ -20,9 +20,10 @@ export function ProcessCard({ title, expanded, onExpand, children, icon }: Props
         title={title}
         expanded={expanded}
         onExpand={onExpand}
-        styles={{ root: { flex: 1, minWidth: 0 }, content: { marginInlineStart: 0, marginTop: token.marginXS, padding: 0, borderInlineStart: 0 } }}
+        classNames={{ content: 'chat-process-content' }}
+        styles={{ root: { flex: 1, minWidth: 0 } }}
       >
-        {expanded ? <Card size="small">{children}</Card> : null}
+        {expanded ? <Card size="small" className="content-frame">{children}</Card> : null}
       </Think>
     </Flex>
   )

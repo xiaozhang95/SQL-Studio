@@ -60,11 +60,11 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
       <Form form={form} component={false} onValuesChange={onDraftChange}>
         <Form.Item name="question" noStyle>
           <Sender
+            classNames={{ root: 'chat-sender', content: 'chat-sender-content', input: 'chat-sender-input', footer: 'chat-sender-footer' }}
             styles={{
-              root: { border: `1px solid ${token.colorBorder}`, boxShadow: 'none', background: token.colorFillQuaternary, height: height, display: 'flex', flexDirection: 'column' },
-              content: { padding: token.padding, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
-              input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
-              footer: { paddingInline: token.padding, paddingBottom: token.padding }
+              root: { height, display: 'flex', flexDirection: 'column' },
+              content: height === undefined ? undefined : { flex: 1, minHeight: 0 },
+              input: height === undefined ? undefined : { height: '100%', overflowY: 'auto' }
             }}
             aria-label="消息"
             onSubmit={submit}
@@ -122,16 +122,16 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       aria-label="操作模式"
                       disabled={busy || settingsBusy}
                       icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
-                      style={mode === 'write' ? { color: token.colorWarning, borderColor: token.colorWarning } : undefined}
+                      className={mode === 'write' ? 'chat-mode-write' : undefined}
                     >
                       {mode === 'write' ? '完全访问模式' : '只读模式'}
-                      <DownOutlined style={{ color: token.colorTextTertiary }} />
+                      <DownOutlined aria-hidden="true" className="dropdown-chevron" />
                     </Button>
                   </Dropdown>
                   <Tooltip
                     title={`只读模式仅查询；完全访问模式可修改数据及结构，执行前逐次确认，操作可能不可撤销。删除和清空始终禁止执行。${usage ? ` 1M上下文 · 输入 ${usage.promptTokens || '—'} token` : ''}`}
                   >
-                    <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined style={{ color: token.colorTextTertiary }} />} />
+                    <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined className="chat-mode-hint" />} />
                   </Tooltip>
                 </Flex>
                 <Flex align="center" gap={token.marginXS}>
@@ -155,7 +155,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       style={{ paddingInline: token.paddingXS }}
                     >
                       {aiStatus?.models.find((m) => m.id === aiStatus.model)?.name ?? 'DeepSeek'}
-                      <DownOutlined style={{ color: token.colorTextTertiary }} />
+                      <DownOutlined aria-hidden="true" className="dropdown-chevron" />
                     </Button>
                   </Dropdown>
                   {busy ? (

@@ -44,13 +44,6 @@ export const CHAT = {
   modeConfirmationWidth: 720,
   spacing: { block: 'middle', detail: 'small' },
   composerRows: { minRows: 4, maxRows: 10 },
-  blockFrame: {
-    width: '100%',
-    minWidth: 0,
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--ant-border-radius-lg)',
-    overflow: 'hidden'
-  } satisfies CSSProperties,
   content: {
     width: `calc(100% - ${transcriptInset * 2}px)`,
     maxWidth: conversationMaxWidth,
