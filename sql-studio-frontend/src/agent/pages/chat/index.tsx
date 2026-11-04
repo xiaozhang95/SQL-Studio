@@ -1,14 +1,14 @@
-import { ArrowLeftOutlined, MenuOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons'
-import { Alert, Button, Flex, Select, theme } from 'antd'
+import { DatabaseOutlined, MenuOutlined } from '@ant-design/icons'
+import { Alert, Button, Flex, theme } from 'antd'
 
-import AISettings from '@/components/aiSettings'
+import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
+import SystemSettings from '@/components/systemSettings'
 import type { ThemePreference } from '@/typings/theme'
 
 import type { WorkspaceController } from '../../hooks/workspace'
 import { Composer } from './components/composer'
-import { ConversationLoading } from './components/conversationLoading'
 import { History } from './components/history'
 import { Transcript } from './components/transcript'
 import { Welcome } from './components/welcome'
@@ -17,6 +17,7 @@ import { CHAT } from './constant/chat'
 import { useChat } from './hooks/chat'
 import { useOperationMode } from './hooks/operationMode'
 import { useAISettings } from './hooks/settings'
+import { useAgentSidebar } from './hooks/sidebar'
 
 export function ChatPage({
   dark,
@@ -34,6 +35,7 @@ export function ChatPage({
   const operation = useOperationMode(workspace)
   const chat = useChat(workspace, operation.mode)
   const ai = useAISettings()
+  const sidebar = useAgentSidebar()
   const { token } = theme.useToken()
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
   const errors = [...new Set([workspace.error, chat.error, ai.error].filter(Boolean))]
@@ -63,30 +65,19 @@ export function ChatPage({
                 savedHint="对话保存在本机，布局和草稿自动保存"
               />
             </span>
-            <Select
-              className="theme-select"
-              aria-label="界面主题"
-              value={themePreference}
-              onChange={onThemeChange}
-              prefix={dark ? <MoonOutlined /> : <SunOutlined />}
-              options={[
-                { value: 'system', label: '跟随系统' },
-                { value: 'light', label: '亮色模式' },
-                { value: 'dark', label: '暗黑模式' }
-              ]}
-              style={{ width: 144 }}
-            />
           </>
         }
       >
         {' '}
-        <Button aria-label="返回工作区" icon={<ArrowLeftOutlined />} onClick={onBack} disabled={chat.historyBusy}>
-          返回工作区
+        <Button icon={<DatabaseOutlined />} onClick={onBack} disabled={chat.historyBusy}>
+          工作区
         </Button>
         <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History
+          layout={sidebar}
+          footer={<SystemSettings themeMode={dark ? 'dark' : 'light'} themePreference={themePreference} onThemeChange={onThemeChange} />}
           open={chat.historyOpen}
           items={chat.history}
           activeId={workspace.state.activeId}
@@ -121,9 +112,9 @@ export function ChatPage({
                 alignItems: chat.entries.length === 0 ? 'center' : 'stretch'
               }}
             >
-              <div style={chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
+              <div style={chat.loading || chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
                 {chat.loading ? (
-                  <ConversationLoading label="正在加载会话" />
+                  <ContentLoading label="正在加载会话…" />
                 ) : chat.loadError ? (
                   <Alert type="error" showIcon title="会话加载失败" description={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>重试</Button>} />
                 ) : chat.entries.length === 0 ? (
@@ -155,25 +146,18 @@ export function ChatPage({
               }}
             >
               <div style={CHAT.content}>
-                <AISettings
-                  themeMode={dark ? 'dark' : 'light'}
-                  showCompletionSetting={false}
-                  trigger={(show) => (
-                    <Composer
-                      mode={operation.mode}
-                      onModeChange={operation.change}
-                      form={chat.form}
-                      busy={chat.busy}
-                      settingsBusy={ai.busy}
-                      aiStatus={ai.status}
-                      onSend={chat.send}
-                      onStop={chat.stop}
-                      onConfigure={() => void show()}
-                      onModelChange={ai.chooseModel}
-                      onDraftChange={chat.onDraftChange}
-                      usage={chat.usage}
-                    />
-                  )}
+                <Composer
+                  mode={operation.mode}
+                  onModeChange={operation.change}
+                  form={chat.form}
+                  busy={chat.busy}
+                  settingsBusy={ai.busy}
+                  aiStatus={ai.status}
+                  onSend={chat.send}
+                  onStop={chat.stop}
+                  onModelChange={ai.chooseModel}
+                  onDraftChange={chat.onDraftChange}
+                  usage={chat.usage}
                 />
               </div>
             </div>

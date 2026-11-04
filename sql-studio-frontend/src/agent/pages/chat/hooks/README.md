@@ -10,3 +10,6 @@
 - [operationMode](operationMode/README.md)：读写模式与风险提示。
 
 - [writeConfirmation](writeConfirmation/README.md)：逐次数据库写入确认。
+
+- [sidebar](sidebar/README.md)：会话侧栏宽度拖拽。
+- [composerResize](composerResize/README.md)：聊天输入区高度拖拽与窗口约束。

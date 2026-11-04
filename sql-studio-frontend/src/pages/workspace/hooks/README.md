@@ -6,7 +6,7 @@
 - [useDatabaseObjects](useDatabaseObjects/README.md)：按连接隔离的元数据缓存、打开/关闭与取消。
 - [useConnectionForm](useConnectionForm/README.md)：连接表单、测试与保存。
 - [useConnectionGroups](useConnectionGroups/README.md)：共享分组列表的新建、重命名与连接移动。
-- [useSidebarResize](useSidebarResize/README.md)：对象栏拖动、键盘调整与宽度边界。
+- [useSidebarResize](../../../hooks/useSidebarResize/README.md)：对象栏拖动、键盘调整与宽度边界。
 - [useSQLCompletion](useSQLCompletion/README.md)：当前连接元数据组织与数据库补全扩展。
 
 每个 hook 使用独立入口及文档；组件只消费其公开返回值。

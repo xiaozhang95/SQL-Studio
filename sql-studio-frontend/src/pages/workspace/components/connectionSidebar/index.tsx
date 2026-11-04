@@ -1,10 +1,13 @@
 import { Spin } from 'antd'
+import type { ReactNode } from 'react'
 
-import type { useSidebarResize } from '../../hooks/useSidebarResize'
+import type { useSidebarResize } from '@/hooks/useSidebarResize'
+
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import DatabaseExplorer from '../databaseExplorer'
 
 type Props = {
+  footer?: ReactNode
   layout: ReturnType<typeof useSidebarResize>
   model: Pick<
     WorkspaceModel,
@@ -28,7 +31,7 @@ type Props = {
   >
 }
 /** 侧栏承载完整连接树，范围选择与结构缓存由工作区管理。 */
-export default function ConnectionSidebar({ model, layout }: Props) {
+export default function ConnectionSidebar({ model, layout, footer }: Props) {
   const { panel, visibleWidth, minimumWidth, maximumWidth, resizing, resizer } = layout
   return (
     <aside
@@ -47,12 +50,13 @@ export default function ConnectionSidebar({ model, layout }: Props) {
       }}
     >
       {model.connectionLoading && !model.connections.length ? (
-        <div className="tree-loading" style={{ textAlign: 'center', padding: '28px 10px' }}>
+        <div className="tree-loading" style={{ flex: 1, textAlign: 'center', padding: '28px 10px' }}>
           <Spin />
         </div>
       ) : (
         <DatabaseExplorer model={model} />
       )}
+      {footer}
       <div
         className="sidebar-resizer"
         role="separator"

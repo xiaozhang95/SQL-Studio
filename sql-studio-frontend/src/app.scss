@@ -46,6 +46,35 @@ body {
   margin: 0;
 }
 
+// 会话操作保留宽度占位，只在对应会话悬停或键盘聚焦时显示。
+.chat-history-actions {
+  opacity: 0;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.chat-history-row:hover .chat-history-actions,
+.chat-history-row:focus-within .chat-history-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+// Dropdown 的子菜单外层是 li，行布局必须应用到内部 title，不能把 li 变成 flex。
+.system-settings-menu {
+  .ant-dropdown-menu-item,
+  .ant-dropdown-menu-submenu-title {
+    display: flex;
+    align-items: center;
+    height: var(--ant-control-height-lg);
+    padding-block: 0;
+  }
+
+  .ant-dropdown-menu-title-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+}
+
 // 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
 * {
   scrollbar-width: thin;
@@ -463,14 +492,6 @@ body {
 }
 .agent-conversation-column .chat-scroll::-webkit-scrollbar {
   width: 0;
-}
-.chat-round-navigation {
-  inset-inline-start: 232px;
-}
-@media (max-width: 760px) {
-  .chat-round-navigation {
-    inset-inline-start: 0;
-  }
 }
 
 /* Question navigation hover and keyboard focus retain a clear click target. */

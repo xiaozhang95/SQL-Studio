@@ -21,7 +21,7 @@ export function RoundNavigation({ rounds, onJump }: Props) {
       role="navigation"
       aria-label="提问导航"
       className="chat-round-navigation"
-      style={{ position: 'fixed', top: '50%', transform: 'translateY(-50%)', zIndex: 2, maxHeight: '80%', width: 32 }}
+      style={{ position: 'absolute', insetInlineStart: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, maxHeight: '80%', width: 32 }}
     >
       <Popover
         trigger="click"

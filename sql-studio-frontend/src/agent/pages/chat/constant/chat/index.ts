@@ -4,6 +4,8 @@ const conversationMaxWidth = 960
 const transcriptInset = 32
 
 export const CHAT = {
+  composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
+  sidebarLayout: { defaultWidth: 232, minimumWidth: 200, maximumWidth: 560, minimumMainWidth: 520, keyboardStep: 24 },
   historyBatchSize: 8,
   historyLoadingDelay: 80,
   historyBoundaryHeight: 48,

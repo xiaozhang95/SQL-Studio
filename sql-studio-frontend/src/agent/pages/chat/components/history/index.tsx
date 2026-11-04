@@ -1,12 +1,17 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import { Alert, Button, Drawer, Empty, Flex, Form, Input, Modal, Popconfirm, Spin, theme, Tooltip, Typography } from 'antd'
+import type { ReactNode } from 'react'
+
+import type { useSidebarResize } from '@/hooks/useSidebarResize'
 
 import type { ConversationInfo } from '../../../../typings/workspace'
 import { CHAT } from '../../constant/chat'
 import { useSessionRename } from '../../hooks/sessionRename'
 
 interface Props {
+  layout: ReturnType<typeof useSidebarResize>
+  footer?: ReactNode
   open: boolean
   items: ConversationInfo[]
   activeId: string
@@ -27,13 +32,28 @@ export function History(props: Props) {
   return (
     <>
       <aside
+        ref={props.layout.panel}
         className="chat-sidebar"
         style={{
+          position: 'relative',
+          width: props.layout.visibleWidth,
           background: token.colorBgContainer,
           borderRight: `1px solid ${token.colorBorderSecondary}`
         }}
       >
         <HistoryContents {...props} onRenameOpen={rename.show} />
+        <div
+          className="sidebar-resizer"
+          role="separator"
+          aria-label="调整历史会话栏宽度"
+          aria-orientation="vertical"
+          aria-valuemin={props.layout.minimumWidth}
+          aria-valuemax={props.layout.maximumWidth}
+          aria-valuenow={Math.round(props.layout.visibleWidth)}
+          tabIndex={0}
+          {...props.layout.resizer}
+          style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
+        />
       </aside>
       <Drawer title="历史会话" placement="left" size={280} open={open} onClose={onClose} styles={{ body: { padding: 0 } }}>
         <HistoryContents {...props} onRenameOpen={rename.show} />
@@ -76,7 +96,20 @@ export function History(props: Props) {
     </>
   )
 }
-function HistoryContents({ items, activeId, busy, selecting, loading, onSelect, onNew, onRefresh, onClose, onDelete, onRenameOpen }: Props & { onRenameOpen: (item: ConversationInfo) => void }) {
+function HistoryContents({
+  items,
+  activeId,
+  busy,
+  selecting,
+  loading,
+  onSelect,
+  onNew,
+  onRefresh,
+  onClose,
+  onDelete,
+  onRenameOpen,
+  footer
+}: Props & { onRenameOpen: (item: ConversationInfo) => void }) {
   const { token } = theme.useToken()
   return (
     <Flex
@@ -85,6 +118,7 @@ function HistoryContents({ items, activeId, busy, selecting, loading, onSelect, 
         height: '100%',
         minHeight: 0,
         padding: token.paddingXS,
+        paddingInline: 'var(--workspace-inset)',
         gap: token.marginSM,
         paddingTop: token.paddingSM
       }}
@@ -122,11 +156,11 @@ function HistoryContents({ items, activeId, busy, selecting, loading, onSelect, 
                 key: i.id,
                 disabled: busy,
                 label: (
-                  <Flex align="center" justify="space-between" gap="small">
+                  <Flex className="chat-history-row" align="center" justify="space-between" gap="small">
                     <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
                       {i.title}
                     </Typography.Text>
-                    <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                    <span className="chat-history-actions" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       <Button type="text" size="small" aria-label={'重命名会话 ' + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
                       <Popconfirm title="删除这条会话？" description="将删除本机保存的消息和查询结果。" okText="删除" cancelText="取消" onConfirm={() => onDelete(i.id)} disabled={busy || selecting}>
                         <Button danger type="text" size="small" aria-label={'删除会话 ' + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
@@ -139,6 +173,7 @@ function HistoryContents({ items, activeId, busy, selecting, loading, onSelect, 
           )}
         </Spin>
       </div>
+      {footer && <div style={{ flexShrink: 0, marginInline: 'calc(-1 * var(--workspace-inset))', marginBottom: -token.paddingXS }}>{footer}</div>}
     </Flex>
   )
 }

@@ -13,3 +13,5 @@ sidebarWidth/setSidebarWidth 为受控偏好宽度，交互由 useSidebarResize 
 接收layout: ReturnType<typeof useSidebarResize>，由工作区统一管理实际显示宽度与拖动事件，侧栏只消费同一份布局；顶部竖线随visibleWidth同步对齐。
 
 已有连接时刷新列表保留树实例，避免加载指示器卸载整棵树；只有首次无连接数据的加载显示 Spin。
+
+footer?:ReactNode为可选底部固定插槽，用于系统设置入口，与连接树分开布局，不随树滚动。加载连接列表时保留弹性空间，入口仍位于底部。

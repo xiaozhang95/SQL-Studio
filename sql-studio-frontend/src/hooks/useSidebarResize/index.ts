@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 
-import { sidebarLayout } from '../../constant/layout'
-
-const { minimumWidth, maximumWidth, defaultWidth, minimumMainWidth, keyboardStep } = sidebarLayout
+export interface SidebarResizeLayout {
+  readonly minimumWidth: number
+  readonly maximumWidth: number
+  readonly defaultWidth: number
+  readonly minimumMainWidth: number
+  readonly keyboardStep: number
+}
 
 /** 拖动只更新临时宽度，结束时提交布局，避免每个像素都加密保存整个工作区。 */
-export function useSidebarResize(width: number, onWidthChange: (width: number) => void, enabled = true) {
+export function useSidebarResize(width: number, onWidthChange: (width: number) => void, layout: SidebarResizeLayout, enabled = true) {
+  const { minimumWidth, maximumWidth, defaultWidth, minimumMainWidth, keyboardStep } = layout
   const panel = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; start: number; current: number } | null>(null)
   const [preview, setPreview] = useState<number | null>(null)

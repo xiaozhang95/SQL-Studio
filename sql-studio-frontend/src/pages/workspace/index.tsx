@@ -1,9 +1,11 @@
-import { CodeOutlined, CommentOutlined, MoonOutlined, PlusOutlined, SunOutlined } from '@ant-design/icons'
-import { Alert, Button, Divider, Empty, Select, Spin } from 'antd'
+import { CodeOutlined, CommentOutlined, PlusOutlined } from '@ant-design/icons'
+import { Alert, Button, Divider, Empty } from 'antd'
 
-import AISettings from '@/components/aiSettings'
+import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
+import SystemSettings from '@/components/systemSettings'
+import { useSidebarResize } from '@/hooks/useSidebarResize'
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
 import ConnectionGroupModal from './components/connectionGroupModal'
@@ -16,7 +18,7 @@ import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { useSidebarResize } from './hooks/useSidebarResize'
+import { sidebarLayout } from './constant/layout'
 import { useWorkspace } from './hooks/useWorkspace'
 
 type Props = {
@@ -31,7 +33,7 @@ type Props = {
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
 export default function Workspace({ onOpenAgent, themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
   const model = useWorkspace()
-  const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, model.workspaceReady)
+  const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   const storageError = model.storageError || themeError
   const noticeError = [...new Set([storageError, model.connectionError].filter(Boolean))].join('\n')
   return (
@@ -44,21 +46,6 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
           <>
             {' '}
             <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />
-            <Select
-              aria-label="界面主题"
-              placeholder="选择界面主题"
-              disabled={!themeReady}
-              className="theme-select"
-              value={themePreference}
-              onChange={onThemeChange}
-              prefix={themeMode === 'dark' ? <MoonOutlined /> : <SunOutlined />}
-              options={[
-                { value: 'system', label: '跟随系统' },
-                { value: 'light', label: '亮色模式' },
-                { value: 'dark', label: '暗黑模式' }
-              ]}
-              style={{ width: 144 }}
-            />
           </>
         }
       >
@@ -80,7 +67,6 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
           </Button>
         </div>
         <Divider orientation="vertical" style={{ margin: 0 }} />
-        <AISettings themeMode={themeMode} />
         <Button icon={<CommentOutlined />} onClick={onOpenAgent}>
           Agent
         </Button>
@@ -104,11 +90,11 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
       )}
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
-          <Spin description="正在恢复工作区…" />
+          <ContentLoading label="正在恢复工作区…" />
         </div>
       ) : (
         <div className="workspace" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <ConnectionSidebar model={model} layout={sidebar} />
+          <ConnectionSidebar model={model} layout={sidebar} footer={<SystemSettings themeMode={themeMode} themePreference={themePreference} onThemeChange={onThemeChange} themeReady={themeReady} />} />
           <main className="main-area" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
             <div className="query-workspace" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {model.tabs.length > 0 ? (
@@ -135,7 +121,7 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
                         <Alert type="error" title="标签内容加载失败" description={model.pageLoadError} action={<Button onClick={model.retryPage}>重试</Button>} />
                       ) : (
                         <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                          <Spin description="正在加载当前标签…" />
+                          <ContentLoading label="正在加载当前标签…" />
                         </div>
                       )
                     ) : (
