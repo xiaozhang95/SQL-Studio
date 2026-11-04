@@ -26,17 +26,18 @@ interface Props {
   onRename: (id: string, title: string) => Promise<void>
 }
 export function History(props: Props) {
+  const { panel: panelRef, visibleWidth, minimumWidth, maximumWidth, resizer } = props.layout
   const { token } = theme.useToken()
   const { open, onClose } = props
   const rename = useSessionRename(props.onRename)
   return (
     <>
       <aside
-        ref={props.layout.panel}
+        ref={panelRef}
         className="chat-sidebar"
         style={{
           position: 'relative',
-          width: props.layout.visibleWidth,
+          width: visibleWidth,
           background: token.colorBgContainer,
           borderRight: `1px solid ${token.colorBorderSecondary}`
         }}
@@ -47,11 +48,11 @@ export function History(props: Props) {
           role="separator"
           aria-label="调整历史会话栏宽度"
           aria-orientation="vertical"
-          aria-valuemin={props.layout.minimumWidth}
-          aria-valuemax={props.layout.maximumWidth}
-          aria-valuenow={Math.round(props.layout.visibleWidth)}
+          aria-valuemin={minimumWidth}
+          aria-valuemax={maximumWidth}
+          aria-valuenow={Math.round(visibleWidth)}
           tabIndex={0}
-          {...props.layout.resizer}
+          {...resizer}
           style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
         />
       </aside>

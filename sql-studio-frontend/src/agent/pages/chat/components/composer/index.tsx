@@ -25,23 +25,23 @@ interface Props {
 }
 export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatus, onSend, onStop, onModelChange, onDraftChange, usage }: Props) {
   const { token } = theme.useToken()
-  const resize = useComposerResize()
+  const { container: containerRef, height, minimum, maximum, resizer } = useComposerResize()
   const question = Form.useWatch('question', form) ?? ''
   function submit(text: string) {
     if (!busy && !settingsBusy && aiStatus?.configured && text.trim() && text.length <= CHAT.maxQuestionLength) void onSend({ question: text })
   }
   return (
-    <div ref={resize.container} style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       <div
         className="composer-resizer"
         role="separator"
         aria-label="调整聊天输入框高度"
         aria-orientation="horizontal"
-        aria-valuemin={resize.minimum}
-        aria-valuemax={resize.maximum}
-        aria-valuenow={resize.height}
+        aria-valuemin={minimum}
+        aria-valuemax={maximum}
+        aria-valuenow={height}
         tabIndex={0}
-        {...resize.resizer}
+        {...resizer}
         style={{
           position: 'absolute',
           insetInline: 0,
@@ -60,9 +60,9 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
         <Form.Item name="question" noStyle normalize={(value: string) => value.slice(0, CHAT.maxQuestionLength)}>
           <Sender
             styles={{
-              root: { border: `1px solid ${token.colorBorder}`, boxShadow: 'none', background: token.colorFillQuaternary, height: resize.height, display: 'flex', flexDirection: 'column' },
-              content: { padding: token.padding, ...(resize.height === undefined ? {} : { flex: 1, minHeight: 0 }) },
-              input: { border: 0, outline: 'none', boxShadow: 'none', ...(resize.height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
+              root: { border: `1px solid ${token.colorBorder}`, boxShadow: 'none', background: token.colorFillQuaternary, height: height, display: 'flex', flexDirection: 'column' },
+              content: { padding: token.padding, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
+              input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
               footer: { paddingInline: token.padding, paddingBottom: token.padding }
             }}
             aria-label="消息"
@@ -80,7 +80,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
               return false
             }}
             suffix={false}
-            autoSize={resize.height === undefined ? CHAT.composerRows : false}
+            autoSize={height === undefined ? CHAT.composerRows : false}
             placeholder="向数据库提问…（Enter 发送，Shift+Enter 换行）"
             footer={
               <Flex align="center" justify="space-between" gap="small" wrap>

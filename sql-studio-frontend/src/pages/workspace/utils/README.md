@@ -21,3 +21,5 @@
 - [结果分页映射](resultRows/README.md)：筛选下标缓存、可见页对象和完整CSV数据。
 
 - [转储可用状态](exportAvailability/README.md)：连接和目标库成功打开后的统一门禁。
+
+- [workspacePages](workspacePages/README.md)：提交前校正失效schema和标签显示，保持无变化引用稳定。

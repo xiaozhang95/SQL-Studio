@@ -17,3 +17,5 @@ ObjectManagementForm 接收 manager（对象管理 hook 的表单展示子集）
 新建/编辑数据库若有 engine.databaseEditor.Form，则在当前受控 Form 中展示引擎所属属性区，传入 creating 和可选 manager.databaseDefinition。名称统一由共享表单注册，避免重复；引擎属性区负责支持/禁用状态。MySQL 新建/编辑均为名称、字符集、排序规则三行，名称编辑禁用；外层不持有 PostgreSQL SQL 或属性校验规则。
 
 时间字段输入复用 temporalInput：DATE 使用日期选择，TIME 使用时分秒，DATETIME/TIMESTAMP 使用日期时间；保留原字符串手动编辑及 NULL/默认值语义，带时区和特殊时间值不强制转换。表设计仅常量默认值启用选择器，表达式仍按文本输入。
+
+右侧控件列统一使用flex:1 1 0及minWidth:0，保留原标签宽度与右对齐；允许长内容和帮助说明在控件列内换行，不通过内容最小宽度撑开表单。

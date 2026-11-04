@@ -27,7 +27,7 @@ export function useSidebarResize(width: number, onWidthChange: (width: number) =
     observer.observe(parent)
     measure()
     return () => observer.disconnect()
-  }, [enabled])
+  }, [enabled, minimumWidth, maximumWidth, minimumMainWidth])
   const finish = () => {
     const current = drag.current
     drag.current = null

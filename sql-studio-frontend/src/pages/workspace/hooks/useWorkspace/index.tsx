@@ -17,6 +17,7 @@ import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
+import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
 import { useConnectionGroups } from '../useConnectionGroups'
 import { useDatabaseObjects } from '../useDatabaseObjects'
@@ -150,19 +151,6 @@ export const useWorkspace = () => {
       objects.snapshots[page.connectionId]?.status !== 'connected'
     )
   }
-  useEffect(() => {
-    if (objectBusy) return
-    setTabs((previous) => {
-      let changed = false
-      const next = previous.map((page) => {
-        const names = objects.snapshots[page.connectionId]?.schemas?.[page.database]
-        if (page.kind !== 'query' || !page.schema || !names || names.includes(page.schema)) return page
-        changed = true
-        return { ...page, schema: '', table: '' }
-      })
-      return changed ? next : previous
-    })
-  }, [objects.snapshots, objectBusy])
   const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
   useEffect(() => {
     if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
@@ -299,20 +287,21 @@ export const useWorkspace = () => {
     }
   }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded])
 
-  useEffect(() => {
-    if (!storage.ready || connectionLoading || connectionError) return
-    setTabs((previous) => {
-      let changed = false
-      const next = previous.map((page) => {
-        const owner = connections.find((connection) => connection.id === page.connectionId)
-        if (!owner) return page
-        const presented = presentObjectPage(page, getDatabaseAdapter(owner.type))
-        changed ||= presented !== page
-        return presented
-      })
-      return changed ? next : previous
-    })
-  }, [storage.ready, connectionLoading, connectionError, connections])
+  const reconciledTabs = useMemo(
+    () =>
+      reconcileWorkspacePages(tabs, {
+        validateSchemas: !objectBusy,
+        snapshots: objects.snapshots,
+        present: (page) => {
+          if (!storage.ready || connectionLoading || connectionError) return page
+          const owner = connections.find((connection) => connection.id === page.connectionId)
+          return owner ? presentObjectPage(page, getDatabaseAdapter(owner.type)) : page
+        }
+      }),
+    [tabs, objectBusy, objects.snapshots, storage.ready, connectionLoading, connectionError, connections]
+  )
+  // 只调整当前组件自身状态；引用守卫确保校正后下一次渲染稳定。
+  if (reconciledTabs !== tabs) setTabs(reconciledTabs)
 
   function updateExplorer(patch: Partial<ExplorerLayout>) {
     setExplorer((previous) => ({ ...previous, ...patch }))

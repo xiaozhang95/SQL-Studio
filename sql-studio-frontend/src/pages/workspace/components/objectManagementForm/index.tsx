@@ -66,7 +66,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
         form={form}
         layout="horizontal"
         labelCol={{ flex: '112px' }}
-        wrapperCol={{ flex: 1 }}
+        wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}
         labelAlign="right"
         labelWrap
         disabled={loading || saving || !ready}

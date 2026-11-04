@@ -45,34 +45,34 @@ const transcriptComponents = { Header: HistoryBoundary }
 export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
-  const scroll = useVirtualTranscript(rounds)
+  const { list: listRef, visibleRounds, first, loadingHistory, loadOlder, atBottom, jump, onTop, onBottom, onReadHistory, onHeight, onRange, toLatest } = useVirtualTranscript(rounds)
   return (
     <div
-      onWheel={scroll.onReadHistory}
-      onTouchMove={scroll.onReadHistory}
+      onWheel={onReadHistory}
+      onTouchMove={onReadHistory}
       onKeyDown={(e) => {
-        if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) scroll.onReadHistory()
+        if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) onReadHistory()
       }}
       style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}
     >
-      <RoundNavigation rounds={rounds} onJump={scroll.jump} />
+      <RoundNavigation rounds={rounds} onJump={jump} />
       <Virtuoso
         className="chat-scroll"
-        ref={scroll.list}
+        ref={listRef}
         style={{ height: '100%', width: '100%', scrollbarGutter: 'stable' }}
-        data={scroll.visibleRounds}
-        firstItemIndex={scroll.first}
+        data={visibleRounds}
+        firstItemIndex={first}
         components={transcriptComponents}
-        context={{ hasOlder: scroll.first > 0, loading: scroll.loadingHistory, onLoad: scroll.loadOlder }}
+        context={{ hasOlder: first > 0, loading: loadingHistory, onLoad: loadOlder }}
         computeItemKey={(_, round) => round.id}
-        initialTopMostItemIndex={{ index: scroll.visibleRounds.length - 1, align: 'end' }}
+        initialTopMostItemIndex={{ index: visibleRounds.length - 1, align: 'end' }}
         increaseViewportBy={{ top: 300, bottom: 400 }}
         atBottomThreshold={96}
-        atBottomStateChange={scroll.onBottom}
-        atTopStateChange={scroll.onTop}
-        rangeChanged={scroll.onRange}
+        atBottomStateChange={onBottom}
+        atTopStateChange={onTop}
+        rangeChanged={onRange}
         followOutput={(atBottom) => (atBottom ? 'auto' : false)}
-        totalListHeightChanged={scroll.onHeight}
+        totalListHeightChanged={onHeight}
         itemContent={(index, round) => (
           <div
             data-chat-round={round.id}
@@ -86,14 +86,8 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
           </div>
         )}
       />
-      {!scroll.atBottom && (
-        <Button
-          aria-label="回到最新消息"
-          shape="circle"
-          icon={<ArrowDownOutlined />}
-          onClick={scroll.toLatest}
-          style={{ position: 'absolute', bottom: token.marginSM, insetInlineEnd: token.margin }}
-        />
+      {!atBottom && (
+        <Button aria-label="回到最新消息" shape="circle" icon={<ArrowDownOutlined />} onClick={toLatest} style={{ position: 'absolute', bottom: token.marginSM, insetInlineEnd: token.margin }} />
       )}
     </div>
   )

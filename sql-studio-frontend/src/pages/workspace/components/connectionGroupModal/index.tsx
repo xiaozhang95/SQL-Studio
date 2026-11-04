@@ -28,7 +28,7 @@ export default function ConnectionGroupModal({ manager }: Props) {
       okButtonProps={{ danger: dialog?.deleting }}
       cancelText="取消"
     >
-      <Form form={form} layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: 'auto' }} disabled={saving}>
+      <Form form={form} layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} labelAlign="right" disabled={saving}>
         <Form.Item
           name="name"
           label="分组名称"

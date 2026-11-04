@@ -1,0 +1,5 @@
+# 工作区标签校正
+
+reconcileWorkspacePages(pages,options)为纯函数。validateSchemas控制是否根据snapshots中已加载的schema列表清空查询页失效范围，未知列表不清空，空列表可确认失效；present负责标题/显示迁移，返回原page表示无变化。无变化返回原数组，有变化只替换目标页，保留SQL、结果归属及其他标签。必须传入幂等present，不读写存储或数据库。
+
+useWorkspace在渲染期间记忆化计算，结果确实变化时才校正自身标签状态，React重新渲染后再提交，避免Effect先提交旧范围/标题再级联更新；不使用定时器、微任务或规则禁用来绕过警告。
