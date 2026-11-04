@@ -13,8 +13,9 @@ export function useOperationMode(workspace: WorkspaceController) {
     modal.confirm({
       title: write ? '切换为完全访问模式？' : '切换为只读模式？',
       width: CHAT.modeConfirmationWidth,
-      centered: true,
-      styles: { container: { borderColor: write ? token.colorWarning : token.colorBorder } },
+      styles: {
+        container: { borderColor: write ? token.colorWarning : token.colorBorder }
+      },
       content: write ? (
         <Flex vertical gap="middle" style={{ paddingTop: token.paddingXS }}>
           <Alert type="warning" showIcon title="将实际修改数据库，操作可能不可撤销" description="请在执行前核对目标数据库、涉及对象和完整 SQL。" />

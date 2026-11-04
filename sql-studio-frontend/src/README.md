@@ -36,3 +36,5 @@ MySQL 对象树按“数据库 → 表 → 表名 → 字段/索引”组织；P
 - [公共组件](components/README.md)：工作区和Agent共用的展示能力。
 
 公共PageHeader统一workspace和Agent顶栏高度、间距、背景和保存状态布局，Agent在左侧提供返回工作区入口。
+
+所有业务Modal与确认框使用Ant Design默认位置，不设置centered或自定义位置偏移。

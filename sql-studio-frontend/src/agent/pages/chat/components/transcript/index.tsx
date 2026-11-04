@@ -59,7 +59,7 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
       <Virtuoso
         className="chat-scroll"
         ref={scroll.list}
-        style={{ height: '100%', width: '100%', scrollbarGutter: 'auto' }}
+        style={{ height: '100%', width: '100%', scrollbarGutter: 'stable' }}
         data={scroll.visibleRounds}
         firstItemIndex={scroll.first}
         components={transcriptComponents}

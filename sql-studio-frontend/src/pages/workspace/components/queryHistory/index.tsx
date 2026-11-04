@@ -5,11 +5,11 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import { appearance, ComponentSize } from '@/constant/appearance'
+import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
-import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import EngineIcon from '../engineIcon'

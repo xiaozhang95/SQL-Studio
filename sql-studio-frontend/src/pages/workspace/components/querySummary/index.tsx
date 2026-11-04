@@ -3,11 +3,11 @@ import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { tablePaginationDefaults } from '@/constant/tablePagination'
 import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
-import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { statementDuration, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 

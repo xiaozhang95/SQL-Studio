@@ -17,12 +17,12 @@ import { Alert, Button, Dropdown, Empty, Input, Pagination, Spin, Table } from '
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
 import type { ThemeMode } from '@/typings/theme'
 import { exportCSV } from '@/utils/csv'
 
 import { resultSQLLayout, resultTableLayout } from '../../constant/layout'
-import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'

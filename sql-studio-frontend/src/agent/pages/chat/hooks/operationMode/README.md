@@ -6,4 +6,5 @@
 
 模式唯一状态源为workspace.state.mode，不维护组件私有副本；确认后workspace.update保存，恢复前不允许切换。旧布局缺失mode默认readonly。
 
-模式切换弹窗使用CHAT.modeConfirmationWidth（720px）并垂直居中，窄屏沿用Modal原生视口宽度限制。完全访问提示使用主题警示边框、warning Alert、分段权限/逐次确认说明、删除禁令和原生danger确认按钮；只读提示使用info Alert。字体和控件尺寸沿用Ant Design默认层级，仅确认后更新模式；不改变回复下方的逐次执行确认卡片。
+模式切换弹窗使用CHAT.modeConfirmationWidth（720px），位置沿用Ant Design默认值，窄屏沿用Modal原生视口宽度限制。完全访问提示使用主题警示边框、warning Alert、分段权限/逐次确认说明、删除禁令和原生danger确认按钮；只读提示使用info Alert。字体和控件尺寸沿用Ant Design默认层级，仅确认后更新模式；不改变回复下方的逐次执行确认卡片。
+模式确认框沿用Ant Design默认位置，不设置centered或会话区偏移。

@@ -1,6 +1,6 @@
-import { ArrowUpOutlined, CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, LockOutlined, StopOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
-import { Button, Dropdown, Flex, Form, theme, Tooltip, Typography } from 'antd'
+import { Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
 
 import type { TokenUsage } from '../../../../typings/chat'
@@ -90,19 +90,15 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     trigger={['click']}
                     placement="topLeft"
                     menu={{
-                      selectable: true,
-                      selectedKeys: [mode],
+                      selectable: false,
                       items: [
                         {
                           key: 'readonly',
                           icon: <LockOutlined />,
                           label: (
-                            <Flex vertical gap={token.marginXXS} style={{ paddingBlock: token.paddingXXS }}>
-                              <Flex justify="space-between" gap="middle">
-                                <span>只读模式</span>
-                                {mode === 'readonly' && <CheckOutlined />}
-                              </Flex>
-                              <Typography.Text type="secondary">查询数据、查看数据库结构</Typography.Text>
+                            <Flex align="center" justify="space-between" gap="middle" style={{ minWidth: token.controlHeight * 4 }}>
+                              <span>只读模式</span>
+                              <span style={{ width: token.fontSize, display: 'inline-flex', justifyContent: 'center' }}>{mode === 'readonly' && <CheckOutlined />}</span>
                             </Flex>
                           )
                         },
@@ -110,12 +106,9 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                           key: 'write',
                           icon: <EditOutlined />,
                           label: (
-                            <Flex vertical gap={token.marginXXS} style={{ paddingBlock: token.paddingXXS }}>
-                              <Flex justify="space-between" gap="middle">
-                                <span>完全访问模式</span>
-                                {mode === 'write' && <CheckOutlined />}
-                              </Flex>
-                              <Typography.Text type="secondary">新增、修改及结构调整，逐次确认</Typography.Text>
+                            <Flex align="center" justify="space-between" gap="middle" style={{ minWidth: token.controlHeight * 4 }}>
+                              <span>完全访问模式</span>
+                              <span style={{ width: token.fontSize, display: 'inline-flex', justifyContent: 'center' }}>{mode === 'write' && <CheckOutlined />}</span>
                             </Flex>
                           )
                         }
@@ -167,7 +160,18 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     </Button>
                   </Dropdown>
                   {busy ? (
-                    <Button shape="circle" aria-label="停止生成" icon={<StopOutlined />} onClick={onStop} />
+                    <Tooltip title="终止生成">
+                      <Button
+                        type="primary"
+                        danger
+                        shape="circle"
+                        aria-label="停止生成"
+                        icon={
+                          <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
+                        }
+                        onClick={onStop}
+                      />
+                    </Tooltip>
                   ) : (
                     <Button type="primary" onClick={() => submit(question)} aria-label="发送消息" shape="circle" icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured} />
                   )}

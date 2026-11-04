@@ -28,15 +28,15 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
         minWidth: token.fontSize,
         height: token.fontSize,
         fontSize: token.fontSize,
-        color: token.colorText
+        color: 'inherit'
       }}
     >
       {icon}
     </span>
   )
-  const menuLabel = (label: string) => <span style={{ color: token.colorText }}>{label}</span>
+  const menuLabel = (label: string) => <span style={{ color: 'inherit' }}>{label}</span>
   const themeLabel = (value: ThemePreference, label: string) => (
-    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.marginLG, color: token.colorText }}>
+    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.marginLG, color: 'inherit' }}>
       {label}
       {themePreference === value && <CheckOutlined />}
     </span>

@@ -52,6 +52,7 @@ export function ChatPage({
       <PageHeader
         titleClassName="agent-header-title"
         title={activeTitle}
+        titleOffset={sidebar.visibleWidth / 2}
         actions={
           <>
             {' '}
@@ -141,6 +142,8 @@ export function ChatPage({
               style={{
                 width: '100%',
                 flexShrink: 0,
+                overflowY: 'auto',
+                scrollbarGutter: 'stable',
                 paddingTop: token.paddingSM,
                 paddingBottom: token.padding
               }}

@@ -1,6 +1,18 @@
 import type { ReactNode } from 'react'
 
-export default function PageHeader({ children, actions, title, titleClassName }: { children: ReactNode; actions: ReactNode; title?: ReactNode; titleClassName?: string }) {
+export default function PageHeader({
+  children,
+  actions,
+  title,
+  titleClassName,
+  titleOffset = 0
+}: {
+  children: ReactNode
+  actions: ReactNode
+  title?: ReactNode
+  titleClassName?: string
+  titleOffset?: number
+}) {
   return (
     <header
       className="topbar"
@@ -26,7 +38,7 @@ export default function PageHeader({ children, actions, title, titleClassName }:
           className={titleClassName}
           style={{
             position: 'absolute',
-            left: 'calc(50% + var(--header-title-offset, 0px))',
+            left: `calc(50% + ${titleOffset}px)`,
             transform: 'translateX(-50%)',
             maxWidth: '30%',
             overflow: 'hidden',

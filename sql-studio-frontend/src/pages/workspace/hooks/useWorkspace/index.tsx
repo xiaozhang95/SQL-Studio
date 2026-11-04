@@ -1037,7 +1037,13 @@ export const useWorkspace = () => {
     const retained = new Set(remaining.map((page) => page.id))
     const unsaved = tabs.filter((page) => !retained.has(page.id) && designerDirty[page.id])
     if (unsaved.length)
-      modal.confirm({ title: '关闭有未保存修改的页面？', content: unsaved.map((page) => page.title).join('、') + ' 的修改将被放弃。', okText: '放弃并关闭', cancelText: '继续编辑', onOk: complete })
+      modal.confirm({
+        title: '关闭有未保存修改的页面？',
+        content: unsaved.map((page) => page.title).join('、') + ' 的修改将被放弃。',
+        okText: '放弃并关闭',
+        cancelText: '继续编辑',
+        onOk: complete
+      })
     else complete()
   }
 

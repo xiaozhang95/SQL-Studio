@@ -18,3 +18,6 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 
 左下角历史侧栏及窄屏Drawer提供统一systemSettings入口，集中API Key/全局SQL补全与外观配置；顶部不再展示主题选择，输入框模型菜单仅切换模型，不再提供API配置入口。
 顶部左侧保留原生圆角描边按钮，显示数据库图标和“工作区”文字，不显示返回箭头；点击切回SQL工作区，沿用原禁用条件。
+
+顶栏标题偏移由sidebar.visibleWidth/2传给PageHeader，拖动侧栏和窗口限宽时同步。Agent消息与内部结果滚动条统一继承全局8px规则，不再单独缩细、改色、改弧度或隐藏主滚动条。
+底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条恢复显示后正文与输入框水平偏移。

@@ -1,6 +1,8 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Alert, Card, Collapse, ConfigProvider, Descriptions, Flex, Space, Table, theme, Tooltip, Typography } from 'antd'
+import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, theme, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
+
+import { tablePaginationDefaults } from '@/constant/tablePagination'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 import { isObject } from '../../../../utils/json'
@@ -21,25 +23,12 @@ interface Props {
   showHeader?: boolean
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
-  const { token } = theme.useToken()
   if (isObject(props.value) && typeof props.value.error === 'string') return null
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Card: { headerBg: token.colorFillAlter },
-          Table: {
-            headerColor: token.colorText,
-            rowHoverBg: token.colorPrimaryBg
-          }
-        }
-      }}
-    >
-      <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
-        <ResultContent {...props} />
-        {showExport && <ExportExcel value={props.value} title={props.title ?? '查询结果'} />}
-      </Flex>
-    </ConfigProvider>
+    <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
+      <ResultContent {...props} />
+      {showExport && <ExportExcel value={props.value} title={props.title ?? '查询结果'} />}
+    </Flex>
   )
 }
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
@@ -121,12 +110,12 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
           columns={columns}
           dataSource={rows}
           pagination={{
+            ...tablePaginationDefaults,
             defaultPageSize: APPEARANCE.resultPageSize,
             pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: rows.length > 10,
             hideOnSinglePage: rows.length <= 10,
-            showTotal: (total) => `共 ${total} 行`,
-            size: 'small'
+            showTotal: (total) => `共 ${total} 行`
           }}
           scroll={{
             x: result.columns.reduce((width, c) => width + Math.min(280, Math.max(140, c.name.length * 14 + 32)), 56),
@@ -188,6 +177,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
           columns={[{ title: '名称', dataIndex: 'name', key: 'name' }]}
           dataSource={value.map((name, i) => ({ key: i, name }))}
           pagination={{
+            ...tablePaginationDefaults,
             pageSize: APPEARANCE.resultPageSize,
             hideOnSinglePage: true
           }}
@@ -229,6 +219,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             ...Object.fromEntries(keys.map((k, j) => [String(j), v[k]]))
           }))}
           pagination={{
+            ...tablePaginationDefaults,
             pageSize: APPEARANCE.resultPageSize,
             hideOnSinglePage: true
           }}

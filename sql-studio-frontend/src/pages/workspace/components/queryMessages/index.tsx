@@ -2,11 +2,11 @@ import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Collapse, Empty, Pagination, Space, Typography } from 'antd'
 import { useState } from 'react'
 
+import { tablePaginationDefaults } from '@/constant/tablePagination'
 import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState } from '@/typings/workspace'
 
-import { tablePaginationDefaults } from '../../constant/tablePagination'
 import { statementDuration, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 

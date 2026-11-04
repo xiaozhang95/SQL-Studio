@@ -20,7 +20,6 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
   return (
     <Modal
       className="connection-dialog"
-      centered
       width={960}
       title={connection ? '编辑连接' : '新建连接'}
       open={open}

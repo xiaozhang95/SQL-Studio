@@ -7,3 +7,5 @@ QueryResult({value:unknown,sql?:string,title?:string,tool?:string,showExport?:bo
 局部ConfigProvider为结果卡片提供主题中性浅色标题背景、数据库图标与行悬停点缀，表头和标题保留主题正文色保证亮暗可读性；复用当前主题token，不改变全局Table/Card。结果内部滚动条继承chat-scroll的局部细滚动条。
 
 结果与导出操作由Flex统一使用CHAT.spacing.block（16px），整体宽度与正文一致；组件自身不追加上下外边距。错误结果直接返回null，不留下空容器和多余间隔。结构化回退文本沿用small Card默认内边距。
+
+所有结果表格的分页复用公共tablePaginationDefaults，使用默认32px页码及统一底栏；保留每页数量和列/行内容，不修改查询行为。
