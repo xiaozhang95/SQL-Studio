@@ -592,7 +592,7 @@ test('长历史还原让出事件循环，可在批次之间取消，不返回�
   assert.equal(restored.at(-1).text, '11999')
 })
 
-async function chatHarness(view, initialView) {
+async function chatHarness(view, initialView, apiOverrides = {}) {
   const events = await moduleAt('utils/chatEvents/index.ts')
   const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/chat/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
@@ -651,7 +651,9 @@ async function chatHarness(view, initialView) {
     state,
     {
       ensureHistory: async () => [{ id: 'initial' }],
-      view: (id, signal) => (id === 'initial' ? (initialView ? initialView(signal) : Promise.resolve({ busy: false, events: [] })) : view(id, signal))
+      list: async () => [{ id: 'initial' }],
+      view: (id, signal) => (id === 'initial' ? (initialView ? initialView(signal) : Promise.resolve({ busy: false, events: [] })) : view(id, signal)),
+      ...apiOverrides
     },
     events.applyEvent,
     events.restoreEvents,
@@ -666,6 +668,120 @@ async function chatHarness(view, initialView) {
   await new Promise((resolve) => setTimeout(resolve, 0))
   return { render, workspace, unmount: () => cleanups.forEach((cleanup) => cleanup?.()) }
 }
+
+test('后台刷新缺少当前项或返回空列表时保留选择、正文、草稿与展开，不创建或激活其他会话', async () => {
+  let items = []
+  let ensures = 0
+  let views = 0
+  const initial = { id: 'initial', title: '查询demo里面的表' }
+  const other = { id: 'other', title: '查询demo里面的数据' }
+  const harness = await chatHarness(
+    async () => {
+      throw new Error('刷新不应读取其他正文')
+    },
+    async () => {
+      views++
+      return {
+        busy: false,
+        events: [
+          { type: 'user', text: '当前问题' },
+          { type: 'answer', text: '当前回答' }
+        ]
+      }
+    },
+    {
+      ensureHistory: async () => {
+        ensures++
+        return [initial, other]
+      },
+      list: async () => items
+    }
+  )
+  harness.render().onDraftChange(undefined, { question: '尚未发送的草稿' })
+  harness.workspace.update({ expanded: ['thinking-2'] })
+  const before = structuredClone({ entries: harness.render().entries, state: harness.workspace.state })
+  for (const response of [[other], []]) {
+    items = response
+    await harness.render().refreshHistory()
+    assert.deepEqual(harness.render().entries, before.entries)
+    assert.deepEqual(harness.workspace.state, before.state)
+    assert.equal(harness.render().history[0].id, 'initial')
+    assert.match(harness.render().error, /当前会话未出现在最新列表/)
+  }
+  items = [other, initial]
+  await harness.render().refreshHistory()
+  assert.deepEqual(harness.render().history, items)
+  assert.deepEqual(harness.workspace.state, before.state)
+  assert.equal(harness.render().error, '')
+  assert.equal(ensures, 1)
+  assert.equal(views, 1)
+  harness.unmount()
+})
+
+test('重叠列表刷新只接受最新响应，旧成功或失败不覆盖新列表、错误和加载状态', async () => {
+  const requests = []
+  const harness = await chatHarness(async () => ({ busy: false, events: [] }), undefined, {
+    list: () => new Promise((resolve, reject) => requests.push({ resolve, reject }))
+  })
+  const first = harness.render().refreshHistory()
+  const second = harness.render().refreshHistory()
+  requests[0].resolve([])
+  await first
+  assert.equal(harness.render().historyLoading, true)
+  assert.equal(harness.render().error, '')
+  const latest = [{ id: 'initial', title: '最新标题' }]
+  requests[1].resolve(latest)
+  await second
+  assert.deepEqual(harness.render().history, latest)
+  assert.equal(harness.render().historyLoading, false)
+  const stale = harness.render().refreshHistory()
+  const current = harness.render().refreshHistory()
+  requests[3].resolve(latest)
+  await current
+  requests[2].reject(new Error('旧请求的失败'))
+  await stale
+  assert.deepEqual(harness.render().history, latest)
+  assert.equal(harness.render().error, '')
+  harness.unmount()
+})
+
+test('刷新期间手动改选后，旧列表与错误不能覆盖新会话', async () => {
+  let reject
+  const harness = await chatHarness(async (id) => ({ busy: false, events: [{ type: 'user', text: id + '正文' }] }), undefined, {
+    list: () =>
+      new Promise((_, fail) => {
+        reject = fail
+      })
+  })
+  const pending = harness.render().refreshHistory()
+  await harness.render().selectHistory('other')
+  reject(new Error('旧列表读取失败'))
+  await pending
+  assert.equal(harness.workspace.state.activeId, 'other')
+  assert.equal(harness.render().entries[0].text, 'other正文')
+  assert.equal(harness.render().error, '')
+  harness.unmount()
+})
+
+test('删除其他会话不因返回列表缺少当前项而跳转；删除当前会话仍可激活后端默认项', async () => {
+  let ensures = 0
+  const removed = []
+  const harness = await chatHarness(async (id) => ({ busy: false, events: [{ type: 'user', text: id + '正文' }] }), undefined, {
+    ensureHistory: async () => (++ensures === 1 ? [{ id: 'initial' }, { id: 'other' }] : [{ id: 'default' }]),
+    list: async () => [],
+    remove: async (id) => removed.push(id)
+  })
+  await harness.render().deleteHistory('other')
+  assert.equal(harness.workspace.state.activeId, 'initial')
+  assert.equal(ensures, 1)
+  assert.deepEqual(harness.render().history, [{ id: 'initial' }])
+  await harness.render().deleteHistory('initial')
+  assert.equal(harness.workspace.state.activeId, 'default')
+  assert.equal(harness.render().entries[0].text, 'default正文')
+  assert.equal(ensures, 2)
+  assert.deepEqual(removed, ['other', 'initial'])
+  harness.unmount()
+})
 
 test('连续选择取消旧请求，迟到历史不能覆盖目标会话，卸载取消读取', async () => {
   const requests = []

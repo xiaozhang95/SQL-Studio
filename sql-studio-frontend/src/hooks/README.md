@@ -9,3 +9,4 @@
 - [useAISettings](useAISettings/README.md)：共用AI配置表单与官方模型发现。
 
 - [useSidebarResize](useSidebarResize/README.md)：SQL工作区与Agent共用侧栏拖拽、键盘调整和尺寸约束。
+- [useSidebarWidth](useSidebarWidth/README.md)：两页共享宽度偏好，沿用工作台布局恢复与保存。

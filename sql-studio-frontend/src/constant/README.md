@@ -6,3 +6,4 @@
 每个实际模块单独目录并保留源码入口与 README。
 
 - [统一表格分页](tablePagination/README.md)：SQL工作区和Agent共用尺寸、底栏及计数约定。
+- [共享侧栏尺寸](sidebarLayout/README.md)：工作台连接栏与Agent历史栏的默认值及拖动边界。

@@ -5,7 +5,6 @@ const transcriptInset = 32
 
 export const CHAT = {
   composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
-  sidebarLayout: { defaultWidth: 232, minimumWidth: 200, maximumWidth: 560, minimumMainWidth: 520, keyboardStep: 24 },
   roundSwitch: { loadingDelay: 180, edgeTolerance: 2, sideOffset: 120 },
   maxQuestionBytes: 256 * 1024,
   maxTitleLength: 80,

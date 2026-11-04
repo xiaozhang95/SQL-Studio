@@ -5,6 +5,7 @@ import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
 import SystemSettings from '@/components/systemSettings'
+import { sidebarLayout } from '@/constant/sidebarLayout'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
@@ -18,7 +19,6 @@ import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { sidebarLayout } from './constant/layout'
 import { useWorkspace } from './hooks/useWorkspace'
 
 type Props = {

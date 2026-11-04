@@ -9,6 +9,8 @@ import { applyEvent, restoreEvents } from '../../../../utils/chatEvents'
 import { CHAT } from '../../constant/chat'
 import { useWriteConfirmation } from '../writeConfirmation'
 
+const missingHistoryMessage = '当前会话未出现在最新列表中，已保留当前内容。请重试刷新或手动选择其他会话。'
+
 export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'write' = 'readonly') {
   const [entries, setEntries] = useState<Entry[]>([])
   const [status, setStatus] = useState('')
@@ -18,6 +20,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   const [managing, setManaging] = useState(false)
   const mutation = useRef(false)
   const historyVersion = useRef(0)
+  const historyRefresh = useRef(0)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [history, setHistory] = useState<ConversationInfo[]>([])
@@ -153,14 +156,17 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     setManaging(true)
     setError('')
     try {
+      const removingCurrent = id === session.current
       await api.remove(id)
-      const items = await api.ensureHistory()
-      const selected = items.find((i) => i.id === session.current)?.id ?? items[0]?.id
+      const items = await (removingCurrent ? api.ensureHistory() : api.list())
+      const selected = removingCurrent ? items[0]?.id : session.current
       if (!selected) throw new Error('无法恢复会话列表')
       const next = session.current !== selected ? await api.view(selected, new AbortController().signal) : null
       if (!mounted.current) return
-      setHistory(items)
-      if (next) await activate(selected, next.events)
+      if (next) {
+        setHistory(items)
+        await activate(selected, next.events)
+      } else updateHistory(items)
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : '删除会话失败')
       throw cause
@@ -182,23 +188,30 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       if (mounted.current) setManaging(false)
     }
   }
+  function updateHistory(items: ConversationInfo[]) {
+    const selected = session.current
+    const missing = Boolean(selected && !items.some((item) => item.id === selected))
+    setHistory((old) => {
+      const current = missing ? old.find((item) => item.id === selected) : undefined
+      return current ? [current, ...items] : items
+    })
+    setError((old) => (missing ? missingHistoryMessage : old === missingHistoryMessage ? '' : old))
+  }
   async function refreshHistory() {
     if (mutation.current || reading.current || loading) return
+    const request = ++historyRefresh.current
     const version = historyVersion.current
     const previous = session.current
+    const current = () => mounted.current && request === historyRefresh.current && version === historyVersion.current && previous === session.current
     setHistoryLoading(true)
     try {
-      const items = await api.ensureHistory()
-      if (!mounted.current || version !== historyVersion.current || previous !== session.current) return
-      setHistory(items)
-      if (!items.some((item) => item.id === session.current) && items[0]) {
-        const view = await api.view(items[0].id, new AbortController().signal)
-        if (mounted.current && version === historyVersion.current && previous === session.current) await activate(items[0].id, view.events)
-      }
+      const items = await api.list()
+      if (!current()) return
+      updateHistory(items)
     } catch (cause) {
-      if (mounted.current) setError(cause instanceof Error ? cause.message : '读取历史失败')
+      if (current()) setError(cause instanceof Error ? cause.message : '读取历史失败')
     } finally {
-      if (mounted.current) setHistoryLoading(false)
+      if (mounted.current && request === historyRefresh.current) setHistoryLoading(false)
     }
   }
   function showHistory() {

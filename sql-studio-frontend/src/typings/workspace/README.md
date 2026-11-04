@@ -6,7 +6,7 @@ QueryScope 保存连接/库/表；WorkspaceTab 保存页面 kind/id/title/sql。
 
 WorkspaceSnapshot 是运行时组合视图：页面、范围、当前常驻SQL/结果、编辑位置、树布局、结果高度、打开连接ID与执行标识；不包含连接密码或表单对象。持久化使用services/workspace的v2索引及独立内容；未加载页sql为空仅代表占位，不能作为空草稿写回。EditorLayout/ExplorerLayout 只保存视图状态，恢复不触发 SQL。
 
-WorkspaceSnapshot.sidebarWidth 为可选对象栏宽度，用于兼容旧快照；缺少或无效时使用默认 272px，新保存的快照记录用户调整后的宽度。
+WorkspaceSnapshot.sidebarWidth 为工作台连接栏与Agent历史栏共用的可选偏好宽度，沿用原字段兼容旧快照；缺少或无效时使用默认272px，新保存的轻量布局索引记录用户在任一页调整后的宽度。
 
 StatementRun.durationMs 为可选语句请求耗时（失败时仍记录）；RunState.startedAt/endedAt 为可选 ISO 时间，durationMs 为前端批次运行耗时。成功语句显示后端 QueryResult.durationMs，失败显示语句请求耗时；旧快照没有字段时显示未记录。只记录实际执行，不为未执行语句创建输出，刷新中断不伪造结束时间。
 

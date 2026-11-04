@@ -6,13 +6,14 @@ import { connectionGroupName, defaultConnectionGroup } from '@/constant/connecti
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
+import { useSidebarWidth } from '@/hooks/useSidebarWidth'
 import { executeQuery, getConnectionGroups, getConnections, deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
 import { saveSQL } from '@/utils/sqlSave'
 
-import { resultPanelLayout, scopeCloseDialogLayout, sidebarLayout } from '../../constant/layout'
+import { resultPanelLayout, scopeCloseDialogLayout } from '../../constant/layout'
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
 import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
@@ -55,7 +56,7 @@ export const useWorkspace = () => {
   const [editorLayouts, setEditorLayouts] = useState<Record<string, EditorLayout>>({})
   const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
   const [resultHeight, setResultHeight] = useState<number>(resultPanelLayout.defaultHeight)
-  const [sidebarWidth, setSidebarWidth] = useState<number>(sidebarLayout.defaultWidth)
+  const { width: sidebarWidth, setWidth: setSidebarWidth, restoreWidth: restoreSidebarWidth } = useSidebarWidth()
   const [restoringConnections, setRestoringConnections] = useState<string[] | null>(null)
   const [runningTabId, setRunningTabId] = useState('')
   const [objectBusy, setObjectBusy] = useState(false)
@@ -208,7 +209,7 @@ export const useWorkspace = () => {
         })
       })
       setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
-      setSidebarWidth(typeof saved.sidebarWidth === 'number' && Number.isFinite(saved.sidebarWidth) ? saved.sidebarWidth : sidebarLayout.defaultWidth)
+      restoreSidebarWidth(saved.sidebarWidth)
       setRestoringConnections(saved.openedConnections)
     },
     {

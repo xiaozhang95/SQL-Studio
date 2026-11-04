@@ -1,0 +1,7 @@
+# 共享侧栏宽度
+
+[SidebarWidthProvider](../../components/sidebarWidthProvider/README.md)由App包裹SQL工作台与Agent，两页通过useSidebarWidth():SidebarWidthController使用同一份偏好。本模块导出SidebarWidthContext供Provider装配，缺少Provider调用hook时明确报错。width默认取sidebarLayout.defaultWidth（272px）；setWidth(number)更新共享宽度并校验有限数值与200–560px范围。切换Agent不会重置宽度，两个侧栏的拖拽、键盘与双击使用同一状态。
+
+restoreWidth(unknown) 由工作台读取已有 WorkspaceSnapshot.sidebarWidth 后调用：旧记录缺失/无效时使用默认值，有效值保留并限制范围；若初始化读取期间用户已经调整宽度，迟到恢复不覆盖新值。
+
+宽度由始终挂载的工作台通过原有轻量布局索引保存；Agent不新建宽度分区或浏览器存储，也不重复请求工作区。刷新恢复与保存错误沿用工作台现有流程；异步保存未完成时强制刷新仍可能丢失最后一次调整。useSidebarResize按当前窗口单独约束实际显示宽度，窄窗口或隐藏页面测量不改写共享偏好。Provider卸载后内存释放，无全局可变状态、数据库访问或自动查询。

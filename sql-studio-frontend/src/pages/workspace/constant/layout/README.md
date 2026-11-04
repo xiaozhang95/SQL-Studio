@@ -2,7 +2,7 @@
 
 [源码](index.ts)
 
-sidebarLayout 是只读尺寸配置：默认 272px，范围 200–560px，主区域至少保留 520px，键盘步进 24px。工作区初始/恢复状态和 useSidebarResize 共用，避免重复数值漂移。
+侧栏尺寸已移至共享[sidebarLayout](../../../../constant/sidebarLayout/README.md)：默认272px，范围200–560px，主区域至少保留520px，键盘步进24px。工作台与Agent使用同一份配置及宽度偏好。
 
 此配置仅服务工作区，不放入全局主题；不包含可变页面状态或浏览器存储逻辑。
 
