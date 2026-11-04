@@ -1,6 +1,6 @@
 # 聊天输入
 
-实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存草稿到Go布局，normalize保留2000字符上限。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留模式Dropdown、带蓝鲸模型Dropdown与发送按钮；模型菜单仅保留日常模型选择；API配置统一从侧栏底部系统设置进入。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
+实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存最多256 KiB的UTF-8草稿到Go布局。超过上限时保留编辑框原文并提示分段，发送入口禁用。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留模式Dropdown、带蓝鲸模型Dropdown与发送按钮；模型菜单仅保留日常模型选择；API配置统一从侧栏底部系统设置进入。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
 
 输入区默认4行、最多10行（CHAT.composerRows），沿用默认字体，以原生styles提供更宽松的内边距、淡背景；根容器保留主题边框，输入内容不显示边框、焦点描边或阴影。仅影响Agent Sender，保留其他控件默认边框。
 
@@ -13,6 +13,6 @@
 底部模式使用默认32px描边Button加Dropdown，与文本模型按钮及发送按钮对齐；只读使用默认中性色，完全访问使用主题警示色。模式菜单使用单行选项和固定勾选占位，不使用整块选中底色；权限说明集中在旁边的信息提示，完整内容撑宽，保留原有切换风险确认。模式说明独立InfoCircle悬浮按钮，始终展示权限、逐次确认及删除禁令，usage存在时追加上下文用量；不包裹模式菜单。图标尺寸：模型入口20px、菜单18px，发送按钮沿用默认圆形。切换风险确认保持原行为；未配置API时禁用发送与模型选择，并提示前往左下角系统设置。
 输入框顶部8px横向手柄支持拖动调整整个输入区高度，向上扩大、向下缩小；手动调整后关闭自动行高，文本区内部滚动，底部操作区保留。双击恢复原4–10行自动高度，键盘上下/Home/End调整。高度受会话区域和160–560px边界限制，窄矮窗口可降低最小值；不改变草稿和发送逻辑。
 
-终止生成使用原生primary danger圆形按钮与实心方块图标，保留停止回调，悬停提示“终止生成”；两种模式的权限/风险提示与逐次写入确认逻辑不变。
+发送使用原生primary圆形按钮与实心纸飞机图标。终止生成使用原生primary danger圆形按钮与实心方块图标，保留停止回调，悬停提示“终止生成”。
 
 hook返回的DOM/list ref先单独解构为Ref变量，再传给ref属性；尺寸/导航状态与事件回调独立消费，渲染不读取ref.current。

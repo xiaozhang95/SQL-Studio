@@ -167,6 +167,27 @@ func findConnection(items []model.Connection, id string) (model.Connection, bool
 	}
 	return model.Connection{}, false
 }
+
+func validateRecoveryTarget(current model.Target, call model.ToolCall) error {
+	if current.ConnectionID == "" {
+		return nil
+	}
+	switch call.Function.Name {
+	case "use_database":
+		var target model.Target
+		if decode(call.Function.Arguments, &target) != nil || target != current {
+			return errors.New("恢复期间仅允许使用已确认的数据库")
+		}
+	case "list_databases":
+		var target struct {
+			ConnectionID string `json:"connectionId"`
+		}
+		if decode(call.Function.Arguments, &target) != nil || target.ConnectionID != current.ConnectionID {
+			return errors.New("恢复期间仅允许探测已确认的连接")
+		}
+	}
+	return nil
+}
 func decode(input string, out interface{}) error {
 	if len(input) > 20000 || !strings.HasPrefix(strings.TrimSpace(input), "{") {
 		return errors.New("工具参数必须是JSON对象")

@@ -9,3 +9,5 @@ Conversation.CustomTitle记录显式重命名，用于阻止首条用户消息�
 Event.createdAt为可选RFC3339时间，user事件由服务端写入UTC发送时间并随会话保存。旧事件允许缺失。
 
 write_confirmation的objects包含本条SQL的目标及源对象名，保留标识符引号并去重；用户可在回复下方卡片核对全部对象与完整SQL，历史确认ID不可重新提交。
+
+limits.go共享消息与工具结果的字节阈值和可恢复错误标识。继续确认使用 `continue_confirmation`，拒绝继续使用 `stopped`，与写入确认事件分开。

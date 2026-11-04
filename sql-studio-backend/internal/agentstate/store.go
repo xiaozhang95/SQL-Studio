@@ -259,7 +259,7 @@ func (s *Store) workspace(ctx context.Context) (model.Workspace, error) {
 		return fallback, errors.New("布局版本或内容损坏，拒绝覆盖")
 	}
 	state := raw.State
-	if (*state.ActiveID != "" && !validID.MatchString(*state.ActiveID)) || len(*state.Draft) > 8000 || len(*state.Expanded) > 1024 {
+	if (*state.ActiveID != "" && !validID.MatchString(*state.ActiveID)) || len(*state.Draft) > model.MessageMaxBytes || len(*state.Expanded) > 1024 {
 		return fallback, errors.New("本地布局范围无效")
 	}
 	if state.Mode != "" && state.Mode != "readonly" && state.Mode != "write" {

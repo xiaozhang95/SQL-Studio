@@ -20,14 +20,18 @@ func TestCompressionPreservesOriginalAndRecentToolPairs(t *testing.T) {
 	source := longHistory()
 	before := len(source)
 	summaries := 0
+	approved := false
 	s := New(generatorFunc(func(_ context.Context, m []model.Message, tools []model.Tool) (model.Message, error) {
 		summaries++
-		if len(tools) != 0 || !strings.Contains(m[0].Content, "摘要") {
+		if !approved || len(tools) != 0 || !strings.Contains(m[0].Content, "摘要") {
 			t.Fatal("summary attempted tools")
 		}
 		return model.Message{Role: "assistant", Content: "用户要按天统计订单；demo库；已确认按支付时间。"}, nil
 	}), &fakeDB{})
-	request, summary, err := s.prepare(context.Background(), source, model.ContextSummary{}, model.Target{ConnectionID: "a", Database: "demo"}, 15000, func(model.Event) error { return nil })
+	request, summary, err := s.prepare(context.Background(), source, model.ContextSummary{}, model.Target{ConnectionID: "a", Database: "demo"}, 15000, func(model.Event) error { return nil }, func() error {
+		approved = true
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

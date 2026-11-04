@@ -1,5 +1,5 @@
-# 写入确认卡片
+# 写入与继续确认卡片
 
-WriteConfirmation({value:WriteConfirmationRequest,submitting:boolean,error:string,onDecide:(allow:boolean)=>Promise<void>})是受控展示组件，在当前回复下方显示Ant Design small Card。展示目标连接、数据库、对象、不可撤销提示和完整只读SQL（高亮、可复制）。确认/取消回调分别传true/false；提交期间禁用双按钮，错误留在卡片内。组件无请求、持久化或自动确认行为，生命周期由useWriteConfirmation管理。
+WriteConfirmation({value:ConfirmationRequest,submitting:boolean,error:string,onDecide:(allow:boolean)=>Promise<void>})在当前回复下方展示受控的 Ant Design 小号卡片。写入确认展示目标、对象和完整 SQL。继续确认展示输入、结果、上下文或读取失败提示，按类型提供继续、压缩后继续、返回编辑或停止本轮。提交期间禁用按钮，失败信息留在卡片内。
 
 卡片内提示、目标明细、SQL、错误和操作区统一使用CHAT.spacing.block（16px），按钮组使用detail（8px）；CodeBlock不叠加外边距。

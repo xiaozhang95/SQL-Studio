@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -17,7 +18,7 @@ func (h *agentHandler) stream(c *gin.Context) {
 		Mode      string `json:"mode"`
 		Message   string `json:"message"`
 	}
-	if err := decodeLimit(c, &input, 32*1024); err != nil {
+	if err := decodeLimit(c, &input, model.MessageJSONMaxBytes); err != nil {
 		fail(c, err)
 		return
 	}
@@ -75,7 +76,9 @@ func (h *agentHandler) stream(c *gin.Context) {
 			}
 		case err := <-done:
 			completed = true
-			if err != nil {
+			if errors.Is(err, model.ErrContinueCancelled) {
+				_ = emit(model.Event{Type: "stopped", Text: err.Error()})
+			} else if err != nil {
 				_ = emit(model.Event{Type: "error", Text: err.Error()})
 			}
 			_ = emit(model.Event{Type: "done"})

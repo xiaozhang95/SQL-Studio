@@ -26,6 +26,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   const [form] = Form.useForm<{ question: string }>()
   const session = useRef('')
   const active = useRef<AbortController | null>(null)
+  const activeText = useRef('')
   const reading = useRef<AbortController | null>(null)
   const [loadError, setLoadError] = useState('')
   const [initializeAttempt, setInitializeAttempt] = useState(0)
@@ -83,11 +84,11 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   }, [workspace.ready, form, initializeAttempt])
   const confirmWrite = useWriteConfirmation()
   function event(e: ChatEvent) {
-    if (e.type === 'write_confirmation' && active.current) {
-      confirmWrite.show(e.result, active.current.signal)
+    if ((e.type === 'write_confirmation' || e.type === 'continue_confirmation') && active.current) {
+      confirmWrite.show(e.result, active.current.signal, e.type === 'continue_confirmation')
       return
     }
-    if (e.type === 'error' || e.type === 'done') confirmWrite.close()
+    if (e.type === 'error' || e.type === 'stopped' || e.type === 'done') confirmWrite.close()
     setEntries((old) => applyEvent(old, e))
     if (e.type === 'status') setStatus(e.text ?? '')
     if (e.type === 'tool_start') setStatus(`${CHAT.tools[e.tool ?? ''] ?? '正在处理'}…`)
@@ -244,8 +245,10 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
   }
   async function send({ question: text }: { question: string }) {
     if (active.current || reading.current || loading || loadError || mutation.current || !workspace.ready || !text.trim()) return
+    if (new TextEncoder().encode(text).length > CHAT.maxQuestionBytes) return
     const c = new AbortController()
     active.current = c
+    activeText.current = text
     setBusy(true)
     setError('')
     setEntries((old) => applyEvent(old, { type: 'user', text, createdAt: new Date().toISOString() }))
@@ -280,6 +283,18 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
       }
     }
   }
+  async function decideConfirmation(allow: boolean) {
+    const pending = confirmWrite.pending
+    const controller = active.current
+    const id = session.current
+    const returnToEdit = !allow && pending && 'kind' in pending && pending.kind === 'input'
+    const text = returnToEdit ? activeText.current : ''
+    const accepted = await confirmWrite.decide(allow)
+    if (returnToEdit && accepted && mounted.current && session.current === id && (!active.current || active.current === controller)) {
+      form.setFieldValue('question', text)
+      latestWorkspace.current.update({ draft: text })
+    }
+  }
   return {
     editQuestion: (text: string) => {
       if (active.current || reading.current || loading || loadError || mutation.current) return
@@ -297,8 +312,9 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     },
     historyBusy: busy || managing || !workspace.ready || initializing,
     entries,
-    status: confirmWrite.pending ? '等待确认数据库操作' : status,
+    status: confirmWrite.pending ? ('kind' in confirmWrite.pending ? '等待选择是否继续' : '等待确认数据库操作') : status,
     confirmWrite,
+    decideConfirmation,
     busy: busy || loading || managing || Boolean(loadError),
     deleteHistory,
     loading,
@@ -316,6 +332,9 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     showHistory,
     selectHistory,
     closeHistory: () => setHistoryOpen(false),
-    onDraftChange: (_: unknown, values: { question?: string }) => workspace.update({ draft: values.question ?? '' })
+    onDraftChange: (_: unknown, values: { question?: string }) => {
+      const draft = values.question ?? ''
+      if (new TextEncoder().encode(draft).length <= CHAT.maxQuestionBytes) workspace.update({ draft })
+    }
   }
 }

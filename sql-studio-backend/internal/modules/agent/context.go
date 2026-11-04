@@ -30,7 +30,7 @@ func requestMessages(all []model.Message, summary model.ContextSummary, target m
 	out = append(out, all[start:]...)
 	return out
 }
-func (s *Service) prepare(ctx context.Context, all []model.Message, previous model.ContextSummary, target model.Target, budget int, emit func(model.Event) error) ([]model.Message, model.ContextSummary, error) {
+func (s *Service) prepare(ctx context.Context, all []model.Message, previous model.ContextSummary, target model.Target, budget int, emit func(model.Event) error, approve ...func() error) ([]model.Message, model.ContextSummary, error) {
 	summary := previous
 	for pass := 0; pass < 8; pass++ {
 		request := requestMessages(all, summary, target)
@@ -59,6 +59,9 @@ func (s *Service) prepare(ctx context.Context, all []model.Message, previous mod
 		if cut <= start {
 			return nil, previous, errors.New("近期完整轮次已超上下文预算，请新建对话")
 		}
+		if estimate(requestMessages(all, model.ContextSummary{Through: cut}, target), tools()) > budget {
+			return nil, previous, errors.New("近期完整轮次已超上下文预算，请缩小问题范围或新建对话")
+		}
 		chosen := start
 		for _, end := range users {
 			if end > start && end <= cut {
@@ -72,6 +75,11 @@ func (s *Service) prepare(ctx context.Context, all []model.Message, previous mod
 		}
 		if chosen == start {
 			return nil, previous, errors.New("单个历史轮次超过压缩预算，原记录已保留，请新建对话")
+		}
+		if len(approve) > 0 {
+			if err := approve[0](); err != nil {
+				return nil, previous, err
+			}
 		}
 		source, _ := json.Marshal(all[start:chosen])
 		if err := emit(model.Event{Type: "status", Text: "正在压缩较早的上下文，原始记录保留在本地…"}); err != nil {

@@ -49,4 +49,4 @@ DELETE /connection-groups 接收 {name:string}，调用 connections.DeleteGroup 
 POST /agent/sessions支持可选ensure=true，仅在空列表创建默认会话；PATCH /agent/sessions/:id接收{title}并返回索引信息，严格JSON、同源和32KiB限制沿用现有Agent路由。
 
 
-写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。等待仍受本轮总超时约束；恢复历史不重新弹出已过期确认。模式提示不替代逐次确认。
+写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。确认独立等待最多5分钟，等待期间暂停本轮执行计时；恢复历史只展示原记录。继续确认通过 `continue_confirmation` 和 `POST /api/agent/continue-confirmation` 处理，拒绝产生 `stopped` 事件。模式提示不替代逐次确认。

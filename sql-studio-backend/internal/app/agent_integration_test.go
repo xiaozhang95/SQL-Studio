@@ -83,7 +83,8 @@ func TestAgentRealDatabaseIntegration(t *testing.T) {
 					t.Errorf("cleanup disposable database: %v", err)
 				}
 			})
-			adapter := agentDatabase{cs, metadata.New(repo, client), query.New(repo, client)}
+			agentClient := newDatabaseClient()
+			adapter := agentDatabase{cs, metadata.New(repo, agentClient), query.New(repo, client).WithExecutor(agentClient)}
 			target := agentmodel.Target{ConnectionID: c.ID, Database: targetDatabase}
 			run := func(sql string) model.QueryResult {
 				t.Helper()

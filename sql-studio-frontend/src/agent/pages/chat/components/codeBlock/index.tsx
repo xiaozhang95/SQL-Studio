@@ -7,6 +7,8 @@ import CodeMirror from '@uiw/react-codemirror'
 import { Card, theme, Typography } from 'antd'
 import { useMemo } from 'react'
 
+import { CHAT } from '../../constant/chat'
+
 export function CodeBlock({ text, language }: { text: string; language: string }) {
   const { token } = theme.useToken()
   const extensions = useMemo(() => {
@@ -30,13 +32,7 @@ export function CodeBlock({ text, language }: { text: string; language: string }
     ]
   }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight])
   return (
-    <Card
-      size="small"
-      title={language || '代码'}
-      extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}
-      styles={{ body: { padding: 0 } }}
-      style={{ width: '100%', minWidth: 0 }}
-    >
+    <Card size="small" title={language || '代码'} extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />} styles={{ body: { padding: 0 } }} style={CHAT.blockFrame}>
       <CodeMirror
         aria-label="代码内容"
         value={text}

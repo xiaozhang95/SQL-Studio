@@ -1,6 +1,6 @@
-import { ArrowUpOutlined, CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
+import { CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
-import { Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
+import { Alert, Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
 
 import type { TokenUsage } from '../../../../typings/chat'
@@ -27,8 +27,9 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
   const { token } = theme.useToken()
   const { container: containerRef, height, minimum, maximum, resizer } = useComposerResize()
   const question = Form.useWatch('question', form) ?? ''
+  const tooLong = new TextEncoder().encode(question).length > CHAT.maxQuestionBytes
   function submit(text: string) {
-    if (!busy && !settingsBusy && aiStatus?.configured && text.trim() && text.length <= CHAT.maxQuestionLength) void onSend({ question: text })
+    if (!busy && !settingsBusy && aiStatus?.configured && text.trim() && new TextEncoder().encode(text).length <= CHAT.maxQuestionBytes) void onSend({ question: text })
   }
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -57,7 +58,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
         <span style={{ width: token.controlHeight, height: token.lineWidth * 2, borderRadius: token.borderRadius, background: token.colorTextQuaternary }} />
       </div>
       <Form form={form} component={false} onValuesChange={onDraftChange}>
-        <Form.Item name="question" noStyle normalize={(value: string) => value.slice(0, CHAT.maxQuestionLength)}>
+        <Form.Item name="question" noStyle>
           <Sender
             styles={{
               root: { border: `1px solid ${token.colorBorder}`, boxShadow: 'none', background: token.colorFillQuaternary, height: height, display: 'flex', flexDirection: 'column' },
@@ -171,7 +172,18 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       />
                     </Tooltip>
                   ) : (
-                    <Button type="primary" onClick={() => submit(question)} aria-label="发送消息" shape="circle" icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured} />
+                    <Button
+                      type="primary"
+                      onClick={() => submit(question)}
+                      aria-label="发送消息"
+                      shape="circle"
+                      icon={
+                        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M21.4 3.2 3.2 10.6a.9.9 0 0 0 .1 1.7l6.8 2.2 6.2-6.2a.6.6 0 0 1 .8.8l-6.2 6.2 2.2 6.8a.9.9 0 0 0 1.7.1l7.4-18.2a.7.7 0 0 0-.8-.8Z" />
+                        </svg>
+                      }
+                      disabled={settingsBusy || !aiStatus?.configured || tooLong}
+                    />
                   )}
                 </Flex>
               </Flex>
@@ -179,6 +191,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
           />
         </Form.Item>
       </Form>
+      {tooLong && <Alert type="warning" showIcon title="消息超过 256 KiB，请缩短内容或分段发送。" style={{ marginTop: token.marginXS }} />}
     </div>
   )
 }

@@ -35,3 +35,10 @@ type Service struct {
 func New(repository Connections, executor Executor) *Service {
 	return &Service{connections: repository, database: executor, querySlots: make(chan struct{}, maxConcurrentQueries)}
 }
+
+// WithExecutor creates a scope using the supplied executor while sharing the
+// original credential source and process query budget.
+// Configure scopes at startup; this does not mutate the original service.
+func (s *Service) WithExecutor(executor Executor) *Service {
+	return &Service{connections: s.connections, database: executor, querySlots: s.querySlots}
+}

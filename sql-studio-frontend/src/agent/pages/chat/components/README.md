@@ -1,7 +1,7 @@
 # 页面组件
 
 - [composer](composer/README.md)：受控输入与提交。
-- [transcript](transcript/README.md)：纯文本消息与操作详情。
+- [transcript](transcript/README.md)：单轮对话、加载切换与操作详情。
 - [queryResult](queryResult/README.md)：结果表格与元数据展示。
 
 - [welcome](welcome/README.md)：欢迎区和示例问题。
@@ -20,5 +20,3 @@
 
 - [codeBlock](codeBlock/README.md)：回答代码高亮与复制。
 - [writeConfirmation](writeConfirmation/README.md)：回复下方的逐次写入确认卡片。
-
-- [conversationLoading](conversationLoading/README.md)：首次读取与历史轮次边界共用的单行局部加载提示。

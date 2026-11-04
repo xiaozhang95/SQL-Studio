@@ -119,6 +119,88 @@ func TestMergedAgentDecodeAndNamespace(t *testing.T) {
 	}
 }
 
+func TestLongAgentMessageCanBeStoppedThroughHTTP(t *testing.T) {
+	g := agentTestModel{make(chan struct{})}
+	services, a := agentFixture(t, g)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	id, err := a.Create(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(New(services))
+	defer server.Close()
+	post := func(path string, body any) *http.Response {
+		t.Helper()
+		payload, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, server.URL+"/api/agent/"+path, strings.NewReader(string(payload)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := server.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res
+	}
+	message := "长输入" + strings.Repeat("\x01", model.MessageNoticeBytes)
+	res := post("chat", map[string]string{"sessionId": id, "message": message})
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK || !strings.HasPrefix(res.Header.Get("Content-Type"), "text/event-stream") {
+		t.Fatal("long JSON request did not start SSE", res.StatusCode)
+	}
+	scan := bufio.NewScanner(res.Body)
+	var token string
+	var stopped, done bool
+	for scan.Scan() {
+		line, ok := strings.CutPrefix(scan.Text(), "data: ")
+		if !ok {
+			continue
+		}
+		var event model.Event
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			t.Fatal(err)
+		}
+		switch event.Type {
+		case "continue_confirmation":
+			var approval struct {
+				ID string `json:"approvalId"`
+			}
+			if err := json.Unmarshal(event.Result, &approval); err != nil || approval.ID == "" {
+				t.Fatal("missing approval")
+			}
+			token = approval.ID
+			decision := map[string]any{"approvalId": token, "allow": false}
+			for _, step := range []struct {
+				path   string
+				status int
+			}{
+				{"write-confirmation", 400},
+				{"continue-confirmation", 200},
+				{"continue-confirmation", 400},
+			} {
+				reply := post(step.path, decision)
+				_ = reply.Body.Close()
+				if reply.StatusCode != step.status {
+					t.Fatalf("%s returned %d", step.path, reply.StatusCode)
+				}
+			}
+		case "stopped":
+			stopped = true
+		case "done":
+			done = true
+		case "error", "model_start":
+			t.Fatal("unexpected SSE event", event.Type)
+		}
+	}
+	if err := scan.Err(); err != nil || token == "" || !stopped || !done {
+		t.Fatalf("incomplete consent stream stopped=%v done=%v error=%v", stopped, done, err)
+	}
+}
+
 func TestAgentEnsureAndRenameRoute(t *testing.T) {
 	services, _ := agentFixture(t, agentTestModel{})
 	router := New(services)

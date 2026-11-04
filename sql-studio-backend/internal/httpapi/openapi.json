@@ -2139,6 +2139,7 @@
         ],
         "summary": "SSE思考、工具与回答",
         "operationId": "agent_post__agent_chat",
+        "description": "输入最多 256 KiB UTF-8。超过 64 KiB 时先通过 continue_confirmation 事件等待确认，再发送给模型。",
         "parameters": [],
         "responses": {
           "200": {
@@ -2383,6 +2384,55 @@
         ],
         "summary": "确认或取消当前待执行数据库操作",
         "operationId": "agent_post__agent_write_confirmation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "approvalId",
+                  "allow"
+                ],
+                "properties": {
+                  "approvalId": {
+                    "type": "string"
+                  },
+                  "allow": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收确认结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效、过期或已处理"
+          },
+          "403": {
+            "description": "本机同源校验失败"
+          }
+        }
+      }
+    },
+    "/agent/continue-confirmation": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "确认继续或停止当前 Agent 轮次",
+        "operationId": "agent_post__agent_continue_confirmation",
         "requestBody": {
           "required": true,
           "content": {

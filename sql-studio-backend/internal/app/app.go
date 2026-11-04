@@ -22,17 +22,12 @@ import (
 
 	"sql-studio-backend/internal/config"
 	"sql-studio-backend/internal/connection"
-	"sql-studio-backend/internal/database"
 	"sql-studio-backend/internal/deepseek"
 	"sql-studio-backend/internal/httpapi"
-	"sql-studio-backend/internal/mariadb"
-	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
-	"sql-studio-backend/internal/mysql"
-	"sql-studio-backend/internal/postgresql"
 	"sql-studio-backend/internal/webui"
 )
 
@@ -54,7 +49,7 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := database.New(map[string]database.Engine{model.TypeMySQL: mysql.NewClient(), model.TypeMariaDB: mariadb.NewClient(), model.TypePostgreSQL: postgresql.NewClient()})
+	client := newDatabaseClient()
 	connectionService := connections.New(repository, client)
 	// 首次初始化走同一业务校验，已有连接保持不变。
 	if len(connectionService.ListConnections()) == 0 && cfg.InitialConnection != nil {
@@ -67,7 +62,14 @@ func New(cfg config.Config) (*App, error) {
 	agentStore := localstate.New(agentDir)
 	metadataService := metadata.New(repository, client)
 	queryService := query.New(repository, client)
-	agentService := agent.New(agentstream.New(agentCredentials{stateStore}), agentDatabase{connectionService, metadataService, queryService}, agentStore)
+	// Agent owns separate lifecycle state; each engine releases its physical
+	// connection before a database operation returns, including errors/cancellation.
+	agentClient := newDatabaseClient()
+	agentService := agent.New(agentstream.New(agentCredentials{stateStore}), agentDatabase{
+		connections: connectionService,
+		metadata:    metadata.New(repository, agentClient),
+		queries:     queryService.WithExecutor(agentClient),
+	}, agentStore)
 	router := httpapi.New(httpapi.Services{
 		Agent:       agentService,
 		AgentLayout: agentlayout.New(agentStore),

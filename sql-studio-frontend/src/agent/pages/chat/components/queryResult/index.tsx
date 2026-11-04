@@ -25,6 +25,7 @@ interface Props {
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
   if (isObject(props.value) && typeof props.value.error === 'string') return null
+  if (isObject(props.value) && typeof props.value.warning === 'string') return <Alert type="warning" showIcon title={props.value.warning} />
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
       <ResultContent {...props} />
@@ -33,7 +34,7 @@ export function QueryResult({ showExport = true, ...props }: Props) {
   )
 }
 
-/** 表格自身提供边框，外层只组织可选标题与内容，避免再叠 Card 外框。 */
+/** 外层只组织可选标题与内容，表格边框由 Table 的 section 绘制。 */
 function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: ReactNode; children: ReactNode }) {
   return (
     <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
@@ -47,6 +48,8 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
     </Flex>
   )
 }
+
+const tableFrame = { classNames: { section: 'agent-result-grid' }, styles: { section: CHAT.blockFrame, pagination: { root: { borderTop: 0 } } } } as const
 
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const { token } = theme.useToken()
@@ -117,6 +120,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       >
         {result.truncated && <Alert type="warning" showIcon title="结果已截断，统计全量请使用聚合查询。" banner />}
         <Table<Row>
+          {...tableFrame}
           aria-label="查询结果"
           size={APPEARANCE.tableSize}
           bordered
@@ -186,6 +190,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     return (
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
+          {...tableFrame}
           size={APPEARANCE.tableSize}
           bordered
           columns={[{ title: '名称', dataIndex: 'name', key: 'name' }]}
@@ -224,6 +229,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     return (
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
+          {...tableFrame}
           size={APPEARANCE.tableSize}
           bordered
           tableLayout="fixed"

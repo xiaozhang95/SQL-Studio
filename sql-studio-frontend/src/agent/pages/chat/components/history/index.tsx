@@ -1,6 +1,7 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import { Alert, Button, Drawer, Empty, Flex, Form, Input, Modal, Popconfirm, Spin, theme, Tooltip, Typography } from 'antd'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
@@ -20,7 +21,6 @@ interface Props {
   loading: boolean
   onClose: () => void
   onSelect: (id: string) => Promise<void>
-  onNew: () => void
   onRefresh: () => Promise<void>
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
@@ -30,6 +30,10 @@ export function History(props: Props) {
   const { token } = theme.useToken()
   const { open, onClose } = props
   const rename = useSessionRename(props.onRename)
+  const [search, setSearch] = useState('')
+  const keyword = search.trim().toLowerCase()
+  const items = keyword ? props.items.filter(({ title }) => title.toLowerCase().includes(keyword)) : props.items
+  const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show }
   return (
     <>
       <aside
@@ -39,10 +43,10 @@ export function History(props: Props) {
           position: 'relative',
           width: visibleWidth,
           background: token.colorBgContainer,
-          borderRight: `1px solid ${token.colorBorderSecondary}`
+          borderRight: '1px solid var(--border)'
         }}
       >
-        <HistoryContents {...props} onRenameOpen={rename.show} />
+        <HistoryContents {...contentsProps} />
         <div
           className="sidebar-resizer"
           role="separator"
@@ -57,7 +61,7 @@ export function History(props: Props) {
         />
       </aside>
       <Drawer title="历史会话" placement="left" size={280} open={open} onClose={onClose} styles={{ body: { padding: 0 } }}>
-        <HistoryContents {...props} onRenameOpen={rename.show} />
+        <HistoryContents {...contentsProps} />
       </Drawer>
       <Modal
         title="重命名会话"
@@ -104,13 +108,13 @@ function HistoryContents({
   selecting,
   loading,
   onSelect,
-  onNew,
   onRefresh,
-  onClose,
   onDelete,
   onRenameOpen,
+  search,
+  onSearchChange,
   footer
-}: Props & { onRenameOpen: (item: ConversationInfo) => void }) {
+}: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void }) {
   const { token } = theme.useToken()
   return (
     <Flex
@@ -124,19 +128,8 @@ function HistoryContents({
         paddingTop: token.paddingSM
       }}
     >
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        disabled={busy || selecting}
-        onClick={() => {
-          onNew()
-          onClose()
-        }}
-        block
-      >
-        新建会话
-      </Button>
-      <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS, paddingTop: token.paddingXS }}>
+      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="搜索会话标题" aria-label="搜索会话标题" allowClear />
+      <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS }}>
         <Typography.Text type="secondary">历史会话</Typography.Text>
         <Tooltip title="刷新历史">
           <Button type="text" size="small" aria-label="刷新历史" icon={<ReloadOutlined />} onClick={() => void onRefresh()} disabled={loading} />
@@ -145,7 +138,7 @@ function HistoryContents({
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有对话" />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? '没有匹配的会话' : '还没有对话'} />
           ) : (
             <Conversations
               activeKey={activeId}

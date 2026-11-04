@@ -7,12 +7,12 @@ import type { ConversationRound } from '../../../../utils/conversationRounds'
 
 interface Props {
   rounds: ConversationRound[]
+  activeIndex: number
   onJump: (index: number) => void
 }
-export function RoundNavigation({ rounds, onJump }: Props) {
+export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
   const { token } = theme.useToken()
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState<number | null>(null)
   return (
     <Flex
       vertical
@@ -40,7 +40,6 @@ export function RoundNavigation({ rounds, onJump }: Props) {
               value={undefined}
               options={rounds.map((round, index) => ({ value: index, label: `${index + 1}. ${round.question}` }))}
               onChange={(index) => {
-                setSelected(index)
                 onJump(index)
                 setOpen(false)
               }}
@@ -60,7 +59,7 @@ export function RoundNavigation({ rounds, onJump }: Props) {
       >
         <Button type="text" size="small" aria-label="问题列表" icon={<UnorderedListOutlined />} />
       </Popover>
-      {roundMarkers(rounds.length, selected ?? 0).map((index) => (
+      {roundMarkers(rounds.length, activeIndex).map((index) => (
         <Popover
           key={rounds[index].id}
           placement="right"
@@ -70,13 +69,11 @@ export function RoundNavigation({ rounds, onJump }: Props) {
               role="button"
               tabIndex={0}
               onClick={() => {
-                setSelected(index)
                 onJump(index)
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault()
-                  setSelected(index)
                   onJump(index)
                 }
               }}
@@ -95,14 +92,13 @@ export function RoundNavigation({ rounds, onJump }: Props) {
             className="chat-round-marker"
             aria-label={`跳转问题 ${index + 1}`}
 
-            aria-current={selected === index ? 'step' : undefined}
+            aria-current={activeIndex === index ? 'step' : undefined}
             onClick={() => {
-              setSelected(index)
               onJump(index)
             }}
             style={{ border: 0, background: 'transparent', cursor: 'pointer', width: 28, height: 10, padding: 0, display: 'grid', placeItems: 'center' }}
           >
-            <span style={{ width: selected === index ? 22 : 12, height: 2, background: selected === index ? token.colorPrimary : token.colorTextQuaternary }} />
+            <span style={{ width: activeIndex === index ? 22 : 12, height: 2, background: activeIndex === index ? token.colorPrimary : token.colorTextQuaternary }} />
           </button>
         </Popover>
       ))}

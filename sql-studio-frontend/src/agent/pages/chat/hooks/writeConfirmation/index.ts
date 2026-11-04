@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { WriteConfirmationRequest } from '../../../../typings/writeConfirmation'
+import type { ConfirmationRequest } from '../../../../typings/writeConfirmation'
 import { isObject } from '../../../../utils/json'
 
 interface PendingRequest {
-  value: WriteConfirmationRequest
+  value: ConfirmationRequest
   signal: AbortSignal
   abort: () => void
   submitting: boolean
 }
 
 export function useWriteConfirmation() {
-  const [pending, setPending] = useState<WriteConfirmationRequest | null>(null)
+  const [pending, setPending] = useState<ConfirmationRequest | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const active = useRef<PendingRequest | null>(null)
@@ -30,21 +30,34 @@ export function useWriteConfirmation() {
     setError('')
   }
 
-  function show(value: unknown, signal: AbortSignal) {
-    if (
-      !isObject(value) ||
-      typeof value.approvalId !== 'string' ||
-      typeof value.sql !== 'string' ||
-      typeof value.database !== 'string' ||
-      typeof value.connection !== 'string' ||
-      !Array.isArray(value.objects) ||
-      !value.objects.every((v) => typeof v === 'string')
-    )
-      throw new Error('写入确认信息无效')
+  function show(value: unknown, signal: AbortSignal, continuation = false) {
+    let confirmation: ConfirmationRequest
+    if (continuation) {
+      if (
+        !isObject(value) ||
+        typeof value.approvalId !== 'string' ||
+        typeof value.detail !== 'string' ||
+        (value.kind !== 'input' && value.kind !== 'result' && value.kind !== 'context' && value.kind !== 'recovery')
+      )
+        throw new Error('继续确认信息无效')
+      confirmation = { approvalId: value.approvalId, kind: value.kind, detail: value.detail }
+    } else {
+      if (
+        !isObject(value) ||
+        typeof value.approvalId !== 'string' ||
+        typeof value.sql !== 'string' ||
+        typeof value.database !== 'string' ||
+        typeof value.connection !== 'string' ||
+        !Array.isArray(value.objects) ||
+        !value.objects.every((v) => typeof v === 'string')
+      )
+        throw new Error('写入确认信息无效')
+      confirmation = { approvalId: value.approvalId, sql: value.sql, database: value.database, connection: value.connection, objects: [...value.objects] }
+    }
     close()
     if (signal.aborted) return
     const request: PendingRequest = {
-      value: { approvalId: value.approvalId, sql: value.sql, database: value.database, connection: value.connection, objects: [...value.objects] },
+      value: confirmation,
       signal,
       submitting: false,
       abort: () => {
@@ -58,12 +71,13 @@ export function useWriteConfirmation() {
 
   async function decide(allow: boolean) {
     const request = active.current
-    if (!request || request.submitting || request.signal.aborted) return
+    if (!request || request.submitting || request.signal.aborted) return false
     request.submitting = true
     setSubmitting(true)
     setError('')
     try {
-      const response = await fetch('/api/agent/write-confirmation', {
+      const endpoint = 'kind' in request.value ? '/api/agent/continue-confirmation' : '/api/agent/write-confirmation'
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approvalId: request.value.approvalId, allow }),
@@ -74,11 +88,13 @@ export function useWriteConfirmation() {
         throw new Error(isObject(data) && typeof data.error === 'string' ? data.error : '操作确认失败')
       }
       if (active.current === request && !request.signal.aborted) close()
+      return !request.signal.aborted
     } catch (cause) {
-      if (active.current !== request || request.signal.aborted) return
+      if (active.current !== request || request.signal.aborted) return false
       request.submitting = false
       setSubmitting(false)
       setError(cause instanceof Error ? cause.message : '操作确认失败')
+      return false
     }
   }
 

@@ -50,14 +50,19 @@ func TestAgentQueriesUseSharedBudgetAndReadOnlyLimit(t *testing.T) {
 			t.Fatal("budget fixture timed out")
 		}
 	}
-	adapter := agentDatabase{queries: service}
+	agentCalls := 0
+	agentService := service.WithExecutor(agentExecutor{func(context.Context, model.QueryRequest) (model.QueryResult, error) {
+		agentCalls++
+		return model.QueryResult{}, nil
+	}})
+	adapter := agentDatabase{queries: agentService}
 	_, err := adapter.Execute(ctx, agentmodel.Target{ConnectionID: "fixture", Database: "demo"}, "query_readonly", "", "SELECT 1")
 	close(release)
 	wg.Wait()
-	if !errors.Is(err, query.ErrBusy) {
+	if !errors.Is(err, query.ErrBusy) || agentCalls != 0 {
 		t.Fatal("agent bypassed shared budget", err)
 	}
-	adapter.queries = query.New(agentRepo{}, agentExecutor{func(_ context.Context, q model.QueryRequest) (model.QueryResult, error) {
+	adapter.queries = service.WithExecutor(agentExecutor{func(_ context.Context, q model.QueryRequest) (model.QueryResult, error) {
 		if q.AllowWrite || q.Limit != 100 || q.Database != "demo" {
 			t.Error("read-only contract lost", q)
 		}

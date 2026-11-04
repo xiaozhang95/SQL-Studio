@@ -1,14 +1,14 @@
-import { ArrowDownOutlined } from '@ant-design/icons'
-import { Button, theme } from 'antd'
+import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
+import { Button, Flex, theme } from 'antd'
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { Virtuoso } from 'react-virtuoso'
+
+import ContentLoading from '@/components/contentLoading'
 
 import type { Entry } from '../../../../typings/chat'
 import { conversationRounds } from '../../../../utils/conversationRounds'
 import { CHAT } from '../../constant/chat'
-import { useVirtualTranscript } from '../../hooks/virtualTranscript'
-import { ConversationLoading } from '../conversationLoading'
+import { useRoundTranscript } from '../../hooks/roundTranscript'
 import { RoundNavigation } from '../roundNavigation'
 import { TurnContent } from '../turnContent'
 
@@ -21,74 +21,69 @@ interface Props {
   onEdit: (text: string) => void
   confirmation?: ReactNode
 }
-interface HistoryContext {
-  hasOlder: boolean
-  loading: boolean
-  onLoad: () => void
-}
-function HistoryBoundary({ context }: { context?: HistoryContext }) {
-  return (
-    <div style={{ ...CHAT.content, height: CHAT.historyBoundaryHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {!context?.hasOlder ? null : context.loading ? (
-        <ConversationLoading />
-      ) : (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Button type="text" onClick={context.onLoad}>
-            加载更早的消息
-          </Button>
-        </div>
-      )}
-    </div>
-  )
-}
-const transcriptComponents = { Header: HistoryBoundary }
 export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
-  const { list: listRef, visibleRounds, first, loadingHistory, loadOlder, atBottom, jump, onTop, onBottom, onReadHistory, onHeight, onRange, toLatest } = useVirtualTranscript(rounds)
+  const { viewport: viewportRef, content: contentRef, round, activeIndex, loading, atBottom, jump, onScroll, previous, next, toLatest } = useRoundTranscript(rounds, Boolean(confirmation), busy)
+  const latest = activeIndex === rounds.length - 1
   return (
-    <div
-      onWheel={onReadHistory}
-      onTouchMove={onReadHistory}
-      onKeyDown={(e) => {
-        if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) onReadHistory()
-      }}
-      style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}
-    >
-      <RoundNavigation rounds={rounds} onJump={jump} />
-      <Virtuoso
+    <Flex vertical style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}>
+      <RoundNavigation rounds={rounds} activeIndex={activeIndex} onJump={jump} />
+      <Flex
+        vertical
+        gap="small"
+        role="group"
+        aria-label="切换对话轮次"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          insetInlineEnd: `max(${token.paddingSM}px, calc((100% - ${CHAT.conversationMaxWidth}px) / 2 - ${CHAT.roundSwitch.sideOffset}px))`,
+          transform: 'translateY(-50%)',
+          zIndex: 1
+        }}
+      >
+        <Button size="small" shape="circle" aria-label="上一轮" title="上一轮" icon={<ArrowUpOutlined />} onClick={previous} disabled={activeIndex === 0 || loading} />
+        <Button size="small" shape="circle" aria-label="下一轮" title="下一轮" icon={<ArrowDownOutlined />} onClick={next} disabled={latest || loading} />
+      </Flex>
+      <div
+        ref={viewportRef}
         className="chat-scroll"
-        ref={listRef}
-        style={{ height: '100%', width: '100%', scrollbarGutter: 'stable' }}
-        data={visibleRounds}
-        firstItemIndex={first}
-        components={transcriptComponents}
-        context={{ hasOlder: first > 0, loading: loadingHistory, onLoad: loadOlder }}
-        computeItemKey={(_, round) => round.id}
-        initialTopMostItemIndex={{ index: visibleRounds.length - 1, align: 'end' }}
-        increaseViewportBy={{ top: 300, bottom: 400 }}
-        atBottomThreshold={96}
-        atBottomStateChange={onBottom}
-        atTopStateChange={onTop}
-        rangeChanged={onRange}
-        followOutput={(atBottom) => (atBottom ? 'auto' : false)}
-        totalListHeightChanged={onHeight}
-        itemContent={(index, round) => (
-          <div
-            data-chat-round={round.id}
-            style={{
-              ...CHAT.content,
-              paddingBlock: token.paddingXS
-            }}
-          >
-            <TurnContent locked={busy} entries={round.entries} busy={busy && index === rounds.length - 1} status={status} expanded={expanded} onExpanded={onExpanded} onEdit={onEdit} />
-            {index === rounds.length - 1 && confirmation}
+        role="region"
+        aria-label="当前轮对话"
+        aria-busy={loading}
+        tabIndex={0}
+        onScroll={onScroll}
+        style={{ flex: 1, minHeight: 0, width: '100%', overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}
+      >
+        {loading ? (
+          <ContentLoading label={'正在加载第 ' + (activeIndex + 1) + ' 轮对话…'} />
+        ) : round ? (
+          <div ref={contentRef} key={round.id} data-chat-round={round.id} style={{ ...CHAT.content, paddingBlock: token.paddingXS }}>
+            <TurnContent
+              locked={busy}
+              entries={round.entries}
+              busy={busy && latest}
+              waiting={latest && Boolean(confirmation)}
+              status={status}
+              expanded={expanded}
+              onExpanded={onExpanded}
+              onEdit={onEdit}
+            />
+            {latest && confirmation}
           </div>
-        )}
-      />
-      {!atBottom && (
-        <Button aria-label="回到最新消息" shape="circle" icon={<ArrowDownOutlined />} onClick={toLatest} style={{ position: 'absolute', bottom: token.marginSM, insetInlineEnd: token.margin }} />
+        ) : null}
+      </div>
+      {!loading && (!latest || !atBottom) && (
+        <Button
+          aria-label={confirmation && !latest ? '返回待确认回复' : '回到最新消息'}
+          title={confirmation && !latest ? '返回待确认回复' : '回到最新消息'}
+          size="small"
+          shape="circle"
+          icon={<ArrowDownOutlined />}
+          onClick={toLatest}
+          style={{ position: 'absolute', bottom: token.marginSM, left: '50%', transform: 'translateX(-50%)', zIndex: 1 }}
+        />
       )}
-    </div>
+    </Flex>
   )
 }

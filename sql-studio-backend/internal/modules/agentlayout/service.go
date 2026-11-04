@@ -24,7 +24,7 @@ func (s *Service) Save(ctx context.Context, revision uint64, state model.Layout)
 	if state.Mode != "" && state.Mode != "readonly" && state.Mode != "write" {
 		return model.Workspace{}, errors.New("操作模式无效")
 	}
-	if (state.ActiveID != "" && !id.MatchString(state.ActiveID)) || len(state.Draft) > 8000 || len(state.Expanded) > 1024 {
+	if (state.ActiveID != "" && !id.MatchString(state.ActiveID)) || len(state.Draft) > model.MessageMaxBytes || len(state.Expanded) > 1024 {
 		return model.Workspace{}, errors.New("布局范围或草稿超限")
 	}
 	for _, key := range state.Expanded {

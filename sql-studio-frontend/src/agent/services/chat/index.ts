@@ -74,10 +74,12 @@ const kinds = [
   'answer_delta',
   'tool_start',
   'write_confirmation',
+  'continue_confirmation',
   'tool_result',
   'answer',
   'usage',
   'error',
+  'stopped',
   'turn_end',
   'done',
   'heartbeat'
@@ -122,7 +124,11 @@ export async function chat(sessionId: string, message: string, signal: AbortSign
     body: JSON.stringify({ sessionId, message, mode }),
     signal
   })
-  if (!r.ok || !r.body) throw new Error('无法启动聊天')
+  if (!r.ok) {
+    const data: unknown = await r.json().catch(() => null)
+    throw new Error(isObject(data) && typeof data.error === 'string' ? data.error : '无法启动聊天')
+  }
+  if (!r.body) throw new Error('无法启动聊天')
   if (!r.headers.get('Content-Type')?.includes('text/event-stream')) throw new Error('服务器不支持SSE，请重启新版Agent')
   const reader = r.body.getReader()
   const decoder = new TextDecoder()

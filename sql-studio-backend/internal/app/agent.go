@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sql-studio-backend/internal/model"
 	agentmodel "sql-studio-backend/internal/model/agent"
 	agent "sql-studio-backend/internal/modules/agent"
@@ -36,7 +37,7 @@ func (d agentDatabase) Connections(ctx context.Context) ([]agentmodel.Connection
 func (d agentDatabase) Databases(ctx context.Context, id string) ([]string, error) {
 	names, err := d.metadata.Databases(ctx, id)
 	if err != nil {
-		return nil, agentDatabaseError(err)
+		return nil, agentReadError(err)
 	}
 	if data, err := json.Marshal(names); err != nil || len(data) > 256*1024 {
 		return nil, errors.New("数据库列表超过256 KiB，请缩小范围")
@@ -70,11 +71,11 @@ func (d agentDatabase) Execute(ctx context.Context, target agentmodel.Target, na
 		return nil, errors.New("不支持的工具")
 	}
 	if err != nil {
-		return nil, agentDatabaseError(err)
+		return nil, agentReadError(err)
 	}
 	data, err := json.Marshal(value)
-	if err == nil && len(data) > 256*1024 {
-		return nil, errors.New("结果超过256 KiB，请缩小查询范围")
+	if err == nil && len(data) > agentmodel.ToolMaxBytes {
+		return nil, agentmodel.ErrToolResultTooLarge
 	}
 	return data, err
 }
@@ -85,6 +86,10 @@ func agentDatabaseError(err error) error {
 		return err
 	}
 	return errors.New("数据库操作失败，请检查连接状态、SQL、对象及数据库权限")
+}
+
+func agentReadError(err error) error {
+	return fmt.Errorf("%w：%w", agentmodel.ErrReadOperation, agentDatabaseError(err))
 }
 
 type agentCredentials struct{ store *statefile.Store }
@@ -120,7 +125,11 @@ func (d agentDatabase) Write(ctx context.Context, target agentmodel.Target, sql 
 	if err != nil {
 		return nil, agentDatabaseError(err)
 	}
-	return json.Marshal(value)
+	data, err := json.Marshal(value)
+	if err == nil && len(data) > agentmodel.ToolMaxBytes {
+		return json.RawMessage(`{"warning":"数据库写入已执行，返回结果超过 256 KiB，请另行查询所需字段。"}`), nil
+	}
+	return data, err
 }
 
 // Re-read the current engine: a discovered connection may have been edited

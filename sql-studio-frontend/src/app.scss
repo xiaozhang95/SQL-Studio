@@ -269,6 +269,17 @@ body {
 .data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);
 }
+// Agent 结果由 Table section 绘制闭合外框，单元格只绘制内部分隔线。
+.ant-table-wrapper .ant-table.ant-table-bordered > .agent-result-grid {
+  > :is(.ant-table-content, .ant-table-header, .ant-table-body) > table > :is(thead, tbody) > tr > :is(th, td):last-child {
+    border-inline-end: 0;
+  }
+
+  > :is(.ant-table-content, .ant-table-body) > table > tbody > tr:last-child > :is(th, td) {
+    border-bottom: 0;
+  }
+}
+
 .table-pagination.ant-pagination,
 .sql-studio-theme .ant-table-wrapper .ant-table-pagination.table-pagination {
   display: flex;

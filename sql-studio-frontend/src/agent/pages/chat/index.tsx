@@ -1,4 +1,4 @@
-import { DatabaseOutlined, MenuOutlined } from '@ant-design/icons'
+import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
 import { Alert, Button, Flex, theme } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
@@ -70,15 +70,22 @@ export function ChatPage({
         }
       >
         {' '}
-        <Button icon={<DatabaseOutlined />} onClick={onBack} disabled={chat.historyBusy}>
-          工作区
+        <Button type="primary" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
+          新建会话
         </Button>
         <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History
           layout={sidebar}
-          footer={<SystemSettings themeMode={dark ? 'dark' : 'light'} themePreference={themePreference} onThemeChange={onThemeChange} />}
+          footer={
+            <SystemSettings
+              themeMode={dark ? 'dark' : 'light'}
+              themePreference={themePreference}
+              onThemeChange={onThemeChange}
+              navigation={{ destination: 'workspace', onSelect: onBack, disabled: chat.historyBusy }}
+            />
+          }
           open={chat.historyOpen}
           items={chat.history}
           activeId={workspace.state.activeId}
@@ -87,7 +94,6 @@ export function ChatPage({
           loading={chat.historyLoading}
           onClose={chat.closeHistory}
           onSelect={chat.selectHistory}
-          onNew={chat.createNew}
           onRefresh={chat.refreshHistory}
           onDelete={chat.deleteHistory}
           onRename={chat.renameHistory}
@@ -131,7 +137,7 @@ export function ChatPage({
                     onEdit={chat.editQuestion}
                     confirmation={
                       chat.confirmWrite.pending && (
-                        <WriteConfirmation value={chat.confirmWrite.pending} submitting={chat.confirmWrite.submitting} error={chat.confirmWrite.error} onDecide={chat.confirmWrite.decide} />
+                        <WriteConfirmation value={chat.confirmWrite.pending} submitting={chat.confirmWrite.submitting} error={chat.confirmWrite.error} onDecide={chat.decideConfirmation} />
                       )
                     }
                   />

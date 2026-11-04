@@ -2,15 +2,19 @@ import type { ChatEvent, Entry } from '../../typings/chat'
 import { isObject } from '../json'
 
 export function chatErrors(entries: Entry[]): string[] {
-  return [
-    ...new Set(
-      entries.flatMap((entry) => {
-        if (entry.role === 'error') return [entry.text]
-        if (entry.role === 'tool' && isObject(entry.result) && typeof entry.result.error === 'string') return [entry.result.error]
-        return []
-      })
-    )
-  ]
+  const seen = new Set<string>()
+  return entries
+    .flatMap((entry) => {
+      if (entry.role === 'error' && !entry.stopped) return [entry.text]
+      if (entry.role === 'tool' && isObject(entry.result) && typeof entry.result.error === 'string') return [entry.result.error]
+      return []
+    })
+    .filter((message) => {
+      const reason = message.replace(/^本轮未完成：/, '')
+      if (seen.has(reason)) return false
+      seen.add(reason)
+      return true
+    })
 }
 
 export function applyEvent(entries: Entry[], event: ChatEvent): Entry[] {
@@ -84,6 +88,10 @@ function accumulator(next: Entry[]) {
       add('error', `本轮未完成：${event.text ?? '请求失败'}`, {
         incomplete: true
       })
+    }
+    if (event.type === 'stopped') {
+      finish(true)
+      add('error', event.text ?? '已停止本轮', { stopped: true })
     }
   }
 }

@@ -19,6 +19,27 @@ async function moduleAt(relative) {
   return import('data:text/javascript;base64,' + Buffer.from(output).toString('base64'))
 }
 
+test('工具失败终止本轮时，实时与恢复记录只汇总一次相同错误', async () => {
+  const { applyEvent, restoreEvents, chatErrors } = await moduleAt('utils/chatEvents/index.ts')
+  const reason = '工具 list_databases 失败，本轮已停止：数据库操作失败'
+  const events = [
+    { type: 'user', text: '查看数据库' },
+    { type: 'tool_start', tool: 'list_databases', arguments: '{}' },
+    { type: 'tool_result', tool: 'list_databases', result: { error: reason } },
+    { type: 'error', text: reason },
+    { type: 'done' }
+  ]
+  const live = events.reduce(applyEvent, [])
+  const restored = await restoreEvents(events, new AbortController().signal)
+  assert.deepEqual(chatErrors(live), [reason])
+  assert.deepEqual(chatErrors(restored), [reason])
+  assert.equal(
+    restored.some((entry) => entry.incomplete),
+    true
+  )
+  assert.deepEqual(chatErrors([...live, { id: 5, role: 'error', text: '独立的保存失败' }]), [reason, '独立的保存失败'])
+})
+
 test('Enter发送，Shift+Enter换行，IME确认候选不提交', async () => {
   const { shouldSendOnEnter } = await moduleAt('utils/inputSubmission/index.ts')
   const enter = {
@@ -34,7 +55,7 @@ test('Enter发送，Shift+Enter换行，IME确认候选不提交', async () => {
   assert.equal(shouldSendOnEnter({ ...enter, key: 'a' }), false)
 })
 
-test('虚拟对话按提问划分，保留错误归属；导航摘要排除思考且刻度有界', async () => {
+test('对话按提问划分，保留错误归属；导航摘要排除思考且刻度有界', async () => {
   const { conversationRounds, roundMarkers } = await moduleAt('utils/conversationRounds/index.ts')
   const entries = [
     { id: 1, role: 'user', text: '第一个问题' },
@@ -613,24 +634,60 @@ test('首次恢复先显示索引，内容未完成时可以改选并取消初�
   harness.unmount()
 })
 
-async function transcriptHarness(count = 25) {
-  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/virtualTranscript/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
+async function transcriptHarness() {
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/roundTranscript/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
   const slots = [],
     effects = [],
     timers = new Map(),
-    frames = new Map(),
-    calls = []
+    observers = new Set()
   let cursor = 0,
     next = 0,
-    rounds = Array.from({ length: count }, (_, id) => ({ id, entries: [], question: String(id), summary: '' }))
+    dirty = false,
+    attention = false
+  let rounds = Array.from({ length: 3 }, (_, id) => ({ id, entries: [], question: String(id), summary: '' }))
+  class MockElement {
+    scrollHeight = 900
+    clientHeight = 300
+    listeners = new Map()
+    top = 0
+    get scrollTop() {
+      return this.top
+    }
+    set scrollTop(value) {
+      this.top = Math.max(0, Math.min(value, this.scrollHeight - this.clientHeight))
+    }
+    addEventListener(type, fn) {
+      this.listeners.set(type, fn)
+    }
+    removeEventListener(type) {
+      this.listeners.delete(type)
+    }
+    dispatch(type, fields = {}) {
+      this.listeners.get(type)?.({ target: this, cancelable: true, preventDefault() {}, ...fields })
+    }
+  }
+  class Observer {
+    constructor(callback) {
+      this.callback = callback
+    }
+    observe() {
+      observers.add(this.callback)
+    }
+    disconnect() {
+      observers.delete(this.callback)
+    }
+  }
+  const viewport = new MockElement(),
+    content = new MockElement()
   const state = (initial) => {
     const index = cursor++
     if (!(index in slots)) slots[index] = initial
     return [
       slots[index],
       (value) => {
-        slots[index] = typeof value === 'function' ? value(slots[index]) : value
+        if (!Object.is(slots[index], value)) dirty = true
+        slots[index] = value
       }
     ]
   }
@@ -638,10 +695,6 @@ async function transcriptHarness(count = 25) {
     const index = cursor++
     if (!(index in slots)) slots[index] = { current: initial }
     return slots[index]
-  }
-  const memo = (factory) => {
-    cursor++
-    return factory()
   }
   const effect = (callback, deps) => {
     const index = cursor++
@@ -653,105 +706,147 @@ async function transcriptHarness(count = 25) {
       })
     }
   }
-  const schedule = (map, callback) => {
-    const id = ++next
-    map.set(id, callback)
-    return id
-  }
   const hook = new Function(
     'exports',
     'useState',
     'useRef',
-    'useMemo',
     'useLayoutEffect',
+    'useCallback',
     'startTransition',
     'CHAT',
     'setTimeout',
     'clearTimeout',
-    'requestAnimationFrame',
-    'cancelAnimationFrame',
-    code + '; return exports.useVirtualTranscript'
+    'ResizeObserver',
+    code + '; return exports.useRoundTranscript'
   )(
     {},
     state,
     ref,
-    memo,
     effect,
-    (callback) => callback(),
-    { historyBatchSize: 8, historyLoadingDelay: 80 },
-    (callback) => schedule(timers, callback),
+    (fn, deps) => {
+      const index = cursor++
+      const prior = slots[index]
+      if (!prior || deps.some((value, i) => value !== prior.deps[i])) slots[index] = { deps, fn }
+      return slots[index].fn
+    },
+    (fn) => fn(),
+    { roundSwitch: { loadingDelay: 180, edgeTolerance: 2 } },
+    (fn) => {
+      timers.set(++next, fn)
+      return next
+    },
     (id) => timers.delete(id),
-    (callback) => schedule(frames, callback),
-    (id) => frames.delete(id)
+    Observer
   )
-  const render = () => {
-    cursor = 0
-    const result = hook(rounds)
-    result.list.current = { scrollToIndex: (location) => calls.push(location) }
-    effects.splice(0).forEach((callback) => callback())
-    const pending = [...frames.values()]
-    frames.clear()
-    pending.forEach((callback) => callback())
+  function render() {
+    let result
+    do {
+      dirty = false
+      cursor = 0
+      result = hook(rounds, attention)
+      result.viewport.current = viewport
+      result.content.current = result.round ? content : null
+      effects.splice(0).forEach((fn) => fn())
+    } while (dirty)
     return result
   }
   return {
     render,
-    calls,
+    viewport,
     timers,
+    observers,
     flush: () => {
       const pending = [...timers.values()]
       timers.clear()
-      pending.forEach((callback) => callback())
+      pending.forEach((fn) => fn())
     },
     append: () => {
-      rounds = [...rounds, { id: rounds.length, entries: [], question: 'new', summary: '' }]
+      rounds = [...rounds, { id: rounds.length, entries: [], question: '新提问', summary: '' }]
     },
+    attention: () => {
+      attention = true
+    },
+    resize: () => observers.forEach((fn) => fn()),
     unmount: () => slots.forEach((slot) => slot?.cleanup?.())
   }
 }
 
-test('上滑边界先显示局部loading再分批前插，重复触发合并且不拉回末尾', async () => {
-  const harness = await transcriptHarness()
-  let scroll = harness.render()
-  assert.equal(scroll.first, 17)
-  assert.equal(scroll.visibleRounds.length, 8)
-  harness.calls.length = 0
-  scroll.onTop(true)
-  assert.equal(harness.timers.size, 0)
-  scroll.onReadHistory()
-  scroll = harness.render()
-  assert.equal(scroll.loadingHistory, true)
-  assert.equal(scroll.first, 17)
-  scroll.loadOlder()
-  assert.equal(harness.timers.size, 1)
-  harness.flush()
-  scroll = harness.render()
-  assert.equal(scroll.loadingHistory, false)
-  assert.equal(scroll.first, 9)
-  assert.equal(scroll.visibleRounds.length, 16)
-  assert.equal(harness.calls.length, 0)
-  scroll.loadOlder()
-  harness.unmount()
-  assert.equal(harness.timers.size, 0)
+test('滚动到边界留在本轮，点击相邻轮次显示加载', async () => {
+  const h = await transcriptHarness()
+  const initial = h.render()
+  assert.equal(initial.round.id, 2)
+  assert.equal(h.viewport.scrollTop, 0)
+  initial.onScroll()
+  h.viewport.dispatch('wheel', { deltaY: -160 })
+  h.viewport.dispatch('touchmove', { touches: [{ clientX: 20, clientY: 200 }] })
+  h.viewport.dispatch('keydown', { key: 'PageUp' })
+  assert.equal(h.timers.size, 0)
+  assert.equal(h.render().round.id, 2)
+
+  h.viewport.scrollTop = 180
+  h.render().previous()
+  const loading = h.render()
+  assert.equal(loading.loading, true)
+  assert.equal(loading.activeIndex, 1)
+  assert.equal(loading.round, undefined)
+  h.flush()
+  assert.equal(h.render().round.id, 1)
+  assert.equal(h.viewport.scrollTop, 600)
+
+  h.render().onScroll()
+  h.viewport.dispatch('wheel', { deltaY: 160 })
+  assert.equal(h.render().round.id, 1)
+  assert.equal(h.timers.size, 0)
+  h.render().next()
+  assert.equal(h.render().loading, true)
+  h.flush()
+  assert.equal(h.render().round.id, 2)
+  assert.equal(h.viewport.scrollTop, 0)
+  h.unmount()
 })
 
-test('分批历史完整导航保持原始索引，回到最新与新消息跟随使用相对索引', async () => {
-  const harness = await transcriptHarness()
-  let scroll = harness.render()
-  scroll.jump(2)
-  scroll = harness.render()
-  assert.equal(scroll.first, 0)
-  assert.deepEqual(harness.calls.at(-1), { index: 2, align: 'start' })
-  scroll.toLatest()
-  assert.deepEqual(harness.calls.at(-1), { index: 24, align: 'end' })
-  harness.append()
-  harness.render()
-  assert.deepEqual(harness.calls.at(-1), { index: 25, align: 'end' })
-  harness.unmount()
-  const short = await transcriptHarness(3)
-  scroll = short.render()
-  assert.equal(scroll.first, 0)
-  scroll.loadOlder()
-  assert.equal(short.timers.size, 0)
-  short.unmount()
+test('切换可被新导航替换，新提问或写入确认回到最新轮', async () => {
+  const h = await transcriptHarness()
+  h.render().jump(0)
+  assert.equal(h.render().activeIndex, 0)
+  h.render().jump(1)
+  assert.equal(h.timers.size, 1)
+  h.flush()
+  assert.equal(h.render().round.id, 1)
+  assert.equal(h.viewport.scrollTop, 0)
+
+  h.render().previous()
+  assert.equal(h.render().loading, true)
+  h.attention()
+  assert.equal(h.render().round.id, 2)
+  assert.equal(h.viewport.scrollTop, 600)
+  assert.equal(h.timers.size, 0)
+
+  h.render().jump(0)
+  h.render()
+  h.append()
+  assert.equal(h.render().round.id, 3)
+  assert.equal(h.timers.size, 0)
+  h.render().jump(0)
+  h.unmount()
+  assert.equal(h.timers.size, 0)
+  assert.equal(h.viewport.listeners.size, 0)
+  assert.equal(h.observers.size, 0)
+})
+
+test('最新回复只在末尾跟随高度变化', async () => {
+  const h = await transcriptHarness()
+  h.render()
+  h.viewport.scrollHeight = 900
+  h.viewport.scrollTop = 600
+  h.render().onScroll()
+  h.viewport.scrollHeight = 1300
+  h.resize()
+  assert.equal(h.viewport.scrollTop, 1000)
+  h.viewport.scrollTop = 220
+  h.render().onScroll()
+  h.viewport.scrollHeight = 1600
+  h.resize()
+  assert.equal(h.viewport.scrollTop, 220)
+  h.unmount()
 })

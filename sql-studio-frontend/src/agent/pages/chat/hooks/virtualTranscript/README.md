@@ -1,5 +1,0 @@
-# useVirtualTranscript
-
-管理Virtuoso引用、当前可视轮次、末尾跟随及跳转。新问题回到末尾，用户上滚后不随流式输出拉回；ResizeObserver由虚拟列表管理动态高度，支持折叠和表格尺寸变化。jump按轮次定位；toLatest恢复跟随。组件按会话ID重建，引用、帧回调随组件清理，无网络和持久化。
-
-visibleRounds/first为分段展示数据与原始起点；初始最近CHAT.historyBatchSize轮。onTop/onReadHistory触发边界补入，loadOlder供边界按钮调用；loadingHistory显示局部提示，等待CHAT.historyLoadingDelay让提示先绘制，再以startTransition补入一批；重复触发合并，卸载清理定时器。向前补入不触发末尾跟随，firstItemIndex保持已读位置。Virtuoso的scrollToIndex使用当前数据相对下标，rangeChanged/itemContent使用原始下标；jump按完整轮次下标先扩展范围、提交后定位，toLatest仍跳到最新一轮。

@@ -15,10 +15,12 @@ export interface ChatEvent {
     | 'answer_delta'
     | 'tool_start'
     | 'write_confirmation'
+    | 'continue_confirmation'
     | 'tool_result'
     | 'answer'
     | 'usage'
     | 'error'
+    | 'stopped'
     | 'turn_end'
     | 'done'
     | 'heartbeat'
@@ -37,4 +39,5 @@ export interface Entry {
   tool?: string
   streaming?: boolean
   incomplete?: boolean
+  stopped?: boolean
 }

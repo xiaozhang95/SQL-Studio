@@ -1,5 +1,5 @@
-import { CodeOutlined, CommentOutlined, PlusOutlined } from '@ant-design/icons'
-import { Alert, Button, Divider, Empty } from 'antd'
+import { CodeOutlined, PlusOutlined } from '@ant-design/icons'
+import { Alert, Button, Empty } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
@@ -66,10 +66,6 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
             新建查询
           </Button>
         </div>
-        <Divider orientation="vertical" style={{ margin: 0 }} />
-        <Button icon={<CommentOutlined />} onClick={onOpenAgent}>
-          Agent
-        </Button>
       </PageHeader>
       {noticeError && (
         <Alert
@@ -94,7 +90,19 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
         </div>
       ) : (
         <div className="workspace" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <ConnectionSidebar model={model} layout={sidebar} footer={<SystemSettings themeMode={themeMode} themePreference={themePreference} onThemeChange={onThemeChange} themeReady={themeReady} />} />
+          <ConnectionSidebar
+            model={model}
+            layout={sidebar}
+            footer={
+              <SystemSettings
+                themeMode={themeMode}
+                themePreference={themePreference}
+                onThemeChange={onThemeChange}
+                themeReady={themeReady}
+                navigation={{ destination: 'agent', onSelect: onOpenAgent }}
+              />
+            }
+          />
           <main className="main-area" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
             <div className="query-workspace" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {model.tabs.length > 0 ? (

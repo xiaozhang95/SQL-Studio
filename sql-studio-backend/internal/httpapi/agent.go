@@ -62,21 +62,8 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 		agentResponse(c, v, err)
 	})
 	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Param("id"))) })
-	a.POST("/write-confirmation", func(c *gin.Context) {
-		var input struct {
-			ID    string `json:"approvalId"`
-			Allow *bool  `json:"allow"`
-		}
-		if err := decodeLimit(c, &input, 4096); err != nil {
-			fail(c, err)
-			return
-		}
-		if input.Allow == nil {
-			fail(c, errors.New("缺少确认结果"))
-			return
-		}
-		agentResponse(c, struct{}{}, s.Agent.ConfirmWrite(input.ID, *input.Allow))
-	})
+	a.POST("/write-confirmation", confirmAgentStep(s.Agent.ConfirmWrite))
+	a.POST("/continue-confirmation", confirmAgentStep(s.Agent.ConfirmContinue))
 	a.POST("/chat", (&agentHandler{s.Agent}).stream)
 	a.GET("/workspace", func(c *gin.Context) { v, e := s.AgentLayout.Read(c.Request.Context()); agentResponse(c, v, e) })
 	a.PUT("/workspace", func(c *gin.Context) {
@@ -84,7 +71,7 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 			Revision *uint64       `json:"revision"`
 			State    *model.Layout `json:"state"`
 		}
-		if e := decodeLimit(c, &input, 32*1024); e != nil {
+		if e := decodeLimit(c, &input, model.MessageJSONMaxBytes); e != nil {
 			fail(c, e)
 			return
 		}
@@ -106,4 +93,22 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 		agentResponse(c, v, e)
 	})
 	a.DELETE("/settings", func(c *gin.Context) { v, e := s.Settings.ClearAgent(c.Request.Context()); agentResponse(c, v, e) })
+}
+
+func confirmAgentStep(confirm func(string, bool) error) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var input struct {
+			ID    string `json:"approvalId"`
+			Allow *bool  `json:"allow"`
+		}
+		if err := decodeLimit(c, &input, 4096); err != nil {
+			fail(c, err)
+			return
+		}
+		if input.Allow == nil {
+			fail(c, errors.New("缺少确认结果"))
+			return
+		}
+		agentResponse(c, struct{}{}, confirm(input.ID, *input.Allow))
+	}
 }

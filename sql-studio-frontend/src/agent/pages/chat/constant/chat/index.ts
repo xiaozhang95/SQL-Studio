@@ -6,10 +6,8 @@ const transcriptInset = 32
 export const CHAT = {
   composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
   sidebarLayout: { defaultWidth: 232, minimumWidth: 200, maximumWidth: 560, minimumMainWidth: 520, keyboardStep: 24 },
-  historyBatchSize: 8,
-  historyLoadingDelay: 80,
-  historyBoundaryHeight: 48,
-  maxQuestionLength: 2000,
+  roundSwitch: { loadingDelay: 180, edgeTolerance: 2, sideOffset: 120 },
+  maxQuestionBytes: 256 * 1024,
   maxTitleLength: 80,
   toolEndpoints: {
     execute_write: 'POST /api/connections/:id/query',
@@ -46,6 +44,13 @@ export const CHAT = {
   modeConfirmationWidth: 720,
   spacing: { block: 'middle', detail: 'small' },
   composerRows: { minRows: 4, maxRows: 10 },
+  blockFrame: {
+    width: '100%',
+    minWidth: 0,
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--ant-border-radius-lg)',
+    overflow: 'hidden'
+  } satisfies CSSProperties,
   content: {
     width: `calc(100% - ${transcriptInset * 2}px)`,
     maxWidth: conversationMaxWidth,

@@ -39,6 +39,7 @@ function blocks(entries: Entry[]): Block[] {
   return out
 }
 interface Props {
+  waiting: boolean
   entries: Entry[]
   locked: boolean
   busy: boolean
@@ -47,7 +48,7 @@ interface Props {
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
 }
-export function TurnContent({ entries, busy, locked, status, expanded, onExpanded, onEdit }: Props) {
+export function TurnContent({ entries, busy, waiting, locked, status, expanded, onExpanded, onEdit }: Props) {
   const { token } = theme.useToken()
   function change(id: string, open: boolean) {
     onExpanded(open ? [...expanded.filter((k) => k !== id), id] : expanded.filter((k) => k !== id))
@@ -63,7 +64,12 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
               {chatErrors(block.entries).map((error) => (
                 <Alert key={error} type="error" showIcon title={error} />
               ))}
-              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} />
+              {block.entries
+                .filter((entry) => entry.stopped)
+                .map((entry) => (
+                  <Alert key={entry.id} type="info" showIcon title={entry.text} />
+                ))}
+              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />
             </Fragment>
           )
         if (block.type === 'thinking')
@@ -168,12 +174,12 @@ export function TurnContent({ entries, busy, locked, status, expanded, onExpande
                   <Typography.Text copyable={{ text: e.text, tooltips: ['复制问题', '已复制'] }} />
                 </Flex>
               )}
-              {user && <Divider style={{ margin: 0 }} />}
+              {user && <Divider style={{ margin: 0, borderBlockStart: '1px solid var(--border)' }} />}
             </Flex>
           )
         })
       })}
-      {busy && (
+      {busy && !waiting && (
         <Flex align="center" gap={CHAT.spacing.detail}>
           <Spin indicator={<LoadingOutlined spin />} size="small" />
           <Typography.Text type="secondary">{status || '正在思考…'}</Typography.Text>
