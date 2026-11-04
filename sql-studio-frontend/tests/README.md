@@ -1,5 +1,7 @@
 # 前端回归
 
+agent.test.mjs覆盖裸JSON/围栏JSON与文字混排、多个表格、字段顺序、字符串转义、重复列、精确数值及truncated保留；校验未闭合流式表格、行列错误与代码示例边界。实际AnswerMarkdown服务端渲染验证加粗、行内代码、列表、安全链接及HTML/图片不执行；浏览器另检查实时/结束状态、亮暗主题和窄窗口。不请求真实模型或数据库。
+
 使用 Node 原生测试运行器，不保留根目录 scripts 包装入口。
 
 真实集成测试通过 `integration-steps.mjs` 的 `step(context, name, run)` 等待每个子测试回调实际完成，再继续依赖该结果的步骤或进入 finally 清理。当前 Node 24.2 环境中，单独 await context.test 不能保证这一顺序；不得在子测试仍运行时删除临时库或连接。回调失败同时标记子测试失败并终止依赖流程，finally 仍清理本轮对象。

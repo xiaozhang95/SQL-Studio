@@ -149,7 +149,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                 }}
                 content={
                   !user ? (
-                    <AnswerContent text={e.text} />
+                    <AnswerContent text={e.text} streaming={e.streaming} />
                   ) : (
                     <Typography.Paragraph
                       style={{

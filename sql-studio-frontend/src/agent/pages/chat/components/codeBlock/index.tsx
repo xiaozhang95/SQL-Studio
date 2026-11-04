@@ -7,6 +7,8 @@ import CodeMirror from '@uiw/react-codemirror'
 import { Card, theme, Typography } from 'antd'
 import { useMemo } from 'react'
 
+import { APPEARANCE } from '../../../../constant/appearance'
+
 export function CodeBlock({ text, language }: { text: string; language: string }) {
   const { token } = theme.useToken()
   const extensions = useMemo(() => {
@@ -23,12 +25,13 @@ export function CodeBlock({ text, language }: { text: string; language: string }
       lang,
       EditorView.lineWrapping,
       EditorView.theme({
-        '&': { backgroundColor: token.colorBgContainer, color: token.colorText, fontSize: `${token.fontSize}px`, fontFamily: token.fontFamily },
+        '&.cm-editor': { backgroundColor: token.colorBgContainer, color: token.colorText, fontSize: `${token.fontSize}px`, fontFamily: token.fontFamily },
+        '&.cm-focused': { outline: 'none' },
         '.cm-scroller': { overflow: 'auto', fontFamily: token.fontFamily, fontSize: `${token.fontSize}px`, lineHeight: String(token.lineHeight) },
-        '.cm-content': { padding: '12px', fontFamily: token.fontFamily }
+        '.cm-content': { padding: `${token.paddingSM}px`, fontFamily: token.fontFamily }
       })
     ]
-  }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight])
+  }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight, token.paddingSM])
   return (
     <Card size="small" className="content-frame code-panel" title={language || '代码'} extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}>
       <CodeMirror
@@ -37,7 +40,7 @@ export function CodeBlock({ text, language }: { text: string; language: string }
         extensions={extensions}
         editable={false}
         readOnly
-        maxHeight="360px"
+        maxHeight={`${APPEARANCE.resultPreviewHeight}px`}
         theme={token.colorBgBase === '#000' ? 'dark' : 'light'}
         basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, highlightActiveLineGutter: false, autocompletion: false }}
       />

@@ -292,7 +292,7 @@ test('POST SSE解码支持UTF8分包，并拒绝没有done的断流', async () =
   }
 })
 
-test('Markdown回答转换为表格，精确字符串保留', async () => {
+async function answerParser() {
   let source = await fs.readFile(new URL('../src/agent/utils/answerTables/index.ts', import.meta.url), 'utf8')
   let result = await fs.readFile(new URL('../src/agent/utils/queryResult/index.ts', import.meta.url), 'utf8')
   result = result
@@ -300,7 +300,11 @@ test('Markdown回答转换为表格，精确字符串保留', async () => {
     .replace(/export /g, '')
   source = source.replace(/import \{ readResult \} from ['"][^'"]+['"]/, result)
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
-  const { answerTables } = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'))
+  return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'))
+}
+
+test('Markdown回答转换为表格，精确字符串保留', async () => {
+  const { answerTables } = await answerParser()
   const parts = answerTables('数据库如下\n| 数据库 | 说明 |\n|---|---|\n| `demo` | 业务库 |\n| 9007199254740993 | NULL |\n说明')
   assert.deepEqual(parts.find((p) => p.kind === 'table').value.rows, [
     ['demo', '业务库'],
@@ -317,6 +321,104 @@ test('Markdown回答转换为表格，精确字符串保留', async () => {
     answerTables('```json\n{bad}\n```').some((p) => p.kind === 'table'),
     false
   )
+})
+
+test('裸JSON回答支持多个表格、说明混排、字段顺序与字符串转义，保留精度和截断提示', async () => {
+  const { answerTables } = await answerParser()
+  const total = { columns: [{ name: 'total', type: 'bigint' }], rows: [['9007199254740993']], truncated: false }
+  const detail = {
+    truncated: true,
+    rows: [['O\'Reilly {"x": "[}]"} \\ 路径\n下一行 | 中文 😀', null, '']],
+    columns: [
+      { name: 'name', type: 'text' },
+      { name: 'notes', type: 'text' },
+      { name: 'notes', type: 'text' }
+    ]
+  }
+  const parts = answerTables('**总量**：' + JSON.stringify(total) + '\n明细：\n' + JSON.stringify(detail, null, 2) + '\n说明：`name` 包含特殊字符。')
+  assert.deepEqual(
+    parts.map((part) => part.kind),
+    ['text', 'table', 'text', 'table', 'text']
+  )
+  assert.deepEqual(parts[1].value.rows, total.rows)
+  assert.deepEqual(parts[3].value.rows, detail.rows)
+  assert.equal(parts[3].value.truncated, true)
+  assert.deepEqual(parts[3].value.columns, detail.columns)
+  assert.match(parts.at(-1).text, /说明/)
+})
+
+test('流式表格只在JSON完整且行列校验成功时显示，不补造数据或吞掉普通JSON和代码示例', async () => {
+  const { answerTables } = await answerParser()
+  const value = { columns: [{ name: 'name', type: 'text' }], rows: [['客户']] }
+  const json = JSON.stringify(value)
+  const partial = json.slice(0, -3)
+  assert.deepEqual(answerTables('明细：\n' + partial), [
+    { kind: 'text', text: '明细：\n' },
+    { kind: 'pending-table', text: partial }
+  ])
+  assert.deepEqual(answerTables('```json\n' + partial), [{ kind: 'pending-table', text: partial }])
+  assert.equal(answerTables('```json\n' + json)[0].kind, 'table')
+  assert.equal(answerTables('~~~~JSON\n' + json + '\n~~~~')[0].kind, 'table')
+  assert.equal(answerTables('```\n' + json + '\n```')[0].kind, 'table')
+  for (const source of ['`' + json + '`', '``' + json + '``', '{"instruction":' + json + '}', '{"columns":[{"name":"id","type":"text"}],"rows":[[1,2]]}', '{"a":true}']) {
+    assert.deepEqual(answerTables(source), [{ kind: 'text', text: source }])
+  }
+  assert.deepEqual(answerTables('```javascript\n' + json + '\n```'), [{ kind: 'code', language: 'javascript', text: json }])
+  assert.deepEqual(answerTables("```sql\nSELECT '```';\n```"), [{ kind: 'code', language: 'sql', text: "SELECT '```';" }])
+})
+
+async function markdownRenderer() {
+  const React = await import('react')
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const { Lexer } = await import('marked')
+  const { Typography, Flex, Divider, theme } = await import('antd')
+  const source = (await fs.readFile(new URL('../src/agent/pages/chat/components/answerMarkdown/index.tsx', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
+  const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.React } }).outputText
+  const AnswerMarkdown = new Function(
+    'exports',
+    'React',
+    'Fragment',
+    'useMemo',
+    'Typography',
+    'Flex',
+    'Divider',
+    'theme',
+    'Lexer',
+    'CHAT',
+    'CodeBlock',
+    'QueryResult',
+    code + '; return exports.AnswerMarkdown'
+  )(
+    {},
+    React,
+    React.Fragment,
+    React.useMemo,
+    Typography,
+    Flex,
+    Divider,
+    theme,
+    Lexer,
+    { spacing: { block: 'middle', detail: 'small' } },
+    () => null,
+    () => null
+  )
+  return (text) => renderToStaticMarkup(React.createElement(AnswerMarkdown, { text }))
+}
+
+test('回答正文渲染加粗、行内代码、列表与链接，不执行HTML或危险链接、不加载远程图片', async () => {
+  const render = await markdownRenderer()
+  const html = render(
+    '**共 1000 行**，字段 `created_at`。\n\n- 第一项\n- *第二项*\n\n[文档](https://example.test/docs)\n\n[危险](javascript:alert%281%29)\n\n<img src=x onerror=alert(1)>\n\n![图片说明](https://example.test/tracker.png)'
+  )
+  assert.match(html, /<strong>共 1000 行<\/strong>/)
+  assert.match(html, /<code>created_at<\/code>/)
+  assert.match(html, /<ul/)
+  assert.match(html, /<li>第一项<\/li>/)
+  assert.match(html, /<em>第二项<\/em>/)
+  assert.match(html, /href="https:\/\/example.test\/docs"/)
+  assert.doesNotMatch(html, /href="javascript:|<img\b/)
+  assert.match(html, /&lt;img/)
+  assert.match(html, /图片说明/)
 })
 
 async function confirmationHarness(fetch) {

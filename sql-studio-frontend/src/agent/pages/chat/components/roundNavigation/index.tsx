@@ -91,14 +91,12 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
           <button
             className="chat-round-marker"
             aria-label={`跳转问题 ${index + 1}`}
-
             aria-current={activeIndex === index ? 'step' : undefined}
             onClick={() => {
               onJump(index)
             }}
-            style={{ border: 0, background: 'transparent', cursor: 'pointer', width: 28, height: 10, padding: 0, display: 'grid', placeItems: 'center' }}
           >
-            <span style={{ width: activeIndex === index ? 22 : 12, height: 2, background: activeIndex === index ? token.colorPrimary : token.colorTextQuaternary }} />
+            <span />
           </button>
         </Popover>
       ))}

@@ -16,6 +16,7 @@
 - [roundNavigation](roundNavigation/README.md)：问题刻度预览和完整问题列表。
 
 - [answerContent](answerContent/README.md)：结构化最终回答。
+- [answerMarkdown](answerMarkdown/README.md)：回答说明的安全 Markdown 展示。
 - [exportExcel](exportExcel/README.md)：当前结果Excel导出。
 
 - [codeBlock](codeBlock/README.md)：回答代码高亮与复制。
