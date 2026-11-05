@@ -7,6 +7,7 @@
 | [功能汇总](FEATURES.md) | 当前完整功能清单、数据库差异及使用边界 |
 | [项目框架](ARCHITECTURE.md) | 技术栈、目录、前后端调用和数据流 |
 | [接口列表](API.md) | HTTP 路由、Swagger 入口和公共约定 |
+| [AI 助手源码导读](AGENT_GUIDE.md) | DeepSeek 请求、工具调用、SQL 权限、流式展示和会话保存 |
 | [开发约定](DEVELOPMENT.md) | 开发入口与检查命令 |
 | [前端规范](FRONTEND_STANDARDS.md) | Ant Design、样式、模块和类型规则 |
 | [后端规范](BACKEND_STANDARDS.md) | 模块边界、接口、存储和检查规则 |

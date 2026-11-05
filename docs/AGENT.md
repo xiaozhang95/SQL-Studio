@@ -1,10 +1,12 @@
 # SQL Studio 数据库 Agent
 
-数据库Agent已合入现有前后端。构建sql-studio-frontend后，从sql-studio-backend运行go run main.go，打开默认8080页面，在侧栏底部「系统设置」中选择「Agent」。也可直接打开/#agent。在Agent的「系统设置」中选择「工作区」即可返回，原查询草稿保留。
+构建 `sql-studio-frontend` 后，从 `sql-studio-backend` 运行 `go run main.go`，打开默认 8080 页面。点击工作区顶栏的「AI 助手」进入，也可直接打开 `/#agent`。点击助手顶栏的「工作区」返回。
+
+从一条消息开始学习模型请求、工具执行、权限确认、回复展示和本地保存，见[AI 助手源码导读](AGENT_GUIDE.md)。
 
 ## 界面
 
-实际使用@ant-design/x 2.5.0的Conversations、Bubble、Sender和Think；参考[官方项目](https://github.com/ant-design/x)与[Sender接口](https://ant-design-x.antgroup.com/components/sender)。空列表默认创建并选中一条“新建会话”；顶栏左侧新建立即显示并保存，历史支持重命名和确认删除。删除最后一条后重新创建默认会话，手动名称不被后续问题覆盖；底部蓝鲸模型菜单的“DeepSeek 配置”直接复用workspace的配置弹窗、表单hook和ai配置分区，不单独维护Agent Key。保存/移除及窗口回焦会刷新Agent配置状态，workspace配置一次即可使用。只读标签、模型与发送在输入区底部。Enter发送，Shift+Enter换行，中文候选确认不提交。
+聊天界面使用 @ant-design/x 2.5.0 的 Conversations、Bubble、Sender 和 Think。空列表默认创建并选中一条「新建会话」，历史支持重命名和确认删除。删除最后一条后重新创建默认会话，手动名称会保留。右上角「系统设置」提供 DeepSeek 配置，输入框底部的模型菜单用于切换模型。工作区与助手共用 AI 配置，保存、移除配置和窗口回焦会刷新助手的配置状态。模式、模型与发送按钮位于输入区底部。Enter 发送，Shift+Enter 换行，中文输入法确认候选时保留在输入阶段。组件参考见[Ant Design X](https://github.com/ant-design/x)与[Sender 接口](https://ant-design-x.antgroup.com/components/sender)。
 
 思考与执行过程分别为标题可折叠的内容卡片，展开状态随会话布局保存；折叠不删除原始记录或查询结果。结果独立展示表格，保留重复列、精确数值文本、NULL、分页和SQL预览。亮暗/跟随系统复用SQL Studio全局主题。内容区一次展示一轮，默认最新；点击右侧上一轮、下一轮按钮或左侧刻度切换，也可通过问题搜索定位，切换时显示加载状态。回到最新消息按钮位于输入框上方中央。单轮可正常滚动，上滚阅读不被流式片段拉回；新提问回到最新轮，轮次切换不重新读取会话或执行SQL。
 
@@ -15,7 +17,7 @@
 - deepseek/agent：官方思考SSE和工具调用传输。SQL续写/优化保留现有deepseek客户端，共用同一ai配置；没有第二份运行时Key配置。
 - agentstate：StateDir/agent下保存conversations/index.json、id-revision.json及layout.json；恢复不调用模型/数据库。完整原文与送模上下文分离。
 
-每轮180秒，不限制主模型调用轮数和工具操作次数。按1M窗口采用700000保守输入上界，较早完整轮次生成事实摘要，保留近期完整工具配对和reasoning_content；估算不是精确tokenizer。单工具HTTP时代的256KiB界限在进程适配器中保留，模型上下文单工具32KiB；超限明确提示。新SSE路由每10秒心跳，单独续期写截止时间，断开取消并完成最终检查点，普通HTTP超时不放宽。
+每轮有 180 秒执行预算，等待用户确认期间暂停计时。按 100 万窗口采用 70 万保守输入估算。摘要处理较早的完整轮次，保留近期完整工具配对和 reasoning_content。工具结果的 32 KiB 确认阈值与 256 KiB 上限分别用于征求送模同意和限制结果体积。SSE 路由每 10 秒发送心跳，断开时取消执行并尝试最终保存。
 
 输入按 UTF-8 字节计算。64 KiB 以内直接发送，超过 64 KiB 至 256 KiB 时先确认，超过 256 KiB 时保留编辑框中的原文并提示分段。工具结果超过 32 KiB 时，先显示已取得的结果，经确认后才将它发给模型。上下文可压缩时，先确认再生成较早轮次的摘要。只读查询结果超硬上限时可自动缩小范围一次，其他可恢复读取失败由用户决定是否重新规划。不可恢复错误结束本轮，已完成的操作保留。
 
