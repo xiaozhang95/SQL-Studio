@@ -57,7 +57,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             flex: 'none',
             padding: '20px var(--engine-picker-padding, 16px)',
             background: 'var(--surface)',
-            borderRight: '1px solid var(--border)',
+            borderRight: '1px solid var(--layout-border)',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,

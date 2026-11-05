@@ -25,9 +25,8 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
       aria-label="输出内容"
       size={appearance.navigationSize}
       type="card"
-      tabBarGutter={0}
       style={{ flex: 'none', minWidth: 0 }}
-      tabBarStyle={{ margin: 0, background: 'var(--surface-raised)' }}
+      tabBarStyle={{ margin: 0 }}
       activeKey={activeKey}
       onChange={onChange}
       tabBarExtraContent={
@@ -53,7 +52,7 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
             <span
               className="statement-result-label is-success"
               title={`语句 ${index + 1}\n${item.sql || run.title || ''}`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: 'var(--ant-color-success-text)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}
             >
               <CheckCircleOutlined />
               结果 {resultIndex + 1}

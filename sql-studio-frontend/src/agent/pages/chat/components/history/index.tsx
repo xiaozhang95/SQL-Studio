@@ -47,7 +47,7 @@ export function History(props: Props) {
           position: 'relative',
           width: visibleWidth,
           background: token.colorBgContainer,
-          borderRight: '1px solid var(--border)'
+          borderRight: '1px solid var(--layout-border)'
         }}
       >
         <HistoryContents

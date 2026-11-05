@@ -50,7 +50,7 @@ export default function PageHeader({
         justifyContent: 'space-between',
         gap: 'var(--workspace-inset)',
         background: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
+        borderBottom: '1px solid var(--layout-border)',
         userSelect: 'none',
         position: 'relative'
       }}

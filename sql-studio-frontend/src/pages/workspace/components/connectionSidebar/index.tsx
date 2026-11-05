@@ -42,7 +42,7 @@ export default function ConnectionSidebar({ model, layout }: Props) {
         minHeight: 0,
         overflow: 'hidden',
         background: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
+        borderRight: '1px solid var(--layout-border)',
         width: visibleWidth
       }}
     >

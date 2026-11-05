@@ -4,6 +4,8 @@
 
 ## Ant Design 与样式
 
+顶栏下沿及左右侧栏边界使用 `--layout-border`（Ant Design colorBorder）区分布局区域。消息分隔线、卡片、表格和弹窗使用各自的默认边框层级，避免用布局分隔色统一覆盖组件边框。
+
 1. 默认使用 Ant Design 提供的尺寸、边框、弧度、字体、颜色及交互，不在业务组件里随意覆盖原生样式。
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
 3. 同类组件使用相同尺寸和外观配置，不零散写死高度、边框、弧度或颜色。全局约定放 [appearance](../sql-studio-frontend/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
