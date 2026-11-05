@@ -212,7 +212,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             padding: '8px var(--workspace-inset)',
-            borderBottom: '1px solid var(--layout-border)',
+            borderBottom: '1px solid var(--border)',
             flex: 'none'
           }}
         >

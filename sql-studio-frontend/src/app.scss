@@ -57,6 +57,19 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
+// 历史会话的当前项使用主题激活色，标题继承激活文字色。
+.chat-history-list .ant-conversations-item-active,
+.chat-history-list .ant-conversations-item-active:not(.ant-conversations-item-disabled):hover,
+.chat-history-list .ant-conversations-item-active:focus-within {
+  background: var(--ant-color-primary);
+  color: var(--ant-color-text-light-solid);
+}
+.chat-history-list .ant-conversations-item-active .chat-history-row > .ant-typography {
+  color: var(--ant-color-text-light-solid);
+}
+.chat-history-list .ant-conversations-item-active .chat-history-actions .ant-btn:not(:disabled) {
+  color: var(--ant-color-text-light-solid);
+}
 
 // Dropdown 的子菜单外层是 li，行布局必须应用到内部 title，不能把 li 变成 flex。
 .system-settings-menu {
@@ -130,6 +143,9 @@ body {
 .explorer > .ant-input-affix-wrapper {
   flex: none;
 }
+.object-tree .ant-tree {
+  background: transparent;
+}
 .object-tree .ant-tree .ant-tree-treenode {
   align-items: center;
   padding-block: 0;
@@ -144,6 +160,10 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 28px;
+  background: transparent;
+}
+.object-tree .ant-tree .ant-tree-switcher::before {
+  display: none;
 }
 // 双击树节点只展开/收起，不产生浏览器文字选区；内容区仍允许复制 SQL 和结果。
 .sql-studio-theme .ant-dropdown-menu {
@@ -202,6 +222,22 @@ body {
 .workspace-tabs > .ant-tabs-body-holder > .ant-tabs-content {
   height: 100%;
 }
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  margin: 0;
+  padding-inline: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  transition: background 0.2s;
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:hover {
+  background: var(--ant-control-item-bg-hover);
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: var(--surface);
+  border-bottom-color: var(--surface);
+  box-shadow: inset 0 2px var(--primary);
+}
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
   display: flex;
   align-items: center;
@@ -214,6 +250,9 @@ body {
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-remove {
   flex: none;
   margin-inline-start: 12px;
+}
+.workspace-tabs > .ant-tabs-nav .ant-tabs-tab-remove:hover {
+  background: var(--ant-control-item-bg-hover);
 }
 .workspace-tabs > .ant-tabs-body-holder {
   min-height: 0;
@@ -338,6 +377,24 @@ body {
 .structure-tags .ant-tag {
   margin-inline-end: 0;
 }
+// 连接弹窗按设计保留独立头部/表单/底栏，原生覆盖集中维护。
+.connection-dialog .ant-modal-container {
+  padding: 0;
+  overflow: hidden;
+}
+.connection-dialog .ant-modal-header {
+  margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.connection-dialog .ant-modal-body {
+  padding: 0;
+}
+.connection-dialog .ant-modal-footer {
+  margin: 0;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
 .connection-engine-header > .ant-tag {
   margin-left: auto;
   margin-right: 0;
@@ -370,12 +427,68 @@ body {
 .object-tree .ant-tree-node-selected .ant-tree-title {
   color: inherit;
 }
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover,
+.object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:focus-visible {
+  color: var(--on-primary);
+  background: var(--primary);
+}
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-title,
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-iconEle {
   color: inherit;
 }
 
+.object-tree .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  color: var(--on-primary);
+  background: var(--primary);
+}
 
+// 查询和结果使用同一套卡片页签布局与主题主色。
+.workspace-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--primary);
+}
+.page-tabs > .ant-tabs-nav .ant-tabs-tab-active {
+  --result-tab-color: var(--primary);
+}
+.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label.is-success) {
+  --result-tab-color: var(--ant-color-success-text);
+}
+.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label.is-error) {
+  --result-tab-color: var(--ant-color-error-text);
+}
+.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label) .ant-tabs-tab-btn {
+  color: var(--result-tab-color, var(--text));
+}
+.page-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  box-shadow: inset 0 2px var(--result-tab-color, var(--primary));
+}
+
+// 内层结果导航独立于主页面 Tabs；选中顶线使用当前结果的语义色。
+// 亮色默认 card 边框与背景过近；显式使用统一实色边框，所有输出项保持连续分隔。
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-color: var(--border);
+}
+// 两层连续页签都只画右侧分隔线，避免相邻边框叠加及首项左侧与侧栏边界重复。
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-inline-start: 0;
+  border-inline-end: 1px solid var(--border);
+}
+// 亮色页签背景接近次级边框色，使用标准边框色保持标签之间的分隔。
+html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
+html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-inline-end-color: var(--ant-color-border);
+}
+.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:has(.is-success) {
+  --statement-tab-color: var(--ant-color-success-text);
+}
+.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:has(.is-error) {
+  --statement-tab-color: var(--ant-color-error-text);
+}
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: var(--surface);
+  border-bottom-color: var(--surface);
+  box-shadow: inset 0 2px var(--statement-tab-color, var(--primary));
+}
 .object-tree .ant-tree-node-selected .connection-tree-label {
   color: inherit;
 }
@@ -451,6 +564,10 @@ body {
   inset-inline-end: max(var(--ant-margin-lg), calc((100% - var(--chat-content-max-width)) * 0.35));
   inset-block-end: var(--ant-margin-sm);
   z-index: 1;
+}
+
+.agent-header-title {
+  font-size: var(--ant-font-size-lg);
 }
 
 .chat-scroll {

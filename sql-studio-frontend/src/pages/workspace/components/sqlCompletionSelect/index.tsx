@@ -63,7 +63,7 @@ export default function SQLCompletionSelect({ completion, objectKinds }: Props) 
           <span style={{ display: 'flex', flex: 'none', alignItems: 'center' }}>{data.icon}</span>
           <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.label}</span>
           {data.detail && (
-            <Typography.Text type="secondary" ellipsis style={{ maxWidth: '45%' }}>
+            <Typography.Text type="secondary" ellipsis style={{ maxWidth: '45%', font: 'inherit' }}>
               {data.detail}
             </Typography.Text>
           )}
@@ -79,7 +79,7 @@ export default function SQLCompletionSelect({ completion, objectKinds }: Props) 
       }}
       popupRender={(menu) => <div onMouseDown={(event) => event.preventDefault()}>{menu}</div>}
       style={{ position: 'fixed', left: popup.left, top: popup.top, width: popup.width, height: 0, visibility: 'hidden', pointerEvents: 'none' }}
-      styles={{ popup: { root: { visibility: 'visible', pointerEvents: 'auto' } } }}
+      styles={{ popup: { root: { visibility: 'visible', pointerEvents: 'auto', ...popup.typography }, listItem: popup.typography } }}
     />
   )
 }

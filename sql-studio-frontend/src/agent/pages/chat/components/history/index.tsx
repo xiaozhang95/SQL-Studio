@@ -147,6 +147,7 @@ function HistoryContents({
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? '没有匹配的会话' : '还没有对话'} />
           ) : (
             <Conversations
+              className="chat-history-list"
               activeKey={activeId}
               onActiveChange={(key) => {
                 if (!busy) void onSelect(key)

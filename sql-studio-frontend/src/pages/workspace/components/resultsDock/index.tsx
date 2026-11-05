@@ -50,7 +50,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
         flexDirection: 'column',
         background: 'var(--surface)',
         overflow: 'hidden',
-        borderTop: resizable ? '1px solid var(--layout-border)' : 0,
+        borderTop: resizable ? '1px solid var(--border)' : 0,
         paddingTop: resizable ? 5 : 0,
         userSelect: resizing ? 'none' : 'text'
       }}

@@ -95,7 +95,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           padding: 'var(--workspace-inset)',
-          borderBottom: '1px solid var(--layout-border)',
+          borderBottom: '1px solid var(--border)',
           userSelect: 'none'
         }}
       >

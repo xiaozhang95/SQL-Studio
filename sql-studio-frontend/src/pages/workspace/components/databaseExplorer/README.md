@@ -22,7 +22,7 @@ model 通过 Pick 消费 connections、objects、running，以及 connectionActi
 
 失败连接在 Tree 的 loadedKeys 中表示本次加载已结束，阻止受控展开状态自动重复调用 loadData；这不表示连接成功，图标及功能权限仍依据 error/connected 状态。
 
-树体独立滚动，选中态及 hover 使用 Ant Design Tree 默认主题样式。
+树体独立滚动，选中态及 hover 使用 Ant Design 原生 primary/controlItemBgHover token。
 
 双击通过原生 Tree expandAction=doubleClick 与箭头共用展开、loadData 和加载状态；表可展开字段和索引，视图保持叶节点。图标容器统一 flex 居中，连接图标外层也使用 flex，覆盖原生 inline-block 的基线偏移；图标和文字在最小 28px 的选中背景内垂直居中，上下各留 2px，节点不额外加 padding-block；覆盖原生 margin-bottom 为 2px，行距约 30px。
 
@@ -34,7 +34,7 @@ model 通过 Pick 消费 connections、objects、running，以及 connectionActi
 
 连接节点的 loadData 调用工作区 openConnection，和右键打开共用元数据生命周期；打开、折叠或选择树节点均不修改查询范围。
 
-折叠按钮使用与内容块一致的最小 28px 高度，图标通过 flex 垂直居中；按钮保留原生 hover 背景与焦点反馈。
+折叠按钮使用与内容块一致的最小 28px 高度，图标通过 flex 垂直居中；按钮始终透明，移除原生 hover 背景伪元素，不影响节点内容的选中或悬停背景。
 
 explorer/updateExplorer 由工作区受控，保存 expanded/selected/search/top，并随本地加密快照恢复。恢复只加载已打开连接及展开库的元数据；切换查询范围不会改树的选中和展开状态。
 
