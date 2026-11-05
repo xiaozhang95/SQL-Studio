@@ -8,13 +8,13 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 - [components](components/README.md)
 - [constant](constant/README.md)
 
-会话标题位于顶栏中央。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用CHAT.content，按conversationMaxWidth（960px）居中并保留两侧transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
+业务顶栏保留会话标题，偏移侧栏宽度的一半使其居中于右侧内容区；Electron 最上方的 SQL Studio 应用标题隐藏。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用CHAT.content，按conversationMaxWidth（960px）居中并保留两侧transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
 
-顶部会话标题使用 Ant Design fontSizeLG，比正文大一号，字体规则集中在 app.scss。空会话通过 Welcome 展示引导标题和三类带功能图标的提问示例。
+空会话通过 Welcome 展示引导标题和三类带功能图标的提问示例。
 
 顶栏左侧提供「新建会话」主按钮，与工作区「新建连接」使用相同样式。会话加载或执行期间禁用新建操作。
 
-会话标题仅在至少1280px的桌面窗口居中展示；中窄窗口隐藏重复标题，避免与保存状态/主题或返回按钮重叠。760px及以下保存状态仅显示图标，保留aria-label与Tooltip；会话名称仍在历史列表或历史抽屉内可读。
+会话标题使用 Ant Design fontSizeLG，1280px 以下隐藏，避免覆盖操作按钮；760px及以下保存状态仅显示图标，保留aria-label与Tooltip。
 
 完全访问模式的逐次写入确认通过WriteConfirmation卡片显示在当前回复下方，提供目标明细、完整SQL、确认/取消及错误反馈，不打开执行确认弹窗；模式切换确认仍沿用原有流程。
 
@@ -27,5 +27,5 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 右上角「系统设置」下拉菜单集中提供 API Key、全局 SQL 补全和外观配置。输入框的模型菜单用于切换模型。
 顶栏左侧的新建会话按钮组后，以竖线分隔「工作区」入口按钮。点击即可返回工作区。会话执行、管理或初始化期间禁用返回入口。
 
-顶栏标题偏移由sidebar.visibleWidth/2传给PageHeader，拖动侧栏和窗口限宽时同步。Agent消息与内部结果滚动条统一继承全局8px规则，不再单独缩细、改色、改弧度或隐藏主滚动条。
+PageHeader 保留原有 56px 业务高度及上下内边距，仅将 macOS 系统按钮所在的 Electron 标题栏收紧到 24px。Agent消息与内部结果滚动条统一继承全局8px规则，不再单独缩细、改色、改弧度或隐藏主滚动条。
 底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条恢复显示后正文与输入框水平偏移。

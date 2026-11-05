@@ -4,6 +4,8 @@
 
 model 提供 tabs/activeTab、runs/resultViews、运行状态和切换/关闭回调，children 为当前页。只有这一层 Tabs；查询 SQL 和本批所有结果共用一个主页面。
 
+查询页可见标题跟随该页选择的数据库/Schema，例如「sql_studio_demo · 查询 1」或「demo / public · 查询 1」；未选库时保留原名。由 [pageTitle](../../utils/pageTitle/README.md) 在显示层派生，不改写保存的 title、不读取左侧树选中项。长库名优先省略，保留查询编号，悬停展示完整标题及原执行来源；对象、设计页沿用原标题。
+
 按 kind 显示图标，运行页显示 loading。颜色根据每页 resultViews.resultIndex 对应语句的成功/失败状态决定，与结果标签 同步；非活动页也保留自己的结果选择和颜色。切换销毁隐藏展示组件，业务状态保留在工作区并加密恢复。
 
 右键关闭当前/其他/右侧按目标计算，执行中禁止关闭；最后一页可关闭并保存为空，下次刷新仍为空。

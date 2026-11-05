@@ -21,6 +21,7 @@ import QueryResults from './components/queryResults'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
 import { useWorkspace } from './hooks/useWorkspace'
+import { workspacePageTitle } from './utils/pageTitle'
 
 type Props = {
   active: boolean
@@ -44,6 +45,8 @@ export default function Workspace({ active, onOpenAgent, themeMode, themePrefere
       style={{ height: '100dvh', minWidth: 900, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--surface)' }}
     >
       <PageHeader
+        desktopTitle={model.tab.id ? workspacePageTitle(model.tab) : 'SQL Studio'}
+        desktopActive={active}
         actions={
           <>
             {' '}

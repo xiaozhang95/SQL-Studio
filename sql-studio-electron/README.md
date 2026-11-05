@@ -58,9 +58,15 @@ pnpm dist
 
 启动失败沿用错误对话框并清理进程；启动过程中关闭窗口会取消健康检查并停止本次创建的服务，不继续在后台等待端口。
 
-桌面窗口采用隐藏原生标题背景、保留系统窗口按钮的方式。前端共享的 DesktopTitleBar 提供 32px 高拖动区域，和业务 PageHeader 都使用 Ant Design `colorBgContainer`（`--surface`）；亮色、暗色、跟随系统及工作区/AI 助手切换均沿用同一主题。Windows/Linux 窗口按钮背景通过受限 IPC 同步，macOS 保留原生红黄绿按钮。系统级菜单栏仍由操作系统管理。
+桌面窗口采用隐藏原生标题背景、保留系统窗口按钮的方式。前端共享的 DesktopTitleBar 提供 macOS 24px、Windows/Linux 32px 高拖动区域，和业务 PageHeader 都使用 Ant Design `colorBgContainer`（`--surface`）；亮色、暗色、跟随系统及工作区/AI 助手切换均沿用同一主题。Windows/Linux 窗口按钮背景通过受限 IPC 同步，macOS 红黄绿按钮位于 x=12/y=6，与缩短的标题栏一起布局。系统级菜单栏仍由操作系统管理。
+
+浏览器与 Electron 业务 header 均保留 56px 高度及原上下内边距；调整的是 macOS 系统按钮区域到业务 header 之间的距离。AI 助手隐藏最上方的 SQL Studio 应用名，业务 header 中的会话标题继续保留。
+
+工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 页仍隐藏最上方标题。
 
 图标唯一来源是 `../sql-studio-frontend/public/studio.svg`：原创蓝底数据库圆柱与查询光标组合。启动和构建时，`scripts/icons.mjs` 使用 resvg 生成 1024px PNG 到 `build/icons/icon.png`；electron-builder 再生成对应平台的应用图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo，无需另外维护图标副本。
+
+macOS 单独生成带透明安全区的 `build/icons/mac-icon.png`：在 1024px 画布内居中放置 824px 图形，四周各留 100px，与本机 Chrome/终端图标的可见比例一致。打包版由 macOS 使用应用自带 ICNS，不在运行时覆盖 Dock 图标；开发预览才用带留白的 PNG 替换 Electron 默认图标。开屏、网页和其他平台继续使用未缩小的图标。
 
 ## Electron 镜像
 

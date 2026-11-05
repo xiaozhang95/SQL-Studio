@@ -23,7 +23,9 @@ const startupAbort = new AbortController()
 
 function createWindow(dark) {
   let origin = ''
-  const icon = app.isPackaged ? path.join(process.resourcesPath, 'icon.png') : fileURLToPath(new URL('../build/icons/icon.png', import.meta.url))
+  const iconDirectory = app.isPackaged ? process.resourcesPath : fileURLToPath(new URL('../build/icons/', import.meta.url))
+  const icon = path.join(iconDirectory, 'icon.png')
+  const appIcon = path.join(iconDirectory, process.platform === 'darwin' ? 'mac-icon.png' : 'icon.png')
   const background = dark ? '#141414' : '#ffffff'
   mainWindow = new BrowserWindow({
     title: 'SQL Studio',
@@ -32,11 +34,11 @@ function createWindow(dark) {
     minWidth: 960,
     minHeight: 640,
     show: false,
-    icon,
+    ...(process.platform === 'darwin' ? {} : { icon: appIcon }),
     backgroundColor: background,
     titleBarStyle: 'hidden',
     ...(process.platform === 'darwin'
-      ? { trafficLightPosition: { x: 12, y: 9 } }
+      ? { trafficLightPosition: { x: 12, y: 6 } }
       : {
           autoHideMenuBar: true,
           titleBarOverlay: { color: background, symbolColor: dark ? '#ffffff' : '#000000', height: 32 }
@@ -54,7 +56,8 @@ function createWindow(dark) {
   const themeReady = new Promise((resolve) => {
     reportThemeReady = resolve
   })
-  if (process.platform === 'darwin') app.dock?.setIcon(icon)
+  // 打包版使用 ICNS，由 macOS 统一管理 Dock 图标；开发预览才覆盖 Electron 默认图标。
+  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(appIcon)
   const contents = mainWindow.webContents
   const syncTheme = (event, value) => {
     if (event.sender !== contents || event.senderFrame !== contents.mainFrame || !isAppURL(event.senderFrame.url, origin) || !validTitleBarTheme(value)) return

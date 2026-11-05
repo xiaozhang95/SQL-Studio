@@ -71,4 +71,8 @@ Agent历史切换回归使用真实useChat控制逻辑与替身接口，覆盖�
 
 workspace-pages.test.mjs验证提交前标签校正：未知/空/有效schema、对象操作期、连接隔离、非查询页保护、SQL保留、标题迁移和幂等引用。
 
+page-title.test.mjs 验证查询页标题随所属数据库/Schema 变化、清空范围回退、多页与恢复隔离、导入文件名及原始 title/SQL 保留、旧执行来源不覆盖当前标题，以及非查询页标题保持原值。不执行 SQL，不访问用户配置。
+
+desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 document.title：切页/切库使用最新标题，空工作区回退，AI 页隐藏，后台工作台不覆盖，浏览器不改写。主题 token 和 effect 调度使用替身，不代表原生 Electron 窗口视觉检查。
+
 review-fixes.test.mjs 覆盖快捷键可见/目标/模态框/组合键边界、分页历史及恢复副本取消与写入失败；workspace-split 追加 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。以上均为替身/单元测试，不替代真实 CodeMirror、HTTP/数据库与下载验证。

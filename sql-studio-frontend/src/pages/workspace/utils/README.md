@@ -1,5 +1,7 @@
 # 工作区工具
 
+- [页面标题](pageTitle/README.md)：查询页签按该页数据库/Schema 联动显示，保留原始名称。
+
 - [执行输出兼容和耗时读取](queryOutput/README.md)
 
 - [AI 续写扩展](aiCompletion/README.md)：灰色预览与 Tab 接受。

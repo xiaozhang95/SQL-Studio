@@ -10,10 +10,11 @@ module.exports = {
   asar: true,
   extraResources: [
     { from: 'build/runtime', to: 'runtime' },
-    { from: 'build/icons/icon.png', to: 'icon.png' }
+    { from: 'build/icons/icon.png', to: 'icon.png' },
+    { from: 'build/icons/mac-icon.png', to: 'mac-icon.png' }
   ],
   electronDownload: { mirror: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
-  mac: { target: ['dmg'], category: 'public.app-category.developer-tools', identity: null },
+  mac: { target: ['dmg'], icon: 'build/icons/mac-icon.png', category: 'public.app-category.developer-tools', identity: null },
   win: { target: ['nsis'] },
   linux: { target: ['AppImage'], category: 'Development' }
 }

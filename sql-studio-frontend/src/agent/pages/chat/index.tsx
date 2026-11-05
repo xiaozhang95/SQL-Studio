@@ -51,6 +51,7 @@ export function ChatPage({
       }}
     >
       <PageHeader
+        showDesktopTitle={false}
         titleClassName="agent-header-title"
         title={activeTitle}
         titleOffset={sidebar.visibleWidth / 2}

@@ -7,6 +7,7 @@ import type { WorkspaceTab } from '@/typings/workspace'
 
 import { workspaceTabLayout } from '../../constant/layout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
+import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
   model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'resultViews' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
@@ -82,17 +83,24 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
         label: (
           <span
             className={`result-tab-label${selectedStatus(item) === 'error' ? ' is-error' : selectedStatus(item) === 'success' ? ' is-success' : ''}`}
-            style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
             title={
               item.kind === 'table-create' || item.kind === 'table-design'
                 ? `${item.title}\n${connections.find((value) => value.id === item.connectionId)?.name || ''} / ${item.database}${item.table ? ' / ' + item.table : ''}`
                 : runs[item.id]?.source || item.resultSource
-                  ? `${item.title}\n${runs[item.id]?.source || item.resultSource}`
-                  : item.title
+                  ? `${workspacePageTitle(item)}\n${runs[item.id]?.source || item.resultSource}`
+                  : workspacePageTitle(item)
             }
           >
-            {item.title}
-            {designerDirty[item.id] ? ' *' : ''}
+            {queryPageContext(item) ? (
+              <>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{queryPageContext(item)}</span>
+                <span style={{ flexShrink: 0, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}> · {item.title}</span>
+              </>
+            ) : (
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+            )}
+            {designerDirty[item.id] && <span style={{ flex: 'none' }}> *</span>}
           </span>
         ),
         closable: true,

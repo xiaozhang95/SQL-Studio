@@ -8,13 +8,19 @@ export default function PageHeader({
   actions,
   title,
   titleClassName,
-  titleOffset = 0
+  titleOffset = 0,
+  showDesktopTitle = true,
+  desktopTitle,
+  desktopActive = true
 }: {
   children: ReactNode
   actions: ReactNode
   title?: ReactNode
   titleClassName?: string
   titleOffset?: number
+  showDesktopTitle?: boolean
+  desktopTitle?: string
+  desktopActive?: boolean
 }) {
   const titleElement = useRef<HTMLDivElement>(null)
   const leftActions = useRef<HTMLDivElement>(null)
@@ -39,10 +45,9 @@ export default function PageHeader({
     measure()
     return () => observer.disconnect()
   }, [hasTitle, titleOffset])
-
   return (
     <>
-      <DesktopTitleBar />
+      <DesktopTitleBar showTitle={showDesktopTitle} title={desktopTitle} active={desktopActive} />
       <header
         className="topbar"
         style={{

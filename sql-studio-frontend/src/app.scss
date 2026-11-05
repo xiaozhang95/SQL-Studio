@@ -605,15 +605,16 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
     padding-block: var(--ant-padding-xs);
   }
 }
-// 中窄窗口没有独立标题空间；会话名仍可从历史列表读取，避免覆盖保存状态和主题控件。
-@media (max-width: 1279px) {
-  .agent-header-title {
-    display: none;
-  }
-}
 @media (max-width: 760px) {
   // Agent 状态在窄屏保留图标、aria-label 和 Tooltip，释放左右操作区宽度。
   .agent-save-status .save-status .ant-typography {
+    display: none;
+  }
+}
+
+// 中窄窗口避免会话标题覆盖操作按钮；会话名仍在历史列表中可读。
+@media (max-width: 1279px) {
+  .agent-header-title {
     display: none;
   }
 }
