@@ -33,7 +33,13 @@ export function CodeBlock({ text, language }: { text: string; language: string }
     ]
   }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight, token.paddingSM])
   return (
-    <Card size="small" className="content-frame code-panel" title={language || '代码'} extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}>
+    <Card
+      size="small"
+      className="content-frame code-panel"
+      title={language || '代码'}
+      extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}
+      styles={{ header: { marginBottom: 0, borderBottomColor: 'var(--border)' } }}
+    >
       <CodeMirror
         aria-label="代码内容"
         value={text}

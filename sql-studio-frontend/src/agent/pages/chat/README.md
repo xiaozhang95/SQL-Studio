@@ -1,6 +1,6 @@
 # 聊天页面
 
-侧栏SystemSettings与聊天输入框共用bottomInset=token.padding（默认16px），两边底部留白一致。设置按钮保持原有高度，输入框仍按自身拖拽逻辑伸缩。
+聊天输入框使用 token.padding（默认 16px）作为底部留白，并按自身拖拽逻辑伸缩。
 
 ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输入。workspace提供本地记录状态；dark/themePreference/onThemeChange沿用SQL Studio全局外观，onBack返回工作区。右上显示共用SaveStatus与主题，保存状态取自workspace.saving/error，侧栏无底部说明；窄屏只显示保存状态图标，保留Tooltip和可访问名称。Key入口在底部模型菜单。布局、会话加载和模型设置错误显示在标题栏下方；对话流式失败与查询错误显示在消息流末尾，随当前聊天内容滚动；弹窗校验和保存错误仍留在各自弹窗。所有状态/请求归hooks，页面只组合；Transcript按activeId重建滚动状态。
 
@@ -22,8 +22,8 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 
 会话初始加载和会话内轮次切换复用居中的ContentLoading，无遮罩。每次只展示一轮提问、回复和结果；点击右侧上一轮、下一轮或左侧问题导航切换，输入框固定，轮次切换不重新请求会话。
 
-左下角历史侧栏及窄屏Drawer提供统一systemSettings入口，集中API Key/全局SQL补全与外观配置；顶部不再展示主题选择，输入框模型菜单仅切换模型，不再提供API配置入口。
-在历史侧栏或窄屏历史抽屉底部打开「系统设置」，选择「工作区」即可返回。会话执行、管理或初始化期间禁用切换项。
+右上角「系统设置」下拉菜单集中提供 API Key、全局 SQL 补全和外观配置。输入框的模型菜单用于切换模型。
+顶栏左侧的新建会话按钮组后，以竖线分隔「工作区」入口按钮。点击即可返回工作区。会话执行、管理或初始化期间禁用返回入口。
 
 顶栏标题偏移由sidebar.visibleWidth/2传给PageHeader，拖动侧栏和窗口限宽时同步。Agent消息与内部结果滚动条统一继承全局8px规则，不再单独缩细、改色、改弧度或隐藏主滚动条。
 底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条恢复显示后正文与输入框水平偏移。

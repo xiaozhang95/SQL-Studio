@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 export default function PageHeader({
@@ -13,13 +14,37 @@ export default function PageHeader({
   titleClassName?: string
   titleOffset?: number
 }) {
+  const titleElement = useRef<HTMLDivElement>(null)
+  const leftActions = useRef<HTMLDivElement>(null)
+  const rightActions = useRef<HTMLDivElement>(null)
+  const hasTitle = Boolean(title)
+  useLayoutEffect(() => {
+    const label = titleElement.current
+    const header = label?.parentElement
+    const left = leftActions.current
+    const right = rightActions.current
+    if (!label || !header || !left || !right) return
+    const measure = () => {
+      const center = header.getBoundingClientRect().left + header.clientWidth / 2 + titleOffset
+      const gap = parseFloat(getComputedStyle(header).columnGap) || 0
+      const available = Math.min(center - left.getBoundingClientRect().right, right.getBoundingClientRect().left - center) - gap
+      label.style.setProperty('--header-title-available-width', `${Math.max(0, available * 2)}px`)
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(header)
+    observer.observe(left)
+    observer.observe(right)
+    measure()
+    return () => observer.disconnect()
+  }, [hasTitle, titleOffset])
+
   return (
     <header
       className="topbar"
       style={{
         minHeight: 56,
         flex: 'none',
-        padding: '0 var(--workspace-inset)',
+        paddingInline: 'var(--workspace-inset)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -30,17 +55,18 @@ export default function PageHeader({
         position: 'relative'
       }}
     >
-      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)', minWidth: 0 }}>
+      <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)', minWidth: 0 }}>
         {children}
       </div>
       {title && (
         <div
+          ref={titleElement}
           className={titleClassName}
           style={{
             position: 'absolute',
             left: `calc(50% + ${titleOffset}px)`,
             transform: 'translateX(-50%)',
-            maxWidth: '30%',
+            maxWidth: 'min(30%, var(--header-title-available-width, 30%))',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -50,7 +76,9 @@ export default function PageHeader({
           {title}
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>{actions}</div>
+      <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, marginInlineStart: 'auto' }}>
+        {actions}
+      </div>
     </header>
   )
 }

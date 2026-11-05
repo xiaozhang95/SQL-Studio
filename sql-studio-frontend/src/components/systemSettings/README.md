@@ -1,9 +1,6 @@
 # 系统设置入口
 
-SystemSettings({themeMode,themePreference,onThemeChange,themeReady?,bottomInset?,navigation})在侧栏底部打开向上、左对齐的 Ant Design Dropdown。工作区、Agent 和窄屏历史抽屉共用菜单，按钮右侧箭头随菜单展开或收起改变方向，与外观子菜单箭头共用 Ant Design 的 colorIcon。
+SystemSettings({themeMode,themePreference,onThemeChange,themeReady?}) 由工作区和 AI 助手的 PageHeader 在右上角展示。按钮使用默认尺寸，显示齿轮、「系统设置」和下拉箭头。Ant Design Dropdown 从按钮下方右对齐展开，主菜单最小宽度为 208px，窄屏继续使用同一入口。
 
-bottomInset?:number控制按钮下方留白，默认沿用token.paddingXXS；Agent传入与聊天输入框相同的token.padding，使两边底边对齐。按钮高度保持token.controlHeight + token.paddingXS（默认40px），不随底部留白增加而拉伸；工作台默认布局保持原样。
-
-- 第一行通过 navigation.onSelect 切换到 navigation.destination。navigation.disabled 控制是否可用。
-- DeepSeek 配置行打开现有 AISettings 弹窗。打开菜单时先读取已保存配置，已配置时请求模型列表验证连通性，并显示检测中、未配置、已连接或检测失败。关闭菜单时取消尚未完成的检查。
-- 外观使用子菜单，根据 themePreference 标记当前选择。选中后调用 onThemeChange，关闭菜单。themeReady 默认为 true，主题恢复期间禁用切换。
+- 「DeepSeek」行显示连接状态，点击打开现有 AISettings 弹窗。展开时优先复用近期检测结果，同一菜单同时最多发起一次检查。保存或移除配置后使旧结果失效。 [菜单连接状态](hooks/useConnectionStatus/README.md)
+- 「外观」保留配色图标，隐藏子菜单的展开箭头。子菜单根据 themePreference 标记当前选择，选中后调用 onThemeChange 并关闭菜单。themeReady 默认为 true，主题恢复期间禁用切换。

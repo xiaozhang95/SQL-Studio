@@ -150,7 +150,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       type="text"
                       aria-label="当前模型"
                       disabled={busy || settingsBusy || !aiStatus?.configured}
-                      title={!aiStatus?.configured ? '请在左下角系统设置中配置 DeepSeek API' : undefined}
+                      title={!aiStatus?.configured ? '请在右上角系统设置中配置 DeepSeek API' : undefined}
                       icon={<DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >

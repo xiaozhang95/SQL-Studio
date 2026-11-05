@@ -4,6 +4,7 @@ import { Alert, Button, Flex, theme } from 'antd'
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
+import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import type { ThemePreference } from '@/typings/theme'
 
@@ -37,7 +38,6 @@ export function ChatPage({
   const ai = useAISettings()
   const sidebar = useAgentSidebar()
   const { token } = theme.useToken()
-  const bottomInset = token.padding
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
   const errors = [...new Set([workspace.error, chat.error, ai.error].filter(Boolean))]
   return (
@@ -67,6 +67,7 @@ export function ChatPage({
                 savedHint="对话保存在本机，布局和草稿自动保存"
               />
             </span>
+            <SystemSettings themeMode={dark ? 'dark' : 'light'} themePreference={themePreference} onThemeChange={onThemeChange} />
           </>
         }
       >
@@ -75,19 +76,11 @@ export function ChatPage({
           新建会话
         </Button>
         <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />
+        <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History
           layout={sidebar}
-          footer={
-            <SystemSettings
-              bottomInset={bottomInset}
-              themeMode={dark ? 'dark' : 'light'}
-              themePreference={themePreference}
-              onThemeChange={onThemeChange}
-              navigation={{ destination: 'workspace', onSelect: onBack, disabled: chat.historyBusy }}
-            />
-          }
           open={chat.historyOpen}
           items={chat.history}
           activeId={workspace.state.activeId}
@@ -153,7 +146,7 @@ export function ChatPage({
                 overflowY: 'auto',
                 scrollbarGutter: 'stable',
                 paddingTop: token.paddingSM,
-                paddingBottom: bottomInset
+                paddingBottom: token.padding
               }}
             >
               <div style={CHAT.content}>

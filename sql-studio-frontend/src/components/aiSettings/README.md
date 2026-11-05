@@ -12,6 +12,6 @@ AISettings({themeMode,trigger?,showCompletionSetting?}) 顶部按钮按profile�
 
 模型获取失败使用模型 Form.Item 的 help/validateStatus，在右侧选择框下方展示原生校验说明，与输入控件左边缘对齐，不另插入占满整行的 Alert。长错误可换行，控件列使用 flex:1 1 0/minWidth:0，避免撑开横向表单；全局配置读取或保存错误继续显示顶部 Alert。
 
-公共组件供workspace和Agent复用同一弹窗与配置接口。可选trigger(show)替换默认按钮；systemSettings将show接入左下角菜单。每次打开重新读取/state/ai，所有保存/移除均操作同一ai分区，不维护Agent专用Key。
+公共组件供工作台和 AI 助手复用同一弹窗与配置接口。可选 trigger(show) 替换默认按钮，SystemSettings 将 show 接入右上角菜单。每次打开重新读取 /state/ai，所有保存和移除均操作同一 ai 分区。
 
 showCompletionSetting默认为true，统一系统设置入口展示全局SQL代码补全开关；调用者可传false隐藏。隐藏只改变表单展示，保留读取到的completionEnabled并随保存原样提交，不重置工作区的补全设置。

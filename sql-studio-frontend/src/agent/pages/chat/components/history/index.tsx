@@ -12,7 +12,6 @@ import { useSessionRename } from '../../hooks/sessionRename'
 
 interface Props {
   layout: ReturnType<typeof useSidebarResize>
-  footer?: ReactNode
   open: boolean
   items: ConversationInfo[]
   activeId: string
@@ -125,7 +124,6 @@ function HistoryContents({
   onRenameOpen,
   search,
   onSearchChange,
-  footer,
   header
 }: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
   const { token } = theme.useToken()
@@ -175,7 +173,6 @@ function HistoryContents({
           )}
         </Spin>
       </div>
-      {footer && <div style={{ flexShrink: 0, marginInline: 'calc(-1 * var(--workspace-inset))', marginBottom: -token.paddingXS }}>{footer}</div>}
     </Flex>
   )
 }

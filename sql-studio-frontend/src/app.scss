@@ -519,6 +519,13 @@ body {
     display: inline-flex;
   }
 }
+@media (max-width: 520px) {
+  // 空间不足时右侧操作独立成行，保留入口按钮和设置文字。
+  .topbar {
+    flex-wrap: wrap;
+    padding-block: var(--ant-padding-xs);
+  }
+}
 // 中窄窗口没有独立标题空间；会话名仍可从历史列表读取，避免覆盖保存状态和主题控件。
 @media (max-width: 1279px) {
   .agent-header-title {

@@ -12,10 +12,8 @@ selecting表示当前会话内容加载中：暂停新建、删除和重命名�
 
 历史侧栏与会话主区域使用 colorBgContainer。侧栏右沿与顶栏下沿、问答分隔线共用 `1px solid var(--border)`。列表悬停和选中状态沿用 Ant Design 主题。
 
-footer?:ReactNode提供底部固定插槽，桌面侧栏和窄屏Drawer都展示统一系统设置；历史列表独立滚动。设置内容不受会话列表忙状态影响。
-
-侧栏/Drawer水平内边距统一--workspace-inset（12px），与PageHeader和底部设置按钮一致；footer只抵消父容器水平留白，再由SystemSettings统一施加一次，避免重复或缩减边距。
+历史列表独立滚动。侧栏和抽屉水平内边距统一为 --workspace-inset（12px），与 PageHeader 一致。
 编辑/删除按钮默认透明并禁止鼠标命中，保留宽度防止标题跳动；对应会话行悬停或键盘焦点进入操作区时显示，选中会话不会常驻显示按钮。
-layout接收公共useSidebarResize控制器；桌面侧栏右侧5px分隔条支持拖动、键盘左右/Home/End与双击恢复272px。宽度与SQL工作台连接栏共用并沿用工作台布局持久化，范围200–560px，实际宽度按主区至少520px约束，底部系统设置随宽度铺满；窄屏继续使用Drawer。
+layout 接收公共 useSidebarResize 控制器。桌面侧栏右侧 5px 分隔条支持拖动、键盘左右/Home/End 与双击恢复 272px。宽度与 SQL 工作台连接栏共用并沿用工作台布局持久化，范围 200–560px，实际宽度按主区至少 520px 约束。窄屏继续使用 Drawer。
 
 hook返回的DOM/list ref先单独解构为Ref变量，再传给ref属性；尺寸/导航状态与事件回调独立消费，渲染不读取ref.current。

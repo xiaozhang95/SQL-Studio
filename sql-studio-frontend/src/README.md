@@ -35,6 +35,6 @@ MySQL 对象树按“数据库 → 表 → 表名 → 字段/索引”组织；P
 - [数据库Agent](agent/README.md)：Ant Design X聊天、思考与只读数据库工具。
 - [公共组件](components/README.md)：工作区和Agent共用的展示能力。
 
-公共PageHeader统一workspace和Agent顶栏高度、间距、背景和保存状态布局。两页通过侧栏底部「系统设置」菜单切换。
+公共 PageHeader 统一工作区和 AI 助手的顶栏布局。两页都在顶栏左侧操作按钮后放置页面切换入口，中间以竖线分隔。
 
 所有业务Modal与确认框使用Ant Design默认位置，不设置centered或自定义位置偏移。
