@@ -37,6 +37,7 @@ export function ChatPage({
   const ai = useAISettings()
   const sidebar = useAgentSidebar()
   const { token } = theme.useToken()
+  const bottomInset = token.padding
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
   const errors = [...new Set([workspace.error, chat.error, ai.error].filter(Boolean))]
   return (
@@ -80,6 +81,7 @@ export function ChatPage({
           layout={sidebar}
           footer={
             <SystemSettings
+              bottomInset={bottomInset}
               themeMode={dark ? 'dark' : 'light'}
               themePreference={themePreference}
               onThemeChange={onThemeChange}
@@ -151,7 +153,7 @@ export function ChatPage({
                 overflowY: 'auto',
                 scrollbarGutter: 'stable',
                 paddingTop: token.paddingSM,
-                paddingBottom: token.padding
+                paddingBottom: bottomInset
               }}
             >
               <div style={CHAT.content}>

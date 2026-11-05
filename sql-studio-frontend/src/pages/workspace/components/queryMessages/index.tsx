@@ -7,6 +7,7 @@ import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState } from '@/typings/workspace'
 
+import { useQueryMessageScroll } from '../../hooks/useQueryMessageScroll'
 import { statementDuration, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
@@ -19,8 +20,16 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
   const page = Math.min(latestPage, selection && selection.identity === identity ? selection.page : latestPage)
   const offset = (page - 1) * 50
   const visible = statements.slice(offset, offset + 50)
+  const { content: contentRef, pause } = useQueryMessageScroll({
+    identity,
+    progress: statements.length,
+    page,
+    latest: page === latestPage,
+    running,
+    onFollowChange: (following) => setSelection(following ? undefined : { identity, page })
+  })
   return (
-    <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div ref={contentRef} style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Collapse
         destroyOnHidden
         key={`${identity}:${offset}:${visible.flatMap((item, index) => (item.error ? [index + offset] : [])).join(',')}`}
@@ -49,7 +58,18 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
           }
         })}
       />
-      {statements.length > 50 && <Pagination {...tablePaginationDefaults} current={page} pageSize={50} total={statements.length} onChange={(page) => setSelection({ identity, page })} />}
+      {statements.length > 50 && (
+        <Pagination
+          {...tablePaginationDefaults}
+          current={page}
+          pageSize={50}
+          total={statements.length}
+          onChange={(page) => {
+            pause()
+            setSelection({ identity, page })
+          }}
+        />
+      )}
       {running && <Typography.Text type="secondary">正在执行，消息随已完成语句更新…</Typography.Text>}
       {!running && !statements.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无执行消息" />}
     </div>

@@ -331,7 +331,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           </div>
         )}
         {activeKey === 'messages' ? (
-          <QueryMessages run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QueryMessages key={tab.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
           <QuerySummary key={run.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (

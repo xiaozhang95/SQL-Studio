@@ -15,6 +15,7 @@ interface Props {
   themePreference: ThemePreference
   onThemeChange: (preference: ThemePreference) => void
   themeReady?: boolean
+  bottomInset?: number
   navigation: { destination: 'agent' | 'workspace'; onSelect: () => void; disabled?: boolean }
 }
 
@@ -25,7 +26,7 @@ const connectionStatuses = {
   failed: { status: 'error', label: '检测失败' }
 } as const
 
-export default function SystemSettings({ themeMode, themePreference, onThemeChange, themeReady = true, navigation }: Props) {
+export default function SystemSettings({ themeMode, themePreference, onThemeChange, themeReady = true, bottomInset, navigation }: Props) {
   const [open, setOpen] = useState(false)
   const [connection, setConnection] = useState<keyof typeof connectionStatuses>('checking')
   const { token } = theme.useToken()
@@ -84,10 +85,9 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
     <div
       style={{
         flexShrink: 0,
-        height: token.controlHeight + token.paddingXS * 2 + token.lineWidth,
-        paddingBlock: token.paddingXXS,
         paddingInline: 'var(--workspace-inset)',
-        paddingTop: token.paddingXXS + token.lineWidth
+        paddingTop: token.paddingXXS + token.lineWidth,
+        paddingBottom: bottomInset ?? token.paddingXXS
       }}
     >
       <AISettings
@@ -160,7 +160,13 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
               }
             }}
           >
-            <Button block aria-haspopup="menu" aria-expanded={open} icon={<SettingOutlined />} style={{ height: '100%', justifyContent: 'flex-start', paddingInline: token.paddingSM }}>
+            <Button
+              block
+              aria-haspopup="menu"
+              aria-expanded={open}
+              icon={<SettingOutlined />}
+              style={{ height: token.controlHeight + token.paddingXS, justifyContent: 'flex-start', paddingInline: token.paddingSM }}
+            >
               <Flex align="center" justify="space-between" flex={1}>
                 系统设置
                 <TriggerArrow aria-hidden="true" className="dropdown-chevron" />
