@@ -17,3 +17,5 @@ Connection.database? 对应后端维护数据库字段，仅 PostgreSQL 使用�
 DBIndex.primary? 为可选主键标志，用于 PostgreSQL 真实索引名，旧 MySQL PRIMARY 名称仍兼容。
 
 QueryRequest.schema? 为 PostgreSQL 当前 schema，后端在本次请求独占的连接上验证 USAGE 并设置 search_path 后再执行。省略不改变旧行为；MySQL 拒绝非空独立 schema。
+
+QueryRequest.matchRows? 表示 MySQL/MariaDB 请求匹配行计数，仅单元格 UPDATE 使用；默认 false，不改变 allowWrite 与单语句限制。

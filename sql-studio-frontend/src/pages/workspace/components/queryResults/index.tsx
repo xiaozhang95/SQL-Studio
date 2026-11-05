@@ -262,10 +262,10 @@ export default function QueryResults({ model, themeMode }: Props) {
               icon={<ReloadOutlined />}
               loading={activeRunning}
               disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-              title={editing.dirty ? '请先保存或放弃修改' : '刷新当前结果'}
+              title={editing.dirty ? '请先保存或放弃修改' : tab.kind === 'query' ? '重新执行当前结果对应的 SQL，写入语句也会再次执行' : '刷新当前结果'}
               onClick={model.refreshResult}
             >
-              刷新
+              {tab.kind === 'query' ? '重新执行' : '刷新'}
             </Button>
             {tab.kind !== 'query' && activeRunning && (
               <Button icon={<StopOutlined />} danger onClick={cancelQuery}>

@@ -66,6 +66,66 @@ function fixture() {
     }
   }
 }
+
+test('stale windows retain their draft and revision after repeated conflicts', async () => {
+  const old = globalThis.fetch,
+    f = fixture()
+  globalThis.fetch = f.fetch
+  try {
+    const a = await WorkspaceStore.open(),
+      b = await WorkspaceStore.open()
+    const contents = await b.hydrate('p0')
+    const stale = b.snapshot({ id: 'p0', ...contents })
+    stale.tabs[0] = { ...stale.tabs[0], sql: 'unsaved local draft' }
+    await a.commit({ ...a.snapshot(), resultHeight: 999 })
+    await assert.rejects(b.commit(stale), /保存冲突/)
+    await assert.rejects(b.commit(stale), /保存冲突/)
+    assert.equal(b.doc.revision, 1)
+    assert.equal(stale.tabs[0].sql, 'unsaved local draft')
+    assert.equal(f.doc().revision, 2)
+  } finally {
+    globalThis.fetch = old
+  }
+})
+
+test('running batches save their index but upload cumulative results only on completion', async () => {
+  const old = globalThis.fetch,
+    f = fixture()
+  globalThis.fetch = f.fetch
+  try {
+    const store = await WorkspaceStore.open()
+    const contents = await store.hydrate('p0')
+    const snapshot = store.snapshot({ id: 'p0', ...contents })
+    snapshot.runningTabId = 'p0'
+    for (let i = 1; i <= 5; i++) {
+      snapshot.runs = { p0: { source: 'fixture', statements: Array.from({ length: i }, () => ({ sql: 'SELECT 1', result: contents.run.result })) } }
+      await store.commit(snapshot)
+    }
+    const uploads = () => f.calls.filter((call) => call.body).map((call) => JSON.parse(call.body))
+    assert.ok(uploads().every((body) => Object.keys(body.results).length === 0))
+    snapshot.runningTabId = ''
+    await store.commit(snapshot)
+    assert.equal(uploads().at(-1).results.p0.statements.length, 5)
+  } finally {
+    globalThis.fetch = old
+  }
+})
+
+test('cleared stale running marker is committed even without further edits', async () => {
+  const old = globalThis.fetch,
+    f = fixture()
+  f.doc().index.runningTabId = 'p0'
+  globalThis.fetch = f.fetch
+  try {
+    const store = await WorkspaceStore.open()
+    assert.equal(store.doc.index.runningTabId, '')
+    await store.commit(store.snapshot())
+    assert.equal(f.doc().index.runningTabId, '')
+    assert.equal(f.doc().index.tabs[0].interrupted, true)
+  } finally {
+    globalThis.fetch = old
+  }
+})
 test('100 tabs start with index only; only selected page content is hydrated', async () => {
   const old = globalThis.fetch,
     f = fixture()
@@ -119,7 +179,7 @@ test('eviction requires successful durability and preserves active/running/dirty
     runtime.tabs[1] = { ...runtime.tabs[1], sql: 'unsaved' }
     assert.deepEqual(store.evictable(runtime), [])
     f.fail()
-    await assert.rejects(store.commit(runtime), /conflict/)
+    await assert.rejects(store.commit(runtime), /冲突|conflict/)
     assert.deepEqual(store.evictable(runtime), [])
     store.forget(['p0'])
     assert.equal(store.savedDrafts.has('p0'), false)

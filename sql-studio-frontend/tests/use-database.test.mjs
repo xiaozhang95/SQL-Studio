@@ -7,7 +7,8 @@ import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/state
 
 // 执行真实工作区编排函数，替换请求与 React 状态；不连接业务数据库。
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
-const implementation = source.slice(source.indexOf('  async function executeSQL('), source.indexOf('  const refreshScope ='))
+const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
+const implementation = executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL'))
 async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
   const controller = new AbortController()
   const calls = [],
@@ -114,4 +115,5 @@ test('table data previews retain the default read request', async () => {
   const output = await run('SELECT * FROM sample;', undefined, undefined, undefined, 'data')
   assert.equal(output.calls.length, 1)
   assert.equal(output.calls[0].allowWrite, undefined)
+  assert.equal(output.histories.length, 0)
 })

@@ -1,4 +1,4 @@
-package localstate
+package agentstate
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strconv"
 	"sync"
 	"time"
@@ -20,8 +20,9 @@ const maxFile = 32 * 1024 * 1024
 var validID = regexp.MustCompile(`^[a-f0-9]{48}$`)
 
 type Store struct {
-	mu  sync.Mutex
-	dir string
+	mu    sync.Mutex
+	dir   string
+	parts map[string]cachedParts
 }
 type index struct {
 	SchemaVersion int                      `json:"schemaVersion"`
@@ -30,6 +31,8 @@ type index struct {
 type record struct {
 	SchemaVersion int                `json:"schemaVersion"`
 	Data          model.Conversation `json:"data"`
+	MessageParts  []string           `json:"messageParts,omitempty"`
+	EventParts    []string           `json:"eventParts,omitempty"`
 }
 
 func New(directory string) *Store { return &Store{dir: directory} }
@@ -144,7 +147,17 @@ func (s *Store) load(ctx context.Context, id string) (model.Conversation, error)
 			if err != nil {
 				return zero, err
 			}
-			if v.SchemaVersion != 1 || v.Data.ID != id || v.Data.Revision != i.Revision || len(v.Data.Messages) == 0 || v.Data.Messages[0].Role != "system" || v.Data.Summary.Through < 0 || v.Data.Summary.Through > len(v.Data.Messages) {
+			if v.SchemaVersion == 2 {
+				v.Data.Messages, err = loadParts[model.Message](ctx, s, id, v.MessageParts)
+				if err != nil {
+					return zero, err
+				}
+				v.Data.Events, err = loadParts[model.Event](ctx, s, id, v.EventParts)
+				if err != nil {
+					return zero, err
+				}
+			}
+			if (v.SchemaVersion != 1 && v.SchemaVersion != 2) || v.Data.ID != id || v.Data.Revision != i.Revision || len(v.Data.Messages) == 0 || v.Data.Messages[0].Role != "system" || v.Data.Summary.Through < 0 || v.Data.Summary.Through > len(v.Data.Messages) {
 				return zero, errors.New("会话记录版本或内容无效")
 			}
 			return v.Data, nil
@@ -179,14 +192,22 @@ func (s *Store) Save(ctx context.Context, value model.Conversation) (model.Conve
 		return value, model.ErrConflict
 	}
 	old := value.Revision
+	var prior record
 	if old > 0 {
-		if _, err = s.load(ctx, value.ID); err != nil {
+		if err = read(s.path(value.ID, old), &prior); err != nil {
 			return value, err
+		}
+		if (prior.SchemaVersion != 1 && prior.SchemaVersion != 2) || prior.Data.ID != value.ID || prior.Data.Revision != old {
+			return value, errors.New("会话记录版本或内容无效")
 		}
 	}
 	value.Revision++
 	value.UpdatedAt = time.Now().UTC()
-	if err = write(ctx, s.path(value.ID, value.Revision), record{1, value}); err != nil {
+	current, err := s.saveRecord(ctx, value)
+	if err != nil {
+		return value, err
+	}
+	if err = write(ctx, s.path(value.ID, value.Revision), current); err != nil {
 		return value, err
 	}
 	info := model.ConversationInfo{ID: value.ID, Revision: value.Revision, Title: value.Title, UpdatedAt: value.UpdatedAt, Status: value.Status}
@@ -199,6 +220,8 @@ func (s *Store) Save(ctx context.Context, value model.Conversation) (model.Conve
 		value.Revision = old
 		return value, err
 	}
+	s.collectReplacedParts(value.ID, prior, current)
+	s.rememberParts(value, current)
 	// Only the index revision is authoritative. A crash before index commit leaves an unreferenced part.
 	if old > 0 {
 		_ = os.Remove(s.path(value.ID, old))
@@ -222,6 +245,8 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 				return err
 			}
 			_ = os.Remove(s.path(id, item.Revision))
+			_ = os.RemoveAll(filepath.Join(s.dir, "conversations", id+"-parts"))
+			delete(s.parts, id)
 			return nil
 		}
 	}

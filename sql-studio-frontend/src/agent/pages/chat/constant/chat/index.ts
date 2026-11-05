@@ -11,14 +11,6 @@ export const CHAT = {
   resultIndexWidth: 56,
   maxQuestionBytes: 256 * 1024,
   maxTitleLength: 80,
-  toolEndpoints: {
-    execute_write: 'POST /api/connections/:id/query',
-    list_connections: 'GET /api/connections',
-    list_databases: 'GET /api/connections/:id/databases',
-    list_tables: 'GET /api/connections/:id/tables',
-    describe_table: 'GET /api/connections/:id/columns',
-    query_readonly: 'POST /api/connections/:id/query'
-  } as Readonly<Record<string, string>>,
   tools: {
     execute_write: '新增或修改数据',
     list_connections: '查看可用连接',

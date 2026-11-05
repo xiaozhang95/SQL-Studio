@@ -15,3 +15,5 @@ iconButton 统一发送、终止生成和回到底部使用的 Ant Design 小号
 resultIndexWidth 统一二维结果表格的序号列宽度（56px）。
 侧栏尺寸与工作台共用[sidebarLayout](../../../../../constant/sidebarLayout/README.md)，不再维护独立默认值。
 composerResize集中输入区拖拽高度边界、聊天预留高度、键盘步长与顶部手柄高度。
+
+工具展示仅提供业务名称及结果标题，不再维护对应 HTTP 端点映射；实际由 Go 业务模块进程内执行。

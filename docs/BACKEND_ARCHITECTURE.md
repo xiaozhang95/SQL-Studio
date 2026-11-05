@@ -47,3 +47,5 @@ MariaDB 由 internal/mariadb 组合共享 MySQL 线协议，app 以独立 mariad
 modules/agent与modules/agentlayout只依赖model/agent。agentstate、deepseek/agent分别实现持久化及官方模型流；app注入现有metadata/query，不引入第二个Go module或内部HTTP。详细边界见[Agent](AGENT.md)。
 
 app为Agent和工作台分别装配独立引擎客户端，隔离连接开关、请求取消及活动租约；元数据与查询仍复用现有业务模块，Agent的query执行范围通过WithExecutor沿用同一4并发预算。物理连接只归属单次操作，返回前释放；模型生成及写入确认期间不保留数据库连接。
+
+2026-11-05：Agent相关包分别命名为agent、agentstate、agentlayout、agentstream、agentmodel，目录和模块边界保持不变。会话持久化采用内容分片，恢复分页；工作区孤儿回收异步且删除前重新核对最新引用。

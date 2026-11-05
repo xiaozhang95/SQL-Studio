@@ -24,4 +24,5 @@ export const getIndexes = (id: string, database: string, table: string, signal?:
 export const executeQuery = (id: string, input: QueryRequest, signal?: AbortSignal) => request<QueryResult>(`${connectionPath(id)}/query`, { ...post(input), signal })
 
 /** 仅对象管理和单元格显式保存使用；普通查询保持默认只读。 */
-export const executeObjectSQL = (id: string, database: string, sql: string, signal?: AbortSignal) => executeQuery(id, { database, sql, allowWrite: true }, signal)
+export const executeObjectSQL = (id: string, database: string, sql: string, signal?: AbortSignal, matchRows = false) =>
+  executeQuery(id, { database, sql, allowWrite: true, ...(matchRows ? { matchRows: true } : {}) }, signal)

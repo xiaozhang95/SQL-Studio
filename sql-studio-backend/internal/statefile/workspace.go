@@ -275,8 +275,8 @@ func (s *Store) migrateWorkspace(ctx context.Context) (model.WorkspaceDocument, 
 // CollectWorkspaceParts removes only unreferenced managed blobs by age and orphan budget.
 func (s *Store) CollectWorkspaceParts(ctx context.Context) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	doc, err := s.readWorkspace()
+	s.mu.Unlock()
 	if err != nil {
 		return err
 	}
@@ -318,15 +318,39 @@ func (s *Store) CollectWorkspaceParts(ctx context.Context) error {
 		total += info.Size()
 	}
 	sort.Slice(candidates, func(i, j int) bool { return candidates[i].modified.Before(candidates[j].modified) })
+	removed := 0
 	for _, file := range candidates {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 		if time.Since(file.modified) > 24*time.Hour || total > 128*1024*1024 {
-			if err := os.Remove(file.path); err != nil {
-				return fmt.Errorf("清理工作区旧内容失败: %w", err)
+			s.mu.Lock()
+			latest, readErr := s.readWorkspace()
+			referenced := false
+			if readErr == nil {
+				for _, page := range latest.Index.Tabs {
+					if file.path == filepath.Join(s.directory, "workspace-parts", page.DraftRef+".json") || file.path == filepath.Join(s.directory, "workspace-parts", page.ResultRef+".json") {
+						referenced = true
+						break
+					}
+				}
+			}
+			var removeErr error
+			if readErr == nil && !referenced {
+				removeErr = os.Remove(file.path)
+			}
+			s.mu.Unlock()
+			if readErr != nil {
+				return readErr
+			}
+			if removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+				return fmt.Errorf("清理工作区旧内容失败: %w", removeErr)
 			}
 			total -= file.size
+			removed++
+			if removed >= 128 {
+				break
+			}
 		}
 	}
 	return nil

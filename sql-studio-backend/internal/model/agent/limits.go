@@ -1,4 +1,4 @@
-package model
+package agentmodel
 
 import "errors"
 
@@ -16,3 +16,7 @@ var (
 	ErrReadOperation      = errors.New("数据库读取失败")
 	ErrContinueCancelled  = errors.New("已停止本轮，未继续执行后续步骤")
 )
+
+// Summary limits are shared by the prompt validation and model request.
+const SummaryMaxRunes = 2000
+const SummaryMaxTokens = 4096

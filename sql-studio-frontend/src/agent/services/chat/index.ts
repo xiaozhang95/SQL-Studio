@@ -1,6 +1,6 @@
 import type { ChatEvent, TokenUsage } from '../../typings/chat'
 import type { ConversationInfo } from '../../typings/workspace'
-import { isObject } from '../../utils/json'
+import { isObject } from '../../utils/json/index.ts'
 
 async function json(path: string, init?: RequestInit): Promise<unknown> {
   const r = await fetch(path, init)
@@ -39,18 +39,36 @@ export async function list(signal?: AbortSignal): Promise<ConversationInfo[]> {
   return v.map(info)
 }
 export async function view(id: string, signal: AbortSignal): Promise<{ events: ChatEvent[]; busy: boolean }> {
-  const v = await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { signal })
-  signal.throwIfAborted()
-  if (!isObject(v) || !Array.isArray(v.events) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
   const events: ChatEvent[] = []
-  for (let offset = 0; offset < v.events.length; offset += 256) {
+  let offset = 0
+  let revision: number | undefined
+  let eventVersion: number | undefined
+  let busy = false
+  while (true) {
+    const suffix = offset ? `?offset=${offset}&revision=${revision}${eventVersion === undefined ? '' : `&eventVersion=${eventVersion}`}` : ''
+    const v = await json(`/api/agent/sessions/${encodeURIComponent(id)}${suffix}`, { signal })
     signal.throwIfAborted()
-    for (let i = offset; i < Math.min(offset + 256, v.events.length); i++) events.push(decodeEvent(v.events[i]))
-    if (offset + 256 < v.events.length) await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    if (!isObject(v) || !Array.isArray(v.events) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
+    if (revision !== undefined && revision !== v.revision) throw new Error('会话已更新，请重新打开后查看。')
+    if (typeof v.revision === 'number') revision = v.revision
+    if (eventVersion !== undefined && eventVersion !== v.eventVersion) throw new Error('会话已更新，请重新打开后查看。')
+    if (typeof v.eventVersion === 'number') eventVersion = v.eventVersion
+    busy = v.busy
+    for (let i = 0; i < v.events.length; i += 256) {
+      signal.throwIfAborted()
+      for (const event of v.events.slice(i, i + 256)) events.push(decodeEvent(event))
+      if (i + 256 < v.events.length) await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    }
+    if (v.nextOffset === undefined) break
+    if (!Number.isSafeInteger(v.nextOffset) || typeof v.nextOffset !== 'number' || v.nextOffset !== offset + v.events.length || v.nextOffset <= offset || revision === undefined)
+      throw new Error('会话分页响应无效')
+    offset = v.nextOffset
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
   }
   signal.throwIfAborted()
-  return { events, busy: v.busy }
+  return { events, busy }
 }
+
 export async function remove(id: string) {
   await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }

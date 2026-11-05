@@ -6,6 +6,7 @@ import (
 	"net/http"
 	model "sql-studio-backend/internal/model/agent"
 	agent "sql-studio-backend/internal/modules/agent"
+	"strconv"
 )
 
 type agentHandler struct{ chat *agent.Service }
@@ -49,7 +50,29 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 		}
 		agentResponse(c, gin.H{"id": v}, e)
 	})
-	a.GET("/sessions/:id", func(c *gin.Context) { v, e := s.Agent.View(c.Request.Context(), c.Param("id")); agentResponse(c, v, e) })
+	a.GET("/sessions/:id", func(c *gin.Context) {
+		offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+		if err != nil {
+			fail(c, errors.New("会话分页位置无效"))
+			return
+		}
+		revision, err := strconv.ParseUint(c.DefaultQuery("revision", "0"), 10, 64)
+		if err != nil {
+			fail(c, errors.New("会话分页版本无效"))
+			return
+		}
+		var versions []uint64
+		if raw := c.Query("eventVersion"); raw != "" {
+			version, err := strconv.ParseUint(raw, 10, 64)
+			if err != nil {
+				fail(c, errors.New("会话分页版本无效"))
+				return
+			}
+			versions = []uint64{version}
+		}
+		v, e := s.Agent.ViewPage(c.Request.Context(), c.Param("id"), offset, revision, versions...)
+		agentResponse(c, v, e)
+	})
 	a.PATCH("/sessions/:id", func(c *gin.Context) {
 		var input struct {
 			Title string `json:"title"`
@@ -61,7 +84,7 @@ func registerAgent(api *gin.RouterGroup, s Services) {
 		v, err := s.Agent.Rename(c.Request.Context(), c.Param("id"), input.Title)
 		agentResponse(c, v, err)
 	})
-	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Param("id"))) })
+	a.DELETE("/sessions/:id", func(c *gin.Context) { agentResponse(c, struct{}{}, s.Agent.Delete(c.Request.Context(), c.Param("id"))) })
 	a.POST("/write-confirmation", confirmAgentStep(s.Agent.ConfirmWrite))
 	a.POST("/continue-confirmation", confirmAgentStep(s.Agent.ConfirmContinue))
 	a.POST("/chat", (&agentHandler{s.Agent}).stream)

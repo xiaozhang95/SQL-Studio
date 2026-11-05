@@ -1,4 +1,4 @@
-import { request } from '../../utils/request/index.ts'
+import { request, RequestError } from '../../utils/request/index.ts'
 
 type Document<T> = { schemaVersion: number; revision: number; updatedAt: string; data: T | null }
 const reads = new Map<string, Promise<Document<unknown>>>()
@@ -30,7 +30,10 @@ export function writeSerializedState(section: string, data: string): Promise<voi
     .then(async () => {
       const revision = revisions.get(section)
       if (revision === undefined) throw new Error('配置尚未读取，拒绝覆盖')
-      const doc = await request<Document<unknown>>('/state/' + encodeURIComponent(section), { method: 'PUT', body: `{"revision":${revision},"data":${data}}` })
+      const doc = await request<Document<unknown>>('/state/' + encodeURIComponent(section), { method: 'PUT', body: `{"revision":${revision},"data":${data}}` }).catch((error: unknown) => {
+        if (error instanceof RequestError && error.status === 409) throw new RequestError('配置保存冲突：其他窗口已更新本机配置。当前内容尚未保存，请通过恢复入口导出副本并重新载入。', 409)
+        throw error
+      })
       if (doc.schemaVersion !== 1 || !Number.isSafeInteger(doc.revision) || doc.revision <= revision) throw new Error('配置保存响应无效')
       revisions.set(section, doc.revision)
       documents.set(section, doc)

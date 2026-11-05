@@ -1,9 +1,9 @@
-package chat
+package agent
 
 import (
 	"context"
 	"errors"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )
@@ -28,7 +28,7 @@ func TestCompressionPreservesOriginalAndRecentToolPairs(t *testing.T) {
 		}
 		return model.Message{Role: "assistant", Content: "用户要按天统计订单；demo库；已确认按支付时间。"}, nil
 	}), &fakeDB{})
-	request, summary, err := s.prepare(context.Background(), source, model.ContextSummary{}, model.Target{ConnectionID: "a", Database: "demo"}, 15000, func(model.Event) error { return nil }, func() error {
+	request, summary, err := s.prepare(context.Background(), source, model.ContextSummary{}, model.Target{ConnectionID: "a", Database: "demo"}, 15000, tools(), model.Message{Role: "system", Content: "只读"}, func(model.Event) error { return nil }, func() error {
 		approved = true
 		return nil
 	})
@@ -60,7 +60,7 @@ func TestCompressionFailureDoesNotReplaceSummary(t *testing.T) {
 	s := New(generatorFunc(func(context.Context, []model.Message, []model.Tool) (model.Message, error) {
 		return model.Message{}, errors.New("mock upstream failed")
 	}), &fakeDB{})
-	_, got, err := s.prepare(context.Background(), longHistory(), prior, model.Target{}, 15000, func(model.Event) error { return nil })
+	_, got, err := s.prepare(context.Background(), longHistory(), prior, model.Target{}, 15000, tools(), model.Message{Role: "system", Content: "只读"}, func(model.Event) error { return nil })
 	if err == nil || got != prior {
 		t.Fatal("failed summary replaced state")
 	}

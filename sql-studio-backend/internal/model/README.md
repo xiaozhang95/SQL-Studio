@@ -35,3 +35,5 @@ workspace.go 定义v2 WorkspacePage/WorkspaceIndex/WorkspaceDocument/WorkspaceCo
 TypeMariaDB=mariadb，为独立的受支持连接身份；IsMySQLProtocol 仅描述 MySQL/MariaDB 线协议复用，不把 MariaDB 归一化成 MySQL。
 
 - [agent](agent/README.md)：Agent工具、模型流与会话契约；独立子包避免与SQL结果/配置同名类型冲突。
+
+QueryRequest.MatchRows（JSON matchRows）默认为false；只供显式单元格UPDATE请求MySQL/MariaDB匹配行计数，不改变普通SQL语义或权限限制。

@@ -1,11 +1,11 @@
-package deepseek
+package agentstream
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )
@@ -88,5 +88,29 @@ func TestNextRequestUsesUpdatedCredentials(t *testing.T) {
 	provider.value.APIKey = ""
 	if _, err := client.Generate(context.Background(), nil, nil); err == nil {
 		t.Fatal("clear did not disable generation")
+	}
+}
+
+func TestSummaryRequestOmitsToolsAndUsesSharedLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]json.RawMessage
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Error(err)
+		}
+		if _, exists := body["tools"]; exists {
+			t.Error("summary sent tools:null")
+		}
+		var limit int
+		_ = json.Unmarshal(body["max_tokens"], &limit)
+		if limit != model.SummaryMaxTokens {
+			t.Error("summary token limit drifted")
+		}
+		_, _ = w.Write([]byte(`{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"摘要"}}]}`))
+	}))
+	defer server.Close()
+	client := New(testCredentials{})
+	client.endpoint = server.URL
+	if _, err := client.Generate(context.Background(), []model.Message{{Role: "user", Content: "总结"}}, nil); err != nil {
+		t.Fatal(err)
 	}
 }

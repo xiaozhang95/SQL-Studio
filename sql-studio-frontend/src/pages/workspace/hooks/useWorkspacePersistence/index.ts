@@ -112,15 +112,18 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
     }, delay)
     return () => window.clearTimeout(timer)
   }, [ready, snapshot, pageReady, save])
-  async function draftsFor(pages: WorkspaceTab[]) {
+  async function draftsFor(pages: WorkspaceTab[], signal?: AbortSignal) {
     const repository = store.current
     const output: WorkspaceTab[] = []
-    for (let index = 0; index < pages.length; index += 4)
+    for (let index = 0; index < pages.length; index += 4) {
+      signal?.throwIfAborted()
       output.push(
         ...(await Promise.all(
-          pages.slice(index, index + 4).map(async (page) => ({ ...page, sql: repository?.page(page.id) && !repository.draftsLoaded.has(page.id) ? await repository.draft(page.id) : page.sql }))
+          pages.slice(index, index + 4).map(async (page) => ({ ...page, sql: repository?.page(page.id) && !repository.draftsLoaded.has(page.id) ? await repository.draft(page.id, signal) : page.sql }))
         ))
       )
+    }
+    signal?.throwIfAborted()
     return output
   }
   return {

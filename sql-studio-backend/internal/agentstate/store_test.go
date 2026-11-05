@@ -1,11 +1,11 @@
-package localstate
+package agentstate
 
 import (
 	"context"
 	"errors"
 	"os"
 	"path/filepath"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )

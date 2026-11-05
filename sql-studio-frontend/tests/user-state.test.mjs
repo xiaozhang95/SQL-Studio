@@ -26,7 +26,7 @@ test('server state is authoritative, namespace writes serialize, conflicts do no
     assert.equal(server.data.theme, 'system')
     assert.equal((await readState('test-appearance', async () => ({}))).theme, 'system')
     server.revision++
-    await assert.rejects(writeState('test-appearance', { theme: 'light' }), /conflict/)
+    await assert.rejects(writeState('test-appearance', { theme: 'light' }), /冲突|conflict/)
     assert.equal(server.data.theme, 'system')
     assert.equal(calls.filter((c) => c.options?.method === 'PUT').length, 3)
   } finally {

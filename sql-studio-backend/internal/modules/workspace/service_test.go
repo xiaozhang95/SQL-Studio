@@ -6,12 +6,46 @@ import (
 	"sql-studio-backend/internal/model"
 	"strings"
 	"testing"
+	"time"
 )
 
 type repositoryFixture struct{ commits, parts int }
 
 func (f *repositoryFixture) ReadWorkspace(context.Context) (model.WorkspaceDocument, error) {
 	return model.WorkspaceDocument{}, nil
+}
+
+type slowCollector struct {
+	repositoryFixture
+	started, release, finished chan struct{}
+}
+
+func (f *slowCollector) CollectWorkspaceParts(ctx context.Context) error {
+	close(f.started)
+	defer close(f.finished)
+	select {
+	case <-f.release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+func TestCollectionDoesNotDelayCommittedSave(t *testing.T) {
+	f := &slowCollector{started: make(chan struct{}), release: make(chan struct{}), finished: make(chan struct{})}
+	s := New(f)
+	done := make(chan error, 1)
+	go func() { _, err := s.Commit(context.Background(), inputFixture()); done <- err }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Error(err)
+		}
+	case <-time.After(time.Second):
+		t.Error("save waited for garbage collection")
+	}
+	<-f.started
+	close(f.release)
+	<-f.finished
 }
 func (f *repositoryFixture) ReadWorkspacePart(context.Context, string) (json.RawMessage, error) {
 	f.parts++

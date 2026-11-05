@@ -244,7 +244,7 @@ test('run and export actions read the live draft while React still has the old s
   const { stripTypeScriptTypes } = await import('node:module')
   const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
   const action = source.slice(source.indexOf('  function getCurrentSQL()'), source.indexOf('  function openHistory()'))
-  const run = source.slice(source.indexOf('  function runSQL()'), source.indexOf('  useEffect(() => {\n    executeRef.current = runSQL'))
+  const run = source.slice(source.indexOf('  function runSQL()'), source.indexOf('  function deleteConnection(', source.indexOf('  function runSQL()')))
   let selected = null,
     flushed = 0
   const exported = [],

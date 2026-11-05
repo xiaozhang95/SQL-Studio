@@ -12,11 +12,16 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
+type matchRowsKey struct{}
+
 const maxResultBytes = 8 * 1024 * 1024
 
 func (c *Client) Execute(ctx context.Context, connection model.Connection, input model.QueryRequest) (model.QueryResult, error) {
 	if input.Schema != "" {
 		return model.QueryResult{}, errors.New("MySQL 不使用独立 schema 范围")
+	}
+	if input.MatchRows {
+		ctx = context.WithValue(ctx, matchRowsKey{}, true)
 	}
 	ctx, db, release, err := c.openRequest(ctx, connection, input.Database)
 	if err != nil {

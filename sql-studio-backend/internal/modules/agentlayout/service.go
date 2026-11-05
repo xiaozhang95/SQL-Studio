@@ -1,10 +1,10 @@
-package workspace
+package agentlayout
 
 import (
 	"context"
 	"errors"
 	"regexp"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 )
 
 type Repository interface {

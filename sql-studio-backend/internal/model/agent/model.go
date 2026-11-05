@@ -1,4 +1,4 @@
-package model
+package agentmodel
 
 import "encoding/json"
 

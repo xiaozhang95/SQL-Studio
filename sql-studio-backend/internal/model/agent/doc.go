@@ -1,2 +1,2 @@
-// Package model defines the chat and tool transport contracts.
-package model
+// Package agentmodel defines the chat and tool transport contracts.
+package agentmodel

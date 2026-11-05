@@ -11,3 +11,5 @@ Event.createdAt为可选RFC3339时间，user事件由服务端写入UTC发送时
 write_confirmation的objects包含本条SQL的目标及源对象名，保留标识符引号并去重；用户可在回复下方卡片核对全部对象与完整SQL，历史确认ID不可重新提交。
 
 limits.go共享消息与工具结果的字节阈值和可恢复错误标识。继续确认使用 `continue_confirmation`，拒绝继续使用 `stopped`，与写入确认事件分开。
+
+包名 agentmodel，与普通model契约区分。ConversationView增加可选NextOffset及EventVersion，支持有界分页和恢复一致性；SummaryMaxRunes=2000与SummaryMaxTokens=4096由压缩校验和模型请求共享。

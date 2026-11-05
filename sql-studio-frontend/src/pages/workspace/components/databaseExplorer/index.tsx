@@ -19,7 +19,7 @@ import {
   SortAscendingOutlined,
   TableOutlined
 } from '@ant-design/icons'
-import { Button, Dropdown, Empty, Input, Tree } from 'antd'
+import { Button, Dropdown, Empty, Input, Tree, Typography } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
@@ -38,7 +38,18 @@ import EngineIcon from '../engineIcon'
 type Props = {
   model: Pick<
     WorkspaceModel,
-    'connections' | 'connectionGroups' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'
+    | 'connections'
+    | 'connectionGroups'
+    | 'connectionAction'
+    | 'openConnection'
+    | 'databaseAction'
+    | 'tableAction'
+    | 'openExplorerPage'
+    | 'objects'
+    | 'running'
+    | 'blockedReason'
+    | 'explorer'
+    | 'updateExplorer'
   >
 }
 
@@ -330,72 +341,80 @@ export default function DatabaseExplorer({ model }: Props) {
             {!data.nodes.length && !search ? (
               <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
             ) : (
-              <Tree<ExplorerNode>
-                ref={treeRef}
-                aria-label="数据库连接树"
-                showIcon={false}
-                blockNode
-                expandAction="doubleClick"
-                autoExpandParent={false}
-                virtual
-                // 折叠时数据会裁剪后代，禁用依赖旧节点层级的离场动画，避免缩进先归零。
-                motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
-                height={treeHeight}
-                itemHeight={objectTreeLayout.rowHeight}
-                onScroll={onTreeScroll}
-                treeData={data.nodes}
-                titleRender={renderTitle}
-                expandedKeys={data.expandedKeys}
-                loadedKeys={data.loadedKeys}
-                selectedKeys={selectedKeys}
-                onExpand={(_, info) => {
-                  if (!running) {
-                    const next = new Set(expanded)
-                    if (info.expanded) next.add(String(info.node.key))
-                    else next.delete(String(info.node.key))
-                    updateExplorer({ expanded: [...next] })
-                  }
-                }}
-                loadData={async (value) => {
-                  if (running) return
-                  const node = data.byKey.get(String(value.key))
-                  if (!node) return
-                  if (node.kind === 'connection') await model.openConnection(node.owner).catch(() => {})
-                  else if (node.kind === 'database') await objects.loadTables(node.database, node.owner).catch(() => {})
-                  else if (node.kind === 'table') await objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
-                }}
-                onDoubleClick={(event, value) => {
-                  if (running) return
-                  const node = data.byKey.get(String(value.key))
-                  if (!node) return
-                  // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。
-                  if (!value.isLeaf && (value.expanded || event.shiftKey || event.metaKey || event.ctrlKey)) return
-                  if (node.kind === 'database' || node.kind === 'schema') model.openExplorerPage('structure', node.owner, node.database, '', node.schema)
-                  else if (node.kind === 'table')
-                    model.openExplorerPage(
-                      'data',
-                      node.owner,
-                      node.database,
-                      node.table,
-                      getDatabaseAdapter(connections.find((connection) => connection.id === node.owner)?.type).explorer?.tableIdentity(node.table).schema
-                    )
-                }}
-                onRightClick={({ event, node: value }) => {
-                  const node = data.byKey.get(String(value.key))
-                  if (!node) return
-                  const menu = menuFor(node)
-                  if (!menu) {
-                    setMenuOpen(false)
-                    event.stopPropagation()
-                    return
-                  }
-                  updateExplorer({ selected: [node.key] })
-                  setContextMenu(menu)
-                }}
-                onSelect={(keys) => {
-                  if (!running && keys.length) updateExplorer({ selected: keys.map(String) })
-                }}
-              />
+              <>
+                {model.blockedReason && (
+                  <Typography.Text type="secondary" role="status">
+                    {model.blockedReason}
+                  </Typography.Text>
+                )}
+                <Tree<ExplorerNode>
+                  disabled={running}
+                  ref={treeRef}
+                  aria-label="数据库连接树"
+                  showIcon={false}
+                  blockNode
+                  expandAction="doubleClick"
+                  autoExpandParent={false}
+                  virtual
+                  // 折叠时数据会裁剪后代，禁用依赖旧节点层级的离场动画，避免缩进先归零。
+                  motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
+                  height={treeHeight}
+                  itemHeight={objectTreeLayout.rowHeight}
+                  onScroll={onTreeScroll}
+                  treeData={data.nodes}
+                  titleRender={renderTitle}
+                  expandedKeys={data.expandedKeys}
+                  loadedKeys={data.loadedKeys}
+                  selectedKeys={selectedKeys}
+                  onExpand={(_, info) => {
+                    if (!running) {
+                      const next = new Set(expanded)
+                      if (info.expanded) next.add(String(info.node.key))
+                      else next.delete(String(info.node.key))
+                      updateExplorer({ expanded: [...next] })
+                    }
+                  }}
+                  loadData={async (value) => {
+                    if (running) return
+                    const node = data.byKey.get(String(value.key))
+                    if (!node) return
+                    if (node.kind === 'connection') await model.openConnection(node.owner).catch(() => {})
+                    else if (node.kind === 'database') await objects.loadTables(node.database, node.owner).catch(() => {})
+                    else if (node.kind === 'table') await objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
+                  }}
+                  onDoubleClick={(event, value) => {
+                    if (running) return
+                    const node = data.byKey.get(String(value.key))
+                    if (!node) return
+                    // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。
+                    if (!value.isLeaf && (value.expanded || event.shiftKey || event.metaKey || event.ctrlKey)) return
+                    if (node.kind === 'database' || node.kind === 'schema') model.openExplorerPage('structure', node.owner, node.database, '', node.schema)
+                    else if (node.kind === 'table')
+                      model.openExplorerPage(
+                        'data',
+                        node.owner,
+                        node.database,
+                        node.table,
+                        getDatabaseAdapter(connections.find((connection) => connection.id === node.owner)?.type).explorer?.tableIdentity(node.table).schema
+                      )
+                  }}
+                  onRightClick={({ event, node: value }) => {
+                    const node = data.byKey.get(String(value.key))
+                    if (!node) return
+                    const menu = menuFor(node)
+                    if (!menu) {
+                      setMenuOpen(false)
+                      event.stopPropagation()
+                      return
+                    }
+                    updateExplorer({ selected: [node.key] })
+                    setContextMenu(menu)
+                  }}
+                  onSelect={(keys) => {
+                    if (!running && keys.length) updateExplorer({ selected: keys.map(String) })
+                  }}
+                />
+              </>
             )}
           </div>
         </Dropdown>

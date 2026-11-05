@@ -110,4 +110,11 @@ Agent数据库连接与工作台会话状态独立，只复用已保存的连接
 
 会话重命名去除首尾空白，限1–80字符且不含控制字符；手动命名持久保存，不再用首条消息覆盖。首次空历史及删除最后一条后，前端调用ensure创建并选中默认“新建会话”，不执行模型或数据库工具。
 
-Agent操作模式：POST /api/agent/chat 增加mode（readonly默认，write为完全访问模式，允许非删除数据及结构操作）。任何模式拒绝DELETE/DROP/TRUNCATE/REPLACE和DDL；删除仅提供命令及风险提示，不自动执行。刷新和往返工作台恢复上次确认的模式。支持单条INSERT/UPDATE/CREATE/ALTER/COMMENT及表达式和子查询；多语句、存储程序、动态SQL不执行，以防绕过删除限制；取消不保证回滚。查询回答提示生成真实二维JSON表格，前端校验后展示，支持导出当前已加载结果xlsx，截断明确提示。
+Agent操作模式：POST /api/agent/chat 增加mode（readonly默认，write为完全访问模式，允许非删除数据及结构操作）。任何模式拒绝DELETE/DROP/TRUNCATE/REPLACE及删除性DDL；删除仅提供命令及风险提示，不自动执行。刷新和往返工作台恢复上次确认的模式。支持单条INSERT/UPDATE/CREATE/ALTER/COMMENT及表达式和子查询；多语句、存储程序、动态SQL不执行，以防绕过删除限制；取消不保证回滚。查询回答提示生成真实二维JSON表格，前端校验后展示，支持导出当前已加载结果xlsx，截断明确提示。
+
+## 2026-11-05 审查修复补充
+
+- GET /api/agent/sessions/:id 默认分页返回 events、busy、revision、eventVersion 和可选 nextOffset；后续带 offset/revision/eventVersion，版本变化返回409。每页最多256事件、约256KiB，单条较大事件独占一页，不截断内容。
+- 会话记录 schema v2 使用轻量版本文件和内容寻址的 messages/events 分片；兼容旧 v1，成功保存后迁移，单分片仍限32MiB，会话总量不再受单个32MiB文件限制。
+- Agent 两路执行预算在接收提问前检查，等待确认释放名额，用户同意后重新获取；与工作台共享的数据库查询预算仍为4路。超时为可读 error，用户取消为 stopped，实时及恢复使用同一映射。
+- 查询请求新增可选 matchRows（默认false），单元格 UPDATE 开启时 MySQL/MariaDB 使用匹配行数作为 affectedRows；匹配但值未变化返回1，旧值不匹配返回0。普通 SQL、插入、删除保持原有计数，PostgreSQL原有UPDATE计数不变。该字段不放宽只读、单语句或行数限制。

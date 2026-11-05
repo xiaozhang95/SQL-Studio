@@ -8,7 +8,7 @@ export interface WriteConfirmationRequest {
 
 export interface ContinueConfirmationRequest {
   approvalId: string
-  kind: 'input' | 'result' | 'context' | 'recovery'
+  kind: 'input' | 'result' | 'context'
   detail: string
 }
 

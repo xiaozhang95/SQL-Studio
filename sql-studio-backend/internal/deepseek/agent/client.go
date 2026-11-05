@@ -1,4 +1,4 @@
-package deepseek
+package agentstream
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"time"
 )
 
@@ -36,12 +36,12 @@ func (c *Client) Generate(ctx context.Context, messages []model.Message, tools [
 	body, err := json.Marshal(struct {
 		Model     string          `json:"model"`
 		Messages  []model.Message `json:"messages"`
-		Tools     []model.Tool    `json:"tools"`
+		Tools     []model.Tool    `json:"tools,omitempty"`
 		MaxTokens int             `json:"max_tokens"`
 		Thinking  struct {
 			Type string `json:"type"`
 		} `json:"thinking"`
-	}{config.Model, messages, tools, 2400, struct {
+	}{config.Model, messages, tools, model.SummaryMaxTokens, struct {
 		Type string `json:"type"`
 	}{"disabled"}})
 	if err != nil {

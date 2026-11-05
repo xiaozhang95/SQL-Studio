@@ -1,9 +1,9 @@
-package chat
+package agent
 
 import (
 	"context"
 	"errors"
-	"sql-studio-backend/internal/agentstate"
+	localstate "sql-studio-backend/internal/agentstate"
 	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"sync"

@@ -1,2 +1,2 @@
-// Package chat owns bounded conversations and database discovery/tool execution.
-package chat
+// Package agent owns bounded conversations and database discovery/tool execution.
+package agent

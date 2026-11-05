@@ -27,7 +27,16 @@ export default function App() {
       <AntApp message={{ styles: { root: { display: 'none' } } }}>
         <SidebarWidthProvider>
           <div style={{ display: section.agent ? 'none' : undefined }}>
-            <Workspace onOpenAgent={section.openAgent} themeReady={ready} themeSaving={saving} themeError={error} themeMode={mode} themePreference={preference} onThemeChange={setPreference} />
+            <Workspace
+              active={!section.agent}
+              onOpenAgent={section.openAgent}
+              themeReady={ready}
+              themeSaving={saving}
+              themeError={error}
+              themeMode={mode}
+              themePreference={preference}
+              onThemeChange={setPreference}
+            />
           </div>
           {section.agent && (
             <Suspense fallback={null}>

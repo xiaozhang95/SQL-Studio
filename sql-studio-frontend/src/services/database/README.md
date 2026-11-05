@@ -19,3 +19,5 @@ setConnectionSession(id, open, database?, signal?) 返回 Promise<{open:boolean}
 getSchemas(id,database,signal?) 调用 /connections/{id}/schemas，返回可访问的 schema 字符串数组，包含无表 schema；复用显式连接/库和取消。
 
 deleteConnectionGroup(name) DELETE /connection-groups，返回 groups 与脱敏 connections；删除组内连接移入默认分组，不删除连接。
+
+executeObjectSQL(id,database,sql,signal?,matchRows=false) 的 matchRows 仅由单元格 UPDATE 显式开启；普通 SQL 和其他对象操作保持默认影响行数语义。

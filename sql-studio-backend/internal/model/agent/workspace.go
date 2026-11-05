@@ -1,4 +1,4 @@
-package model
+package agentmodel
 
 import (
 	"errors"
@@ -42,9 +42,11 @@ type ConversationInfo struct {
 	Status    string    `json:"status"`
 }
 type ConversationView struct {
+	EventVersion uint64 `json:"eventVersion"`
 	ConversationInfo
-	Events []Event `json:"events"`
-	Busy   bool    `json:"busy"`
+	Events     []Event `json:"events"`
+	Busy       bool    `json:"busy"`
+	NextOffset *int    `json:"nextOffset,omitempty"`
 }
 type Layout struct {
 	Mode     string   `json:"mode,omitempty"`

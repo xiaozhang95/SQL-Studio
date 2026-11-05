@@ -23,6 +23,7 @@ type Props = {
     | 'selectConnection'
     | 'selectObject'
     | 'running'
+    | 'blockedReason'
     | 'explorer'
     | 'updateExplorer'
   >

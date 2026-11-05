@@ -1,4 +1,4 @@
-package deepseek
+package agentstream
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )

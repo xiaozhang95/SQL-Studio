@@ -11,7 +11,7 @@
 
 项目级 skill 为 `sql-studio`；后端唯一程序入口为 `sql-studio-backend/main.go`。
 
-内置[数据库 Agent](docs/AGENT.md)：从工作台顶部“Agent”进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。查询强制只读，无需启动额外服务。
+内置[数据库 Agent](docs/AGENT.md)：从工作台顶部“AI 助手”进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。查询强制只读，无需启动额外服务。
 
 ## 功能
 

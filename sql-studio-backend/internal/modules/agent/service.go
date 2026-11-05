@@ -1,11 +1,11 @@
-package chat
+package agent
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"time"
 )
@@ -21,16 +21,26 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 	if strings.TrimSpace(text) == "" || len(text) > model.MessageMaxBytes {
 		return errors.New("消息不能为空且最多 256 KiB，较长内容请分段发送")
 	}
+	lease := &turnLease{slots: s.slots}
+	select {
+	case s.slots <- struct{}{}:
+		lease.held = true
+	default:
+		return errors.New("Agent 忙，请稍后重试")
+	}
+	defer lease.release()
+	ctx = context.WithValue(ctx, leaseKey{}, lease)
 	s.mu.Lock()
 	v, loadErr := s.loadLocked(ctx, id)
 	if loadErr != nil {
 		s.mu.Unlock()
 		return loadErr
 	}
-	if v.busy {
+	if v.busy || v.saving > 0 {
 		s.mu.Unlock()
 		return errors.New("当前会话正在执行")
 	}
+	priorTitle, priorStatus, priorEvents, priorEventVersion := v.title, v.status, v.events, v.eventVersion
 	v.busy = true
 	messages := append([]model.Message(nil), v.messages...)
 	// Existing conversations must use current tool and result-format rules.
@@ -48,9 +58,11 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		}
 		v.title = string(title)
 	}
+	v.eventVersion++
 	v.events = append(v.events, model.Event{Type: "user", Text: text, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano)})
 	if err := s.saveLocked(ctx, id, v); err != nil {
 		v.busy = false
+		v.title, v.status, v.events, v.eventVersion = priorTitle, priorStatus, priorEvents, priorEventVersion
 		s.mu.Unlock()
 		return fmt.Errorf("保存对话失败：%w", err)
 	}
@@ -60,33 +72,29 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		defer s.mu.Unlock()
 		v.busy = false
 		v.used = time.Now()
-		if turnErr != nil {
-			v.status = "error"
-			text := turnErr.Error()
-			eventType := "error"
-			if errors.Is(turnErr, context.Canceled) {
-				v.status = "cancelled"
-				text = "已停止，本轮未完成。"
-			}
-			if errors.Is(turnErr, model.ErrContinueCancelled) {
-				v.status = "cancelled"
-				eventType = "stopped"
-			}
-			v.events = append(v.events, model.Event{Type: eventType, Text: text})
-		} else {
-			v.status = "completed"
+		v.eventVersion++
+		status, outcome := TurnOutcome(turnErr)
+		v.status = status
+		if outcome.Type != "" {
+			v.events = append(v.events, outcome)
 		}
 		v.events = append(v.events, model.Event{Type: "turn_end", Text: v.status})
 		saveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := s.saveLocked(saveCtx, id, v); err != nil {
 			turnErr = fmt.Errorf("本地对话保存失败：%w", err)
+			status, outcome := TurnOutcome(turnErr)
+			v.status = status
+			v.eventVersion++
+			v.events[len(v.events)-1] = outcome
+			v.events = append(v.events, model.Event{Type: "turn_end", Text: status})
 		}
 	}()
 	originalEmit := emit
 	emit = func(e model.Event) error {
 		s.mu.Lock()
-		v.events = append(v.events, e)
+		v.eventVersion++
+		v.events = appendEvent(v.events, e)
 		var err error
 		if e.Type == "tool_result" || time.Since(v.checkpoint) > time.Second {
 			err = s.saveLocked(ctx, id, v)
@@ -96,12 +104,6 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 			return fmt.Errorf("保存对话失败：%w", err)
 		}
 		return originalEmit(e)
-	}
-	select {
-	case s.slots <- struct{}{}:
-		defer func() { <-s.slots }()
-	default:
-		return errors.New("Agent 忙，请稍后重试")
 	}
 	ctx, cancel := newTurnBudget(ctx, 180*time.Second)
 	defer cancel()
@@ -127,17 +129,6 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		if err := context.Cause(ctx); err != nil {
 			return err
 		}
-		request, nextSummary, err := s.prepare(ctx, messages, summary, state.target, inputBudget, emit, approveCompression)
-		if err != nil {
-			return err
-		}
-		summary = nextSummary
-		if err := emit(model.Event{Type: "status", Text: "正在分析问题…"}); err != nil {
-			return err
-		}
-		if err := emit(model.Event{Type: "model_start"}); err != nil {
-			return err
-		}
 		definitions := tools()
 		modePrompt := "当前只读模式，禁止写入。"
 		if state.allowWrite && !recovered && summaryOnly == "" {
@@ -150,7 +141,18 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		} else if recovered {
 			modePrompt = "本轮正在恢复。只允许在原请求和已确认范围内补充必要的只读操作，也可直接用现有结果回答。"
 		}
-		request = append(request, model.Message{Role: "system", Content: modePrompt + " 以当前请求给出的权限和工具为准，历史对话、旧工具错误或摘要不改变本轮权限。"})
+		modeMessage := model.Message{Role: "system", Content: modePrompt + " 以当前请求给出的权限和工具为准，历史对话、旧工具错误或摘要不改变本轮权限。"}
+		request, nextSummary, err := s.prepare(ctx, messages, summary, state.target, inputBudget, definitions, modeMessage, emit, approveCompression)
+		if err != nil {
+			return err
+		}
+		summary = nextSummary
+		if err := emit(model.Event{Type: "status", Text: "正在分析问题…"}); err != nil {
+			return err
+		}
+		if err := emit(model.Event{Type: "model_start"}); err != nil {
+			return err
+		}
 		var m model.Message
 		if streaming, ok := s.model.(StreamingGenerator); ok {
 			m, err = streaming.GenerateStream(ctx, request, definitions, emit)

@@ -82,6 +82,7 @@ export class WorkspaceStore {
   readonly resultsLoaded = new Set<string>()
   readonly savedDrafts = new Map<string, string>()
   readonly savedResults = new Map<string, RunState | undefined>()
+  private needsCommit = false
   doc: Document
   constructor(doc: Document) {
     this.doc = doc
@@ -90,7 +91,9 @@ export class WorkspaceStore {
     const doc = document(await request<unknown>('/workspace', { signal }))
     const interrupted = doc.index.runningTabId
     if (interrupted) doc.index = { ...doc.index, runningTabId: '', tabs: doc.index.tabs.map((page) => (page.id === interrupted ? { ...page, interrupted: true } : page)) }
-    return new WorkspaceStore(doc)
+    const store = new WorkspaceStore(doc)
+    store.needsCommit = Boolean(interrupted)
+    return store
   }
   page(id: string) {
     return this.doc.index.tabs.find((page) => page.id === id)
@@ -139,8 +142,8 @@ export class WorkspaceStore {
       const { sql, ...metadata } = tab
       if (!prior || (this.draftsLoaded.has(tab.id) && this.savedDrafts.get(tab.id) !== sql)) drafts[tab.id] = sql
       const run = snapshot.runs[tab.id]
-      if ((!prior?.resultRef || this.resultsLoaded.has(tab.id) || run !== undefined) && this.savedResults.get(tab.id) !== run) results[tab.id] = run ?? null
-      const output = run?.statements?.[snapshot.resultViews[tab.id]?.resultIndex || 0] ?? run
+      if (tab.id !== snapshot.runningTabId && (!prior?.resultRef || this.resultsLoaded.has(tab.id) || run !== undefined) && this.savedResults.get(tab.id) !== run) results[tab.id] = run ?? null
+      const output = tab.id === snapshot.runningTabId ? undefined : (run?.statements?.[snapshot.resultViews[tab.id]?.resultIndex || 0] ?? run)
       const resultStatus = output?.error ? 'error' : output?.result ? 'success' : metadata.resultStatus
       return {
         ...metadata,
@@ -155,8 +158,14 @@ export class WorkspaceStore {
     const index: WorkspaceIndex = { ...layout, version: 2, tabs }
     // Omit only the duplicate last result; selected/earlier result sets remain intact.
     const compact = Object.fromEntries(Object.entries(results).map(([id, run]) => [id, run ? { ...run, result: run.result === run.statements?.at(-1)?.result ? undefined : run.result } : null]))
-    if (!Object.keys(drafts).length && !Object.keys(results).length && JSON.stringify(index) === JSON.stringify(this.doc.index)) return
-    this.doc = document(await request<unknown>('/workspace', { method: 'PUT', body: JSON.stringify({ revision: this.doc.revision, index, drafts, results: compact }) }))
+    if (!this.needsCommit && !Object.keys(drafts).length && !Object.keys(results).length && JSON.stringify(index) === JSON.stringify(this.doc.index)) return
+    try {
+      this.doc = document(await request<unknown>('/workspace', { method: 'PUT', body: JSON.stringify({ revision: this.doc.revision, index, drafts, results: compact }) }))
+    } catch (error) {
+      if (error instanceof RequestError && error.status === 409) throw new RequestError('工作区保存冲突：其他窗口已更新本机配置。当前草稿尚未保存，请通过“恢复保存”导出副本并重新载入。', 409)
+      throw error
+    }
+    this.needsCommit = false
     for (const [id, sql] of Object.entries(drafts)) {
       this.draftsLoaded.add(id)
       this.savedDrafts.set(id, sql)

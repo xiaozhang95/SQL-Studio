@@ -1,15 +1,15 @@
 import type { EditorView } from '@codemirror/view'
 import { App as AntApp, Button } from 'antd'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
 import { useSidebarWidth } from '@/hooks/useSidebarWidth'
-import { executeQuery, getConnectionGroups, getConnections, deleteConnection as removeConnection } from '@/services/database'
-import type { Column, Connection, QueryResult } from '@/typings/database'
-import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
+import { deleteConnection as removeConnection } from '@/services/database'
+import type { Column, Connection } from '@/typings/database'
+import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
 import { saveSQL } from '@/utils/sqlSave'
 
@@ -24,56 +24,67 @@ import { useConnectionGroups } from '../useConnectionGroups'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useDataExport } from '../useDataExport'
 import { useObjectManagement } from '../useObjectManagement'
+import { useQueryExecution } from '../useQueryExecution'
 import { useQueryHistory } from '../useQueryHistory'
+import { useQuerySession } from '../useQuerySession'
+import { useQueryShortcut } from '../useQueryShortcut'
+import { useWorkspaceConnections } from '../useWorkspaceConnections'
 import { useWorkspaceEditor } from '../useWorkspaceEditor'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
+import { useWorkspaceRecovery } from '../useWorkspaceRecovery'
 
 const emptyScope: QueryScope = { connectionId: '', database: '', schema: '', table: '' }
 const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query', sql: '' }
 
 /** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
-export const useWorkspace = () => {
+export const useWorkspace = (active = true) => {
   const { message, modal } = AntApp.useApp()
-  const [connections, setConnections] = useState<Connection[]>([])
-  const [savedGroups, setSavedGroups] = useState<string[]>([defaultConnectionGroup])
-  const groups = useMemo(
-    () => [
-      defaultConnectionGroup,
-      ...[...new Set([...savedGroups, ...connections.map((item) => connectionGroupName(item.group))])].filter((name) => name !== defaultConnectionGroup).sort((a, b) => a.localeCompare(b, 'zh-CN'))
-    ],
-    [savedGroups, connections]
-  )
-  const [connectionLoading, setConnectionLoading] = useState(true)
-  const [connectionError, setConnectionError] = useState('')
   const [refresh, setRefresh] = useState(0)
   const [connectionModal, setConnectionModal] = useState(false)
   const [editing, setEditing] = useState<Connection>()
-  const [tabs, setTabs] = useState<WorkspaceTab[]>([])
-  const [activeTab, setActiveTab] = useState('')
-  const activeTabRef = useRef('')
-  const [runs, setRuns] = useState<Record<string, RunState>>({})
-  const [resultViews, setResultViews] = useState<Record<string, ResultView>>({})
-  const [editorLayouts, setEditorLayouts] = useState<Record<string, EditorLayout>>({})
+  const {
+    tabs,
+    setTabs,
+    activeTab,
+    setActiveTab,
+    activeTabRef,
+    runs,
+    setRuns,
+    resultViews,
+    setResultViews,
+    editorLayouts,
+    setEditorLayouts,
+    runningTabId,
+    activeRunning,
+    closedPages,
+    pendingDrafts,
+    request,
+    publishResult,
+    replaceTableResult,
+    startRun,
+    finishRun,
+    cancelQuery
+  } = useQuerySession()
+  const onConnectionsLoaded = useCallback(
+    (data: Connection[]) => {
+      setTabs((previous) => previous.map((item) => (item.kind !== 'query' || data.some((value) => value.id === item.connectionId) ? item : { ...item, ...emptyScope })))
+    },
+    [setTabs]
+  )
+  const { connections, setConnections, setSavedGroups, groups, connectionLoading, connectionError, loadConnections } = useWorkspaceConnections(onConnectionsLoaded)
   const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
   const [resultHeight, setResultHeight] = useState<number>(resultPanelLayout.defaultHeight)
   const { width: sidebarWidth, setWidth: setSidebarWidth, restoreWidth: restoreSidebarWidth } = useSidebarWidth()
   const [restoringConnections, setRestoringConnections] = useState<string[] | null>(null)
-  const [runningTabId, setRunningTabId] = useState('')
   const [objectBusy, setObjectBusy] = useState(false)
   const [designerBusy, setDesignerBusy] = useState<Record<string, boolean>>({})
   const [designerDirty, setDesignerDirty] = useState<Record<string, boolean>>({})
-  const activeRunning = Boolean(runningTabId && runningTabId === activeTab)
   const [columns, setColumns] = useState<Column[]>([])
   const [ddl, setDDL] = useState('')
   const [structureError, setStructureError] = useState('')
   const [structureLoading, setStructureLoading] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historySearch, setHistorySearch] = useState('')
-  const closedPages = useRef(new Set<string>())
-  const pendingDrafts = useRef(new Map<string, string>())
-  useLayoutEffect(() => {
-    for (const [id, sql] of pendingDrafts.current) if (!tabs.some((page) => page.id === id) || tabs.find((page) => page.id === id)?.sql === sql) pendingDrafts.current.delete(id)
-  }, [tabs])
   const editorSession = useWorkspaceEditor({
     layouts: editorLayouts,
     commit: ({ id, sql, layout }) => {
@@ -90,9 +101,7 @@ export const useWorkspace = () => {
     }
   })
   const editor = editorSession.editor
-  const request = useRef<AbortController | null>(null)
   const closingScope = useRef(false)
-  const executeRef = useRef<() => void>(() => {})
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, schema: selectedSchema = '', table: selectedTable } = tab
   const connection = connections.find((item) => item.id === connectionId)
@@ -104,12 +113,15 @@ export const useWorkspace = () => {
     // 列表失败/尚未恢复时不能把暂时的空列表当成所有连接已删除。
     if (historyStore.ready && !connectionLoading && !connectionError) pruneHistory(connections.map((item) => item.id))
   }, [historyStore.ready, connectionLoading, connectionError, connections, pruneHistory])
-  const validateDatabases = useCallback((id: string, databases: string[]) => {
-    setExplorer((previous) => explorerAfterDatabasesLoaded(previous, id, databases))
-    setTabs((previous) =>
-      previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', schema: '', table: '' } : item))
-    )
-  }, [])
+  const validateDatabases = useCallback(
+    (id: string, databases: string[]) => {
+      setExplorer((previous) => explorerAfterDatabasesLoaded(previous, id, databases))
+      setTabs((previous) =>
+        previous.map((item) => (item.kind === 'query' && item.connectionId === id && item.database && !databases.includes(item.database) ? { ...item, database: '', schema: '', table: '' } : item))
+      )
+    },
+    [setTabs]
+  )
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
   const dataExport = useDataExport((id, db) => canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db))
@@ -139,7 +151,7 @@ export const useWorkspace = () => {
   const tableDesignerCommitted = useCallback(
     (id: string, change: ObjectChange) =>
       setTabs((previous) => previous.map((page) => (page.id === id ? { ...page, kind: 'table-design', table: change.name, title: change.name + ' · 设计' } : page))),
-    []
+    [setTabs]
   )
   function isTableDesignerBlocked(page: WorkspaceTab) {
     return (
@@ -188,16 +200,11 @@ export const useWorkspace = () => {
   const storage = useWorkspacePersistence(
     snapshot,
     (saved) => {
-      const restoredRuns = { ...saved.runs }
-      if (saved.runningTabId && restoredRuns[saved.runningTabId]) {
-        const interrupted = restoredRuns[saved.runningTabId]
-        restoredRuns[saved.runningTabId] = { ...interrupted, interrupted: true, error: interrupted.result ? interrupted.error : '页面刷新中断了上次执行，请手动重新运行。' }
-      }
       setTabs(saved.tabs)
       const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
       setActiveTab(active)
       activeTabRef.current = active
-      setRuns(restoredRuns)
+      setRuns(saved.runs)
       setResultViews(saved.resultViews)
       setEditorLayouts(saved.editorLayouts)
       const restoredConnectionIds = new Set(saved.openedConnections)
@@ -268,11 +275,23 @@ export const useWorkspace = () => {
       setExplorer((previous) => ({ ...previous, expanded: previous.expanded.map((key) => (key === oldKey ? newKey : key)), selected: previous.selected.map((key) => (key === oldKey ? newKey : key)) }))
     }
   })
-  const tabBusy = Boolean(runningTabId) || objectBusy || Boolean(objectManagement.dialog) || connectionGroups.saving || Boolean(connectionGroups.dialog) || Object.values(designerBusy).some(Boolean)
+  const queryRunning = Boolean(runningTabId)
+  const uiBlocked = objectBusy || Boolean(objectManagement.dialog) || connectionGroups.saving || Boolean(connectionGroups.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
+  const tabBusy = queryRunning || uiBlocked
   const running = tabBusy || !storage.pageReady
+  const blockedReason = queryRunning ? 'SQL 正在执行，可切换已有页面或取消执行。' : uiBlocked ? '请先完成或关闭当前弹窗及保存操作。' : !storage.pageReady ? '正在加载当前页面。' : ''
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
   const saving = storage.saving || editorSession.pending || historyStore.saving
+  const recoverStorage = useWorkspaceRecovery({
+    blocked: tabBusy || historyOpen || Object.values(designerDirty).some(Boolean),
+    histories: historyStore.histories,
+    capture: async (signal) => {
+      editorSession.flush()
+      const pages = tabs.map((page) => ({ ...page, sql: page.id === activeTabRef.current && page.kind === 'query' ? getCurrentSQL() : (pendingDrafts.current.get(page.id) ?? page.sql) }))
+      return { ...snapshot, tabs: await storage.draftsFor(pages, signal) }
+    }
+  })
   useEffect(() => {
     if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
@@ -297,7 +316,7 @@ export const useWorkspace = () => {
     return () => {
       stale = true
     }
-  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded])
+  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
 
   const reconciledTabs = useMemo(
     () =>
@@ -319,41 +338,6 @@ export const useWorkspace = () => {
     setExplorer((previous) => ({ ...previous, ...patch }))
   }
 
-  const applyConnections = useCallback((data: Connection[]) => {
-    setConnections(data)
-    setTabs((previous) => previous.map((item) => (item.kind !== 'query' || data.some((value) => value.id === item.connectionId) ? item : { ...item, ...emptyScope })))
-  }, [])
-  const loadConnections = useCallback(async () => {
-    setConnectionLoading(true)
-    setConnectionError('')
-    try {
-      const [data, groupNames] = await Promise.all([getConnections(), getConnectionGroups()])
-      applyConnections(data)
-      setSavedGroups(groupNames)
-    } catch (error) {
-      setConnectionError(error instanceof Error ? error.message : '连接列表加载失败')
-    } finally {
-      setConnectionLoading(false)
-    }
-  }, [applyConnections])
-  useEffect(() => {
-    const controller = new AbortController()
-    Promise.all([getConnections(controller.signal), getConnectionGroups(controller.signal)])
-      .then(([data, groupNames]) => {
-        if (!controller.signal.aborted) {
-          applyConnections(data)
-          setSavedGroups(groupNames)
-        }
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted) setConnectionError(error.message)
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setConnectionLoading(false)
-      })
-    return () => controller.abort()
-  }, [applyConnections])
-  useEffect(() => () => request.current?.abort(), [])
   useEffect(() => {
     if (tab.kind !== 'query' || !objects.connected || !connectionId || !database || !objects.databases.includes(database) || !selectedTable) return
     let stale = false
@@ -374,18 +358,7 @@ export const useWorkspace = () => {
       stale = true
     }
   }, [activeTab, tab.kind, connectionId, database, selectedTable, refresh, objects.connected, objects.databases, loadStructure])
-  useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        event.preventDefault()
-        // 在 CodeMirror 的插入空行快捷键之前读取选区，避免选区丢失后执行整份草稿。
-        event.stopPropagation()
-        executeRef.current()
-      }
-    }
-    window.addEventListener('keydown', handler, true)
-    return () => window.removeEventListener('keydown', handler, true)
-  }, [])
+  useQueryShortcut({ enabled: active && !running && storage.pageReady && !connectionModal && !historyOpen && tab.kind === 'query', editor, run: runSQL })
 
   function resetStructure(loading = false) {
     setColumns([])
@@ -481,39 +454,6 @@ export const useWorkspace = () => {
     }
     const number = Math.max(0, ...tabs.filter((page) => page.kind === 'table-create').map((page) => Number(page.title.match(/^新建表 (\d+)/)?.[1]) || 0)) + 1
     createPage(kind, scope, kind === 'table-create' ? '新建表 ' + number + ' · ' + scope.database : scope.table + ' · 设计')
-  }
-  function publishResult(id: string, value: RunState) {
-    if (closedPages.current.has(id)) return
-    setRuns((previous) => ({ ...previous, [id]: { ...value, id: crypto.randomUUID() } }))
-  }
-  function replaceTableResult(id: string, result: QueryResult) {
-    setRuns((previous) => {
-      const run = previous[id]
-      if (!run || run.kind !== 'data') return previous
-      return {
-        ...previous,
-        [id]: {
-          ...run,
-          id: crypto.randomUUID(),
-          result,
-          error: undefined,
-          statements: run.statements?.map((statement, index) => (index === 0 ? { ...statement, result, error: undefined } : statement))
-        }
-      }
-    })
-  }
-  function startRun(id: string, value: RunState) {
-    const controller = new AbortController()
-    request.current = controller
-    setRunningTabId(id)
-    publishResult(id, value)
-    setResultViews((previous) => ({ ...previous, [id]: { search: '', page: 1, resultIndex: 0 } }))
-    return controller
-  }
-  function finishRun(controller: AbortController) {
-    if (request.current !== controller) return
-    request.current = null
-    setRunningTabId('')
   }
   function selectConnection(id: string) {
     if (running || objects.snapshots[id]?.status !== 'connected') return
@@ -870,93 +810,7 @@ export const useWorkspace = () => {
       finishRun(controller)
     }
   }
-  async function executeSQL(statement: string, scope: QueryScope, tabId: string, kind: WorkspacePageKind = 'query') {
-    const target = connections.find((item) => item.id === scope.connectionId)
-    if (!target || objects.snapshots[target.id]?.status !== 'connected' || running || request.current) return
-    let statements: string[]
-    try {
-      statements = getDatabaseAdapter(target.type).splitStatements(statement)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'SQL 解析失败')
-      return
-    }
-    if (!statements.length) {
-      message.info('请先输入 SQL 语句')
-      return
-    }
-    const source = `${target.name} / ${scope.database || '未选择数据库'}${scope.schema ? ' / ' + scope.schema : ''}`
-    const title = kind === 'data' ? `${getDatabaseAdapter(target.type).tableLabel(scope.table)} · 数据` : 'SQL 结果'
-    const startedAt = new Date().toISOString()
-    const batchStart = performance.now()
-    const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
-    const completed: StatementRun[] = []
-    let executionDatabase = scope.database
-    try {
-      // 驱动继续保持单语句；整批固定连接、取消信号和运行锁，默认库跟随成功的 USE，逐条保留结果与历史。
-      for (const [index, sql] of statements.entries()) {
-        const start = performance.now()
-        const item: HistoryItem = {
-          id: crypto.randomUUID(),
-          sql,
-          database: executionDatabase,
-          connectionId: target.id,
-          connectionName: target.name,
-          databaseType: target.type,
-          schema: scope.schema,
-          time: new Date().toISOString(),
-          durationMs: 0,
-          ok: false
-        }
-        const entry: StatementRun = { sql, database: executionDatabase, schema: scope.schema }
-        try {
-          if (controller.signal.aborted) throw new Error('请求已取消')
-          entry.result = await executeQuery(
-            target.id,
-            { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true } : {}) },
-            controller.signal
-          )
-          if (controller.signal.aborted) throw new Error('请求已取消')
-          const selectedDatabase = getDatabaseAdapter(target.type).useDatabase(sql)
-          if (selectedDatabase !== undefined) {
-            executionDatabase = selectedDatabase
-            setTabs((previous) =>
-              previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, schema: '', table: '' } : page))
-            )
-          }
-          item.ok = true
-          item.durationMs = entry.result.durationMs
-          if (!entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
-        } catch (error) {
-          entry.result = undefined
-          const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
-          const remaining = statements.length - index - 1
-          entry.error = `${reason}${remaining ? `\n后续 ${remaining} 条语句未执行。` : ''}`
-          item.error = reason
-          item.durationMs = Math.round(performance.now() - start)
-        }
-        entry.durationMs = item.durationMs
-        completed.push(entry)
-        appendHistory(item)
-        publishResult(tabId, {
-          scope: { ...scope },
-          kind,
-          result: entry.result,
-          error: entry.error,
-          source,
-          title,
-          statements: [...completed],
-          statementCount: statements.length,
-          startedAt,
-          endedAt: entry.error || index === statements.length - 1 ? new Date().toISOString() : undefined,
-          durationMs: Math.round(performance.now() - batchStart)
-        })
-        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
-        if (entry.error) break
-      }
-    } finally {
-      finishRun(controller)
-    }
-  }
+  const executeSQL = useQueryExecution({ connections, objects, running, request, message, startRun, finishRun, publishResult, setTabs, setResultViews, appendHistory })
   const refreshScope = tab.kind === 'query' ? batch?.scope : tab
   const canRefreshResult = Boolean(run && refreshScope && objects.snapshots[refreshScope.connectionId]?.status === 'connected' && (tab.kind !== 'query' || statementRun?.sql))
   async function refreshResult() {
@@ -997,9 +851,6 @@ export const useWorkspace = () => {
     const draft = getCurrentSQL()
     executeCurrentSQL(sql ?? draft)
   }
-  useEffect(() => {
-    executeRef.current = runSQL
-  })
   function deleteConnection(id: string) {
     const target = connections.find((item) => item.id === id)
     if (!target || running) return
@@ -1049,7 +900,6 @@ export const useWorkspace = () => {
   }
 
   const closeTab = (key: string) => closeTabs(key)
-  const cancelQuery = () => request.current?.abort()
   const onEditorReady = (view: EditorView) => editorSession.attach(activeTabRef.current, view)
   const onEditorDispose = editorSession.detach
   const getEditorHistory = editorSession.history
@@ -1081,6 +931,7 @@ export const useWorkspace = () => {
     pageLoadError: storage.loadError,
     retryPage: storage.retryPage,
     storageError,
+    recoverStorage,
     saving,
     explorer,
     updateExplorer,
@@ -1094,6 +945,9 @@ export const useWorkspace = () => {
     runs,
     resultViews,
     running,
+    queryRunning,
+    uiBlocked,
+    blockedReason,
     tabBusy,
     runningTabId,
     activeRunning,

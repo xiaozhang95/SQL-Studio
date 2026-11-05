@@ -38,7 +38,11 @@ func (c *Client) openScopedRequest(ctx context.Context, connection model.Connect
 	lease := &requestLease{id: connection.ID, database: database, cancel: cancel, done: make(chan struct{})}
 	c.active[lease] = true
 	c.mu.Unlock()
-	db, err := c.open(connection, database)
+	open := c.open
+	if matched, _ := ctx.Value(matchRowsKey{}).(bool); matched {
+		open = c.openMatched
+	}
+	db, err := open(connection, database)
 	var once sync.Once
 	release := func() {
 		once.Do(func() {

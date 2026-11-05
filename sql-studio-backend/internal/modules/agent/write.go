@@ -1,11 +1,10 @@
-package chat
+package agent
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	model "sql-studio-backend/internal/model/agent"
-	"strings"
 )
 
 type WriteDatabase interface {
@@ -16,57 +15,16 @@ type WriteDatabase interface {
 // executable comments, routines and dynamic SQL that could bypass delete checks.
 func ValidateWriteSQL(sql string) error {
 	deny := errors.New("完全访问模式仍禁止删除：DELETE、DROP、TRUNCATE、REPLACE及多语句、存储程序、动态SQL不可执行。仅提供命令和风险提示，由用户自行操作")
-	sql = strings.TrimSpace(sql)
-	if len(sql) == 0 || len(sql) > 16000 {
-		return deny
+	parsed, err := agentSQLTokens(sql)
+	if err != nil {
+		return err
 	}
-	var tokens []string
-	for i := 0; i < len(sql); {
-		c := sql[i]
-		if c == '\'' || c == '"' || c == '`' {
-			quote := c
-			i++
-			closed := false
-			for i < len(sql) {
-				if sql[i] == '\\' {
-					return deny
-				}
-				if sql[i] == quote {
-					i++
-					if i < len(sql) && sql[i] == quote {
-						i++
-						continue
-					}
-					closed = true
-					break
-				}
-				i++
-			}
-			if !closed {
-				return deny
-			}
-			tokens = append(tokens, "IDENTIFIER")
-			continue
+	tokens := make([]string, len(parsed))
+	for i, token := range parsed {
+		tokens[i] = token.word()
+		if token.quote != 0 {
+			tokens[i] = "IDENTIFIER"
 		}
-		if c == ';' {
-			if strings.TrimSpace(sql[i+1:]) != "" {
-				return deny
-			}
-			break
-		}
-		if c == '$' || c == '#' || (i+1 < len(sql) && ((c == '-' && sql[i+1] == '-') || (c == '/' && sql[i+1] == '*'))) {
-			return deny
-		}
-		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' {
-			start := i
-			i++
-			for i < len(sql) && ((sql[i] >= 'a' && sql[i] <= 'z') || (sql[i] >= 'A' && sql[i] <= 'Z') || (sql[i] >= '0' && sql[i] <= '9') || sql[i] == '_') {
-				i++
-			}
-			tokens = append(tokens, strings.ToUpper(sql[start:i]))
-			continue
-		}
-		i++
 	}
 	if len(tokens) == 0 {
 		return deny
@@ -97,10 +55,6 @@ func ValidateWriteSQL(sql string) error {
 		case "DELETE", "DROP", "TRUNCATE", "REPLACE", "CALL", "EXEC", "EXECUTE", "PREPARE", "FUNCTION", "PROCEDURE", "TRIGGER", "EVENT", "RULE", "COPY", "LOAD", "OUTFILE", "DUMPFILE", "DISCARD", "DETACH", "IMPORT":
 			return deny
 		}
-	}
-	parsed, err := agentSQLTokens(sql)
-	if err != nil {
-		return err
 	}
 	relations, err := agentRelations(parsed, "", false)
 	if err != nil {

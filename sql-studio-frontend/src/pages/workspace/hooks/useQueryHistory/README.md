@@ -9,3 +9,5 @@ clearHistory(id) 移除该连接记录；pruneHistory(connectionIds) 清理已�
 当前缺失历史配置直接初始化空历史，不再读取浏览器旧历史。
 
 恢复阶段只校验/截取历史，不用默认 MySQL 方言重写全部引擎 SQL；追加按 HistoryItem.databaseType 选择清理器，载入按目标查询页适配器处理，避免破坏 PostgreSQL 美元引号函数体。
+
+返回 histories 供保存失败恢复副本使用。表数据浏览不调用 appendHistory，避免挤出用户编写的查询；SQL 窗口手动运行和重新执行仍记录历史。

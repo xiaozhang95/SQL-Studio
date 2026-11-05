@@ -1,2 +1,2 @@
-// Package deepseek implements bounded non-thinking Chat Completions tool calls.
-package deepseek
+// Package agentstream implements bounded non-thinking Chat Completions tool calls.
+package agentstream

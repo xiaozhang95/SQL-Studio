@@ -46,4 +46,4 @@ export type QueryResult = {
   truncated: boolean
   isQuery: boolean
 }
-export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; limit?: number }
+export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number }

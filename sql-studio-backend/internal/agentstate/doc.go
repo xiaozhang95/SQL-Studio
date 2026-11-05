@@ -1,2 +1,2 @@
-// Package localstate implements versioned local conversation and layout files.
-package localstate
+// Package agentstate implements versioned local conversation and layout files.
+package agentstate

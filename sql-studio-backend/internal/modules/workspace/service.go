@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"regexp"
 	"sql-studio-backend/internal/model"
 	"sync"
@@ -19,6 +20,7 @@ type Service struct {
 	repository Repository
 	mu         sync.Mutex
 	collected  time.Time
+	collecting bool
 }
 
 func New(repository Repository) *Service { return &Service{repository: repository} }
@@ -85,14 +87,26 @@ func (s *Service) Commit(ctx context.Context, input model.WorkspaceCommit) (mode
 	doc, err := s.repository.CommitWorkspace(ctx, input)
 	if err == nil {
 		s.mu.Lock()
-		collect := time.Since(s.collected) > 5*time.Second
+		collect := !s.collecting && time.Since(s.collected) > 5*time.Second
 		if collect {
 			s.collected = time.Now()
+			s.collecting = true
 		}
 		s.mu.Unlock()
 		if collect {
 			if collector, ok := s.repository.(interface{ CollectWorkspaceParts(context.Context) error }); ok {
-				_ = collector.CollectWorkspaceParts(ctx)
+				go func() {
+					defer func() { s.mu.Lock(); s.collecting = false; s.mu.Unlock() }()
+					cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+					if err := collector.CollectWorkspaceParts(cleanupCtx); err != nil {
+						slog.Warn("工作区旧内容回收未完成", "error", err)
+					}
+				}()
+			} else {
+				s.mu.Lock()
+				s.collecting = false
+				s.mu.Unlock()
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package chat
+package agent
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"sync"
 	"time"
@@ -15,17 +15,20 @@ import (
 )
 
 type session struct {
-	revision    uint64
-	title       string
-	customTitle bool
-	status      string
-	events      []model.Event
-	summary     model.ContextSummary
-	checkpoint  time.Time
-	state       toolState
-	messages    []model.Message
-	busy        bool
-	used        time.Time
+	eventVersion uint64
+	persistMu    sync.Mutex
+	saving       int
+	revision     uint64
+	title        string
+	customTitle  bool
+	status       string
+	events       []model.Event
+	summary      model.ContextSummary
+	checkpoint   time.Time
+	state        toolState
+	messages     []model.Message
+	busy         bool
+	used         time.Time
 }
 type toolState struct {
 	allowWrite           bool
@@ -44,6 +47,8 @@ func (v toolState) clone() toolState {
 }
 
 type Service struct {
+	loading   map[string]chan struct{}
+	catalogMu sync.Mutex
 	approvals map[string]*pendingApproval
 	mu        sync.Mutex
 	sessions  map[string]*session
@@ -54,7 +59,7 @@ type Service struct {
 }
 
 func New(g Generator, db Database, repositories ...Repository) *Service {
-	s := &Service{approvals: map[string]*pendingApproval{}, sessions: map[string]*session{}, model: g, db: db, slots: make(chan struct{}, 2)}
+	s := &Service{loading: map[string]chan struct{}{}, approvals: map[string]*pendingApproval{}, sessions: map[string]*session{}, model: g, db: db, slots: make(chan struct{}, 2)}
 	if len(repositories) > 0 {
 		s.repo = repositories[0]
 	}
@@ -63,6 +68,8 @@ func New(g Generator, db Database, repositories ...Repository) *Service {
 
 // Create starts an unbound conversation without accessing a database.
 func (s *Service) Create(ctx context.Context) (string, error) {
+	s.catalogMu.Lock()
+	defer s.catalogMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.createLocked(ctx)
@@ -70,13 +77,17 @@ func (s *Service) Create(ctx context.Context) (string, error) {
 
 // Ensure creates only when the persistent index is empty, including concurrent callers.
 func (s *Service) Ensure(ctx context.Context) (string, error) {
+	s.catalogMu.Lock()
+	defer s.catalogMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
 	if s.repo != nil {
+		s.mu.Unlock()
 		items, err := s.repo.List(ctx)
+		s.mu.Lock()
 		if err != nil {
 			return "", err
 		}
@@ -119,7 +130,7 @@ func (s *Service) Rename(ctx context.Context, id, title string) (model.Conversat
 	if err != nil {
 		return model.ConversationInfo{}, err
 	}
-	if v.busy {
+	if v.busy || v.saving > 0 {
 		return model.ConversationInfo{}, errors.New("请先停止当前请求再重命名")
 	}
 	oldTitle, oldCustom := v.title, v.customTitle
@@ -130,17 +141,29 @@ func (s *Service) Rename(ctx context.Context, id, title string) (model.Conversat
 	}
 	return info(id, v), nil
 }
-func (s *Service) Delete(id string) error {
+func (s *Service) Delete(ctx context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	s.catalogMu.Lock()
+	defer s.catalogMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	v := s.sessions[id]
-	if v != nil && v.busy {
+	v, err := s.loadLocked(ctx, id)
+	if err != nil {
+		return err
+	}
+	if v.busy || v.saving > 0 {
 		return errors.New("请先停止当前请求")
 	}
+	v.busy = true
+	s.mu.Unlock()
 	if s.repo != nil {
-		if err := s.repo.Delete(context.Background(), id); err != nil {
-			return err
-		}
+		err = s.repo.Delete(ctx, id)
+	}
+	s.mu.Lock()
+	v.busy = false
+	if err != nil {
+		return err
 	}
 	delete(s.sessions, id)
 	return nil

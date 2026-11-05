@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sql-studio-backend/internal/agentstate"
+	localstate "sql-studio-backend/internal/agentstate"
 	model "sql-studio-backend/internal/model/agent"
 	agent "sql-studio-backend/internal/modules/agent"
 	layout "sql-studio-backend/internal/modules/agentlayout"

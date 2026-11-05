@@ -23,3 +23,18 @@ func TestCompatibleProfilesAndTLS(t *testing.T) {
 		t.Fatal("legacy TLS default changed")
 	}
 }
+
+func TestMatchedRowsIsOptInPerConnection(t *testing.T) {
+	connection := model.Connection{Type: model.TypeMySQL, Host: "localhost", Port: 3306}
+	ordinary, err := driverConfig(connection, "example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	matched, err := driverConfig(connection, "example", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ordinary.ClientFoundRows || !matched.ClientFoundRows || matched.MultiStatements {
+		t.Fatal("matched row opt-in changed ordinary SQL semantics")
+	}
+}

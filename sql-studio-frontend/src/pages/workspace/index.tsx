@@ -1,4 +1,4 @@
-import { CodeOutlined, PlusOutlined } from '@ant-design/icons'
+import { CodeOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons'
 import { Alert, Button, Empty } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
@@ -23,6 +23,7 @@ import WorkspaceTabs from './components/workspaceTabs'
 import { useWorkspace } from './hooks/useWorkspace'
 
 type Props = {
+  active: boolean
   onOpenAgent: () => void
   themeReady: boolean
   themeSaving: boolean
@@ -32,8 +33,8 @@ type Props = {
   onThemeChange: (preference: ThemePreference) => void
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ onOpenAgent, themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
-  const model = useWorkspace()
+export default function Workspace({ active, onOpenAgent, themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
+  const model = useWorkspace(active)
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   const storageError = model.storageError || themeError
   const noticeError = [...new Set([storageError, model.connectionError].filter(Boolean))].join('\n')
@@ -68,6 +69,11 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
             新建查询
           </Button>
         </div>
+        {model.runningTabId && !model.activeRunning && (
+          <Button danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+            取消执行
+          </Button>
+        )}
         <SectionNavigation destination="agent" onSwitch={onOpenAgent} />
       </PageHeader>
       {noticeError && (
@@ -79,7 +85,9 @@ export default function Workspace({ onOpenAgent, themeMode, themePreference, onT
           title={storageError ? '本机配置保存不可用，当前页面仍可使用。' : '连接列表加载失败，当前页面仍可使用。'}
           description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{noticeError}</div>}
           action={
-            model.connectionError ? (
+            storageError ? (
+              <Button onClick={() => void model.recoverStorage()}>恢复保存</Button>
+            ) : model.connectionError ? (
               <Button loading={model.connectionLoading} onClick={() => void model.loadConnections()}>
                 重试
               </Button>

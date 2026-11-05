@@ -33,12 +33,7 @@ export function useWriteConfirmation() {
   function show(value: unknown, signal: AbortSignal, continuation = false) {
     let confirmation: ConfirmationRequest
     if (continuation) {
-      if (
-        !isObject(value) ||
-        typeof value.approvalId !== 'string' ||
-        typeof value.detail !== 'string' ||
-        (value.kind !== 'input' && value.kind !== 'result' && value.kind !== 'context' && value.kind !== 'recovery')
-      )
+      if (!isObject(value) || typeof value.approvalId !== 'string' || typeof value.detail !== 'string' || (value.kind !== 'input' && value.kind !== 'result' && value.kind !== 'context'))
         throw new Error('继续确认信息无效')
       confirmation = { approvalId: value.approvalId, kind: value.kind, detail: value.detail }
     } else {

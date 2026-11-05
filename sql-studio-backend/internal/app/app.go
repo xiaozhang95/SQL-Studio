@@ -8,7 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
-	"sql-studio-backend/internal/agentstate"
+	localstate "sql-studio-backend/internal/agentstate"
 	agentstream "sql-studio-backend/internal/deepseek/agent"
 	agent "sql-studio-backend/internal/modules/agent"
 	agentlayout "sql-studio-backend/internal/modules/agentlayout"

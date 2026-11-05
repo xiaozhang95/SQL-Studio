@@ -79,5 +79,5 @@ export function useQueryHistory(connectionId: string) {
       )
   }, [])
   const pruneHistory = useCallback((connectionIds: readonly string[]) => setHistories((previous) => retainConnectionHistories(previous, connectionIds)), [])
-  return { history: histories[connectionId] || [], appendHistory, clearHistory, pruneHistory, ready, saving: ready && available && savedHistories !== histories && !error, error }
+  return { histories, history: histories[connectionId] || [], appendHistory, clearHistory, pruneHistory, ready, saving: ready && available && savedHistories !== histories && !error, error }
 }

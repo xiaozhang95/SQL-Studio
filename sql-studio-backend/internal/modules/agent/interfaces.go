@@ -1,9 +1,9 @@
-package chat
+package agent
 
 import (
 	"context"
 	"encoding/json"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 )
 
 type Generator interface {

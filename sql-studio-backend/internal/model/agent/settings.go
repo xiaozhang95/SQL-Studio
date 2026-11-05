@@ -1,4 +1,4 @@
-package model
+package agentmodel
 
 // AICredentials never travels to the browser; only AIStatus is returned.
 type AICredentials struct {

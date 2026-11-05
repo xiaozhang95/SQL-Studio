@@ -8,8 +8,8 @@ import { findExplorerPage } from '../src/pages/workspace/utils/workspaceTransiti
 import { WorkspaceStore } from '../src/services/workspace/index.ts'
 
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
-const pages = source.slice(source.indexOf('  function createPage('), source.indexOf('  function publishResult('))
-const navigation = source.slice(source.indexOf('  function openExplorerPage('), source.indexOf('  async function executeSQL('))
+const pages = source.slice(source.indexOf('  function createPage('), source.indexOf('  function selectConnection('))
+const navigation = source.slice(source.indexOf('  function openExplorerPage('), source.indexOf('  const executeSQL = useQueryExecution'))
 const implementation = stripTypeScriptTypes(pages + navigation)
 
 function harness(type, view) {

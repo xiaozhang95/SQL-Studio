@@ -59,12 +59,7 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
             <Typography.Text type="secondary">
               {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
             </Typography.Text>
-            <div>
-              <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
-              <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
-                {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
-              </Typography.Text>
-            </div>
+            <Typography.Text type="secondary">通过 Go 业务模块在进程内调用</Typography.Text>
             {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && <CodeBlock text={e.text} language="json" title="请求参数" formatJson />}
           </Flex>
           {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}

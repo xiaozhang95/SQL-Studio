@@ -3,11 +3,11 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	model "sql-studio-backend/internal/model/agent"
+	agent "sql-studio-backend/internal/modules/agent"
 	"time"
 )
 
@@ -76,10 +76,9 @@ func (h *agentHandler) stream(c *gin.Context) {
 			}
 		case err := <-done:
 			completed = true
-			if errors.Is(err, model.ErrContinueCancelled) {
-				_ = emit(model.Event{Type: "stopped", Text: err.Error()})
-			} else if err != nil {
-				_ = emit(model.Event{Type: "error", Text: err.Error()})
+			_, outcome := agent.TurnOutcome(err)
+			if outcome.Type != "" {
+				_ = emit(outcome)
 			}
 			_ = emit(model.Event{Type: "done"})
 			return

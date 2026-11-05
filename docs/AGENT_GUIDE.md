@@ -88,7 +88,7 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 | `query_readonly` | 在当前目标执行一条受限的只读 SQL，最多返回 100 行 |
 | `execute_write` | 校验写入语句和范围，获得逐次确认后执行 |
 
-界面执行步骤中显示的 `POST /api/connections/:id/query` 等地址，代表工作区里对应的 HTTP 能力。Agent 在同一个 Go 进程内直接调用元数据和查询服务，`use_database` 只更新会话目标。Agent 使用独立的引擎实例，与工作区共用 4 个查询并发槽位。每次数据库操作结束就释放本次连接，用户确认和等待模型的阶段无需占用数据库连接。
+界面执行步骤只展示工具名称、参数、结果及进程内调用说明。Agent 在同一个 Go 进程内直接调用元数据和查询服务，`use_database` 只更新会话目标。Agent 使用独立的引擎实例，与工作区共用 4 个查询并发槽位。每次数据库操作结束就释放本次连接，用户确认和等待模型的阶段无需占用数据库连接。
 
 首次问「这个库有哪些表」时，可以跟踪 `list_connections` → `list_databases` → `use_database` → `list_tables`。同一会话里目标明确时可以复用。一般知识问题可以由模型直接回答。
 

@@ -132,8 +132,8 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       for (const [key, draft] of entries) {
         const value = draft.isNull ? null : draft.value
         const sql = adapter.updateCellSQL(tab.database, tab.table, columns, working, working.rows[draft.row], draft.column, value)
-        const updated = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
-        if (updated.affectedRows !== 1) throw new Error('原值已变化或保存值未产生变更，请重新打开表确认')
+        const updated = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal, true)
+        if (updated.affectedRows !== 1) throw new Error('目标行或原值已变化，请重新打开表确认')
         working.rows[draft.row][draft.column] = value
         delete pending[key]
         saved++

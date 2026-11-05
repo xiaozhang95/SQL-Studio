@@ -1,9 +1,9 @@
-package chat
+package agent
 
 import (
 	"context"
-	"sql-studio-backend/internal/agentstate"
-	"sql-studio-backend/internal/model/agent"
+	localstate "sql-studio-backend/internal/agentstate"
+	model "sql-studio-backend/internal/model/agent"
 	"testing"
 )
 
@@ -109,11 +109,11 @@ func TestServiceDeleteCannotRemoveBusySession(t *testing.T) {
 		t.Fatal(err)
 	}
 	service.sessions[id].busy = true
-	if err = service.Delete(id); err == nil {
+	if err = service.Delete(ctx, id); err == nil {
 		t.Fatal("busy conversation removed")
 	}
 	service.sessions[id].busy = false
-	if err = service.Delete(id); err != nil {
+	if err = service.Delete(ctx, id); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = New(&streamingMock{}, &fakeDB{}, localstate.New(dir)).View(ctx, id); err == nil {

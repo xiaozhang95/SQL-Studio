@@ -1,4 +1,4 @@
-package deepseek
+package agentstream
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"time"
 )

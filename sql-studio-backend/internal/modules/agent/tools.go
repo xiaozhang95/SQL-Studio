@@ -1,4 +1,4 @@
-package chat
+package agent
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sql-studio-backend/internal/model/agent"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 )
 

@@ -6,6 +6,7 @@ type QueryRequest struct {
 	SQL        string `json:"sql"`
 	Limit      int    `json:"limit"`
 	AllowWrite bool   `json:"allowWrite"`
+	MatchRows  bool   `json:"matchRows,omitempty"`
 }
 
 type ResultColumn struct {

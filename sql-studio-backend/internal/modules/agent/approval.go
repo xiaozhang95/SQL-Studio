@@ -1,4 +1,4 @@
-package chat
+package agent
 
 import (
 	"context"
@@ -81,9 +81,14 @@ func (s *Service) approveContinue(ctx context.Context, kind, detail string, emit
 }
 
 func (s *Service) awaitApproval(ctx context.Context, event string, declined error, emit func(model.Event) error, payload func(string) any) error {
-	if budget, ok := ctx.Value(turnBudgetKey{}).(*turnBudget); ok {
+	budget, _ := ctx.Value(turnBudgetKey{}).(*turnBudget)
+	if budget != nil {
 		budget.pause()
 		defer budget.resume()
+	}
+	lease, _ := ctx.Value(leaseKey{}).(*turnLease)
+	if lease != nil {
+		lease.release()
 	}
 	if err := context.Cause(ctx); err != nil {
 		return err
@@ -114,6 +119,9 @@ func (s *Service) awaitApproval(ctx context.Context, event string, declined erro
 		}
 		if !allow {
 			return declined
+		}
+		if lease != nil {
+			return lease.acquire(ctx)
 		}
 		return nil
 	case <-wait.Done():

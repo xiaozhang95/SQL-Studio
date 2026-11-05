@@ -1,11 +1,11 @@
-package chat
+package agent
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"sql-studio-backend/internal/agentstate"
-	"sql-studio-backend/internal/model/agent"
+	localstate "sql-studio-backend/internal/agentstate"
+	model "sql-studio-backend/internal/model/agent"
 	"strings"
 	"testing"
 )
