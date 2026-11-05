@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"sql-studio-backend/internal/model/agent"
 	"strings"
@@ -27,10 +28,11 @@ type session struct {
 	used        time.Time
 }
 type toolState struct {
-	allowWrite  bool
-	target      model.Target
-	connections []model.Connection
-	databases   map[string][]string
+	allowWrite           bool
+	target               model.Target
+	connections          []model.Connection
+	databases            map[string][]string
+	unavailableDatabases map[string]json.RawMessage // Only used within the current turn.
 }
 
 func (v toolState) clone() toolState {

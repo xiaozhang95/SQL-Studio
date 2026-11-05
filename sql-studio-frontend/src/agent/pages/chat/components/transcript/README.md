@@ -2,7 +2,7 @@
 
 受控entries/busy/status/expanded/onExpanded；用户消息靠右，思考与执行共用带官方蓝鲸的ProcessCard，仅支持标题折叠，不提供隐藏和恢复按钮；旧隐藏键不再影响展示。查询结果位于各自执行步骤内部，收起执行过程会一起折叠结果。Typography继承Ant Design默认字号，文本保留换行并安全显示。useRoundTranscript管理轮次选择、手动切换和末尾跟随；一次仅挂载一轮TurnContent，默认最新轮，RoundNavigation保留刻度预览与完整问题列表搜索。错误条目按提问归属，在各自回答末尾呈现。无网络请求。
 
-官方思考与回答分区，未完成片段明确标识。展开键thinking-ID/tools-ID保存在Go布局expanded中；刷新恢复，不删除记录。恢复重用相同事件折叠逻辑，不伪造思考内容。
+相邻的思考与执行步骤合并为一个折叠区，展开后按原顺序显示，未完成片段明确标识。展开键 `process-ID` 保存在 Go 布局的 expanded 中，旧的 `thinking-ID` 和 `tools-ID` 展开记录也可恢复。实时生成与历史恢复使用相同的展示分组。
 
 思考正文、执行步骤、参数及结果统一恢复Ant Design默认字号（默认14px），不单独缩小；过程标题图标也使用fontSize token对应尺寸。消息块统一使用CHAT.spacing.block（16px），同组详情使用detail（8px）。
 

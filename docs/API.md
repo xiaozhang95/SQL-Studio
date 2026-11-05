@@ -104,7 +104,7 @@ DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],co
 
 同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与SQL续写共用ai分区，空Key保留已有值。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。
 
-消息与草稿按 UTF-8 字节计算，单条最多 256 KiB。超过 64 KiB 的输入、超过 32 KiB 的单次工具结果、可压缩的上下文及可恢复的数据库读取失败会发送 `continue_confirmation`，携带 `approvalId`、`kind` 和 `detail`。`kind` 为 `input`、`result`、`context` 或 `recovery`。同意后仅继续对应步骤，拒绝以 `stopped` 和 `done` 结束。只读结果超过 256 KiB 时可自动缩小范围一次。恢复时跳过同批后续工具并重新规划，禁止改连已确认目标。不可恢复错误通过 `error` 和 `done` 结束。
+消息与草稿按 UTF-8 字节计算，单条最多 256 KiB。超过 64 KiB 的输入、超过 32 KiB 的单次工具结果和可压缩的上下文会发送 `continue_confirmation`，携带 `approvalId`、`kind` 和 `detail`。当前后端发出 `input`、`result` 或 `context`。同意后仅继续对应步骤，拒绝以 `stopped` 和 `done` 结束。列库时连接读取失败返回含 `warning` 和 `connectionId` 的 `tool_result`，同批其他工具继续走各自的流程。其他工具失败返回含 `warning` 的 `tool_result`，跳过同批后续工具，并把警告与已取得的结果交回模型。模型可在已确认范围内重新规划一次只读操作。写入失败或恢复阶段再次失败时，仅请求模型总结。会话处理错误通过 `error` 和 `done` 结束。
 
 Agent数据库连接与工作台会话状态独立，只复用已保存的连接配置和进程查询并发预算。每次数据库操作结束（含失败、取消）即释放物理连接；不改变工作台打开/关闭状态，也不要求先在工作台打开连接。Agent会话保存目标，不保留物理连接，等待模型回复和用户写入确认期间不占用连接。
 

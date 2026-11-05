@@ -13,7 +13,7 @@ import { QueryResult } from '../queryResult'
 import { RoundFooter } from '../roundFooter'
 
 interface Block {
-  type: 'message' | 'tools' | 'thinking' | 'footer'
+  type: 'message' | 'process' | 'footer'
   entries: Entry[]
 }
 function blocks(entries: Entry[]): Block[] {
@@ -28,10 +28,11 @@ function blocks(entries: Entry[]): Block[] {
     turn.push(e)
     if (e.role === 'error') continue
     const last = out[out.length - 1]
-    if (e.role === 'tool' && last?.type === 'tools') last.entries.push(e)
+    const process = e.role === 'tool' || e.role === 'thinking'
+    if (process && last?.type === 'process') last.entries.push(e)
     else
       out.push({
-        type: e.role === 'tool' ? 'tools' : e.role === 'thinking' ? 'thinking' : 'message',
+        type: process ? 'process' : 'message',
         entries: [e]
       })
   }
@@ -50,9 +51,6 @@ interface Props {
 }
 export function TurnContent({ entries, busy, waiting, locked, status, expanded, onExpanded, onEdit }: Props) {
   const { token } = theme.useToken()
-  function change(id: string, open: boolean) {
-    onExpanded(open ? [...expanded.filter((k) => k !== id), id] : expanded.filter((k) => k !== id))
-  }
   const sections = blocks(entries)
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0, paddingBottom: token.padding }}>
@@ -72,69 +70,74 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
               <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />
             </Fragment>
           )
-        if (block.type === 'thinking')
+        if (block.type === 'process') {
+          const key = `process-${first.id}`
+          const legacyKeys = block.entries.map((e) => `${e.role === 'thinking' ? 'thinking' : 'tools'}-${e.id}`)
+          const groupKeys = new Set([key, ...legacyKeys])
+          const toolCount = block.entries.filter((entry) => entry.role === 'tool').length
+          const hasThinking = toolCount < block.entries.length
+          let title = 'DeepSeek 思考过程'
+          if (toolCount) title = `${hasThinking ? '思考与执行' : '执行过程'} · ${toolCount} 项操作`
+          else if (block.entries.some((entry) => entry.streaming)) title = 'DeepSeek 正在思考…'
+          else if (block.entries.some((entry) => entry.incomplete)) title = '思考过程（未完成）'
+          let toolNumber = 0
           return (
             <ProcessCard
-              key={first.id}
-              expanded={expanded.includes(`thinking-${first.id}`)}
-              onExpand={(open) => change(`thinking-${first.id}`, open)}
-              title={first.streaming ? 'DeepSeek 正在思考…' : first.incomplete ? '思考过程（未完成）' : 'DeepSeek 思考过程'}
+              key={key}
+              title={title}
+              icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
+              expanded={expanded.some((id) => groupKeys.has(id))}
+              onExpand={(open) => {
+                const remaining = expanded.filter((id) => !groupKeys.has(id))
+                onExpanded(open ? [...remaining, key] : remaining)
+              }}
             >
-              <Typography.Paragraph
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                  margin: 0
-                }}
-              >
-                {first.text}
-              </Typography.Paragraph>
-            </ProcessCard>
-          )
-        if (block.type === 'tools')
-          return (
-            <ProcessCard
-              key={first.id}
-              title={`执行过程 · ${block.entries.length} 项操作`}
-              icon={<CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
-              expanded={expanded.includes(`tools-${first.id}`)}
-              onExpand={(open) => change(`tools-${first.id}`, open)}
-            >
-              <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
-                {block.entries.map((e, index) => (
-                  <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
-                    <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-                      <Typography.Text type="secondary">
-                        {index + 1}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
-                      </Typography.Text>
-                      <div>
-                        <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
-                        <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
-                          {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
+              <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
+                {block.entries.map((e) => {
+                  if (e.role === 'thinking')
+                    return (
+                      <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
+                        <Typography.Text type="secondary">{e.streaming ? 'DeepSeek 正在思考…' : e.incomplete ? '思考过程（未完成）' : '思考过程'}</Typography.Text>
+                        <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{e.text}</Typography.Paragraph>
+                      </Flex>
+                    )
+                  toolNumber++
+                  return (
+                    <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
+                      <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                        <Typography.Text type="secondary">
+                          {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
                         </Typography.Text>
-                      </div>
-                      {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && (
-                        <Flex vertical gap={CHAT.spacing.detail}>
-                          <Typography.Text type="secondary">请求参数</Typography.Text>
-                          <Typography.Paragraph
-                            copyable={{ text: e.text }}
-                            style={{
-                              whiteSpace: 'pre-wrap',
-                              overflowWrap: 'anywhere',
-                              margin: 0
-                            }}
-                          >
-                            {e.text}
-                          </Typography.Paragraph>
-                        </Flex>
-                      )}
+                        <div>
+                          <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
+                          <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
+                            {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
+                          </Typography.Text>
+                        </div>
+                        {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && (
+                          <Flex vertical gap={CHAT.spacing.detail}>
+                            <Typography.Text type="secondary">请求参数</Typography.Text>
+                            <Typography.Paragraph
+                              copyable={{ text: e.text }}
+                              style={{
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'anywhere',
+                                margin: 0
+                              }}
+                            >
+                              {e.text}
+                            </Typography.Paragraph>
+                          </Flex>
+                        )}
+                      </Flex>
+                      {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
                     </Flex>
-                    {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
-                  </Flex>
-                ))}
+                  )
+                })}
               </Flex>
             </ProcessCard>
           )
+        }
         return block.entries.map((e) => {
           const user = e.role === 'user'
           return (

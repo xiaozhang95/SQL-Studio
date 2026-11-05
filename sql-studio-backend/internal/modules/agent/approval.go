@@ -24,6 +24,10 @@ const (
 
 var errWriteCancelled = errors.New("用户取消本次操作，未执行SQL")
 
+type writeApprovalError struct{ error }
+
+func (e writeApprovalError) Unwrap() error { return e.error }
+
 // ConfirmWrite resolves a single-use, unguessable approval bound to an active tool call.
 func (s *Service) ConfirmWrite(id string, allow bool) error {
 	return s.confirm(id, writeConfirmation, allow)

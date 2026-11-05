@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"sql-studio-backend/internal/model/agent"
 	"strings"
@@ -29,12 +30,32 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		if err := decode(call.Function.Arguments, &args); err != nil {
 			return nil, err
 		}
-		if _, ok := findConnection(state.connections, args.ConnectionID); !ok {
+		connection, ok := findConnection(state.connections, args.ConnectionID)
+		if !ok {
 			return nil, errors.New("请先列出连接并使用其中真实的connectionId")
+		}
+		if warning, skipped := state.unavailableDatabases[args.ConnectionID]; skipped {
+			return warning, nil
 		}
 		names, err := s.db.Databases(ctx, args.ConnectionID)
 		if err != nil {
-			return nil, err
+			if ctx.Err() != nil || !errors.Is(err, model.ErrReadOperation) {
+				return nil, err
+			}
+			warning, err := json.Marshal(map[string]string{
+				"connectionId": args.ConnectionID,
+				"warning":      fmt.Sprintf("连接 %q 的数据库列表读取失败，本轮已跳过。", connection.Name),
+				"instruction":  "根据已成功读取的结果继续。若此连接是用户指定的目标，或无法确认目标，请说明哪些连接未能检查，并向用户确认后续范围。不要将未能读取当作数据库不存在。",
+			})
+			if err != nil {
+				return nil, err
+			}
+			delete(state.databases, args.ConnectionID)
+			if state.unavailableDatabases == nil {
+				state.unavailableDatabases = make(map[string]json.RawMessage)
+			}
+			state.unavailableDatabases[args.ConnectionID] = warning
+			return warning, nil
 		}
 		state.databases[args.ConnectionID] = names
 		return json.Marshal(names)
@@ -134,7 +155,7 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 			emit = emitters[0]
 		}
 		if err := s.approveWrite(ctx, state, args.SQL, emit); err != nil {
-			return nil, err
+			return nil, writeApprovalError{err}
 		}
 		return writer.Write(ctx, state.target, args.SQL)
 	case "query_readonly":

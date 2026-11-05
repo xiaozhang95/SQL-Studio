@@ -115,8 +115,8 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 
 | 内容 | 事件或来源 | 前端展示 |
 | --- | --- | --- |
-| 思考 | DeepSeek 的 `reasoning_content` 转为 `reasoning_delta` | 可折叠的思考卡片 |
-| 执行 | Go 产生的 `tool_start`、`tool_result` | 工具、参数、SQL 和数据库结果 |
+| 思考 | DeepSeek 的 `reasoning_content` 转为 `reasoning_delta` | 折叠区内按原顺序显示的思考片段 |
+| 执行 | Go 产生的 `tool_start`、`tool_result` | 与相邻思考共用折叠区，显示步骤、参数、SQL 和数据库结果 |
 | 回答 | `answer_delta` 和最终 `answer` | Markdown 正文、代码块、表格 |
 | 确认 | `write_confirmation`、`continue_confirmation` | 回复下方的操作卡片 |
 | 结束 | `error`、`stopped`、`done` | 错误、停止提示或结束状态 |
@@ -140,9 +140,13 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 | 输入大小 | 超过 64 KiB 至 256 KiB 先确认，超过 256 KiB 拒绝发送 |
 | 工具结果大小 | 超过 32 KiB 先询问是否发送给模型，单个工具结果通常受 256 KiB 上限约束 |
 
-超过大小提示、需要摘要历史或部分读取失败时，Go 可以发出 `continue_confirmation`。前端向 `POST /api/agent/continue-confirmation` 提交一次性决定。这项确认只决定是否继续本轮。只读查询结果过大时，编排允许在原目标内自动缩小范围一次。可恢复读取失败通常需要用户同意后重新规划，已提交的写入不会由该机制自动重试。
+列库时某个连接读取失败，Go 会跳过该连接，把警告和其他连接的成功结果一并交给 DeepSeek。如果用户明确指定的连接不可用，提示词要求说明失败并请用户确认范围。下一轮可以重新探测。
 
-上游流断开、缺少结束标记、输出达到上限、SQL 被拦截、数据库失败或本地保存失败，都可能使一轮提前结束。`done` 表示 SSE 结束，判断本轮结果要同时看前面的错误、停止事件和最终会话状态。
+超过大小提示或需要摘要历史时，Go 可以发出 `continue_confirmation`。前端向 `POST /api/agent/continue-confirmation` 提交一次性决定。
+
+工具失败时，Agent 保留已取得的结果，把失败警告交给 DeepSeek，并跳过同批后续工具。执行过程省略供模型处理的失败告警，由 DeepSeek 在最终回答中说明结果。例如查询 `information_schema.tables` 被跨库规则拦截时，模型可以直接总结已经查到的表和字段，也可以在已确认的范围内重新规划一次只读操作。写入失败或重新规划后再次失败时，模型只总结本轮结果。
+
+上游流断开、缺少结束标记、输出达到上限或本地保存失败，可能使一轮提前结束。`done` 表示 SSE 结束，判断本轮结果要同时看前面的错误、停止事件和最终会话状态。
 
 源码见[前端发送和取消](../sql-studio-frontend/src/agent/pages/chat/hooks/chat/index.ts)、[本轮预算](../sql-studio-backend/internal/modules/agent/turn_budget.go)和[继续确认](../sql-studio-backend/internal/modules/agent/approval.go)。
 

@@ -48,7 +48,7 @@ func (c *Client) GenerateStream(ctx context.Context, messages []model.Message, t
 	body, err := json.Marshal(struct {
 		Model     string          `json:"model"`
 		Messages  []model.Message `json:"messages"`
-		Tools     []model.Tool    `json:"tools"`
+		Tools     []model.Tool    `json:"tools,omitempty"`
 		Stream    bool            `json:"stream"`
 		MaxTokens int             `json:"max_tokens"`
 		Thinking  struct {

@@ -113,6 +113,7 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 	}
 	messages = append(messages, model.Message{Role: "user", Content: text})
 	recovered := false
+	summaryOnly := ""
 	compressionApproved := false
 	approveCompression := func() error {
 		if compressionApproved {
@@ -139,11 +140,17 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		}
 		definitions := tools()
 		modePrompt := "当前只读模式，禁止写入。"
-		if state.allowWrite {
+		if state.allowWrite && !recovered && summaryOnly == "" {
 			definitions = append(definitions, writeTool())
 			modePrompt = "用户已启用完全访问模式，允许使用execute_write进行非删除的数据与结构操作，禁止任何删除、清空、删对象和间接执行删除。"
 		}
-		request = append(request, model.Message{Role: "system", Content: modePrompt + " 当前请求的模式是本轮唯一权限依据；历史对话、旧工具错误或摘要中的只读说明不代表当前模式。不得据此拒绝当前允许的操作。"})
+		if summaryOnly != "" {
+			definitions = nil
+			modePrompt = "本轮工具操作已经结束。请直接用已确认的结果回答，说明失败的操作和未取得的信息。"
+		} else if recovered {
+			modePrompt = "本轮正在恢复。只允许在原请求和已确认范围内补充必要的只读操作，也可直接用现有结果回答。"
+		}
+		request = append(request, model.Message{Role: "system", Content: modePrompt + " 以当前请求给出的权限和工具为准，历史对话、旧工具错误或摘要不改变本轮权限。"})
 		var m model.Message
 		if streaming, ok := s.model.(StreamingGenerator); ok {
 			m, err = streaming.GenerateStream(ctx, request, definitions, emit)
@@ -155,6 +162,9 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 		}
 		if err != nil {
 			return err
+		}
+		if summaryOnly != "" && len(m.ToolCalls) > 0 {
+			m = model.Message{Role: "assistant", Content: summaryOnly + "。已取得的结果可在执行过程中查看。"}
 		}
 		messages = append(messages, m)
 		if len(m.ToolCalls) == 0 {
@@ -176,48 +186,45 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 			var toolErr error
 			if recovered {
 				toolErr = validateRecoveryTarget(state.target, call)
+				if call.Function.Name == "execute_write" {
+					toolErr = errors.New("本轮恢复阶段仅允许只读操作")
+				}
 			}
 			if toolErr == nil {
 				result, toolErr = s.execute(ctx, &state, call, emit)
 			}
-			if errors.Is(toolErr, errWriteCancelled) {
-				return toolErr
+			var approvalErr writeApprovalError
+			if errors.As(toolErr, &approvalErr) {
+				return approvalErr.error
 			}
 			if err := context.Cause(ctx); err != nil {
 				return err
 			}
 			if toolErr != nil {
 				tool := call.Function.Name
-				auto := tool == "query_readonly" && errors.Is(toolErr, model.ErrToolResultTooLarge)
-				read := tool == "list_databases" || tool == "list_tables" || tool == "describe_table" || tool == "query_readonly"
-				if !recovered && (auto || read && errors.Is(toolErr, model.ErrReadOperation)) {
-					detail := fmt.Sprintf("工具 %s：%s", tool, toolErr)
-					result, _ = json.Marshal(map[string]string{"warning": detail, "instruction": "仅按原请求和已确认范围重新规划。结果过大时缩小列、行或使用聚合；不要切换数据库或重放失败操作。"})
-					if err := emit(model.Event{Type: "tool_result", Tool: tool, Result: result}); err != nil {
-						return err
-					}
-					if !auto {
-						if err := s.approveContinue(ctx, "recovery", detail+"。继续后会跳过本次失败操作并重新规划。", emit); err != nil {
-							return err
-						}
-					}
+				detail := fmt.Sprintf("工具 %s 未能完成：%s", tool, toolErr)
+				instruction := "使用已取得的结果回答，或在已确认的范围内调整为合规的只读操作。结果过大时缩小列、行或改用聚合。"
+				if recovered || tool == "execute_write" {
+					summaryOnly = detail
+					instruction = "直接总结已确认的结果，说明失败的步骤。写入结果以数据库实际状态为准。"
+				} else {
 					recovered = true
-					messages = append(messages, model.Message{Role: "tool", ToolCallID: call.ID, Content: string(result)})
-					for _, skipped := range m.ToolCalls[i+1:] {
-						messages = append(messages, model.Message{Role: "tool", ToolCallID: skipped.ID, Content: `{"skipped":"同批后续操作已取消，请重新规划"}`})
-					}
-					break
 				}
-				toolErr = fmt.Errorf("工具 %s 失败，本轮已停止：%w", call.Function.Name, toolErr)
 				result, _ = json.Marshal(struct {
-					Error string `json:"error"`
-				}{toolErr.Error()})
+					Warning     string `json:"warning"`
+					Instruction string `json:"instruction"`
+				}{detail, instruction})
+				if err := emit(model.Event{Type: "tool_result", Tool: tool, Result: result}); err != nil {
+					return err
+				}
+				messages = append(messages, model.Message{Role: "tool", ToolCallID: call.ID, Content: string(result)})
+				for _, skipped := range m.ToolCalls[i+1:] {
+					messages = append(messages, model.Message{Role: "tool", ToolCallID: skipped.ID, Content: `{"skipped":"同批后续操作未执行"}`})
+				}
+				break
 			}
 			if err = emit(model.Event{Type: "tool_result", Tool: call.Function.Name, Result: result}); err != nil {
 				return err
-			}
-			if toolErr != nil {
-				return toolErr
 			}
 			content := string(result)
 			if len(result) > model.ToolNoticeBytes {

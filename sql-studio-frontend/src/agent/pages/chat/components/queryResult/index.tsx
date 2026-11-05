@@ -26,7 +26,11 @@ interface Props {
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
   if (isObject(props.value) && typeof props.value.error === 'string') return null
-  if (isObject(props.value) && typeof props.value.warning === 'string') return <Alert type="warning" showIcon title={props.value.warning} />
+  if (isObject(props.value) && typeof props.value.warning === 'string') {
+    // Tool failures carry a recovery instruction for DeepSeek. Other warnings can describe a successful operation.
+    if (typeof props.value.instruction === 'string') return null
+    return <Alert type="warning" showIcon title={props.value.warning} />
+  }
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
       <ResultContent {...props} />

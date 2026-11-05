@@ -139,12 +139,47 @@ func TestLargeResultConsentUsesOriginalResult(t *testing.T) {
 	}
 }
 
+func TestSQLPolicyRejectionReturnsPriorResultsToModel(t *testing.T) {
+	ctx := context.Background()
+	db := &fakeDB{}
+	calls := 0
+	s := New(generatorFunc(func(_ context.Context, messages []model.Message, _ []model.Tool) (model.Message, error) {
+		calls++
+		if calls == 1 {
+			batch := call("list_tables", "{}")
+			query := call("query_readonly", `{"sql":"SELECT table_name FROM information_schema.tables"}`).ToolCalls[0]
+			query.ID = "metadata"
+			batch.ToolCalls = append(batch.ToolCalls, query)
+			return batch, nil
+		}
+		previous, rejected := messages[len(messages)-3], messages[len(messages)-2]
+		if !strings.Contains(previous.Content, "9007199254740993") || rejected.ToolCallID != "metadata" || !strings.Contains(rejected.Content, errAgentSQL.Error()) {
+			t.Fatalf("model did not receive the prior result and the policy rejection: %+v, %+v", previous, rejected)
+		}
+		return model.Message{Role: "assistant", Content: "已列出表，补充元数据无法读取"}, nil
+	}), db)
+	id, err := s.Create(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.sessions[id].state.target = model.Target{ConnectionID: "a", Database: "demo"}
+	err = s.Chat(ctx, id, "检查 MySQL 数据库", func(event model.Event) error {
+		if event.Type == continueConfirmation {
+			t.Fatal("a rejected query should be handled by the model")
+		}
+		return nil
+	})
+	if err != nil || calls != 2 || db.calls != 1 {
+		t.Fatalf("database calls=%d model calls=%d error=%v", db.calls, calls, err)
+	}
+}
+
 func TestReadRecoverySkipsRemainingBatch(t *testing.T) {
 	for _, failure := range []error{model.ErrReadOperation, model.ErrToolResultTooLarge} {
 		ctx := context.Background()
 		db := &failingToolDB{err: failure}
-		calls, approvals := 0, 0
-		s := New(generatorFunc(func(_ context.Context, messages []model.Message, _ []model.Tool) (model.Message, error) {
+		calls := 0
+		s := New(generatorFunc(func(_ context.Context, messages []model.Message, definitions []model.Tool) (model.Message, error) {
 			calls++
 			if calls == 1 {
 				batch := call("query_readonly", `{"sql":"SELECT 1"}`)
@@ -153,9 +188,15 @@ func TestReadRecoverySkipsRemainingBatch(t *testing.T) {
 				batch.ToolCalls = append(batch.ToolCalls, skipped)
 				return batch, nil
 			}
-			skipped := messages[len(messages)-2]
-			if skipped.ToolCallID != "skipped" || !strings.Contains(skipped.Content, "skipped") {
-				t.Fatal("skipped tool result pair missing")
+			if calls == 2 {
+				skipped := messages[len(messages)-2]
+				if skipped.ToolCallID != "skipped" || !strings.Contains(skipped.Content, "skipped") {
+					t.Fatal("skipped tool result pair missing")
+				}
+				return call("query_readonly", `{"sql":"SELECT 3"}`), nil
+			}
+			if len(definitions) != 0 || !strings.Contains(messages[len(messages)-2].Content, failure.Error()) {
+				t.Fatal("repeated failure should be sent back for a tool-free summary")
 			}
 			return model.Message{Role: "assistant", Content: "说明部分失败"}, nil
 		}), db)
@@ -163,13 +204,12 @@ func TestReadRecoverySkipsRemainingBatch(t *testing.T) {
 		s.sessions[id].state.target = model.Target{ConnectionID: "a", Database: "demo"}
 		err := s.Chat(ctx, id, "查询", func(event model.Event) error {
 			if event.Type == continueConfirmation {
-				approvals++
-				return s.ConfirmContinue(continueID(t, event, "recovery"), true)
+				t.Fatal("tool failure should not require approval")
 			}
 			return nil
 		})
-		if err != nil || calls != 2 || db.attempts != 1 || (approvals == 1) != errors.Is(failure, model.ErrReadOperation) {
-			t.Fatalf("failure=%v attempts=%d calls=%d approvals=%d error=%v", failure, db.attempts, calls, approvals, err)
+		if err != nil || calls != 3 || db.attempts != 2 {
+			t.Fatalf("failure=%v attempts=%d calls=%d error=%v", failure, db.attempts, calls, err)
 		}
 	}
 }
