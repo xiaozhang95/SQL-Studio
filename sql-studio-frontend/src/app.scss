@@ -260,6 +260,38 @@ body {
   --resize-grip-color: var(--ant-color-text-secondary);
 }
 
+// 公共加载区负责居中，指示器与说明沿用 Ant Design 默认样式。
+.content-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+// 保存刷新期间遮住旧表格，保留原滚动区域。
+.result-scroll > .result-saving-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--surface);
+}
+
+.content-loading.sql-optimization-loading {
+  min-height: 100px;
+}
+
+.sql-editor > .sql-completion-loading {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  z-index: 2;
+  pointer-events: none;
+  color: var(--ant-color-text-secondary);
+}
+
 .result-panel-content > .ant-spin-nested-loading {
   flex: 1;
   min-height: 0;
@@ -482,7 +514,6 @@ body {
 }
 .ant-btn.chat-mode-write:not(:disabled) {
   color: var(--ant-color-warning);
-  border-color: var(--ant-color-warning);
 }
 .chat-mode-hint {
   color: var(--ant-color-icon);
@@ -493,6 +524,14 @@ body {
   margin-block-start: var(--ant-margin-xs);
   padding: 0;
   border-inline-start: 0;
+}
+
+.chat-transcript-region .chat-back-to-bottom {
+  position: absolute;
+  // 宽窗口将按钮放在正文外侧的留白内，窄窗口保留边距。
+  inset-inline-end: max(var(--ant-margin-lg), calc((100% - var(--chat-content-max-width)) * 0.35));
+  inset-block-end: var(--ant-margin-sm);
+  z-index: 1;
 }
 
 .chat-scroll {

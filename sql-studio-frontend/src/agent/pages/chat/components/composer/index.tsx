@@ -119,6 +119,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     }}
                   >
                     <Button
+                      type="text"
                       aria-label="操作模式"
                       disabled={busy || settingsBusy}
                       icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
@@ -161,9 +162,8 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   {busy ? (
                     <Tooltip title="终止生成">
                       <Button
-                        type="primary"
+                        {...CHAT.iconButton}
                         danger
-                        shape="circle"
                         aria-label="停止生成"
                         icon={
                           <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
@@ -173,13 +173,12 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     </Tooltip>
                   ) : (
                     <Button
-                      type="primary"
+                      {...CHAT.iconButton}
                       onClick={() => submit(question)}
                       aria-label="发送消息"
-                      shape="circle"
                       icon={
                         <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <path d="M21.4 3.2 3.2 10.6a.9.9 0 0 0 .1 1.7l6.8 2.2 6.2-6.2a.6.6 0 0 1 .8.8l-6.2 6.2 2.2 6.8a.9.9 0 0 0 1.7.1l7.4-18.2a.7.7 0 0 0-.8-.8Z" />
+                          <path d="M11.1 2.6a1 1 0 0 1 1.8 0l8.3 17a1 1 0 0 1-1.2 1.4L13 18.5V9h-2v9.5L4 21a1 1 0 0 1-1.2-1.4z" />
                         </svg>
                       }
                       disabled={settingsBusy || !aiStatus?.configured || tooLong}

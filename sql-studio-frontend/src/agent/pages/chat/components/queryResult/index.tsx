@@ -79,12 +79,14 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       </Card>
     )
   if (result) {
+    const columnWidths = result.columns.map((column) => Math.min(280, Math.max(140, column.name.length * 14 + 32)))
+    const scrollWidth = columnWidths.reduce((width, columnWidth) => width + columnWidth, CHAT.resultIndexWidth)
     const columns: TableColumnsType<Row> = [
       {
         title: '#',
         dataIndex: 'key',
         key: 'row-number',
-        width: 56,
+        width: CHAT.resultIndexWidth,
         fixed: 'left',
         align: 'right',
         render: (v: number) => <Typography.Text type="secondary">{v + 1}</Typography.Text>
@@ -93,7 +95,8 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
         title: <Tooltip title={c.type}>{c.name || `列 ${i + 1}`}</Tooltip>,
         dataIndex: String(i),
         key: String(i),
-        width: Math.min(280, Math.max(140, c.name.length * 14 + 32)),
+        // Let the last data column absorb extra space so the row number keeps its width.
+        width: i === columnWidths.length - 1 ? undefined : columnWidths[i],
         ellipsis: true,
         render: (v: unknown) => {
           const text = cellText(v)
@@ -141,7 +144,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             showTotal: (total) => `共 ${total} 行`
           }}
           scroll={{
-            x: result.columns.reduce((width, c) => width + Math.min(280, Math.max(140, c.name.length * 14 + 32)), 56),
+            x: scrollWidth,
             y: rows.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
           }}
           locale={{ emptyText: '查询成功，没有匹配的数据' }}

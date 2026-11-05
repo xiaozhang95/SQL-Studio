@@ -8,4 +8,6 @@ QueryResult({value:unknown,sql?:string,title?:string,tool?:string,showExport?:bo
 
 结果与导出操作由Flex统一使用CHAT.spacing.block（16px），整体宽度与正文一致；组件自身不追加上下外边距。带模型恢复指令的工具失败告警由 DeepSeek 纳入最终回答，结果区跳过该告警。已执行操作的结果截断提示照常展示。错误结果直接返回null，不留下空容器和多余间隔。结构化回退文本沿用small Card默认内边距。
 
+二维结果表格的 `#` 序号列宽度固定为 56px。最后一个数据列吸收剩余空间，横向滚动宽度仍按所有列的预设宽度合计。
+
 所有结果表格的分页复用公共tablePaginationDefaults，使用默认32px页码及统一底栏；保留每页数量和列/行内容，不修改查询行为。

@@ -853,57 +853,80 @@ test('首次恢复先显示索引，内容未完成时可以改选并取消初�
 })
 
 async function transcriptHarness() {
+  const { CHAT } = await moduleAt('pages/chat/constant/chat/index.ts')
   const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/roundTranscript/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
-  const slots = [],
-    effects = [],
-    timers = new Map(),
-    observers = new Set()
-  let cursor = 0,
-    next = 0,
-    dirty = false,
-    attention = false
-  let rounds = Array.from({ length: 3 }, (_, id) => ({ id, entries: [], question: String(id), summary: '' }))
+  const slots = []
+  const effects = []
+  const timers = new Map()
+  const observers = new Set()
+  const heights = new Map()
+  const mounted = new Map()
+  let cursor = 0
+  let nextTimer = 0
+  let dirty = false
+  let attention = false
+  let now = 0
+  let result
+  let rounds = Array.from({ length: 12 }, (_, id) => ({ id, entries: [], question: String(id), summary: '' }))
+
   class MockElement {
-    scrollHeight = 900
-    clientHeight = 300
-    listeners = new Map()
     top = 0
+    clientHeight = 300
+    get scrollHeight() {
+      return result.paddingTop + result.paddingBottom + [...mounted.values()].reduce((total, item) => total + item.offsetHeight, 0)
+    }
     get scrollTop() {
       return this.top
     }
     set scrollTop(value) {
       this.top = Math.max(0, Math.min(value, this.scrollHeight - this.clientHeight))
     }
-    addEventListener(type, fn) {
-      this.listeners.set(type, fn)
-    }
-    removeEventListener(type) {
-      this.listeners.delete(type)
-    }
-    dispatch(type, fields = {}) {
-      this.listeners.get(type)?.({ target: this, cancelable: true, preventDefault() {}, ...fields })
+    querySelectorAll() {
+      return [...mounted.values()]
     }
   }
+
+  class RoundElement extends MockElement {
+    constructor(index) {
+      super()
+      this.dataset = { chatRound: String(rounds[index].id), roundIndex: String(index) }
+    }
+    get offsetHeight() {
+      return heights.get(Number(this.dataset.chatRound)) ?? 500
+    }
+    get offsetTop() {
+      let top = result.paddingTop
+      for (const item of mounted.values()) {
+        if (item === this) break
+        top += item.offsetHeight
+      }
+      return top
+    }
+  }
+
   class Observer {
+    targets = new Set()
     constructor(callback) {
       this.callback = callback
     }
-    observe() {
-      observers.add(this.callback)
+    observe(target) {
+      this.targets.add(target)
+      observers.add(this)
     }
     disconnect() {
-      observers.delete(this.callback)
+      observers.delete(this)
     }
   }
-  const viewport = new MockElement(),
-    content = new MockElement()
+
+  const viewport = new MockElement()
   const state = (initial) => {
     const index = cursor++
     if (!(index in slots)) slots[index] = initial
     return [
       slots[index],
-      (value) => {
+      (update) => {
+        const value = typeof update === 'function' ? update(slots[index]) : update
         if (!Object.is(slots[index], value)) dirty = true
         slots[index] = value
       }
@@ -917,7 +940,7 @@ async function transcriptHarness() {
   const effect = (callback, deps) => {
     const index = cursor++
     const prior = slots[index]
-    if (!prior || deps.some((value, i) => value !== prior.deps[i])) {
+    if (!prior || !deps || deps.some((value, i) => value !== prior.deps[i])) {
       effects.push(() => {
         prior?.cleanup?.()
         slots[index] = { deps, cleanup: callback() }
@@ -929,41 +952,36 @@ async function transcriptHarness() {
     'useState',
     'useRef',
     'useLayoutEffect',
-    'useCallback',
-    'startTransition',
     'CHAT',
     'setTimeout',
     'clearTimeout',
     'ResizeObserver',
+    'HTMLElement',
+    'performance',
     code + '; return exports.useRoundTranscript'
   )(
     {},
     state,
     ref,
     effect,
-    (fn, deps) => {
-      const index = cursor++
-      const prior = slots[index]
-      if (!prior || deps.some((value, i) => value !== prior.deps[i])) slots[index] = { deps, fn }
-      return slots[index].fn
-    },
-    (fn) => fn(),
-    { roundSwitch: { loadingDelay: 180, edgeTolerance: 2 } },
-    (fn) => {
-      timers.set(++next, fn)
-      return next
+    CHAT,
+    (fn, delay) => {
+      timers.set(++nextTimer, { fn, end: now + delay })
+      return nextTimer
     },
     (id) => timers.delete(id),
-    Observer
+    Observer,
+    MockElement,
+    { now: () => now }
   )
   function render() {
-    let result
     do {
       dirty = false
       cursor = 0
       result = hook(rounds, attention)
       result.viewport.current = viewport
-      result.content.current = result.round ? content : null
+      mounted.clear()
+      for (let index = result.start; index < result.end; index++) mounted.set(index, new RoundElement(index))
       effects.splice(0).forEach((fn) => fn())
     } while (dirty)
     return result
@@ -973,10 +991,18 @@ async function transcriptHarness() {
     viewport,
     timers,
     observers,
-    flush: () => {
-      const pending = [...timers.values()]
-      timers.clear()
-      pending.forEach((fn) => fn())
+    scroll: (top) => {
+      viewport.scrollTop = top
+      result.onScroll()
+      return render()
+    },
+    tick: (ms) => {
+      now += ms
+      for (const [id, timer] of timers) {
+        if (now < timer.end) continue
+        timers.delete(id)
+        timer.fn()
+      }
     },
     append: () => {
       rounds = [...rounds, { id: rounds.length, entries: [], question: '新提问', summary: '' }]
@@ -984,87 +1010,63 @@ async function transcriptHarness() {
     attention: () => {
       attention = true
     },
-    resize: () => observers.forEach((fn) => fn()),
+    resize: (index, height) => {
+      heights.set(index, height)
+      const item = mounted.get(index)
+      for (const observer of observers) if (observer.targets.has(item) || observer.targets.has(viewport)) observer.callback([{ target: item }])
+    },
     unmount: () => slots.forEach((slot) => slot?.cleanup?.())
   }
 }
 
-test('滚动到边界留在本轮，点击相邻轮次显示加载', async () => {
+test('原生上下滚动在窗口中段预挂载相邻轮次并保留阅读锚点', async () => {
   const h = await transcriptHarness()
   const initial = h.render()
-  assert.equal(initial.round.id, 2)
-  assert.equal(h.viewport.scrollTop, 0)
-  initial.onScroll()
-  h.viewport.dispatch('wheel', { deltaY: -160 })
-  h.viewport.dispatch('touchmove', { touches: [{ clientX: 20, clientY: 200 }] })
-  h.viewport.dispatch('keydown', { key: 'PageUp' })
-  assert.equal(h.timers.size, 0)
-  assert.equal(h.render().round.id, 2)
-
-  h.viewport.scrollTop = 180
-  h.render().previous()
-  const loading = h.render()
-  assert.equal(loading.loading, true)
-  assert.equal(loading.activeIndex, 1)
-  assert.equal(loading.round, undefined)
-  h.flush()
-  assert.equal(h.render().round.id, 1)
-  assert.equal(h.viewport.scrollTop, 600)
-
-  h.render().onScroll()
-  h.viewport.dispatch('wheel', { deltaY: 160 })
-  assert.equal(h.render().round.id, 1)
-  assert.equal(h.timers.size, 0)
-  h.render().next()
-  assert.equal(h.render().loading, true)
-  h.flush()
-  assert.equal(h.render().round.id, 2)
-  assert.equal(h.viewport.scrollTop, 0)
+  assert.deepEqual([initial.start, initial.end, initial.activeIndex], [7, 12, 11])
+  const up = h.scroll(initial.paddingTop + 1100)
+  assert.deepEqual([up.start, up.end, up.activeIndex, up.loading], [6, 11, 9, false])
+  assert.equal(h.viewport.scrollTop - up.paddingTop, 1600)
+  const down = h.scroll(h.viewport.scrollTop + 100)
+  assert.deepEqual([down.start, down.end, down.activeIndex, down.loading], [7, 12, 9, false])
+  assert.equal(h.viewport.scrollTop - down.paddingTop, 1200)
   h.unmount()
 })
 
-test('切换可被新导航替换，新提问或写入确认回到最新轮', async () => {
+test('拖动到窗口之外至少显示一秒加载且不影响连续导航', async () => {
   const h = await transcriptHarness()
-  h.render().jump(0)
-  assert.equal(h.render().activeIndex, 0)
-  h.render().jump(1)
-  assert.equal(h.timers.size, 1)
-  h.flush()
-  assert.equal(h.render().round.id, 1)
-  assert.equal(h.viewport.scrollTop, 0)
-
-  h.render().previous()
-  assert.equal(h.render().loading, true)
-  h.attention()
-  assert.equal(h.render().round.id, 2)
-  assert.equal(h.viewport.scrollTop, 600)
-  assert.equal(h.timers.size, 0)
-
-  h.render().jump(0)
   h.render()
+  const loading = h.scroll(0)
+  assert.deepEqual([loading.start, loading.activeIndex, loading.loading], [0, 0, true])
+  h.tick(999)
+  assert.equal(h.render().loading, true)
+  h.render().jump(6)
+  assert.equal(h.render().activeIndex, 6)
+  h.tick(1)
+  assert.equal(h.render().loading, false)
+  h.attention()
+  assert.equal(h.render().activeIndex, 11)
+  assert.equal(h.viewport.scrollTop, h.viewport.scrollHeight - h.viewport.clientHeight)
   h.append()
-  assert.equal(h.render().round.id, 3)
-  assert.equal(h.timers.size, 0)
-  h.render().jump(0)
+  assert.equal(h.render().activeIndex, 12)
+  h.resize(12, 900)
+  assert.equal(h.viewport.scrollTop, h.viewport.scrollHeight - h.viewport.clientHeight)
   h.unmount()
   assert.equal(h.timers.size, 0)
-  assert.equal(h.viewport.listeners.size, 0)
   assert.equal(h.observers.size, 0)
 })
 
-test('最新回复只在末尾跟随高度变化', async () => {
+test('最新回复只在末尾跟随高度变化，历史上方变高时保留锚点', async () => {
   const h = await transcriptHarness()
   h.render()
-  h.viewport.scrollHeight = 900
-  h.viewport.scrollTop = 600
-  h.render().onScroll()
-  h.viewport.scrollHeight = 1300
-  h.resize()
-  assert.equal(h.viewport.scrollTop, 1000)
-  h.viewport.scrollTop = 220
-  h.render().onScroll()
-  h.viewport.scrollHeight = 1600
-  h.resize()
-  assert.equal(h.viewport.scrollTop, 220)
+  h.scroll(h.viewport.scrollHeight)
+  h.resize(11, 900)
+  assert.equal(h.viewport.scrollTop, h.viewport.scrollHeight - h.viewport.clientHeight)
+  const latest = h.render()
+  h.scroll(latest.paddingTop + 2100)
+  const position = h.viewport.scrollTop
+  h.resize(11, 1100)
+  assert.equal(h.viewport.scrollTop, position)
+  h.resize(10, 800)
+  assert.equal(h.viewport.scrollTop, position + 300)
   h.unmount()
 })

@@ -176,15 +176,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
             basicSetup={editorSetup}
             aria-label="SQL 编辑器"
           />
-          {ai.enabled && ai.completionLoading && (
-            <LoadingOutlined
-              spin
-              aria-label="SQL补全中"
-              role="status"
-              className="sql-completion-loading"
-              style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--ant-color-text-secondary)' }}
-            />
-          )}
+          {ai.enabled && ai.completionLoading && <LoadingOutlined spin aria-label="SQL补全中" role="status" className="sql-completion-loading" />}
         </div>
       </Dropdown>
       <SQLCompletionSelect completion={completion} objectKinds={objectKinds} />

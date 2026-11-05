@@ -12,4 +12,4 @@ sidebarWidth/setSidebarWidth 为与Agent历史栏共用的受控偏好宽度，�
 
 接收layout: ReturnType<typeof useSidebarResize>，由工作区统一管理实际显示宽度与拖动事件，侧栏只消费同一份布局；顶部竖线随visibleWidth同步对齐。
 
-已有连接时刷新列表保留树实例，避免加载指示器卸载整棵树；只有首次无连接数据的加载显示 Spin。
+已有连接时刷新列表保留树实例。首次加载且暂无连接时，侧栏通过 ContentLoading 显示加载提示。

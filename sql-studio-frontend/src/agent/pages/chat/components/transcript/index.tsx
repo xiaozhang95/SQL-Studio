@@ -1,7 +1,7 @@
-import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
-import { Button, Flex, theme } from 'antd'
-import { useMemo } from 'react'
-import type { ReactNode } from 'react'
+import { CaretDownFilled } from '@ant-design/icons'
+import { Button, Flex, theme, Tooltip } from 'antd'
+import { memo, useMemo } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 
@@ -11,6 +11,15 @@ import { CHAT } from '../../constant/chat'
 import { useRoundTranscript } from '../../hooks/roundTranscript'
 import { RoundNavigation } from '../roundNavigation'
 import { TurnContent } from '../turnContent'
+
+const TranscriptTurn = memo(TurnContent)
+const transcriptLayout = {
+  height: '100%',
+  minHeight: 0,
+  position: 'relative',
+  width: '100%',
+  '--chat-content-max-width': `${CHAT.conversationMaxWidth}px`
+} satisfies CSSProperties & { '--chat-content-max-width': string }
 
 interface Props {
   entries: Entry[]
@@ -24,56 +33,61 @@ interface Props {
 export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
-  const { viewport: viewportRef, content: contentRef, round, activeIndex, loading, atBottom, jump, onScroll, previous, next, toLatest } = useRoundTranscript(rounds, Boolean(confirmation), busy)
-  const latest = activeIndex === rounds.length - 1
+  const { viewport: viewportRef, start, end, paddingTop, paddingBottom, activeIndex, loading, atBottom, jump, onScroll, toLatest } = useRoundTranscript(rounds, Boolean(confirmation), busy)
   return (
-    <Flex vertical style={{ height: '100%', minHeight: 0, position: 'relative', width: '100%' }}>
+    <Flex vertical style={transcriptLayout}>
       <RoundNavigation rounds={rounds} activeIndex={activeIndex} onJump={jump} />
-      <Flex
-        vertical
-        gap="small"
-        role="group"
-        aria-label="切换对话轮次"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          insetInlineEnd: `max(${token.paddingSM}px, calc((100% - ${CHAT.conversationMaxWidth}px) / 2 - ${CHAT.roundSwitch.sideOffset}px))`,
-          transform: 'translateY(-50%)',
-          zIndex: 1
+      <div
+        ref={viewportRef}
+        className="chat-scroll"
+        role="region"
+        aria-label="对话记录"
+        aria-busy={loading}
+        tabIndex={0}
+        onScroll={onScroll}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return
+          if (event.key === 'Home') {
+            event.preventDefault()
+            jump(0)
+          } else if (event.key === 'End') {
+            event.preventDefault()
+            toLatest()
+          }
         }}
+        style={{ position: 'relative', overflowAnchor: 'none' }}
       >
-        <Button size="small" shape="circle" aria-label="上一轮" title="上一轮" icon={<ArrowUpOutlined />} onClick={previous} disabled={activeIndex === 0 || loading} />
-        <Button size="small" shape="circle" aria-label="下一轮" title="下一轮" icon={<ArrowDownOutlined />} onClick={next} disabled={latest || loading} />
-      </Flex>
-      <div ref={viewportRef} className="chat-scroll" role="region" aria-label="当前轮对话" aria-busy={loading} tabIndex={0} onScroll={onScroll}>
-        {loading ? (
-          <ContentLoading label={'正在加载第 ' + (activeIndex + 1) + ' 轮对话…'} />
-        ) : round ? (
-          <div ref={contentRef} key={round.id} data-chat-round={round.id} style={{ ...CHAT.content, paddingBlock: token.paddingXS }}>
-            <TurnContent
-              locked={busy}
-              entries={round.entries}
-              busy={busy && latest}
-              waiting={latest && Boolean(confirmation)}
-              status={status}
-              expanded={expanded}
-              onExpanded={onExpanded}
-              onEdit={onEdit}
-            />
-            {latest && confirmation}
-          </div>
-        ) : null}
+        <div aria-hidden="true" style={{ height: paddingTop }} />
+        {rounds.slice(start, end).map((round, offset) => {
+          const index = start + offset
+          const isLatest = index === rounds.length - 1
+          return (
+            <div key={round.id} data-chat-round={round.id} data-round-index={index} style={{ ...CHAT.content, paddingBlock: token.paddingXS }}>
+              <TranscriptTurn
+                locked={busy}
+                entries={round.entries}
+                busy={busy && isLatest}
+                waiting={isLatest && Boolean(confirmation)}
+                status={status}
+                expanded={expanded}
+                onExpanded={onExpanded}
+                onEdit={onEdit}
+              />
+              {isLatest && confirmation}
+            </div>
+          )
+        })}
+        <div aria-hidden="true" style={{ height: paddingBottom }} />
       </div>
-      {!loading && (!latest || !atBottom) && (
-        <Button
-          aria-label={confirmation && !latest ? '返回待确认回复' : '回到最新消息'}
-          title={confirmation && !latest ? '返回待确认回复' : '回到最新消息'}
-          size="small"
-          shape="circle"
-          icon={<ArrowDownOutlined />}
-          onClick={toLatest}
-          style={{ position: 'absolute', bottom: token.marginSM, left: '50%', transform: 'translateX(-50%)', zIndex: 1 }}
-        />
+      {loading && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <ContentLoading label="正在加载附近对话…" />
+        </div>
+      )}
+      {!atBottom && (
+        <Tooltip title="回到底部" trigger={['hover', 'focus']}>
+          <Button {...CHAT.iconButton} className="chat-back-to-bottom" aria-label="回到底部" icon={<CaretDownFilled />} onClick={toLatest} />
+        </Tooltip>
       )}
     </Flex>
   )

@@ -1,8 +1,8 @@
 import { Spin } from 'antd'
 
-export default function ContentLoading({ label }: { label: string }) {
+export default function ContentLoading({ label, className }: { label: string; className?: string }) {
   return (
-    <div role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', flex: 1, minHeight: 0 }}>
+    <div role="status" className={className ? `content-loading ${className}` : 'content-loading'}>
       <Spin description={label} />
     </div>
   )

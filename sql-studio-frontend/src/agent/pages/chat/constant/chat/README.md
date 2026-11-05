@@ -6,6 +6,12 @@ modeConfirmationWidth（720px）为模式切换确认弹窗的桌面宽度，窄
 
 spacing统一Agent内容节奏：block=middle（原生16px）用于文字/表格/代码/卡片和独立区块，detail=small（原生8px）用于同组元数据、标签/参数和按钮。外层容器负责间距，子组件不重复追加外边距。
 
-roundSwitch集中轮次切换加载时长（180ms）、末尾判定容差（2px）及右侧导航在宽屏下相对于正文边缘的定位偏移（120px）。只控制本地展示，不影响持久历史和服务端读取。
+roundSwitch 集中虚拟窗口大小（5 轮）、未测高度估算（520px）和末尾判定容差（2px）。只控制本地展示，不影响持久历史和服务端读取。
+
+processDetails 配置过程详情每批挂载 2 项。轮次滚动和过程详情共用 1 秒的最短加载提示时长。
+
+iconButton 统一发送、终止生成和回到底部使用的 Ant Design 小号圆形主按钮配置。
+
+resultIndexWidth 统一二维结果表格的序号列宽度（56px）。
 侧栏尺寸与工作台共用[sidebarLayout](../../../../../constant/sidebarLayout/README.md)，不再维护独立默认值。
 composerResize集中输入区拖拽高度边界、聊天预留高度、键盘步长与顶部手柄高度。

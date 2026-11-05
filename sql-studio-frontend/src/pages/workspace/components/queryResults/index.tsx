@@ -4,7 +4,6 @@ import {
   DownloadOutlined,
   DownOutlined,
   EyeOutlined,
-  LoadingOutlined,
   PlusOutlined,
   ReloadOutlined,
   SaveOutlined,
@@ -13,9 +12,10 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Dropdown, Empty, Input, Pagination, Spin, Table, Typography } from 'antd'
+import { Alert, Button, Dropdown, Empty, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useState } from 'react'
 
+import ContentLoading from '@/components/contentLoading'
 import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
@@ -321,23 +321,13 @@ export default function QueryResults({ model, themeMode }: Props) {
         aria-busy={editing.saving}
         style={{ position: 'relative', flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}
       >
-        {editing.saving && (
-          <div
-            role="status"
-            aria-live="polite"
-            style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
-            <Spin size="small" /> 正在保存并刷新数据…
-          </div>
-        )}
+        {editing.saving && <ContentLoading label="正在保存并刷新数据…" className="result-saving-loading" />}
         {activeKey === 'messages' ? (
           <QueryMessages key={tab.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
           <QuerySummary key={run.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
-          <div className="tree-loading" style={{ textAlign: 'center', padding: '28px 10px' }}>
-            <LoadingOutlined spin /> 正在加载结果
-          </div>
+          <ContentLoading label="正在加载结果…" />
         ) : run?.error ? (
           <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{run.error}</div>} />
         ) : result ? (

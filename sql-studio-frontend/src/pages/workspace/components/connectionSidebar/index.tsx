@@ -1,5 +1,4 @@
-import { Spin } from 'antd'
-
+import ContentLoading from '@/components/contentLoading'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
@@ -47,13 +46,7 @@ export default function ConnectionSidebar({ model, layout }: Props) {
         width: visibleWidth
       }}
     >
-      {model.connectionLoading && !model.connections.length ? (
-        <div className="tree-loading" style={{ flex: 1, textAlign: 'center', padding: '28px 10px' }}>
-          <Spin />
-        </div>
-      ) : (
-        <DatabaseExplorer model={model} />
-      )}
+      {model.connectionLoading && !model.connections.length ? <ContentLoading label="正在加载连接…" /> : <DatabaseExplorer model={model} />}
       <div
         className="sidebar-resizer"
         role="separator"

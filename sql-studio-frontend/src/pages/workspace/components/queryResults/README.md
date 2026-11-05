@@ -22,6 +22,8 @@ DDL 页和普通查询中的 SQL 定义/语句列通过 DatabaseAdapter.isSQLCol
 
 data 页面支持双击单元格，由 [useDataEditing](../../hooks/useDataEditing/README.md) 加载元数据并使用 [dataCellEditor](../dataCellEditor/README.md) 编辑。保存显式写入且重读结果；普通 SQL 结果、视图、无主键表以及不支持字段保持只读。
 
+结果加载和保存刷新提示均使用 ContentLoading。保存刷新期间通过 app.scss 的结果区遮罩盖住旧表格，保留滚动布局。
+
 数据页顶部统一保存所有暂存修改或放弃修改；已改单元格由 data-cell-dirty 类名标记，主题警告背景集中在 app.scss，输入区不再展示独立保存按钮。
 
 保存期间直到服务端数据刷新完成，结果数据区域显示不透明主题背景的 loading 遮罩，暂时隐藏表格但保留其布局与滚动测量，避免逐项清理暂存后闪回旧值；同时阻止操作旧单元格。遮罩直接跟随 useDataEditing.saving，成功或失败的 finally 结束后解除，失败仍沿用原有部分成功及剩余草稿语义，不人为延时。

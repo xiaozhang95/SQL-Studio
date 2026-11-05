@@ -15,6 +15,8 @@
 
 ## 单一功能模块
 
+独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
+
 组件、hooks、常量/枚举、类型/接口、服务方法和工具按功能独立组织。每个实际功能使用一个目录，`index.ts` 或 `index.tsx` 为实现入口，旁边必须有 `README.md`，而非把多个无关功能堆进一个文件。
 
 README 至少说明职责、导出接口、参数类型/可选值/默认值、返回值、调用方式及有影响的边界；异步模块补充错误、取消、缓存和状态归属，UI 模块补充受控值及回调。变更实现时同步文档和父级索引。App/main 为框架入口例外，不保留旧路径转发壳。

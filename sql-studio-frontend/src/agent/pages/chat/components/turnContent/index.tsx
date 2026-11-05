@@ -1,13 +1,16 @@
 import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
-import { Alert, Button, Divider, Flex, Spin, theme, Tooltip, Typography } from 'antd'
-import { Fragment } from 'react'
+import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
+import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
+
+import ContentLoading from '@/components/contentLoading'
 
 import type { Entry } from '../../../../typings/chat'
 import { chatErrors } from '../../../../utils/chatEvents'
 import { readSQL } from '../../../../utils/queryResult'
 import { CHAT } from '../../constant/chat'
 import { AnswerContent } from '../answerContent'
+import { CodeBlock } from '../codeBlock'
 import { ProcessCard } from '../processCard'
 import { QueryResult } from '../queryResult'
 import { RoundFooter } from '../roundFooter'
@@ -39,6 +42,65 @@ function blocks(entries: Entry[]): Block[] {
   finishTurn()
   return out
 }
+function ProcessDetails({ entries }: { entries: Entry[] }) {
+  const { batchSize, loadingMinDuration } = CHAT.processDetails
+  const [visibleCount, setVisibleCount] = useState(0)
+  const loading = visibleCount === 0
+  const pending = visibleCount < entries.length
+
+  useEffect(() => {
+    if (!pending) return
+    const showNextBatch = () => {
+      startTransition(() => setVisibleCount(visibleCount + batchSize))
+    }
+    if (loading) {
+      const timer = setTimeout(showNextBatch, loadingMinDuration)
+      return () => clearTimeout(timer)
+    }
+    const frame = requestAnimationFrame(showNextBatch)
+    return () => cancelAnimationFrame(frame)
+  }, [batchSize, loading, loadingMinDuration, pending, visibleCount])
+
+  const steps = useMemo(() => {
+    if (loading) return []
+    let toolNumber = 0
+    return entries.map((e) => {
+      if (e.role === 'thinking')
+        return (
+          <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
+            <Typography.Text type="secondary">{e.streaming ? 'DeepSeek 正在思考…' : e.incomplete ? '思考过程（未完成）' : '思考过程'}</Typography.Text>
+            <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{e.text}</Typography.Paragraph>
+          </Flex>
+        )
+      toolNumber++
+      return (
+        <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
+          <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            <Typography.Text type="secondary">
+              {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
+            </Typography.Text>
+            <div>
+              <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
+              <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
+                {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
+              </Typography.Text>
+            </div>
+            {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && <CodeBlock text={e.text} language="json" title="请求参数" formatJson />}
+          </Flex>
+          {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
+        </Flex>
+      )
+    })
+  }, [entries, loading])
+
+  if (loading) return <ContentLoading label="正在加载过程详情…" />
+  return (
+    <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
+      {steps.slice(0, visibleCount)}
+    </Flex>
+  )
+}
+
 interface Props {
   waiting: boolean
   entries: Entry[]
@@ -80,7 +142,6 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
           if (toolCount) title = `${hasThinking ? '思考与执行' : '执行过程'} · ${toolCount} 项操作`
           else if (block.entries.some((entry) => entry.streaming)) title = 'DeepSeek 正在思考…'
           else if (block.entries.some((entry) => entry.incomplete)) title = '思考过程（未完成）'
-          let toolNumber = 0
           return (
             <ProcessCard
               key={key}
@@ -92,49 +153,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                 onExpanded(open ? [...remaining, key] : remaining)
               }}
             >
-              <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
-                {block.entries.map((e) => {
-                  if (e.role === 'thinking')
-                    return (
-                      <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
-                        <Typography.Text type="secondary">{e.streaming ? 'DeepSeek 正在思考…' : e.incomplete ? '思考过程（未完成）' : '思考过程'}</Typography.Text>
-                        <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{e.text}</Typography.Paragraph>
-                      </Flex>
-                    )
-                  toolNumber++
-                  return (
-                    <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
-                      <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-                        <Typography.Text type="secondary">
-                          {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
-                        </Typography.Text>
-                        <div>
-                          <Typography.Text type="secondary">对应 Go API（当前为进程内调用）：</Typography.Text>
-                          <Typography.Text copyable={CHAT.toolEndpoints[e.tool ?? ''] ? { text: CHAT.toolEndpoints[e.tool ?? ''] } : false}>
-                            {CHAT.toolEndpoints[e.tool ?? ''] ?? '切换会话数据库上下文，无独立 HTTP 接口'}
-                          </Typography.Text>
-                        </div>
-                        {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && (
-                          <Flex vertical gap={CHAT.spacing.detail}>
-                            <Typography.Text type="secondary">请求参数</Typography.Text>
-                            <Typography.Paragraph
-                              copyable={{ text: e.text }}
-                              style={{
-                                whiteSpace: 'pre-wrap',
-                                overflowWrap: 'anywhere',
-                                margin: 0
-                              }}
-                            >
-                              {e.text}
-                            </Typography.Paragraph>
-                          </Flex>
-                        )}
-                      </Flex>
-                      {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
-                    </Flex>
-                  )
-                })}
-              </Flex>
+              <ProcessDetails entries={block.entries} />
             </ProcessCard>
           )
         }
@@ -184,7 +203,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
       })}
       {busy && !waiting && (
         <Flex align="center" gap={CHAT.spacing.detail}>
-          <Spin indicator={<LoadingOutlined spin />} size="small" />
+          <LoadingOutlined spin />
           <Typography.Text type="secondary">{status || '正在思考…'}</Typography.Text>
         </Flex>
       )}

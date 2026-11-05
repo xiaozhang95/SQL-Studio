@@ -2,10 +2,14 @@ import type { CSSProperties } from 'react'
 
 const conversationMaxWidth = 960
 const transcriptInset = 32
+const loadingMinDuration = 1000
 
 export const CHAT = {
   composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
-  roundSwitch: { loadingDelay: 180, edgeTolerance: 2, sideOffset: 120 },
+  roundSwitch: { windowSize: 5, estimatedHeight: 520, loadingMinDuration, edgeTolerance: 2 },
+  processDetails: { batchSize: 2, loadingMinDuration },
+  iconButton: { type: 'primary', shape: 'circle', size: 'small' },
+  resultIndexWidth: 56,
   maxQuestionBytes: 256 * 1024,
   maxTitleLength: 80,
   toolEndpoints: {

@@ -1,5 +1,6 @@
-import { Alert, Modal, Spin, Typography } from 'antd'
+import { Alert, Modal, Typography } from 'antd'
 
+import ContentLoading from '@/components/contentLoading'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useAISQL } from '../../hooks/useAISQL'
@@ -19,11 +20,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
       styles={{ body: { maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
     >
       {model.error && <Alert type="error" title={model.error} style={{ marginBottom: 12 }} />}
-      {model.loading && (
-        <Spin description="正在生成建议…">
-          <div style={{ minHeight: 100 }} />
-        </Spin>
-      )}
+      {model.loading && <ContentLoading label="正在生成建议…" className="sql-optimization-loading" />}
       {model.preview && (
         <div style={{ display: 'grid', gap: 20, minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16, minWidth: 0 }}>

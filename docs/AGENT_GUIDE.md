@@ -121,11 +121,47 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 | 确认 | `write_confirmation`、`continue_confirmation` | 回复下方的操作卡片 |
 | 结束 | `error`、`stopped`、`done` | 错误、停止提示或结束状态 |
 
+展开思考与执行区后，页面先显示与工作台切换标签同样样式的「正在加载过程详情…」。至少 1 秒后，提示由第一批详情替换，其余详情和表格按原顺序显示。
+
 模型返回形如 `{"columns":[{"name":"id","type":"text"}],"rows":[["9007199254740993"]],"truncated":false}` 的结果时，前端验证结构后生成表格。数字字符串保持原样，`null` 和空字符串分别展示，重复列按位置保留。识别支持 JSON 代码围栏、正文中的裸对象和合法 Markdown 表格。表格可以分页并导出当前已加载的结果。
 
 流式表格尚未拼完整时，页面显示「正在整理查询结果」。结束后仍缺字段或行数据时，可以查看未完成提示和原文。普通 JSON、损坏的完整 JSON 或代码示例会保留原格式。SQL 围栏使用 CodeMirror 只读高亮和复制，Markdown 由安全的 React 节点呈现。
 
 源码见[事件合并](../sql-studio-frontend/src/agent/utils/chatEvents/index.ts)、[回答内容](../sql-studio-frontend/src/agent/pages/chat/components/answerContent/index.tsx)、[表格识别](../sql-studio-frontend/src/agent/utils/answerTables/README.md)和[查询结果组件](../sql-studio-frontend/src/agent/pages/chat/components/queryResult/README.md)。
+
+### 7.1 过程展开和加载提示
+
+连续的思考片段和工具步骤合并到同一个过程折叠区。回答正文会将过程分成不同的组。展开后先显示加载提示，至少保留 1 秒，再显示首批详情，其余内容按原顺序每批挂载 2 项。收起或离开虚拟窗口时清理定时器和待处理帧。
+
+会话读取、快速滚动到未挂载轮次和过程展开共用 `ContentLoading`，使用 Ant Design 默认 `Spin` 的图标、尺寸、主题色及说明。居中布局等共用样式放在 `app.scss`。等待模型回复时使用行内旋转图标和状态文字，写入确认由确认卡片呈现。展开详情与轮次滚动的最短加载时长集中在 `CHAT`，共用 1 秒配置。
+
+源码见[公共加载组件](../sql-studio-frontend/src/components/contentLoading/README.md)、[过程详情](../sql-studio-frontend/src/agent/pages/chat/components/turnContent/README.md)和[聊天配置](../sql-studio-frontend/src/agent/pages/chat/constant/chat/README.md)。
+
+### 7.2 连续滚动和回到底部
+
+聊天使用原生滚轮、触摸和键盘滚动，虚拟窗口最多挂载 5 轮。滚动到已挂载窗口中段时，提前挂载相邻轮次，并保持正在阅读内容的像素位置。快速移动到尚未挂载的区域时，加载提示至少显示 1 秒。位于末尾时跟随新增内容，阅读历史时保留阅读锚点。
+
+离开底部时显示实心向下三角按钮。宽窗口下按钮位于正文右侧留白内、输入区上方，窄窗口保留右侧边距。点击后定位最新轮末尾，悬停或键盘聚焦显示「回到底部」。左侧轮次刻度与问题搜索继续支持定位。
+
+源码见[滚动 Hook](../sql-studio-frontend/src/agent/pages/chat/hooks/roundTranscript/README.md)、[消息视口](../sql-studio-frontend/src/agent/pages/chat/components/transcript/README.md)和[统一样式](../sql-studio-frontend/src/app.scss)。
+
+### 7.3 请求参数、代码和表格
+
+工具步骤中有内容的请求参数通过 `CodeBlock` 显示为带语法高亮、换行和两空格缩进的 JSON，空对象省略。格式化只调整字符串之外的空白，保留数字文本及字符串转义。SQL 字段属于 JSON 字符串，其中的换行以 `\n` 表示。解析失败时展示原文，复制按钮始终复制原始参数。实时回复与历史恢复复用同一组件。
+
+代码块标题栏与正文之间保留分隔线。代码预览沿用项目现有的 Ant Design 字体配置，普通界面文字继承系统或 Ant Design 默认字体。
+
+二维结果表格的 `#` 序号列统一为 56px，并固定在左侧。最后一个数据列吸收剩余空间，避免序号列随表格宽度扩张。表格继续支持长内容提示、横向滚动、分页和 Excel 导出。
+
+源码见[代码预览](../sql-studio-frontend/src/agent/pages/chat/components/codeBlock/README.md)和[结果表格](../sql-studio-frontend/src/agent/pages/chat/components/queryResult/README.md)。
+
+### 7.4 输入区按钮
+
+发送使用机头朝上的实心纸飞机图标，回到底部使用配套的实心向下三角图标。发送、停止和回到底部共用 `CHAT.iconButton` 中的小号圆形主按钮配置。生成期间发送入口切换为危险色停止按钮，内部显示实心方块。
+
+按钮通过 Ant Design 参数控制尺寸和状态，必要的定位样式集中在 `app.scss`。输入区保留 Enter 发送、Shift+Enter 换行、输入法候选保护、模型选择、模式切换和高度调整。
+
+源码见[输入区组件](../sql-studio-frontend/src/agent/pages/chat/components/composer/README.md)。
 
 ## 8. 停止、超时和重新规划
 
@@ -149,6 +185,33 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 上游流断开、缺少结束标记、输出达到上限或本地保存失败，可能使一轮提前结束。`done` 表示 SSE 结束，判断本轮结果要同时看前面的错误、停止事件和最终会话状态。
 
 源码见[前端发送和取消](../sql-studio-frontend/src/agent/pages/chat/hooks/chat/index.ts)、[本轮预算](../sql-studio-backend/internal/modules/agent/turn_budget.go)和[继续确认](../sql-studio-backend/internal/modules/agent/approval.go)。
+
+### 8.1 安全拦截如何检测
+
+工具参数先由 Go 的 JSON 解码器检查，拒绝未知字段、多个对象和超过长度上限的参数。`query_readonly` 只接收 SQL，连接和数据库由后端保存的当前目标确定。
+
+SQL 先经过项目自己的词法处理，区分字符串、标识符和符号，再由读写策略检查语句类型、对象引用和函数。词法阶段会拒绝无法安全解释的输入，例如多条语句、注释、会话变量、特定转义和未闭合括号。策略阶段限制跨库访问、文件、锁、等待及未审核函数。系统提示也描述这些边界，真正执行前由 Go 校验。
+
+「Agent仅支持单条安全SQL……」是多个检查分支共用的错误文案。仅凭这段文字无法确定具体命中了哪项规则，需要结合当次工具参数和策略源码核对。
+
+源码见[SQL 词法与策略](../sql-studio-backend/internal/modules/agent/sqlpolicy.go)、[工具参数解码](../sql-studio-backend/internal/modules/agent/tools.go)和[写入校验](../sql-studio-backend/internal/modules/agent/write.go)。
+
+### 8.2 拦截或执行失败后如何处理
+
+| 情况 | 后端及模型处理 | 页面表现 |
+| --- | --- | --- |
+| 发现数据库时连接失败 | 本轮跳过失败连接，将原因交给模型结合成功结果处理 | 由模型说明可用范围和未完成部分 |
+| 首次普通工具失败或 SQL 被拦截 | 生成含 `warning`、`instruction` 的工具结果，跳过同批剩余调用，允许模型在已确认范围内重新规划一次只读操作 | 结果组件省略供模型处理的失败告警，最终说明由模型组织 |
+| 恢复期间继续失败 | 转为总结已确认结果 | 展示模型最终说明 |
+| 写入工具失败 | 转为总结，并要求按数据库实际状态说明写入结果 | 展示模型最终说明 |
+| 写入确认被拒绝、取消或失效 | 结束确认等待和本轮处理 | 显示停止或相应结束状态 |
+| 用户停止、上游断流、本轮超时或本地保存失败 | 取消或结束本轮，尝试保留已取得内容 | 显示本轮对应错误或停止状态 |
+
+恢复阶段仍经过安全检查，且限制为只读。已有确认目标时，恢复调用必须沿用该数据库，探测连接也必须沿用该连接。失败信息交给 DeepSeek 后，删除禁令、模式限制、SQL 校验和逐次写入确认仍然生效。
+
+大输入、工具结果超出送模确认阈值和上下文摘要仍使用继续确认流程。普通工具失败交给模型处理的路径与这些确认流程分别由后端管理。
+
+源码见[失败恢复编排](../sql-studio-backend/internal/modules/agent/service.go)、[恢复目标校验](../sql-studio-backend/internal/modules/agent/tools.go)和[失败结果展示](../sql-studio-frontend/src/agent/pages/chat/components/queryResult/index.tsx)。
 
 ## 9. 会话文件、历史恢复和数据范围
 

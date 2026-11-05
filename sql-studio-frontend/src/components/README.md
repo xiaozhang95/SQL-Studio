@@ -10,4 +10,4 @@
 - [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的右上角下拉菜单，集中 DeepSeek API 与外观。
 - [sectionNavigation](sectionNavigation/README.md)：顶栏左侧的工作区和 AI 助手切换入口。
 
-- [contentLoading](contentLoading/README.md)：工作区与Agent共用内容区加载展示。
+- [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
