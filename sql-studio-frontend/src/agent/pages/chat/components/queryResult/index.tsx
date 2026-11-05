@@ -1,5 +1,5 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, theme, Tooltip, Typography } from 'antd'
+import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
@@ -57,10 +57,9 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
 const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
 
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
-  const { token } = theme.useToken()
   const cardTitle = showHeader ? (
     <Space size="small">
-      <DatabaseOutlined style={{ color: token.colorPrimary }} />
+      <DatabaseOutlined className="chat-result-icon" />
       <Typography.Text>{title}</Typography.Text>
     </Space>
   ) : undefined

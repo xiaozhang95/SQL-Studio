@@ -69,7 +69,6 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
       className="content-frame code-panel"
       title={title ?? (language || '代码')}
       extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}
-      styles={{ header: { marginBottom: 0, borderBottomColor: 'var(--border)' } }}
     >
       <CodeMirror
         aria-label="代码内容"

@@ -6,6 +6,6 @@ text/language受控的只读代码预览。复用CodeMirror，支持SQL、JSON�
 
 可选的 `title` 控制标题栏文案，缺省时显示语言名。`formatJson` 默认关闭，开启后为合法 JSON 增加换行和两空格缩进，解析失败时展示原文。复制始终使用原始文本。
 
-代码卡片、查询结果表格和工作区的 SQL 预览面板共用 app.scss 的外框规则。聊天代码块的标题栏底线使用外框颜色，标题栏与代码正文直接相接，保留分隔线的绘制空间。代码内容裁切在圆角内，长代码仍可在编辑器内滚动。与相邻内容的间隔由 AnswerContent 或 WriteConfirmation 控制。
+代码卡片、查询结果表格和工作区的 SQL 预览面板共用 app.scss 的外框规则。聊天代码块的标题栏间距和分隔线样式也集中在 app.scss，标题栏与代码正文直接相接。代码内容裁切在圆角内，长代码仍可在编辑器内滚动。与相邻内容的间隔由 AnswerContent 或 WriteConfirmation 控制。
 
 编辑器背景与文字颜色通过 CodeMirror 的原生主题扩展跟随 Ant Design，选择器复用工作区预览的优先级。内容边距取 paddingSM，最大高度与 Agent 结果预览共用 APPEARANCE.resultPreviewHeight。

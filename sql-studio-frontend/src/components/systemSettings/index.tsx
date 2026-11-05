@@ -103,7 +103,7 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
                 key: 'appearance',
                 popupClassName: 'system-settings-menu',
                 icon: menuIcon(<BgColorsOutlined />),
-                label: menuLabel('外观'),
+                label: menuLabel('主题模式'),
                 disabled: !themeReady,
                 children: [
                   { key: 'system', icon: menuIcon(<DesktopOutlined />), label: themeLabel('system', '跟随系统') },

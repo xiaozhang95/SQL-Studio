@@ -1,6 +1,6 @@
 # 会话列表
 
-History受控items/activeId/busy/loading/open及onSelect/onRefresh/onDelete/onRename。桌面232px侧栏和手机Drawer共用Ant Design X Conversations，空列表初始化显示等待。长标题省略，编辑按钮打开横向名称表单，红色删除按钮需确认。操作按钮停止冒泡，防止同时切换会话。新建会话由页面顶栏处理。
+History受控items/activeId/busy/loading/open及onSelect/onRefresh/onDelete/onRename。桌面侧栏宽度由共享 layout 提供，和手机Drawer共用Ant Design X Conversations，空列表初始化显示等待。长标题省略，编辑按钮打开横向名称表单，红色删除按钮需确认。操作按钮停止冒泡，防止同时切换会话。新建会话由页面顶栏处理。
 
 历史列表上方提供可清空的搜索框，桌面侧栏与窄屏Drawer共用关键词。按已加载的会话标题即时过滤，忽略首尾空白和大小写。搜索为空时显示全部，无匹配时显示「没有匹配的会话」。过滤保留当前会话选择，关键词仅保存在当前页面。
 

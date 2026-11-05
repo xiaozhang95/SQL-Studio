@@ -165,9 +165,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                         {...CHAT.iconButton}
                         danger
                         aria-label="停止生成"
-                        icon={
-                          <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
-                        }
+                        icon={<span aria-hidden="true" className="chat-stop-icon" />}
                         onClick={onStop}
                       />
                     </Tooltip>

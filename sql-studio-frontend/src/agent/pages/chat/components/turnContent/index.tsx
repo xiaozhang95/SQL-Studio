@@ -76,6 +76,7 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
       return (
         <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
           <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            <Typography.Text type="secondary">执行过程</Typography.Text>
             <Typography.Text type="secondary">
               {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
             </Typography.Text>
@@ -96,7 +97,12 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
   if (loading) return <ContentLoading label="正在加载过程详情…" />
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
-      {steps.slice(0, visibleCount)}
+      {steps.slice(0, visibleCount).map((step, index) => (
+        <Fragment key={entries[index].id}>
+          {index > 0 && <Divider className="chat-process-divider" />}
+          {step}
+        </Fragment>
+      ))}
     </Flex>
   )
 }
@@ -146,7 +152,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
             <ProcessCard
               key={key}
               title={title}
-              icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
+              icon={hasThinking ? undefined : <CodeOutlined className="chat-process-icon" />}
               expanded={expanded.some((id) => groupKeys.has(id))}
               onExpand={(open) => {
                 const remaining = expanded.filter((id) => !groupKeys.has(id))

@@ -324,6 +324,10 @@ body {
 .ant-card.code-panel > .ant-card-body {
   padding: 0;
 }
+.ant-card.code-panel > .ant-card-head {
+  margin-bottom: 0;
+  border-bottom-color: var(--border);
+}
 
 // 表格单元格仅绘制内部分隔线，分页复用公共底栏并省去相邻边线。
 .sql-studio-theme .ant-table-wrapper .ant-table.ant-table-bordered > .ant-table-container.agent-result-grid {
@@ -490,23 +494,13 @@ body {
   flex-basis: 8px;
 }
 
-// Agent 消息区和 Sender 共用工作区分隔线，输入框的圆角沿用 Sender。
+// Agent 问答分隔线与工作区使用同一边框。
 .ant-divider.chat-turn-divider {
   margin: 0;
   border-block-start: 1px solid var(--border);
 }
-.sql-studio-theme .ant-sender.chat-sender {
-  border-color: var(--border);
-  box-shadow: none;
-  background: var(--ant-color-fill-quaternary);
-}
 .chat-sender .chat-sender-content {
   padding: var(--ant-padding);
-}
-.chat-sender .chat-sender-input {
-  border: 0;
-  outline: none;
-  box-shadow: none;
 }
 .chat-sender .chat-sender-footer {
   padding-inline: var(--ant-padding);
@@ -517,6 +511,26 @@ body {
 }
 .chat-mode-hint {
   color: var(--ant-color-icon);
+}
+.chat-process-icon {
+  color: var(--ant-color-text-secondary);
+  font-size: var(--ant-font-size);
+  width: var(--ant-font-size);
+  height: var(--ant-font-size);
+}
+.ant-divider.chat-process-divider {
+  margin: 0;
+}
+.chat-result-icon {
+  color: var(--ant-color-primary);
+}
+// 实心停止符号继承按钮颜色，大小跟随 Ant Design 字体 token。
+.chat-stop-icon {
+  display: block;
+  width: var(--ant-font-size-sm);
+  height: var(--ant-font-size-sm);
+  background: currentColor;
+  border-radius: var(--ant-border-radius-xs);
 }
 // Think 的展开区由 Card 绘制外框。
 .ant-think .chat-process-content {
@@ -543,7 +557,6 @@ body {
   overscroll-behavior: contain;
 }
 .chat-sidebar {
-  width: 232px;
   flex-shrink: 0;
   height: 100%;
 }

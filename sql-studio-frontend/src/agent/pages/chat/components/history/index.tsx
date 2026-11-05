@@ -88,7 +88,7 @@ export function History(props: Props) {
         keyboard={!rename.busy}
         cancelButtonProps={{ disabled: rename.busy }}
       >
-        {rename.error && <Alert type="error" title={rename.error} style={{ marginBottom: 16 }} />}
+        {rename.error && <Alert type="error" title={rename.error} style={{ marginBottom: token.margin }} />}
         <Form form={rename.form} layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={rename.busy} onFinish={rename.save}>
           <Form.Item
             name="title"

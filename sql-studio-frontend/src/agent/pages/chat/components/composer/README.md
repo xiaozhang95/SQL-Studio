@@ -2,7 +2,7 @@
 
 实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存最多256 KiB的UTF-8草稿到Go布局。超过上限时保留编辑框原文并提示分段，发送入口禁用。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留模式Dropdown、带蓝鲸模型Dropdown与发送按钮；模型菜单仅保留日常模型选择；API配置统一从右上角系统设置进入。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
 
-输入区默认 4 行、最多 10 行（CHAT.composerRows），沿用默认字体和 Sender 圆角。app.scss 集中设置输入区的主题边框、淡背景和内边距，输入内容保留单层外框。拖拽产生的动态高度通过 Sender 的语义 styles 传入。
+输入区默认 4 行、最多 10 行（CHAT.composerRows），字体、背景、边框、阴影和焦点反馈沿用 Sender 默认样式。内容和底部操作区的统一内边距集中在 app.scss。拖拽产生的动态高度通过 Sender 的语义 styles 传入。实心停止符号的外观集中在 app.scss，继承按钮颜色。
 
 底部模型Dropdown使用默认尺寸文本按钮，无边框和背景色；当前值和所有模型选项统一展示蓝鲸图标。模型菜单的蓝鲸统一使用CHAT.modelMenuIconSize（18px），透传原生图标className并复用菜单默认图文间距，所有选项的图标列和文字起点一致。入口图标使用CHAT.modelTriggerIconSize（20px），复用Button默认图文间距；菜单按完整内容撑宽。字体沿用Ant Design默认值。
 
