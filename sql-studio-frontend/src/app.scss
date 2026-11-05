@@ -46,6 +46,11 @@ body {
   margin: 0;
 }
 
+// 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。
+.desktop-titlebar {
+  -webkit-app-region: drag;
+}
+
 // 会话操作保留宽度占位，只在对应会话悬停或键盘聚焦时显示。
 .chat-history-actions {
   opacity: 0;

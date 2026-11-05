@@ -279,7 +279,6 @@ export const useWorkspace = (active = true) => {
   const uiBlocked = objectBusy || Boolean(objectManagement.dialog) || connectionGroups.saving || Boolean(connectionGroups.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
   const tabBusy = queryRunning || uiBlocked
   const running = tabBusy || !storage.pageReady
-  const blockedReason = queryRunning ? 'SQL 正在执行，可切换已有页面或取消执行。' : uiBlocked ? '请先完成或关闭当前弹窗及保存操作。' : !storage.pageReady ? '正在加载当前页面。' : ''
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
   const saving = storage.saving || editorSession.pending || historyStore.saving
@@ -947,7 +946,6 @@ export const useWorkspace = (active = true) => {
     running,
     queryRunning,
     uiBlocked,
-    blockedReason,
     tabBusy,
     runningTabId,
     activeRunning,

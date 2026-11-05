@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
+import DesktopTitleBar from '@/components/desktopTitleBar'
+
 export default function PageHeader({
   children,
   actions,
@@ -39,46 +41,49 @@ export default function PageHeader({
   }, [hasTitle, titleOffset])
 
   return (
-    <header
-      className="topbar"
-      style={{
-        minHeight: 56,
-        flex: 'none',
-        paddingInline: 'var(--workspace-inset)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 'var(--workspace-inset)',
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--layout-border)',
-        userSelect: 'none',
-        position: 'relative'
-      }}
-    >
-      <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)', minWidth: 0 }}>
-        {children}
-      </div>
-      {title && (
-        <div
-          ref={titleElement}
-          className={titleClassName}
-          style={{
-            position: 'absolute',
-            left: `calc(50% + ${titleOffset}px)`,
-            transform: 'translateX(-50%)',
-            maxWidth: 'min(30%, var(--header-title-available-width, 30%))',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none'
-          }}
-        >
-          {title}
+    <>
+      <DesktopTitleBar />
+      <header
+        className="topbar"
+        style={{
+          minHeight: 56,
+          flex: 'none',
+          paddingInline: 'var(--workspace-inset)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--workspace-inset)',
+          background: 'var(--surface)',
+          borderBottom: '1px solid var(--layout-border)',
+          userSelect: 'none',
+          position: 'relative'
+        }}
+      >
+        <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)', minWidth: 0 }}>
+          {children}
         </div>
-      )}
-      <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, marginInlineStart: 'auto' }}>
-        {actions}
-      </div>
-    </header>
+        {title && (
+          <div
+            ref={titleElement}
+            className={titleClassName}
+            style={{
+              position: 'absolute',
+              left: `calc(50% + ${titleOffset}px)`,
+              transform: 'translateX(-50%)',
+              maxWidth: 'min(30%, var(--header-title-available-width, 30%))',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none'
+            }}
+          >
+            {title}
+          </div>
+        )}
+        <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, marginInlineStart: 'auto' }}>
+          {actions}
+        </div>
+      </header>
+    </>
   )
 }

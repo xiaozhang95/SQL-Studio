@@ -1,5 +1,8 @@
 # 公共组件
 
+- [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景。
+- [pageHeader](pageHeader/README.md)：工作区和 AI 助手共用顶栏布局。
+
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
 
 - [saveStatus](saveStatus/README.md)：工作区和Agent共用的本机保存状态。

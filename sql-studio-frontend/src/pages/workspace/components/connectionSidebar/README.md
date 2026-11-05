@@ -14,4 +14,4 @@ sidebarWidth/setSidebarWidth 为与Agent历史栏共用的受控偏好宽度，�
 
 已有连接时刷新列表保留树实例。首次加载且暂无连接时，侧栏通过 ContentLoading 显示加载提示。
 
-向对象树透传 blockedReason，展示执行/弹窗/加载占用的原因。
+执行 SQL 或打开弹窗时，侧栏不插入动态状态说明，搜索框、树体高度和节点位置保持稳定；操作占用仍沿用 running 控制。

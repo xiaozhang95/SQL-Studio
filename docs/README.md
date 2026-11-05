@@ -6,6 +6,7 @@
 | --- | --- |
 | [功能汇总](FEATURES.md) | 当前完整功能清单、数据库差异及使用边界 |
 | [项目框架](ARCHITECTURE.md) | 技术栈、目录、前后端调用和数据流 |
+| [Electron 桌面项目](../sql-studio-electron/README.md) | 独立桌面项目、镜像、开发与安装包构建 |
 | [接口列表](API.md) | HTTP 路由、Swagger 入口和公共约定 |
 | [AI 助手源码导读](AGENT_GUIDE.md) | DeepSeek 请求、工具调用、SQL 权限、流式展示和会话保存 |
 | [开发约定](DEVELOPMENT.md) | 开发入口与检查命令 |

@@ -8,6 +8,7 @@
 | ---- | --------------------- | ---------------------------------- | --------------------- |
 | 前端 | `sql-studio-frontend` | npm package：`sql-studio-frontend` | `sql-studio-frontend` |
 | 后端 | `sql-studio-backend`  | Go module：`sql-studio-backend`    | `sql-studio-backend`  |
+| 桌面 | `sql-studio-electron` | npm package：`sql-studio-electron` | 项目级 `sql-studio` |
 
 项目级 skill 为 `sql-studio`；后端唯一程序入口为 `sql-studio-backend/main.go`。
 
@@ -53,6 +54,10 @@ pnpm dev
 ```
 
 浏览器打开 `http://127.0.0.1:15173`，点击“新建连接”填写数据库信息。后端默认监听 `127.0.0.1:18080`。
+
+### Electron 桌面项目
+
+独立项目位于 [sql-studio-electron](sql-studio-electron/README.md)，已配置 Electron 和 electron-builder 下载镜像。启动上述前后端后，在该目录执行 `pnpm install --frozen-lockfile`、`pnpm dev` 即可打开桌面开发窗口。执行 `pnpm build` 生成当前平台应用目录，`pnpm dist` 生成安装包；打包版携带前端页面和 Go 服务，自动管理本地服务进程，使用独立的桌面配置目录。完整步骤和目录说明见项目 README。
 
 ## 一键打包
 

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; base-uri 'none'; form-action 'none'"
+    />
+    <title>SQL Studio</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script defer src="./renderer.js"></script>
+  </head>
+  <body>
+    <div class="window-drag" aria-hidden="true"></div>
+    <main class="startup" aria-busy="true">
+      <div class="brand">
+        <div class="logo-halo" aria-hidden="true"></div>
+        <img class="logo" width="80" height="80" alt="" />
+      </div>
+      <h1>SQL Studio</h1>
+      <div class="loading" role="status" aria-label="正在启动 SQL Studio">
+        <div class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+    </main>
+  </body>
+</html>

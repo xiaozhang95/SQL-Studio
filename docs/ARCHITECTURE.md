@@ -32,6 +32,7 @@ SQL-Studio/
 │  ├─ internal/statefile/     用户分区 JSON 和修订保护
 │  ├─ internal/deepseek/      AI HTTPS 传输
 │  └─ tests/                  架构与可选数据库集成测试
+├─ sql-studio-electron/        独立 Electron 桌面壳、进程管理与安装包构建
 └─ docs/                     当前项目文档
 ```
 
@@ -62,3 +63,5 @@ flowchart LR
 连接密码由后端 AES-GCM 加密到服务启动目录下的配置目录，密钥随连接文件备份；该配置目录的分区 JSON 保存工作区、历史、主题和 AI 配置。配置使用版本号与修订号，拒绝冲突覆盖；工作区不含连接密码，恢复不自动执行 SQL。AI Key 仅后端保存，公开响应脱敏，AI 请求不会执行生成 SQL。
 
 开发时 Vite 15173 将 /api 同源代理到 Go 18080。构建后 Go 同时提供网页、Swagger 页面与 API，无额外服务进程。启动见 [项目 README](../README.md)，包依赖细节见 [后端架构](BACKEND_ARCHITECTURE.md)。
+
+[Electron 桌面项目](../sql-studio-electron/README.md) 开发时连接现有 Vite；打包后携带 Go 可执行文件和前端 dist，由主进程启动独立本地服务并管理退出。桌面版配置显式指向 Electron 用户数据目录，不使用安装目录或网页服务的默认配置。
