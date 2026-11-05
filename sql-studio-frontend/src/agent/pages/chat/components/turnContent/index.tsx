@@ -1,9 +1,7 @@
 import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
 import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
-import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
-
-import ContentLoading from '@/components/contentLoading'
+import { Fragment, useMemo } from 'react'
 
 import type { Entry } from '../../../../typings/chat'
 import { chatErrors } from '../../../../utils/chatEvents'
@@ -43,26 +41,7 @@ function blocks(entries: Entry[]): Block[] {
   return out
 }
 function ProcessDetails({ entries }: { entries: Entry[] }) {
-  const { batchSize, loadingMinDuration } = CHAT.processDetails
-  const [visibleCount, setVisibleCount] = useState(0)
-  const loading = visibleCount === 0
-  const pending = visibleCount < entries.length
-
-  useEffect(() => {
-    if (!pending) return
-    const showNextBatch = () => {
-      startTransition(() => setVisibleCount(visibleCount + batchSize))
-    }
-    if (loading) {
-      const timer = setTimeout(showNextBatch, loadingMinDuration)
-      return () => clearTimeout(timer)
-    }
-    const frame = requestAnimationFrame(showNextBatch)
-    return () => cancelAnimationFrame(frame)
-  }, [batchSize, loading, loadingMinDuration, pending, visibleCount])
-
   const steps = useMemo(() => {
-    if (loading) return []
     let toolNumber = 0
     return entries.map((e) => {
       if (e.role === 'thinking')
@@ -92,12 +71,11 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
         </Flex>
       )
     })
-  }, [entries, loading])
+  }, [entries])
 
-  if (loading) return <ContentLoading label="正在加载过程详情…" />
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
-      {steps.slice(0, visibleCount).map((step, index) => (
+      {steps.map((step, index) => (
         <Fragment key={entries[index].id}>
           {index > 0 && <Divider className="chat-process-divider" />}
           {step}

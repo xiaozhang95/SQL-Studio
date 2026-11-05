@@ -27,7 +27,10 @@ export function useWorkspace() {
     writing.current = true
     pending.current = false
     const snapshot = current.current
-    if (mounted.current) setSaving(true)
+    if (mounted.current) {
+      setState(snapshot)
+      setSaving(true)
+    }
     try {
       const v = await workspace('PUT', { revision: revision.current, state: snapshot }, undefined, keepalive || leaving.current)
       revision.current = v.revision
@@ -73,7 +76,8 @@ export function useWorkspace() {
     const next = { ...current.current, ...patch }
     if (JSON.stringify(next) === JSON.stringify(current.current)) return
     current.current = next
-    setState(next)
+    // Form owns live input. Publish draft-only updates with the debounced save.
+    if (Object.keys(patch).some((key) => key !== 'draft')) setState(next)
     pending.current = true
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => void flush(), 400)

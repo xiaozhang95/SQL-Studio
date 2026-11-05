@@ -121,7 +121,7 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 | 确认 | `write_confirmation`、`continue_confirmation` | 回复下方的操作卡片 |
 | 结束 | `error`、`stopped`、`done` | 错误、停止提示或结束状态 |
 
-展开思考与执行区后，页面先显示与工作台切换标签同样样式的「正在加载过程详情…」。至少 1 秒后，提示由第一批详情替换，其余详情和表格按原顺序显示。
+思考与执行区展开时直接展示详情，展开和收起使用 Ant Design X Think 自带的折叠动画。
 
 模型返回形如 `{"columns":[{"name":"id","type":"text"}],"rows":[["9007199254740993"]],"truncated":false}` 的结果时，前端验证结构后生成表格。数字字符串保持原样，`null` 和空字符串分别展示，重复列按位置保留。识别支持 JSON 代码围栏、正文中的裸对象和合法 Markdown 表格。表格可以分页并导出当前已加载的结果。
 
@@ -131,9 +131,9 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 
 ### 7.1 过程展开和加载提示
 
-连续的思考片段和工具步骤合并到同一个过程折叠区。回答正文会将过程分成不同的组。展开后先显示加载提示，至少保留 1 秒，再显示首批详情，其余内容按原顺序每批挂载 2 项。收起或离开虚拟窗口时清理定时器和待处理帧。
+连续的思考片段和工具步骤合并到同一个过程折叠区。回答正文会将过程分成不同的组。展开时直接展示详情，收起由 Think 自带动画控制内容退场。
 
-会话读取、快速滚动到未挂载轮次和过程展开共用 `ContentLoading`，使用 Ant Design 默认 `Spin` 的图标、尺寸、主题色及说明。居中布局等共用样式放在 `app.scss`。等待模型回复时使用行内旋转图标和状态文字，写入确认由确认卡片呈现。展开详情与轮次滚动的最短加载时长集中在 `CHAT`，共用 1 秒配置。
+会话读取和快速滚动到未挂载轮次共用 `ContentLoading`，使用 Ant Design 默认 `Spin` 的图标、尺寸、主题色及说明。居中布局等共用样式放在 `app.scss`。等待模型回复时使用行内旋转图标和状态文字，写入确认由确认卡片呈现。轮次滚动的最短加载时长集中在 `CHAT`，为 1 秒。
 
 源码见[公共加载组件](../sql-studio-frontend/src/components/contentLoading/README.md)、[过程详情](../sql-studio-frontend/src/agent/pages/chat/components/turnContent/README.md)和[聊天配置](../sql-studio-frontend/src/agent/pages/chat/constant/chat/README.md)。
 
