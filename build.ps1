@@ -80,4 +80,4 @@ try {
     Pop-Location
 }
 Write-Host "Built: $outputFile"
-Write-Host 'Run the executable, then open http://127.0.0.1:8080/ . No external dist is needed.'
+Write-Host 'Run the executable, then open http://127.0.0.1:18080/ . No external dist is needed.'

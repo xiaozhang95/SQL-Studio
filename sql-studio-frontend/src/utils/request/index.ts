@@ -16,7 +16,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error('后端服务不可用，请检查 Go 服务是否已启动（8080 端口）')
+    throw new Error('后端服务不可用，请检查 Go 服务是否已启动（18080 端口）')
   }
   if (!response.ok) throw new RequestError(data.error || `请求失败：${response.status}`, response.status)
   return data as T

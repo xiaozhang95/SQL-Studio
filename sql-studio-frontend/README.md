@@ -10,7 +10,7 @@ pnpm install
 pnpm dev
 ```
 
-开发地址 `http://127.0.0.1:5173`，/api 同源代理到 Go 8080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
+开发地址 `http://127.0.0.1:15173`，/api 同源代理到 Go 18080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
 
 [源码索引](src/README.md) · [前端规范](../docs/FRONTEND_STANDARDS.md) · [项目框架](../docs/ARCHITECTURE.md) · [测试](tests/README.md)
 

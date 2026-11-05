@@ -15,8 +15,8 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     host: '127.0.0.1',
-    port: 5173,
+    port: 15173,
     strictPort: true,
-    proxy: { '/api': { target: 'http://127.0.0.1:8080', changeOrigin: false } }
+    proxy: { '/api': { target: 'http://127.0.0.1:18080', changeOrigin: false } }
   }
 })

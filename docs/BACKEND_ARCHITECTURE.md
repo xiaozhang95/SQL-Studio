@@ -32,7 +32,7 @@ HTTP context 传入模块和驱动，保留取消、超时、游标与连接释�
 
 普通 JSON 请求限制 1 MiB，配置写入信封限制 32 MiB + 1024 字节。配置文件缺失可重建，现存文件严格 CAS，损坏或未知版本拒绝覆盖。密码不进入响应与日志；AI Key 仅保存在后端配置，响应脱敏。
 
-Go 服务默认仅监听 127.0.0.1:8080，提供构建网页及 API。退出给予在途请求 5 秒结束时间。目录、启动、环境变量和测试入口见 [后端 README](../sql-studio-backend/README.md)。
+Go 服务默认仅监听 127.0.0.1:18080，提供构建网页及 API。退出给予在途请求 5 秒结束时间。目录、启动、环境变量和测试入口见 [后端 README](../sql-studio-backend/README.md)。
 
 仓库根目录 `build.ps1` 先构建 Vite dist，再同步到 internal/webui 的生成目录并用 embedded 标签编译。app 调用 webui.Register，以 Gin StaticFS/StaticFileFS 注册前端路由，API 命名空间优先；内嵌版不依赖运行目录的前端文件，显式 SQLDESK_WEB_DIR 可覆盖。开发构建使用磁盘 dist，不需要占位资源。
 

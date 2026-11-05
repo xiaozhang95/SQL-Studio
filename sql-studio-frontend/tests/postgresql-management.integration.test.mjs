@@ -8,7 +8,7 @@ import { splitPostgreSQLStatements } from '../src/databases/postgresql/statement
 import { step } from './integration-steps.mjs'
 
 test('real PostgreSQL database edits and structure/data export restore into another database', { skip: process.env.SQLDESK_SQL_WINDOW_INTEGRATION !== '1', timeout: 120000 }, async (t) => {
-  const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:8080/api'
+  const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:18080/api'
   const api = async (path, body, method = body ? 'POST' : 'GET') => {
     const r = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
     const d = await r.json()

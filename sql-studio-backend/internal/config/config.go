@@ -21,7 +21,7 @@ type Config struct {
 
 // Load resolves paths against the service startup working directory, independently of the executable location.
 func Load() (Config, error) {
-	cfg := Config{Address: "127.0.0.1:8080"}
+	cfg := Config{Address: "127.0.0.1:18080"}
 	if address := os.Getenv("SQLDESK_ADDR"); address != "" {
 		cfg.Address = address
 	}

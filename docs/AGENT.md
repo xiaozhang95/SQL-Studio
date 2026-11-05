@@ -1,6 +1,6 @@
 # SQL Studio 数据库 Agent
 
-构建 `sql-studio-frontend` 后，从 `sql-studio-backend` 运行 `go run main.go`，打开默认 8080 页面。点击工作区顶栏的「AI 助手」进入，也可直接打开 `/#agent`。点击助手顶栏的「工作区」返回。
+构建 `sql-studio-frontend` 后，从 `sql-studio-backend` 运行 `go run main.go`，打开默认 18080 页面。点击工作区顶栏的「AI 助手」进入，也可直接打开 `/#agent`。点击助手顶栏的「工作区」返回。
 
 从一条消息开始学习模型请求、工具执行、权限确认、回复展示和本地保存，见[AI 助手源码导读](AGENT_GUIDE.md)。
 

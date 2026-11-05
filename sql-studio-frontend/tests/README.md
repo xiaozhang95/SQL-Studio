@@ -49,7 +49,7 @@ PostgreSQL 回归：`node --test tests/postgresql.test.mjs` 检查美元引号/E
 
 PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test.mjs` 覆盖元数据解码、属性范围/原值核对/注入拒绝、序列精度、IDENTITY、生成列、BYTEA及截断拒绝。`postgresql-management.integration.test.mjs` 复用 SQLDESK_SQL_WINDOW_INTEGRATION/SQLDESK_TEST_API/SQLDESK_PG_PASSWORD 开关，建立两个随机 sqldesk_feature_ 临时库，真实执行属性修改与跨库还原、对比数据并检查后续自增；finally删除临时库和连接。浏览器另验证实际编辑入口、预览/保存、下载内容及亮暗主题。
 
-真实 SQL 窗口回归：`node --test tests/sql-window.integration.test.mjs` 默认跳过。先用独立 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 启动本地后端，再设置 SQLDESK_SQL_WINDOW_INTEGRATION=1、SQLDESK_MYSQL_PASSWORD、SQLDESK_PG_PASSWORD；SQLDESK_TEST_API 可覆盖接口地址（默认 http://127.0.0.1:8080/api）。测试执行实际 executeSQL 编排和引擎切分器，经 HTTP 访问本机 3306/root 与 5432/postgres；只创建随机 sqldesk_window_ 临时库/schema、临时连接，finally 清理。覆盖精确值、多结果、错误停止、取消后重跑、行数限制、MySQL USE/SET/建表/重建表/INSERT/UPDATE/DELETE/ALTER/RENAME/TRUNCATE/DROP、写入失败停止和 API 默认读取边界、PostgreSQL DDL/DML/RETURNING 与美元引号。它替换 React 状态并断言请求、逐条结果及历史，不替代浏览器点击、选区或快捷键检查。凭据只从环境变量读取，勿把真实密码写入测试文件或报告。
+真实 SQL 窗口回归：`node --test tests/sql-window.integration.test.mjs` 默认跳过。先用独立 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 启动本地后端，再设置 SQLDESK_SQL_WINDOW_INTEGRATION=1、SQLDESK_MYSQL_PASSWORD、SQLDESK_PG_PASSWORD；SQLDESK_TEST_API 可覆盖接口地址（默认 http://127.0.0.1:18080/api）。测试执行实际 executeSQL 编排和引擎切分器，经 HTTP 访问本机 3306/root 与 5432/postgres；只创建随机 sqldesk_window_ 临时库/schema、临时连接，finally 清理。覆盖精确值、多结果、错误停止、取消后重跑、行数限制、MySQL USE/SET/建表/重建表/INSERT/UPDATE/DELETE/ALTER/RENAME/TRUNCATE/DROP、写入失败停止和 API 默认读取边界、PostgreSQL DDL/DML/RETURNING 与美元引号。它替换 React 状态并断言请求、逐条结果及历史，不替代浏览器点击、选区或快捷键检查。凭据只从环境变量读取，勿把真实密码写入测试文件或报告。
 
 explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
 

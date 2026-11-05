@@ -19,7 +19,7 @@ func TestLoadPathsAndInitialConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.StateDir != filepath.Join(dir, "state") || cfg.Address != "127.0.0.1:8080" || cfg.InitialConnection == nil || cfg.InitialConnection.Port != 3307 || cfg.InitialConnection.Host != "localhost" || !filepath.IsAbs(cfg.DataDir) || !filepath.IsAbs(cfg.WebDir) {
+	if cfg.StateDir != filepath.Join(dir, "state") || cfg.Address != "127.0.0.1:18080" || cfg.InitialConnection == nil || cfg.InitialConnection.Port != 3307 || cfg.InitialConnection.Host != "localhost" || !filepath.IsAbs(cfg.DataDir) || !filepath.IsAbs(cfg.WebDir) {
 		t.Fatal("configuration not applied")
 	}
 	t.Setenv("SQLDESK_MYSQL_PORT", "65536")
@@ -37,9 +37,9 @@ func TestListenAddressOverride(t *testing.T) {
 	t.Setenv("SQLDESK_DATA_DIR", t.TempDir())
 	t.Setenv("SQLDESK_STATE_DIR", t.TempDir())
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
-	t.Setenv("SQLDESK_ADDR", "127.0.0.1:18080")
+	t.Setenv("SQLDESK_ADDR", "127.0.0.1:18081")
 	cfg, err := Load()
-	if err != nil || cfg.Address != "127.0.0.1:18080" {
+	if err != nil || cfg.Address != "127.0.0.1:18081" {
 		t.Fatalf("listen address override: %q, %v", cfg.Address, err)
 	}
 }

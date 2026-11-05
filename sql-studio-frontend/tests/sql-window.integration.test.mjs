@@ -10,7 +10,7 @@ import { step } from './integration-steps.mjs'
 
 // Opt in against an isolated SQL Studio backend. Credentials only come from the environment.
 const enabled = process.env.SQLDESK_SQL_WINDOW_INTEGRATION === '1'
-const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:8080/api'
+const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:18080/api'
 const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
 const implementation = stripTypeScriptTypes(executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL')))
 
