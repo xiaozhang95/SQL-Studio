@@ -38,6 +38,5 @@
 - [useQueryShortcut](useQueryShortcut/README.md)：可见查询编辑器内的执行快捷键。
 - [useQueryExecution](useQueryExecution/README.md)：固定页面范围的多语句执行及历史。
 - [useWorkspaceConnections](useWorkspaceConnections/README.md)：连接列表、分组与加载错误。
-- [useWorkspaceRecovery](useWorkspaceRecovery/README.md)：保存失败时的导出副本与显式重新载入。
 
 - [useQuerySession](useQuerySession/README.md)：查询页面、结果、运行请求及草稿保护状态。

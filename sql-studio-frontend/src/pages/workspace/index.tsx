@@ -88,9 +88,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themePrefere
           title={storageError ? '本机配置保存不可用，当前页面仍可使用。' : '连接列表加载失败，当前页面仍可使用。'}
           description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{noticeError}</div>}
           action={
-            storageError ? (
-              <Button onClick={() => void model.recoverStorage()}>恢复保存</Button>
-            ) : model.connectionError ? (
+            !storageError && model.connectionError ? (
               <Button loading={model.connectionLoading} onClick={() => void model.loadConnections()}>
                 重试
               </Button>

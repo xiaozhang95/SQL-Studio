@@ -37,6 +37,7 @@ body {
   -webkit-app-region: drag;
 }
 .startup {
+  --brand-size: clamp(40px, 8vw, 92px);
   width: 100%;
   height: 100%;
   display: flex;
@@ -46,14 +47,22 @@ body {
   user-select: none;
   padding: 48px 24px;
 }
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
 .brand {
   position: relative;
   display: grid;
   place-items: center;
-  width: 144px;
-  height: 144px;
+  width: calc(var(--brand-size) * 0.88);
+  height: calc(var(--brand-size) * 0.88);
+  flex-shrink: 0;
 }
 .logo {
+  width: calc(var(--brand-size) * 0.88);
+  height: calc(var(--brand-size) * 0.88);
   position: relative;
   animation:
     arrive 480ms ease-out both,
@@ -67,7 +76,10 @@ body {
   animation: halo 2400ms ease-in-out infinite;
 }
 h1 {
-  margin: 12px 0 0;
+  margin: 0;
+  font-size: var(--brand-size);
+  line-height: 1;
+  white-space: nowrap;
 }
 .loading {
   margin-top: 32px;
@@ -78,13 +90,13 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 8px;
+  gap: 8px;
+  height: 10px;
 }
 .loading-dots span {
   display: block;
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: currentColor;
   opacity: 0.35;

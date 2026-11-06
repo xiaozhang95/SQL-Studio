@@ -88,6 +88,6 @@ getEditorHistory(id) 提供会话内该页撤销/重做的初始化扩展；切�
 
 失效schema及对象标题迁移改由reconcileWorkspacePages在提交前统一校正当前组件状态；未知元数据和对象操作期保留范围，无变化返回原引用，校正稳定后不重复更新，不再通过Effect级联setTabs。
 
-连接列表、批次执行、快捷键和保存恢复分别归属 useWorkspaceConnections/useQueryExecution/useQueryShortcut/useWorkspaceRecovery，组合根负责页面范围和跨模块协调。queryRunning 与 uiBlocked 区分执行及界面占用，树显示禁用状态和原因。执行中切页后顶栏保留取消入口。保存失败不推进旧 revision；“恢复保存”可导出全部草稿、常驻结果和内存历史，再由用户明确重新载入。恢复不自动执行 SQL。
+连接列表、批次执行、快捷键分别归属 useWorkspaceConnections/useQueryExecution/useQueryShortcut，组合根负责页面范围和跨模块协调。queryRunning 与 uiBlocked 区分执行及界面占用，树显示禁用状态和原因。执行中切页后顶栏保留取消入口。保存失败不推进旧 revision；加载或保存失败仅保留错误状态，不提供恢复弹窗。
 
 查询页 tabs/runs/resultViews/editorLayouts、运行请求及取消边界集中到 useQuerySession；useWorkspace 继续负责范围关闭、对象操作与上述模块的组合协调，不再直接拥有这些底层状态。

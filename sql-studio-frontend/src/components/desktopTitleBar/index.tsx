@@ -35,8 +35,9 @@ export default function DesktopTitleBar({ showTitle = true, title = 'SQL Studio'
       }}
     >
       {showTitle && (
-        <span title={title} style={{ maxWidth: 'calc(100% - 320px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: `${desktop.titleBarHeight}px` }}>
-          {title}
+        <span title={title} style={{ maxWidth: 'calc(100% - 320px)', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, lineHeight: `${desktop.titleBarHeight}px` }}>
+          <img src="/studio.svg" alt="" width={16} height={16} draggable={false} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         </span>
       )}
     </div>

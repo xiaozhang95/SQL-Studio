@@ -13,5 +13,3 @@
 - [exportWriter](exportWriter/README.md)：原生文件流及有界下载兼容。
 
 - [latestWriter](latestWriter/README.md)：同一工作区单在途、只保留最新等待保存。
-
-- [recoveryFile](recoveryFile/README.md)：保存 JSON 恢复副本，区分原生完成和浏览器下载。

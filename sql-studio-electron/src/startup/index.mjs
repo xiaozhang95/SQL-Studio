@@ -15,7 +15,6 @@ export async function createStartupScreen(window, { icon, dark, followSystem = f
     }
   })
   let disposed = false
-  let shownAt
   const lifetime = new AbortController()
   const updateSystemTheme = () => {
     if (!disposed && followSystem && !view.webContents.isDestroyed())
@@ -54,7 +53,6 @@ export async function createStartupScreen(window, { icon, dark, followSystem = f
     })
     if (!window.isDestroyed()) {
       window.show()
-      shownAt = performance.now()
       nativeTheme.on('updated', updateSystemTheme)
       updateSystemTheme()
     }
@@ -66,8 +64,8 @@ export async function createStartupScreen(window, { icon, dark, followSystem = f
     setStage,
     dispose,
     async complete() {
-      // 两秒从开屏实际显示起计时，后台初始化并行进行；慢启动不再额外等两秒。
-      await delay(Math.max(0, 2000 - (performance.now() - shownAt)), undefined, { signal: lifetime.signal })
+      // 工作台就绪后保留两秒，让品牌和加载动画充分展示。
+      await delay(2000, undefined, { signal: lifetime.signal })
       setStage('ready')
       await delay(240, undefined, { signal: lifetime.signal })
       dispose()

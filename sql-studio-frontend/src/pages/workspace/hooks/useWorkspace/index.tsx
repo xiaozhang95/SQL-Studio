@@ -31,7 +31,6 @@ import { useQueryShortcut } from '../useQueryShortcut'
 import { useWorkspaceConnections } from '../useWorkspaceConnections'
 import { useWorkspaceEditor } from '../useWorkspaceEditor'
 import { useWorkspacePersistence } from '../useWorkspacePersistence'
-import { useWorkspaceRecovery } from '../useWorkspaceRecovery'
 
 const emptyScope: QueryScope = { connectionId: '', database: '', schema: '', table: '' }
 const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query', sql: '' }
@@ -282,15 +281,6 @@ export const useWorkspace = (active = true) => {
   const workspaceReady = storage.ready && historyStore.ready
   const storageError = storage.error || historyStore.error
   const saving = storage.saving || editorSession.pending || historyStore.saving
-  const recoverStorage = useWorkspaceRecovery({
-    blocked: tabBusy || historyOpen || Object.values(designerDirty).some(Boolean),
-    histories: historyStore.histories,
-    capture: async (signal) => {
-      editorSession.flush()
-      const pages = tabs.map((page) => ({ ...page, sql: page.id === activeTabRef.current && page.kind === 'query' ? getCurrentSQL() : (pendingDrafts.current.get(page.id) ?? page.sql) }))
-      return { ...snapshot, tabs: await storage.draftsFor(pages, signal) }
-    }
-  })
   useEffect(() => {
     if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
@@ -930,7 +920,6 @@ export const useWorkspace = (active = true) => {
     pageLoadError: storage.loadError,
     retryPage: storage.retryPage,
     storageError,
-    recoverStorage,
     saving,
     explorer,
     updateExplorer,
