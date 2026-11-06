@@ -71,12 +71,21 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           {databaseProfiles.map((profile) => (
             <Button
               key={profile.value}
-              type={profile.value === engine.value ? 'primary' : 'text'}
+              type="text"
               className="engine-choice"
               aria-pressed={profile.value === engine.value}
               disabled={busy || Boolean(connection && profile.value !== engine.value)}
               onClick={() => selectEngine(profile.value)}
-              style={{ height: 'auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', whiteSpace: 'normal', textAlign: 'left' }}
+              style={{
+                height: 'auto',
+                minHeight: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                whiteSpace: 'normal',
+                textAlign: 'left',
+                background: profile.value === engine.value ? 'var(--ant-control-item-bg-hover)' : undefined
+              }}
             >
               <EngineIcon type={profile.value} variant="logo" size={32} />
               <span>{profile.label}</span>

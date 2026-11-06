@@ -19,3 +19,5 @@ selecting表示当前会话内容加载中：暂停新建、删除和重命名�
 layout 接收公共 useSidebarResize 控制器。桌面侧栏右侧 5px 分隔条支持拖动、键盘左右/Home/End 与双击恢复 272px。宽度与 SQL 工作台连接栏共用并沿用工作台布局持久化，范围 200–560px，实际宽度按主区至少 520px 约束。窄屏继续使用 Drawer。
 
 hook返回的DOM/list ref先单独解构为Ref变量，再传给ref属性；尺寸/导航状态与事件回调独立消费，渲染不读取ref.current。
+
+当前选中项统一使用 controlItemBgHover 灰阶背景与主题正文色，悬停和聚焦保持一致，不使用蓝底白字。

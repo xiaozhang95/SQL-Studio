@@ -10,18 +10,13 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'resultViews' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
+  model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
 }
 /** 主区域只保留这一层页面标签；各页内容、执行状态和关闭目标独立。 */
 export default function WorkspaceTabs({ model, children, renderDesigner }: Props) {
-  const { connections, designerDirty, tabs, activeTab, runs, resultViews, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
-  const selectedRun = (id: string) => runs[id]?.statements?.[resultViews[id]?.resultIndex || 0] || runs[id]
-  const selectedStatus = (page: WorkspaceTab) => {
-    const output = selectedRun(page.id)
-    return output ? (output.error ? 'error' : output.result ? 'success' : undefined) : page.resultStatus
-  }
+  const { connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
   return (
     <Tabs
       className="workspace-tabs page-tabs"
@@ -82,7 +77,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
           ),
         label: (
           <span
-            className={`result-tab-label${selectedStatus(item) === 'error' ? ' is-error' : selectedStatus(item) === 'success' ? ' is-success' : ''}`}
+            className="result-tab-label"
             style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
             title={
               item.kind === 'table-create' || item.kind === 'table-design'

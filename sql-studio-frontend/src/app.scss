@@ -62,18 +62,18 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
-// 历史会话的当前项使用主题激活色，标题继承激活文字色。
+// 历史会话的当前项使用灰阶背景，标题继承激活文字色。
 .chat-history-list .ant-conversations-item-active,
 .chat-history-list .ant-conversations-item-active:not(.ant-conversations-item-disabled):hover,
 .chat-history-list .ant-conversations-item-active:focus-within {
-  background: var(--ant-color-primary);
-  color: var(--ant-color-text-light-solid);
+  background: var(--ant-control-item-bg-hover);
+  color: var(--text);
 }
 .chat-history-list .ant-conversations-item-active .chat-history-row > .ant-typography {
-  color: var(--ant-color-text-light-solid);
+  color: var(--text);
 }
 .chat-history-list .ant-conversations-item-active .chat-history-actions .ant-btn:not(:disabled) {
-  color: var(--ant-color-text-light-solid);
+  color: var(--text);
 }
 
 // Dropdown 的子菜单外层是 li，行布局必须应用到内部 title，不能把 li 变成 flex。
@@ -241,7 +241,7 @@ body {
 .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
   background: var(--surface);
   border-bottom-color: var(--surface);
-  box-shadow: inset 0 2px var(--primary);
+  box-shadow: none;
 }
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
   display: flex;
@@ -307,7 +307,7 @@ body {
   bottom: 12px;
   z-index: 2;
   pointer-events: none;
-  color: var(--ant-color-text-secondary);
+  color: var(--text);
 }
 
 .result-panel-content > .ant-spin-nested-loading {
@@ -434,8 +434,8 @@ body {
 }
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover,
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:focus-visible {
-  color: var(--on-primary);
-  background: var(--primary);
+  color: var(--text);
+  background: var(--ant-control-item-bg-hover);
 }
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-title,
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-iconEle {
@@ -443,31 +443,11 @@ body {
 }
 
 .object-tree .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
-  color: var(--on-primary);
-  background: var(--primary);
+  color: var(--text);
+  background: var(--ant-control-item-bg-hover);
 }
 
-// 查询和结果使用同一套卡片页签布局与主题主色。
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: var(--primary);
-}
-.page-tabs > .ant-tabs-nav .ant-tabs-tab-active {
-  --result-tab-color: var(--primary);
-}
-.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label.is-success) {
-  --result-tab-color: var(--ant-color-success-text);
-}
-.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label.is-error) {
-  --result-tab-color: var(--ant-color-error-text);
-}
-.page-tabs > .ant-tabs-nav .ant-tabs-tab:has(.result-tab-label) .ant-tabs-tab-btn {
-  color: var(--result-tab-color, var(--text));
-}
-.page-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
-  box-shadow: inset 0 2px var(--result-tab-color, var(--primary));
-}
-
-// 内层结果导航独立于主页面 Tabs；选中顶线使用当前结果的语义色。
+// 内层结果导航独立于主页面 Tabs，边框保持统一灰阶。
 // 亮色默认 card 边框与背景过近；显式使用统一实色边框，所有输出项保持连续分隔。
 .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
   border-color: var(--border);
@@ -482,17 +462,6 @@ body {
 html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
 html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
   border-inline-end-color: var(--ant-color-border);
-}
-.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:has(.is-success) {
-  --statement-tab-color: var(--ant-color-success-text);
-}
-.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:has(.is-error) {
-  --statement-tab-color: var(--ant-color-error-text);
-}
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
-  background: var(--surface);
-  border-bottom-color: var(--surface);
-  box-shadow: inset 0 2px var(--statement-tab-color, var(--primary));
 }
 .object-tree .ant-tree-node-selected .connection-tree-label {
   color: inherit;
@@ -652,4 +621,53 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
 .chat-round-marker:focus-visible {
   outline: 1px solid var(--ant-color-primary);
   outline-offset: 2px;
+}
+
+// 页面与结果页签不随执行状态着色；统一灰底与正文色。
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:is(:hover, :focus-within, .ant-tabs-tab-active),
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:is(:hover, :focus-within, .ant-tabs-tab-active) {
+  background: var(--ant-control-item-bg-hover);
+  box-shadow: none;
+}
+.workspace-tabs > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn,
+.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn,
+.workspace-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn,
+.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn {
+  color: var(--text);
+  text-shadow: none;
+}
+
+// 页签仅通过低对比灰阶背景区分激活，不增加顶线或文字强调。
+.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active,
+.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
+  background: var(--ant-color-fill-secondary);
+  box-shadow: none;
+  border-bottom-color: var(--ant-color-fill-secondary);
+}
+.workspace-tabs > .ant-tabs-nav .ant-tabs-tab:not(.ant-tabs-tab-active) .ant-tabs-tab-btn,
+.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:not(.ant-tabs-tab-active) .ant-tabs-tab-btn {
+  color: var(--text);
+}
+
+// 主按钮统一采用中性外观，覆盖工作区、AI 助手及上下文弹框；危险/禁用态保留原生语义。
+.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled) {
+  color: var(--ant-color-text);
+  background: var(--ant-color-bg-container);
+  border-color: var(--ant-color-border);
+  box-shadow: none;
+}
+.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):hover {
+  color: var(--ant-color-text);
+  background: var(--ant-control-item-bg-hover);
+  border-color: var(--ant-color-text-tertiary);
+}
+.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):active {
+  color: var(--ant-color-text);
+  background: var(--ant-color-fill-secondary);
+  border-color: var(--ant-color-text-secondary);
 }
