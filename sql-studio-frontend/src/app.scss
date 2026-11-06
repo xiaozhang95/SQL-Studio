@@ -671,3 +671,24 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
   background: var(--ant-color-fill-secondary);
   border-color: var(--ant-color-text-secondary);
 }
+
+// 链接式操作同样使用中性文字；真实链接保留悬停下划线和键盘焦点提示。
+.sql-studio-theme .ant-btn-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled),
+.sql-studio-theme .ant-btn-variant-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled),
+.sql-studio-theme a.ant-typography:not(.ant-typography-disabled),
+.sql-studio-theme .ant-typography a:not(.ant-typography-disabled) {
+  color: var(--ant-color-text);
+}
+.sql-studio-theme .ant-btn-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
+.sql-studio-theme .ant-btn-variant-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
+.sql-studio-theme a.ant-typography:not(.ant-typography-disabled):is(:hover, :active),
+.sql-studio-theme .ant-typography a:not(.ant-typography-disabled):is(:hover, :active) {
+  color: var(--ant-color-text);
+  text-decoration: underline;
+}
+// 普通描边按钮的悬停/按下边框也不再变蓝，危险与禁用状态保持原生语义。
+.sql-studio-theme .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active) {
+  color: var(--ant-color-text);
+  border-color: var(--ant-color-text-tertiary);
+  background: var(--ant-control-item-bg-hover);
+}
