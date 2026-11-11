@@ -1,5 +1,5 @@
-import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, SearchOutlined } from '@ant-design/icons'
-import { Alert, App as AntApp, Button, Drawer, Empty, Input, Table, Tag, Tooltip } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined } from '@ant-design/icons'
+import { Alert, App as AntApp, Drawer, Empty, Input, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -14,6 +14,7 @@ import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import EngineIcon from '../engineIcon'
 import SQLPreview from '../sqlPreview'
+import ToolbarButton from '../toolbarButton'
 
 type Props = {
   themeMode: ThemeMode
@@ -69,16 +70,19 @@ export default function QueryHistory({ model, themeMode }: Props) {
     {
       title: '操作',
       key: 'actions',
-      width: 124,
+      width: 64,
       fixed: 'right',
       render: (_, item) => {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
         return (
-          <Tooltip title={missing ? '原连接已删除' : undefined}>
-            <Button type="link" size={ComponentSize.Small} disabled={running || missing} onClick={() => loadHistory(item)}>
-              载入编辑器
-            </Button>
-          </Tooltip>
+          <ToolbarButton
+            label="载入编辑器"
+            hint={missing ? '原连接已删除' : undefined}
+            icon={<ImportOutlined />}
+            size={ComponentSize.Small}
+            disabled={running || missing}
+            onClick={() => loadHistory(item)}
+          />
         )
       }
     }
@@ -106,8 +110,9 @@ export default function QueryHistory({ model, themeMode }: Props) {
       size="min(1080px, 100vw)"
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
-        <Button
-          type="text"
+        <ToolbarButton
+          label="清空执行历史"
+          icon={<DeleteOutlined />}
           danger
           disabled={!connectionHistory.length}
           onClick={() =>
@@ -119,9 +124,7 @@ export default function QueryHistory({ model, themeMode }: Props) {
               }
             })
           }
-        >
-          清空
-        </Button>
+        />
       }
     >
       <Input

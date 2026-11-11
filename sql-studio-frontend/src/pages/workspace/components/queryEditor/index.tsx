@@ -1,8 +1,8 @@
-import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, CodeOutlined, DownloadOutlined, FormatPainterOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Alert, Button, Dropdown, Upload } from 'antd'
+import { Alert, Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import type { ThemeMode } from '@/typings/theme'
@@ -16,6 +16,7 @@ import { sqlEditorAppearance } from '../../utils/editorAppearance'
 import ScopeSelects from '../scopeSelects'
 import SQLCompletionSelect from '../sqlCompletionSelect'
 import SQLOptimization from '../sqlOptimization'
+import ToolbarButton from '../toolbarButton'
 
 type Props = {
   themeMode: ThemeMode
@@ -109,34 +110,37 @@ export default function QueryEditor({ model, themeMode }: Props) {
             onSelect={selectObject}
             onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}
           />
-          <Button type="primary" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running}>
-            运行
-          </Button>
-          {ai.configured && (
-            <Button icon={<BulbOutlined />} disabled={!hasSQL || running} onClick={() => void ai.optimize()}>
-              优化
-            </Button>
-          )}
-          {activeRunning && (
-            <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
-              取消
-            </Button>
-          )}
+          <ToolbarButton label="运行" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
+          {activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
+          {ai.configured && (
+            <div role="group" aria-label="SQL AI 工具" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CodeOutlined aria-hidden="true" />
+                <span>代码补全</span>
+                <Tooltip title="AI 代码补全">
+                  <Switch
+                    size="small"
+                    aria-label="代码补全"
+                    checked={ai.enabled}
+                    disabled={running || ai.preferenceSaving}
+                    loading={ai.preferenceSaving}
+                    onChange={(value) => void ai.changeCompletion(value)}
+                  />
+                </Tooltip>
+              </div>
+              <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+            </div>
+          )}
           <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
-            <Button icon={<UploadOutlined />} loading={importing} disabled={running}>
-              导入
-            </Button>
+            <ToolbarButton label="导入 SQL" icon={<UploadOutlined />} loading={importing} disabled={running} />
           </Upload>
-          <Button icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL}>
-            导出
-          </Button>
-          <Button icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory}>
-            执行历史
-          </Button>
+          <ToolbarButton label="导出 SQL" icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
+          <ToolbarButton label="执行历史" icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
         </div>
       </div>
+      {ai.preferenceError && <Alert type="error" showIcon closable title="代码补全设置保存失败" description={ai.preferenceError} onClose={ai.clearPreferenceError} />}
       <SQLOptimization model={ai} themeMode={themeMode} />
       {objects.error && <Alert type="error" title="连接加载失败" description={objects.error} />}
       {objects.tableError && <Alert type="error" title="表列表加载失败" description={objects.tableError} />}

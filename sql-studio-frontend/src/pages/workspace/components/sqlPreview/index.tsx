@@ -2,7 +2,7 @@ import { CopyOutlined } from '@ant-design/icons'
 import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { App, Button, Card, Typography } from 'antd'
+import { App, Card, Typography } from 'antd'
 import { memo, useMemo } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
@@ -10,6 +10,7 @@ import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
 
 import { sqlPreviewAppearance } from '../../utils/editorAppearance'
+import ToolbarButton from '../toolbarButton'
 
 type Props = {
   sql: string
@@ -32,7 +33,7 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
     }
   }
   const extensions = useMemo(() => [sqlPreviewAppearance, getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} }), EditorView.lineWrapping], [databaseType])
-  const copyButton = <Button size="small" icon={<CopyOutlined />} onClick={copySQL} aria-label="复制" title="复制" style={{ flex: 'none' }}></Button>
+  const copyButton = <ToolbarButton size="small" icon={<CopyOutlined />} onClick={copySQL} label="复制 SQL" style={{ flex: 'none' }} />
   const editor = <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly style={{ flex: 1, minWidth: 0 }} basicSetup={previewSetup} aria-label="SQL 文本" />
   if (panel)
     return (

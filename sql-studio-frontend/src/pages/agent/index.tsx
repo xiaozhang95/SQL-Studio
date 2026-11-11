@@ -3,12 +3,10 @@ import { Alert, theme } from 'antd'
 import { useWorkspace } from '@/agent/hooks/workspace'
 import { ChatPage } from '@/agent/pages/chat'
 import ContentLoading from '@/components/contentLoading'
-import type { ThemeMode, ThemePreference } from '@/typings/theme'
+import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 
-interface Props {
+interface Props extends AppearancePreferences {
   themeMode: ThemeMode
-  themePreference: ThemePreference
-  onThemeChange: (value: ThemePreference) => void
   onBack: () => void
 }
 export default function AgentPage(props: Props) {
@@ -22,5 +20,6 @@ export default function AgentPage(props: Props) {
         <ContentLoading label="正在恢复Agent记录…" />
       </div>
     )
-  return <ChatPage workspace={workspace} dark={props.themeMode === 'dark'} themePreference={props.themePreference} onThemeChange={props.onThemeChange} onBack={props.onBack} />
+  const { themeMode, ...chatProps } = props
+  return <ChatPage workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
 }

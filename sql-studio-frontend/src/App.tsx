@@ -13,7 +13,14 @@ const AgentPage = lazy(() => import('@/pages/agent'))
 /** 动态弹框使用 AntApp 上下文，确保亮暗主题一致。 */
 export default function App() {
   const section = useAppSection()
-  const { preference, setPreference, mode, error, ready, saving } = useThemePreference()
+  const { preference, setPreference, fontSizePreference, setFontSizePreference, mode, error, ready, saving } = useThemePreference()
+  const appearancePreferences = {
+    themePreference: preference,
+    onThemeChange: setPreference,
+    fontSizePreference,
+    onFontSizeChange: setFontSizePreference,
+    themeReady: ready
+  }
   return (
     <ConfigProvider
       locale={zhCN}
@@ -21,26 +28,18 @@ export default function App() {
       tag={{ variant: 'solid' }}
       theme={{
         algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: { fontSize: fontSizePreference === 'small' ? 12 : fontSizePreference === 'large' ? 16 : theme.defaultSeed.fontSize },
         cssVar: { key: 'sql-studio-theme' }
       }}
     >
       <AntApp message={{ styles: { root: { display: 'none' } } }}>
         <SidebarWidthProvider>
           <div style={{ display: section.agent ? 'none' : undefined }}>
-            <Workspace
-              active={!section.agent}
-              onOpenAgent={section.openAgent}
-              themeReady={ready}
-              themeSaving={saving}
-              themeError={error}
-              themeMode={mode}
-              themePreference={preference}
-              onThemeChange={setPreference}
-            />
+            <Workspace active={!section.agent} onOpenAgent={section.openAgent} {...appearancePreferences} themeSaving={saving} themeError={error} themeMode={mode} />
           </div>
           {section.agent && (
             <Suspense fallback={null}>
-              <AgentPage onBack={section.openWorkspace} themeMode={mode} themePreference={preference} onThemeChange={setPreference} />
+              <AgentPage onBack={section.openWorkspace} themeMode={mode} {...appearancePreferences} />
             </Suspense>
           )}
         </SidebarWidthProvider>

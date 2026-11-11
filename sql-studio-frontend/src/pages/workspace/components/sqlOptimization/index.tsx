@@ -9,7 +9,7 @@ import SQLPreview from '../sqlPreview'
 export default function SQLOptimization({ model, themeMode }: { model: ReturnType<typeof useAISQL>; themeMode: ThemeMode }) {
   return (
     <Modal
-      title="优化建议"
+      title="SQL 美化建议"
       open={model.open}
       onCancel={model.close}
       onOk={model.apply}
@@ -25,7 +25,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
         <div style={{ display: 'grid', gap: 20, minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16, minWidth: 0 }}>
             <SQLPreview title="原文" panel sql={model.preview.original} themeMode={themeMode} />
-            <SQLPreview title="优化结果" panel sql={model.preview.result.sql || ''} themeMode={themeMode} />
+            <SQLPreview title="调整结果" panel sql={model.preview.result.sql || ''} themeMode={themeMode} />
           </div>
           {model.preview.result.explanation && (
             <section style={{ display: 'grid', gap: 8, minWidth: 0 }}>

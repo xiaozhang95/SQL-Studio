@@ -6,7 +6,7 @@ import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
-import type { ThemePreference } from '@/typings/theme'
+import type { AppearancePreferences } from '@/typings/theme'
 
 import type { WorkspaceController } from '../../hooks/workspace'
 import { Composer } from './components/composer'
@@ -23,14 +23,11 @@ import { useAgentSidebar } from './hooks/sidebar'
 export function ChatPage({
   dark,
   workspace,
-  onThemeChange,
-  themePreference,
-  onBack
-}: {
+  onBack,
+  ...appearancePreferences
+}: AppearancePreferences & {
   dark: boolean
   workspace: WorkspaceController
-  onThemeChange: (preference: ThemePreference) => void
-  themePreference: ThemePreference
   onBack: () => void
 }) {
   const operation = useOperationMode(workspace)
@@ -68,12 +65,12 @@ export function ChatPage({
                 savedHint="对话保存在本机，布局和草稿自动保存"
               />
             </span>
-            <SystemSettings themeMode={dark ? 'dark' : 'light'} themePreference={themePreference} onThemeChange={onThemeChange} />
+            <SystemSettings themeMode={dark ? 'dark' : 'light'} {...appearancePreferences} />
           </>
         }
       >
         {' '}
-        <Button type="primary" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
+        <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
           新建会话
         </Button>
         <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />

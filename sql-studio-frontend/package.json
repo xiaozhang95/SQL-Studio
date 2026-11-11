@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "lint": "pnpm typecheck && oxlint && node --test tests/structure.test.mjs tests/agent.test.mjs",
+    "lint": "pnpm typecheck && oxlint && node --test tests/structure.test.mjs tests/agent.test.mjs tests/ai-settings.test.mjs",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

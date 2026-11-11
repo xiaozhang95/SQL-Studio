@@ -9,6 +9,7 @@
 - [数据库品牌图标](engineIcon/README.md)
 - [当前查询连接与数据库选择器](scopeSelects/README.md)
 - [查询编辑与执行工具栏](queryEditor/README.md)
+- [工具栏图标按钮](toolbarButton/README.md)：查询、结果、表设计、历史和 SQL 预览等操作共用，仅图标并保留悬停说明和可访问名称。
 - [主区域页面标签](workspaceTabs/README.md)
 - [结果、字段与 DDL](queryResults/README.md)
 - [结果与状态标签](resultTabs/README.md)

@@ -8,7 +8,7 @@ import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { sidebarLayout } from '@/constant/sidebarLayout'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
-import type { ThemeMode, ThemePreference } from '@/typings/theme'
+import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 
 import ConnectionGroupModal from './components/connectionGroupModal'
 import ConnectionModal from './components/connectionModal'
@@ -23,18 +23,16 @@ import WorkspaceTabs from './components/workspaceTabs'
 import { useWorkspace } from './hooks/useWorkspace'
 import { workspacePageTitle } from './utils/pageTitle'
 
-type Props = {
+type Props = AppearancePreferences & {
   active: boolean
   onOpenAgent: () => void
   themeReady: boolean
   themeSaving: boolean
   themeError?: string
   themeMode: ThemeMode
-  themePreference: ThemePreference
-  onThemeChange: (preference: ThemePreference) => void
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ active, onOpenAgent, themeMode, themePreference, onThemeChange, themeError, themeReady, themeSaving }: Props) {
+export default function Workspace({ active, onOpenAgent, themeMode, themeError, themeReady, themeSaving, ...appearancePreferences }: Props) {
   const model = useWorkspace(active)
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   const storageError = model.storageError || themeError
@@ -51,14 +49,14 @@ export default function Workspace({ active, onOpenAgent, themeMode, themePrefere
           <>
             {' '}
             <SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />
-            <SystemSettings themeMode={themeMode} themePreference={themePreference} onThemeChange={onThemeChange} themeReady={themeReady} />
+            <SystemSettings themeMode={themeMode} themeReady={themeReady} {...appearancePreferences} />
           </>
         }
       >
         {' '}
-        <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
+        <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
           <Button
-            type="primary"
+            type="text"
             icon={<PlusOutlined />}
             disabled={model.running || !model.workspaceReady}
             onClick={() => {
@@ -68,12 +66,12 @@ export default function Workspace({ active, onOpenAgent, themeMode, themePrefere
           >
             新建连接
           </Button>
-          <Button icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
+          <Button type="text" icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
             新建查询
           </Button>
         </div>
         {model.runningTabId && !model.activeRunning && (
-          <Button danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+          <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
             取消执行
           </Button>
         )}
@@ -142,7 +140,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themePrefere
                 </WorkspaceTabs>
               ) : (
                 <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="点击顶部“新建查询”开始编写 SQL，也可以双击左侧数据库或表查看结构与数据。" />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="点击顶部“新建查询”开始编写 SQL，双击左侧表查看数据；数据库结构列表可从右键菜单打开。" />
                 </div>
               )}
             </div>

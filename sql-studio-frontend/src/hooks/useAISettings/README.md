@@ -1,9 +1,11 @@
 # AI 配置状态
 
-useAISettings() 管理 open/ready/loading/saving/error/configured、provider/model/apiKey/completionEnabled、模型列表和模型请求状态；公开 show/close/save/changeKey/refreshModels。每次打开读取 /api/state/ai，再通过适配器加载官方模型。模型请求单独 AbortController，关闭或换 Key 时取消，并通过弹窗代次丢弃迟到结果。Key 仅存在本次输入，不进入工作区或浏览器存储。
+useAISettings() 管理配置面板的 open/ready/loading/saving/removing/busy/error/configured、provider/model/apiKey、模型列表与请求状态；公开 show/close/save/remove/changeKey/refreshModels/setModel。服务商当前固定为已注册的 DeepSeek。
 
-保存要求当前模型来自本次已成功加载列表；revision 防止多窗口覆盖。空 Key 保留旧值。保存成功广播 ai-settings-saved，失败保留表单；模型获取失败可点击获取模型重试。无全局模型缓存；Key输入停顿500ms后自动获取模型，换Key、关闭和移除均取消防抖及旧请求。清空新输入且原Key仍存在时重新加载已保存Key的模型。
+show 每次读取 /api/state/ai，读取已保存配置后才允许保存；已配置 Key 时用空 Key 调用服务商模型发现，由后端复用密钥。模型请求有独立 AbortController，换 Key、关闭或卸载时取消，通过面板代次和 signal 丢弃迟到响应。Key 仅存在本次输入，不进入工作区或浏览器存储。
 
-remove()通过DELETE /api/ai/config及当前revision清除配置；removing/busy管理互斥状态。成功清空表单并广播配置更新，优化入口和续写同步停用；失败保留弹窗和错误。
+输入 Key 停顿 500ms 自动获取列表，手动 refreshModels 可取消防抖并重试。模型必须来自成功加载的实际列表；优先恢复已选模型，其次默认模型，否则选择首项。空列表与协议错误由模型服务校验。
 
-移除后重新输入Key会自动发现模型并选择默认可用项，成功后允许保存；空列表使用请选择模型占位，不展示未经发现的裸模型ID。
+save 成功返回 true、清理输入并广播 ai-settings-saved；失败返回 false 并保留表单和错误，未就绪或忙碌时也返回 false。提交只含 provider/model/apiKey 及 revision，不发送地址，不改写原 completionEnabled。空 Key 由后端保留，revision 防止覆盖其他页面的修改。
+
+remove 通过 DELETE /api/ai/config 及当前 revision 清除配置，成功返回 true 并广播更新，补全和美化入口同步隐藏；失败返回 false 并保留错误。保存/移除互斥，卸载取消模型请求，不自动重试覆盖冲突。

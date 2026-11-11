@@ -19,7 +19,7 @@ import {
   SortAscendingOutlined,
   TableOutlined
 } from '@ant-design/icons'
-import { Button, Dropdown, Empty, Input, Tree } from 'antd'
+import { Dropdown, Empty, Input, Tree } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
@@ -34,6 +34,7 @@ import { buildExplorerTree } from '../../utils/explorerTree'
 import type { ExplorerNode } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
 import EngineIcon from '../engineIcon'
+import ToolbarButton from '../toolbarButton'
 
 type Props = {
   model: Pick<
@@ -290,17 +291,16 @@ export default function DatabaseExplorer({ model }: Props) {
         </span>
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.title}</span>
         {node.retry && (
-          <Button
-            type="link"
+          <ToolbarButton
+            label="重试加载"
+            icon={<ReloadOutlined />}
             size="small"
             disabled={running}
             onClick={(event) => {
               event.stopPropagation()
               retry(node)
             }}
-          >
-            重试
-          </Button>
+          />
         )}
       </span>
     )
@@ -368,10 +368,11 @@ export default function DatabaseExplorer({ model }: Props) {
                 onDoubleClick={(event, value) => {
                   if (running) return
                   const node = data.byKey.get(String(value.key))
-                  if (!node) return
+                  // 数据库和分类节点只处理展开/折叠，不进入页面操作。
+                  if (!node || !['schema', 'table'].includes(node.kind)) return
                   // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。
                   if (!value.isLeaf && (value.expanded || event.shiftKey || event.metaKey || event.ctrlKey)) return
-                  if (node.kind === 'database' || node.kind === 'schema') model.openExplorerPage('structure', node.owner, node.database, '', node.schema)
+                  if (node.kind === 'schema') model.openExplorerPage('structure', node.owner, node.database, '', node.schema)
                   else if (node.kind === 'table')
                     model.openExplorerPage(
                       'data',

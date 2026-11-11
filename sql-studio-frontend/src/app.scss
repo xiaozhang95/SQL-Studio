@@ -76,23 +76,6 @@ body {
   color: var(--text);
 }
 
-// Dropdown 的子菜单外层是 li，行布局必须应用到内部 title，不能把 li 变成 flex。
-.system-settings-menu {
-  .ant-dropdown-menu-item,
-  .ant-dropdown-menu-submenu-title {
-    display: flex;
-    align-items: center;
-    height: var(--ant-control-height-lg);
-    padding-block: 0;
-  }
-
-  .ant-dropdown-menu-title-content {
-    display: flex;
-    align-items: center;
-    flex: 1;
-  }
-}
-
 // 手动渲染的下拉箭头与 Ant Design 子菜单保持同一颜色和尺寸。
 .dropdown-chevron {
   font-size: var(--ant-font-size-icon);
@@ -568,7 +551,7 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
   }
 }
 @media (max-width: 520px) {
-  // 空间不足时右侧操作独立成行，保留入口按钮和设置文字。
+  // 空间不足时右侧操作独立成行，保留入口按钮和设置图标。
   .topbar {
     flex-wrap: wrap;
     padding-block: var(--ant-padding-xs);

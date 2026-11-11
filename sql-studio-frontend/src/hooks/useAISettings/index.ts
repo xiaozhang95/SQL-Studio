@@ -4,7 +4,7 @@ import { aiProviders, getAIAdapter, isAIProvider } from '@/ai'
 import type { AIConfigDocument, AIModel, AIProviderType } from '@/ai/typings'
 import { request } from '@/utils/request'
 
-/** 表单与官方模型发现各自取消，Key 只保留于当前弹窗。 */
+/** 表单与官方模型发现各自取消，Key 只保留于当前面板。 */
 export function useAISettings() {
   const [open, setOpen] = useState(false)
   const [ready, setReady] = useState(false)
@@ -17,7 +17,6 @@ export function useAISettings() {
   const [apiKey, setAPIKey] = useState('')
   const [provider, setProvider] = useState<AIProviderType>(aiProviders[0].value)
   const [model, setModel] = useState(getAIAdapter().profile.defaultModel)
-  const [completionEnabled, setCompletionEnabled] = useState(true)
   const [models, setModels] = useState<AIModel[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsError, setModelsError] = useState('')
@@ -75,7 +74,6 @@ export function useAISettings() {
       revision.current = doc.revision
       setProvider(target)
       setModel(selected)
-      setCompletionEnabled(doc.data?.completionEnabled !== false)
       setConfigured(doc.data?.configured === true)
       setReady(true)
       if (doc.data?.configured) void loadModels(target, '', selected, id)
@@ -108,25 +106,27 @@ export function useAISettings() {
   }
   const refreshModels = () => loadModels(provider, apiKey, model, generation.current)
   const save = async () => {
-    if (!ready || busy || modelsLoading || !models.some((item) => item.id === model)) return
+    if (!ready || busy || modelsLoading || !models.some((item) => item.id === model)) return false
     setSaving(true)
     setError('')
     try {
-      await request<AIConfigDocument>('/state/ai', { method: 'PUT', body: JSON.stringify({ revision: revision.current, data: { provider, model, completionEnabled, apiKey: apiKey.trim() } }) })
+      await request<AIConfigDocument>('/state/ai', { method: 'PUT', body: JSON.stringify({ revision: revision.current, data: { provider, model, apiKey: apiKey.trim() } }) })
       window.dispatchEvent(new Event('ai-settings-saved'))
       generation.current++
       clearTimeout(modelTimer.current)
       modelRequest.current?.abort()
       setAPIKey('')
       setOpen(false)
+      return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '保存失败')
+      return false
     } finally {
       setSaving(false)
     }
   }
   const remove = async () => {
-    if (!ready || !configured || busy) return
+    if (!ready || !configured || busy) return false
     setRemoving(true)
     setError('')
     clearTimeout(modelTimer.current)
@@ -136,12 +136,13 @@ export function useAISettings() {
       generation.current++
       setAPIKey('')
       setConfigured(false)
-      setCompletionEnabled(false)
       setModels([])
       setOpen(false)
       window.dispatchEvent(new Event('ai-settings-saved'))
+      return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '移除失败')
+      return false
     } finally {
       setModelsLoading(false)
       setRemoving(false)
@@ -165,8 +166,6 @@ export function useAISettings() {
     provider,
     model,
     setModel,
-    completionEnabled,
-    setCompletionEnabled,
     models,
     modelsLoading,
     modelsError,

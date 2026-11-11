@@ -32,6 +32,10 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const [requestScope, setRequestScope] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const controller = useRef<AbortController | null>(null)
+  const preferenceRequest = useRef<AbortController | null>(null)
+  const [preferenceSaving, setPreferenceSaving] = useState(false)
+  const [preferenceError, setPreferenceError] = useState('')
+  useEffect(() => () => preferenceRequest.current?.abort(), [])
 
   useEffect(() => {
     let alive = true
@@ -42,7 +46,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
         .then((doc) => {
           if (alive && current === latest) {
             setCompletionLoading(false)
-            setConfigured(doc.data?.configured === true && isAIProvider(doc.data.provider))
+            setConfigured(doc.data?.configured === true && isAIProvider(doc.data.provider) && Boolean(doc.data.model?.trim()))
             setEnabled(doc.data?.completionEnabled !== false)
             if (doc.data && isAIProvider(doc.data.provider)) setProvider(doc.data.provider)
             setSettingsRevision(doc.revision)
@@ -93,6 +97,31 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     setOpen(false)
     setPreview(null)
     setLoading(false)
+  }
+  const changeCompletion = async (value: boolean) => {
+    if (!configured || blocked || preferenceRequest.current) return
+    const pending = new AbortController()
+    preferenceRequest.current = pending
+    setPreferenceSaving(true)
+    setPreferenceError('')
+    try {
+      const doc = await request<AIConfigDocument>('/state/ai', { signal: pending.signal })
+      if (!doc.data?.configured || !doc.data.model || !isAIProvider(doc.data.provider)) throw new Error('请先配置并选择 AI 模型')
+      await request<AIConfigDocument>('/state/ai', {
+        method: 'PUT',
+        signal: pending.signal,
+        body: JSON.stringify({ revision: doc.revision, data: { provider: doc.data.provider, completionEnabled: value } })
+      })
+      if (!pending.signal.aborted) {
+        setEnabled(value)
+        window.dispatchEvent(new Event('ai-settings-saved'))
+      }
+    } catch (cause) {
+      if (!pending.signal.aborted) setPreferenceError(cause instanceof Error ? cause.message : '代码补全设置保存失败')
+    } finally {
+      if (preferenceRequest.current === pending) preferenceRequest.current = null
+      if (!pending.signal.aborted) setPreferenceSaving(false)
+    }
   }
   const optimize = async (selectionOnly = false, selectedSQL?: string) => {
     const view = editor.current
@@ -145,6 +174,10 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     onEditorReady,
     configured,
     enabled,
+    changeCompletion,
+    preferenceSaving,
+    preferenceError,
+    clearPreferenceError: () => setPreferenceError(''),
     completionLoading,
     extensions,
     error,

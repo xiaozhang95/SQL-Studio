@@ -1,3 +1,4 @@
+import { theme } from 'antd'
 import { useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
@@ -22,6 +23,7 @@ export default function PageHeader({
   desktopTitle?: string
   desktopActive?: boolean
 }) {
+  const { token } = theme.useToken()
   const titleElement = useRef<HTMLDivElement>(null)
   const leftActions = useRef<HTMLDivElement>(null)
   const rightActions = useRef<HTMLDivElement>(null)
@@ -51,20 +53,20 @@ export default function PageHeader({
       <header
         className="topbar"
         style={{
-          minHeight: 56,
+          minHeight: token.controlHeight + token.paddingSM,
           flex: 'none',
           paddingInline: 'var(--workspace-inset)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 'var(--workspace-inset)',
+          gap: token.marginXS,
           background: 'var(--surface)',
           borderBottom: '1px solid var(--layout-border)',
           userSelect: 'none',
           position: 'relative'
         }}
       >
-        <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--workspace-inset)', minWidth: 0 }}>
+        <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXXS, minWidth: 0 }}>
           {children}
         </div>
         {title && (
@@ -85,7 +87,7 @@ export default function PageHeader({
             {title}
           </div>
         )}
-        <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, marginInlineStart: 'auto' }}>
+        <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, flexShrink: 0, marginInlineStart: 'auto' }}>
           {actions}
         </div>
       </header>

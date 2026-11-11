@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Checkbox, Form, Input, Select, Table } from 'antd'
+import { Alert, AutoComplete, Checkbox, Form, Input, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
@@ -11,6 +11,7 @@ import type { ThemeMode } from '@/typings/theme'
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
 import SQLPreview from '../sqlPreview'
 import TemporalInput from '../temporalInput'
+import ToolbarButton from '../toolbarButton'
 
 type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
@@ -232,13 +233,12 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   width: 48,
                   fixed: 'right',
                   render: (_, row) => (
-                    <Button
-                      type="text"
+                    <ToolbarButton
+                      label="删除字段"
                       danger
                       icon={<DeleteOutlined />}
                       disabled={locked(row)}
-                      title={locked(row) ? '特殊字段暂不支持修改或删除' : '删除字段'}
-                      aria-label="删除字段"
+                      hint={locked(row) ? '特殊字段暂不支持修改或删除' : '删除字段'}
                       onClick={() => remove(row.name)}
                     />
                   )
@@ -247,9 +247,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
               return (
                 <>
                   <Table size={appearance.tableSize} rowKey="key" dataSource={fields} columns={columns} pagination={false} scroll={{ x: 1250 }} />
-                  <Button icon={<PlusOutlined />} style={{ marginTop: 12 }} onClick={() => add(manager.defaultField())}>
-                    添加字段
-                  </Button>
+                  <ToolbarButton label="添加字段" icon={<PlusOutlined />} style={{ marginTop: 12 }} onClick={() => add(manager.defaultField())} />
                 </>
               )
             }}

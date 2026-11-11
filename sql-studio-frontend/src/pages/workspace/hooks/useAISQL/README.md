@@ -13,3 +13,5 @@ optimize(false) 优化整页，optimize(true,selectedSQL?) 仅优化选区，空
 第四参数 databaseType? 用于选取引擎的引用识别能力；当前 schema 同时进入续写/优化上下文与依赖。优化按真实引用完整表身份筛选，不再以 SQL 字符串包含完整引号表名判断 PostgreSQL 表引用。
 
 编辑器现仅按页面重挂载；连接、库、schema、表或引擎变化时，取消优化请求并隐藏旧范围预览，apply再次核对请求范围，避免将旧连接优化应用到新范围。补全扩展仍随实际范围重配。
+
+configured 仅在 Key 已保存、服务商有效且 model 非空时为 true。changeCompletion(value) 先读最新 revision，再只提交 provider/completionEnabled，避免重置已选模型或密钥；成功广播共享事件并重建扩展。preferenceSaving 互斥并发保存，preferenceError/clearPreferenceError 提供独立设置错误，卸载取消在途请求。

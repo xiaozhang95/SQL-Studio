@@ -1,6 +1,6 @@
 # 公共 hooks
 
-- [useThemePreference](useThemePreference/README.md)：系统及用户主题。
+- [useThemePreference](useThemePreference/README.md)：系统及用户主题、界面字号与外观配置保存状态。
 
 只有跨页面的状态逻辑进入公共层。
 

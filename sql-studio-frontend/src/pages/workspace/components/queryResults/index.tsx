@@ -1,18 +1,5 @@
-import {
-  CloseOutlined,
-  DeleteOutlined,
-  DownloadOutlined,
-  DownOutlined,
-  EyeOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SaveOutlined,
-  SearchOutlined,
-  StopOutlined,
-  TableOutlined,
-  UndoOutlined
-} from '@ant-design/icons'
-import { Alert, Button, Dropdown, Empty, Input, Pagination, Table, Typography } from 'antd'
+import { CloseOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
+import { Alert, Dropdown, Empty, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -37,6 +24,7 @@ import QuerySummary from '../querySummary'
 import ResultsDock from '../resultsDock'
 import ResultTabs from '../resultTabs'
 import SQLPreview from '../sqlPreview'
+import ToolbarButton from '../toolbarButton'
 
 type Props = {
   themeMode: ThemeMode
@@ -116,7 +104,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         row: {
           key: number
         }
-      ) => (row.key < 0 ? <Button type="text" size="small" icon={<CloseOutlined />} aria-label="移除新增行" disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
+      ) => (row.key < 0 ? <ToolbarButton label="移除新增行" size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
     },
     ...(result?.columns || []).map((column, index) => ({
       title: (
@@ -216,10 +204,11 @@ export default function QueryResults({ model, themeMode }: Props) {
             flex: 'none'
           }}
         >
-          <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
+          <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
             {tab.kind === 'data' && (
               <>
-                <Button
+                <ToolbarButton
+                  label="新增行"
                   icon={<PlusOutlined />}
                   disabled={editingBlocked}
                   onClick={() => {
@@ -227,66 +216,56 @@ export default function QueryResults({ model, themeMode }: Props) {
                     setTablePage(1)
                     void editing.addRow()
                   }}
-                >
-                  新增行
-                </Button>
-                <Button
+                />
+                <ToolbarButton
+                  label="删除行"
                   icon={<DeleteOutlined />}
                   danger
                   disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length}
-                  title={editing.dirty ? '请先保存或放弃修改' : '删除选中的数据行'}
+                  hint={editing.dirty ? '请先保存或放弃修改' : '删除选中的数据行'}
                   onClick={() => editing.deleteRows(selectedRows, () => setSelection({ keys: [] }))}
-                >
-                  删除行
-                </Button>
-                <Button
+                />
+                <ToolbarButton
+                  label="保存"
                   icon={<SaveOutlined />}
-                  type="primary"
                   loading={editing.saving}
                   disabled={editingBlocked || !editing.dirty}
                   onClick={() => {
                     setTablePage(1)
                     void editing.save()
                   }}
-                >
-                  保存
-                </Button>
-                <Button icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel}>
-                  放弃修改
-                </Button>
+                />
+                <ToolbarButton label="放弃修改" icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
               </>
             )}
           </div>
-          <div className="result-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-            <Button
-              icon={<ReloadOutlined />}
-              loading={activeRunning}
-              disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-              title={editing.dirty ? '请先保存或放弃修改' : tab.kind === 'query' ? '重新执行当前结果对应的 SQL，写入语句也会再次执行' : '刷新当前结果'}
-              onClick={model.refreshResult}
-            >
-              {tab.kind === 'query' ? '重新执行' : '刷新'}
-            </Button>
-            {tab.kind !== 'query' && activeRunning && (
-              <Button icon={<StopOutlined />} danger onClick={cancelQuery}>
-                取消
-              </Button>
-            )}
+          <div className="result-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
             {showingResult && (
-              <>
-                <Input
-                  style={{ width: 'var(--result-filter-width, 180px)' }}
-                  prefix={<SearchOutlined />}
-                  placeholder="筛选当前结果"
-                  aria-label="筛选查询结果"
-                  value={resultSearch}
-                  onChange={(event) => {
-                    setResultSearch(event.target.value)
-                    setTablePage(1)
-                  }}
-                  allowClear
-                  disabled={!result}
-                />
+              <Input
+                style={{ width: 'var(--result-filter-width, 180px)', minWidth: 0 }}
+                prefix={<SearchOutlined />}
+                placeholder="筛选当前结果"
+                aria-label="筛选查询结果"
+                value={resultSearch}
+                onChange={(event) => {
+                  setResultSearch(event.target.value)
+                  setTablePage(1)
+                }}
+                allowClear
+                disabled={!result}
+              />
+            )}
+            <div role="group" aria-label="结果操作" style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              <ToolbarButton
+                label={tab.kind === 'query' ? '重新执行' : '刷新'}
+                icon={<ReloadOutlined />}
+                loading={activeRunning}
+                disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
+                hint={editing.dirty ? '请先保存或放弃修改' : tab.kind === 'query' ? '重新执行当前结果对应的 SQL，写入语句也会再次执行' : '刷新当前结果'}
+                onClick={model.refreshResult}
+              />
+              {tab.kind !== 'query' && activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
+              {showingResult && (
                 <Dropdown
                   trigger={['click']}
                   menu={{
@@ -303,12 +282,10 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                   disabled={!result?.isQuery || deferredSearch !== resultSearch}
                 >
-                  <Button icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch}>
-                    导出 CSV <DownOutlined aria-hidden="true" className="dropdown-chevron" />
-                  </Button>
+                  <ToolbarButton label="导出 CSV" icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch} aria-haspopup="menu" />
                 </Dropdown>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

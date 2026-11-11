@@ -31,7 +31,7 @@ query-output.test.mjs 验证 104 条批量执行回执不生成数据结果导�
 
 用户配置回归：node --test tests/user-state.test.mjs，覆盖服务端优先、旧记录迁移、串行修订及冲突，不访问真实用户文件。
 
-对象树回归：node --test tests/object-tree.test.mjs，验证多连接及特殊名称节点身份、复合索引顺序、前缀、降序和表达式说明；浏览器使用独立端口和虚构数据检查，不连接真实数据库。
+对象树回归：node --test tests/object-tree.test.mjs，验证数据库及分类节点双击只展开/折叠且不打开页面、Schema/表的原始双击入口、多连接及特殊名称节点身份、复合索引顺序、前缀、降序和表达式说明；浏览器使用独立端口和虚构数据检查，不连接真实数据库。
 
 连接恢复回归：`node --test tests/connection-recovery.test.mjs`，执行真实元数据 hook、菜单生成和已打开列表计算，使用替身请求验证恢复失败不再持久化为已打开、失败可关闭/重试、加载中关闭取消及迟到响应隔离、关闭失败保留状态和多连接隔离；不访问真实数据库或用户配置。
 
@@ -76,3 +76,5 @@ page-title.test.mjs 验证查询页标题随所属数据库/Schema 变化、清�
 desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 document.title：切页/切库使用最新标题，空工作区回退，AI 页隐藏，后台工作台不覆盖，浏览器不改写。主题 token 和 effect 调度使用替身，不代表原生 Electron 窗口视觉检查。
 
 review-fixes.test.mjs 覆盖快捷键可见/目标/模态框/组合键边界、分页历史及恢复副本取消与写入失败；workspace-split 追加 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。以上均为替身/单元测试，不替代真实 CodeMirror、HTTP/数据库与下载验证。
+
+AI 配置回归：node --test tests/ai-settings.test.mjs。覆盖三项配置不发送地址、不重置补全偏好，补全开关按最新修订保存且保留模型，失败不改变开关，以及未选模型时隐藏工具。通过真实 hook 及替身请求验证，不访问 DeepSeek 或数据库。

@@ -23,3 +23,5 @@ Table 采用原生 small、8px 单元格内边距、小号载入按钮，每页 
 抽屉标题在当前连接名称前复用EngineIcon，按该connectionId的对象快照展示连接状态；不使用左侧高亮或其他连接状态。长名称省略并保留原生title。
 
 PostgreSQL 历史增加 Schema 列和 schema 搜索，未记录/未指定展示默认搜索路径；载入仍只追加 SQL，不自动改换当前连接、数据库或 schema。
+
+清空历史及逐条载入编辑器使用 ToolbarButton 图标入口，Tooltip 和 aria-label 提供名称；载入操作列收紧为 64px。原连接缺失提示及清空确认流程保持一致。

@@ -1,5 +1,5 @@
 import { DatabaseOutlined, RobotOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { Button, theme } from 'antd'
 
 interface Props {
   destination: 'workspace' | 'agent'
@@ -14,9 +14,10 @@ const destinations = {
 
 export default function SectionNavigation({ destination, onSwitch, switchDisabled = false }: Props) {
   const { label, Icon } = destinations[destination]
+  const { token } = theme.useToken()
   return (
-    <div style={{ borderInlineStart: '1px solid var(--border)', paddingInlineStart: 'var(--workspace-inset)', flexShrink: 0 }}>
-      <Button icon={<Icon />} disabled={switchDisabled} onClick={onSwitch}>
+    <div style={{ borderInlineStart: '1px solid var(--border)', marginInlineStart: token.marginXXS, paddingInlineStart: token.paddingXS, flexShrink: 0 }}>
+      <Button type="text" icon={<Icon />} disabled={switchDisabled} onClick={onSwitch}>
         {label}
       </Button>
     </div>
