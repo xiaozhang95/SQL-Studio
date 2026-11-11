@@ -34,16 +34,18 @@ export async function waitForService(url, { timeout = 15000, stopped = () => fal
   throw new Error(`等待 SQL Studio 服务超时：${url}`)
 }
 
-export async function startBackend(runtime, userData, onExit, { signal } = {}) {
+export async function startBackend(runtime, dataDirectory, onExit, { signal } = {}) {
   signal?.throwIfAborted()
-  await mkdir(userData, { recursive: true })
+  // 数据根与 Go 服务一致：状态在 <dataDirectory>/state，Electron 自身数据在 <dataDirectory>/electron。
+  const stateDirectory = path.join(dataDirectory, 'state')
+  await mkdir(stateDirectory, { recursive: true })
   const address = `127.0.0.1:${await freePort()}`
   signal?.throwIfAborted()
   const url = `http://${address}`
   const executable = path.join(runtime, process.platform === 'win32' ? 'sql-studio-backend.exe' : 'sql-studio-backend')
   const child = spawn(executable, [], {
-    cwd: userData,
-    env: backendEnvironment(process.env, path.join(runtime, 'web'), path.join(userData, 'state'), address),
+    cwd: dataDirectory,
+    env: backendEnvironment(process.env, path.join(runtime, 'web'), stateDirectory, address),
     windowsHide: true,
     stdio: ['ignore', 'ignore', 'pipe']
   })

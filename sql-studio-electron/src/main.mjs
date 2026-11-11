@@ -1,3 +1,4 @@
+import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -9,8 +10,47 @@ import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 
+// 数据统一放在 .sql-studio，与 Go 服务（go run main.go）用的是同一个目录：
+// Chromium 用户数据在 electron/，连接、密钥与工作区状态在 state/。便携运行或受限终端
+// （%APPDATA% 不可写）可以用 SQL_STUDIO_DATA_DIR 换一个数据根。
+function ensureDirectory(directory) {
+  try {
+    mkdirSync(directory, { recursive: true })
+    return true
+  } catch {
+    return false
+  }
+}
+
+const dataDirectory = (() => {
+  const override = process.env.SQL_STUDIO_DATA_DIR?.trim()
+  if (override) return path.resolve(override)
+  if (app.isPackaged) {
+    // 绿色版优先把数据放在 exe 同级的 .sql-studio；portable 目录只读时退回 AppData。
+    const portable = path.join(path.dirname(app.getPath('exe')), '.sql-studio')
+    if (ensureDirectory(path.join(portable, 'electron'))) return portable
+    return path.join(app.getPath('appData'), 'sql-studio-electron')
+  }
+  return fileURLToPath(new URL('../../sql-studio-backend/.sql-studio', import.meta.url))
+})()
 app.setName('SQL Studio')
-app.setPath('userData', path.join(app.getPath('appData'), 'sql-studio-electron'))
+const userDataDirectory = path.join(dataDirectory, 'electron')
+const stateDirectory = path.join(dataDirectory, 'state')
+// Chromium 只在默认路径下自建目录，自定义 userData 必须先落盘，否则单实例锁会因
+// “路径不存在”创建失败，进程静默退出（双击没反应）。
+const userDataReady = ensureDirectory(userDataDirectory)
+ensureDirectory(stateDirectory)
+app.setPath('userData', userDataDirectory)
+
+function trace(message) {
+  try {
+    appendFileSync(path.join(stateDirectory, 'electron.log'), `[${new Date().toISOString()}] ${message}\n`)
+  } catch {
+    /* 诊断日志写不了就算了，不能影响启动。 */
+  }
+}
+
+trace(`starting packaged=${app.isPackaged} data=${dataDirectory} userData=${userDataReady}`)
 const dev = !app.isPackaged && process.argv.includes('--dev')
 let backend
 let mainWindow
@@ -101,7 +141,14 @@ function createWindow(dark) {
   }
 }
 
-if (!app.requestSingleInstanceLock()) {
+if (!userDataReady) {
+  const message = `无法创建数据目录：\n${userDataDirectory}\n\n请检查磁盘空间与安全软件，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
+  trace(`fatal: userData 不可写 ${userDataDirectory}`)
+  dialog.showErrorBox('SQL Studio 无法启动', message)
+  app.exit(1)
+} else if (!app.requestSingleInstanceLock()) {
+  // 锁失败既可能是“已有实例在运行”，也可能是数据目录不可写，都写进日志便于排查。
+  trace('single instance lock 获取失败，退出')
   app.quit()
 } else {
   app.on('second-instance', () => {
@@ -126,9 +173,6 @@ if (!app.requestSingleInstanceLock()) {
   startupTask = app
     .whenReady()
     .then(async () => {
-      const stateDirectory = dev
-        ? fileURLToPath(new URL('../../sql-studio-backend/.sql-studio/state', import.meta.url))
-        : path.join(app.getPath('userData'), 'state')
       const appearance = await readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors)
       startupAbort.signal.throwIfAborted()
       const desktop = createWindow(appearance.dark)
@@ -141,7 +185,7 @@ if (!app.requestSingleInstanceLock()) {
         const runtime = app.isPackaged ? path.join(process.resourcesPath, 'runtime') : fileURLToPath(new URL('../build/runtime', import.meta.url))
         backend = await startBackend(
           runtime,
-          app.getPath('userData'),
+          dataDirectory,
           () => {
             if (!quitting) {
               dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
@@ -162,9 +206,10 @@ if (!app.requestSingleInstanceLock()) {
       if (!desktop.window.isDestroyed()) desktop.window.webContents.focus()
     })
     .catch((error) => {
+      trace(`启动失败: ${error?.stack || error?.message || error}`)
       if (!quitting) {
         startupScreen?.setStage('error')
-        dialog.showErrorBox('SQL Studio 启动失败', `${error.message}\n\n开发模式请先启动 Go 后端和 Vite；本地预览请先执行 pnpm prepare:runtime。`)
+        dialog.showErrorBox('SQL Studio 启动失败', `${error.message}\n\n开发模式请先启动 Go 后端和 Vite；本地预览请先执行 pnpm bundle。`)
       }
       app.quit()
     })

@@ -57,7 +57,7 @@ pnpm dev
 
 ### Electron 桌面项目
 
-独立项目位于 [sql-studio-electron](sql-studio-electron/README.md)，已配置 Electron 和 electron-builder 下载镜像。启动上述前后端后，在该目录执行 `pnpm install --frozen-lockfile`、`pnpm dev` 即可打开桌面开发窗口。执行 `pnpm build` 生成当前平台应用目录，`pnpm dist` 生成安装包；打包版携带前端页面和 Go 服务，自动管理本地服务进程，使用独立的桌面配置目录。完整步骤和目录说明见项目 README。
+独立项目位于 [sql-studio-electron](sql-studio-electron/README.md)，已配置 Electron 和 electron-builder 下载镜像。启动上述前后端后，在该目录执行 `pnpm install --frozen-lockfile`、`pnpm dev` 即可打开桌面开发窗口。`pnpm build` 一步产出可运行目录和当前平台安装包（NSIS / dmg / AppImage），内部会自动先打包前后端（前端 dist + Go 服务 → `build/runtime`）；只想更新产物再预览时用 `pnpm bundle` + `pnpm start`。打包版携带前端页面和 Go 服务，自动管理本地服务进程，使用独立的桌面配置目录。完整步骤和目录说明见项目 README。
 
 ## 一键打包
 
