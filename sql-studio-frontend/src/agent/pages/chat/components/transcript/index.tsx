@@ -17,9 +17,8 @@ const transcriptLayout = {
   height: '100%',
   minHeight: 0,
   position: 'relative',
-  width: '100%',
-  '--chat-content-max-width': `${CHAT.conversationMaxWidth}px`
-} satisfies CSSProperties & { '--chat-content-max-width': string }
+  width: '100%'
+} satisfies CSSProperties
 
 interface Props {
   entries: Entry[]
@@ -39,7 +38,6 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
       <RoundNavigation rounds={rounds} activeIndex={activeIndex} onJump={jump} />
       <div
         ref={viewportRef}
-        className="chat-scroll"
         role="region"
         aria-label="对话记录"
         aria-busy={loading}
@@ -55,7 +53,7 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
             toLatest()
           }
         }}
-        style={{ position: 'relative', overflowAnchor: 'none' }}
+        style={{ position: 'relative', flex: 1, minHeight: 0, width: '100%', overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain', overflowAnchor: 'none' }}
       >
         <div aria-hidden="true" style={{ height: paddingTop }} />
         {rounds.slice(start, end).map((round, offset) => {
@@ -86,7 +84,13 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
       )}
       {!atBottom && (
         <Tooltip title="回到底部" trigger={['hover', 'focus']}>
-          <Button {...CHAT.iconButton} className="chat-back-to-bottom" aria-label="回到底部" icon={<CaretDownFilled />} onClick={toLatest} />
+          <Button
+            {...CHAT.iconButton}
+            aria-label="回到底部"
+            icon={<CaretDownFilled />}
+            onClick={toLatest}
+            style={{ position: 'absolute', insetInlineEnd: `max(${token.marginLG}px, calc((100% - ${CHAT.conversationMaxWidth}px) * 0.35))`, insetBlockEnd: token.marginSM, zIndex: 1 }}
+          />
         </Tooltip>
       )}
     </Flex>

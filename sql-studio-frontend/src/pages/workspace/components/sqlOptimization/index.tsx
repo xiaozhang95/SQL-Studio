@@ -20,7 +20,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
       styles={{ body: { maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
     >
       {model.error && <Alert type="error" title={model.error} style={{ marginBottom: 12 }} />}
-      {model.loading && <ContentLoading label="正在生成建议…" className="sql-optimization-loading" />}
+      {model.loading && <ContentLoading label="正在生成建议…" style={{ minHeight: 100 }} />}
       {model.preview && (
         <div style={{ display: 'grid', gap: 20, minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16, minWidth: 0 }}>

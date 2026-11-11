@@ -11,6 +11,7 @@ import { CHAT } from '../../constant/chat'
 import { useSessionRename } from '../../hooks/sessionRename'
 
 interface Props {
+  mobile: boolean
   layout: ReturnType<typeof useSidebarResize>
   open: boolean
   items: ConversationInfo[]
@@ -27,7 +28,7 @@ interface Props {
 export function History(props: Props) {
   const { panel: panelRef, visibleWidth, minimumWidth, maximumWidth, resizer } = props.layout
   const { token } = theme.useToken()
-  const { open, onClose } = props
+  const { open, onClose, mobile } = props
   const rename = useSessionRename(props.onRename)
   const [search, setSearch] = useState('')
   const keyword = search.trim().toLowerCase()
@@ -42,9 +43,11 @@ export function History(props: Props) {
     <>
       <aside
         ref={panelRef}
-        className="chat-sidebar"
         style={{
           position: 'relative',
+          display: mobile ? 'none' : 'block',
+          flexShrink: 0,
+          height: '100%',
           width: visibleWidth,
           background: token.colorBgContainer,
           borderRight: '1px solid var(--layout-border)'
@@ -72,7 +75,7 @@ export function History(props: Props) {
           style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
         />
       </aside>
-      <Drawer title="历史会话" extra={refreshAction} placement="left" size={280} open={open} onClose={onClose} styles={{ body: { padding: 0 } }}>
+      <Drawer title="历史会话" extra={refreshAction} placement="left" size={280} open={mobile && open} onClose={onClose} styles={{ body: { padding: 0 } }}>
         <HistoryContents {...contentsProps} />
       </Drawer>
       <Modal

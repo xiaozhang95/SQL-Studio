@@ -242,7 +242,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           <div className="result-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
             {showingResult && (
               <Input
-                style={{ width: 'var(--result-filter-width, 180px)', minWidth: 0 }}
+                style={{ width: 180, flex: '0 1 180px', minWidth: 0 }}
                 prefix={<SearchOutlined />}
                 placeholder="筛选当前结果"
                 aria-label="筛选查询结果"
@@ -298,7 +298,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         aria-busy={editing.saving}
         style={{ position: 'relative', flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}
       >
-        {editing.saving && <ContentLoading label="正在保存并刷新数据…" className="result-saving-loading" />}
+        {editing.saving && <ContentLoading label="正在保存并刷新数据…" style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)' }} />}
         {activeKey === 'messages' ? (
           <QueryMessages key={tab.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (

@@ -21,6 +21,12 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
     <Modal
       className="connection-dialog"
       width={960}
+      styles={{
+        container: { padding: 0, overflow: 'hidden' },
+        header: { margin: 0, padding: '20px 24px', borderBottom: '1px solid var(--border)' },
+        body: { padding: 0 },
+        footer: { margin: 0, padding: '16px 24px', borderTop: '1px solid var(--border)' }
+      }}
       title={connection ? '编辑连接' : '新建连接'}
       open={open}
       onCancel={busy ? undefined : onClose}
@@ -34,11 +40,11 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         }
       }}
       footer={
-        <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+        <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <Button icon={<LinkOutlined />} onClick={test} loading={testing} disabled={saving}>
             测试连接
           </Button>
-          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineStart: 'auto', flexWrap: 'wrap' }}>
             <Button onClick={onClose} disabled={busy}>
               取消
             </Button>
@@ -53,9 +59,9 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         <aside
           className="engine-picker"
           style={{
-            width: 'var(--engine-picker-width, 280px)',
+            width: 'clamp(160px, 30%, 280px)',
             flex: 'none',
-            padding: '20px var(--engine-picker-padding, 16px)',
+            padding: '20px clamp(12px, 2%, 16px)',
             background: 'var(--surface)',
             borderRight: '1px solid var(--border)',
             display: 'flex',
@@ -93,7 +99,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           ))}
         </aside>
         <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px var(--connection-settings-padding, 28px)' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px clamp(16px, 3%, 28px)' }}>
             <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
               <EngineIcon type={engine.value} variant="logo" />
               <span>{engine.label}</span>

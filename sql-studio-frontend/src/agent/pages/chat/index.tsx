@@ -1,5 +1,5 @@
 import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
-import { Alert, Button, Flex, theme } from 'antd'
+import { Alert, Button, Flex, Grid, theme } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
@@ -35,6 +35,8 @@ export function ChatPage({
   const ai = useAISettings()
   const sidebar = useAgentSidebar()
   const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
+  const mobile = screens.md === false
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
   const errors = [...new Set([workspace.error, chat.error, ai.error].filter(Boolean))]
   return (
@@ -49,22 +51,19 @@ export function ChatPage({
     >
       <PageHeader
         showDesktopTitle={false}
-        titleClassName="agent-header-title"
         title={activeTitle}
-        titleOffset={sidebar.visibleWidth / 2}
+        titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
         actions={
           <>
             {' '}
-            <span className="agent-save-status">
-              <SaveStatus
-                restoring={!workspace.ready}
-                saving={workspace.saving}
-                error={workspace.error}
-                label="对话保存状态"
-                savedText="对话保存在本机"
-                savedHint="对话保存在本机，布局和草稿自动保存"
-              />
-            </span>
+            <SaveStatus
+              restoring={!workspace.ready}
+              saving={workspace.saving}
+              error={workspace.error}
+              label="对话保存状态"
+              savedText="对话保存在本机"
+              savedHint="对话保存在本机，布局和草稿自动保存"
+            />
             <SystemSettings themeMode={dark ? 'dark' : 'light'} {...appearancePreferences} />
           </>
         }
@@ -73,11 +72,12 @@ export function ChatPage({
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
           新建会话
         </Button>
-        <Button className="chat-history-toggle" type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />
+        {mobile && <Button type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />}
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History
+          mobile={mobile}
           layout={sidebar}
           open={chat.historyOpen}
           items={chat.history}

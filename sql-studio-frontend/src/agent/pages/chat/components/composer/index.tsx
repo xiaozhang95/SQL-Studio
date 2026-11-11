@@ -60,11 +60,11 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
       <Form form={form} component={false} onValuesChange={onDraftChange}>
         <Form.Item name="question" noStyle>
           <Sender
-            classNames={{ root: 'chat-sender', content: 'chat-sender-content', input: 'chat-sender-input', footer: 'chat-sender-footer' }}
             styles={{
               root: { height, display: 'flex', flexDirection: 'column' },
-              content: height === undefined ? undefined : { flex: 1, minHeight: 0 },
-              input: height === undefined ? undefined : { height: '100%', overflowY: 'auto' }
+              content: { padding: token.padding, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
+              input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
+              footer: { paddingInline: token.padding, paddingBlockEnd: token.padding }
             }}
             aria-label="消息"
             onSubmit={submit}

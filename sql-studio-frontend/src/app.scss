@@ -9,17 +9,12 @@ html[data-theme='dark'] {
 .sql-studio-theme {
   --workspace-inset: 12px;
   --text: var(--ant-color-text);
-  --layout: var(--ant-color-bg-layout);
   --surface: var(--ant-color-bg-container);
   --surface-raised: var(--ant-color-fill-alter);
   --border: var(--ant-color-border-secondary);
   --layout-border: var(--ant-color-border);
   --primary: var(--ant-color-primary);
-  --primary-soft: var(--ant-color-primary-bg);
-  --on-primary: var(--ant-color-text-light-solid);
-  --danger: var(--ant-color-error-text);
   --inactive-icon: var(--ant-color-text-tertiary);
-  --shadow: var(--ant-box-shadow-tertiary);
 
   ::selection {
     background: var(--ant-control-item-bg-active);
@@ -41,9 +36,12 @@ html[data-theme='light'] .sql-studio-theme {
 }
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
 }
 body {
   margin: 0;
+  overflow-y: hidden;
+  overflow-x: auto;
 }
 
 // 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。
@@ -85,21 +83,16 @@ body {
 }
 
 // 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
-* {
-  scrollbar-width: thin;
-}
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-*::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
   border-radius: 0;
-}
-*::-webkit-scrollbar-corner {
-  background: transparent;
 }
 
 // 全局基础规则与必要的 Ant Design 覆盖；普通布局由组件 style/styles 管理。
@@ -109,17 +102,10 @@ body,
 .ant-app.sql-studio-theme {
   height: 100%;
 }
-body {
-  overflow-y: hidden;
-  overflow-x: auto;
-}
-// 保存状态使用同一套语义色，Typography 与图标同步，不覆盖其他文本。
-.save-status .ant-typography {
-  color: inherit;
-}
-.sidebar-resizer:hover,
-.sidebar-resizer:focus-visible,
-.sidebar.is-resizing .sidebar-resizer {
+.sidebar-resizer:is(:hover, :focus-visible),
+.sidebar.is-resizing .sidebar-resizer,
+.results-resizer:is(:hover, :focus-visible),
+.results-panel.is-resizing .results-resizer {
   background: var(--ant-control-item-bg-hover);
   outline: none;
 }
@@ -175,26 +161,9 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.object-tree .ant-tree-iconEle {
-  color: var(--text);
-  flex: none;
-  margin-inline-end: 8px;
-}
-.object-tree .is-closed .ant-tree-iconEle,
-.object-tree .is-error .ant-tree-iconEle {
-  color: var(--ant-color-text-disabled);
-}
-.object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 // Tree 在 showIcon=false 的加载期仍插入额外图标，占位会挤动标题；加载状态已显示在展开箭头中。
 .object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle.ant-tree-icon_loading {
   display: none;
-}
-.object-tree .ant-tree-node-selected .ant-tree-iconEle {
-  color: inherit;
 }
 .object-tree .ant-tree-title {
   display: block;
@@ -215,16 +184,7 @@ body {
   padding-inline: 12px;
   border: 0;
   border-bottom: 1px solid var(--border);
-  background: transparent;
   transition: background 0.2s;
-}
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:hover {
-  background: var(--ant-control-item-bg-hover);
-}
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
-  background: var(--surface);
-  border-bottom-color: var(--surface);
-  box-shadow: none;
 }
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
   display: flex;
@@ -246,63 +206,12 @@ body {
   min-height: 0;
   overflow: hidden;
 }
-.toolbar-left > .ant-btn {
-  flex: none;
-}
-.results-resizer:hover,
-.results-resizer:focus-visible,
-.results-panel.is-resizing .results-resizer {
-  background: var(--ant-control-item-bg-hover);
-  outline: none;
-}
 .results-resizer:hover > span,
 .results-resizer:focus-visible > span,
 .results-panel.is-resizing .results-resizer > span {
   --resize-grip-color: var(--ant-color-text-secondary);
 }
 
-// 公共加载区负责居中，指示器与说明沿用 Ant Design 默认样式。
-.content-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  flex: 1;
-  min-height: 0;
-}
-
-// 保存刷新期间遮住旧表格，保留原滚动区域。
-.result-scroll > .result-saving-loading {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: var(--surface);
-}
-
-.content-loading.sql-optimization-loading {
-  min-height: 100px;
-}
-
-.sql-editor > .sql-completion-loading {
-  position: absolute;
-  right: 20px;
-  bottom: 12px;
-  z-index: 2;
-  pointer-events: none;
-  color: var(--text);
-}
-
-.result-panel-content > .ant-spin-nested-loading {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-.result-panel-content > .ant-spin-nested-loading > .ant-spin-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
 .database-object-name > .anticon {
   flex: none;
 }
@@ -361,55 +270,13 @@ body {
 .cm-tooltip.sql-native-completion {
   display: none;
 }
-.result-meta .ant-tag,
-.structure-tags .ant-tag {
-  margin-inline-end: 0;
-}
-// 连接弹窗按设计保留独立头部/表单/底栏，原生覆盖集中维护。
-.connection-dialog .ant-modal-container {
-  padding: 0;
-  overflow: hidden;
-}
-.connection-dialog .ant-modal-header {
-  margin: 0;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-}
-.connection-dialog .ant-modal-body {
-  padding: 0;
-}
-.connection-dialog .ant-modal-footer {
-  margin: 0;
-  padding: 16px 24px;
-  border-top: 1px solid var(--border);
-}
-.connection-engine-header > .ant-tag {
-  margin-left: auto;
-  margin-right: 0;
-}
 .connection-fields .ant-form-item:last-child {
   margin-bottom: 0;
-}
-@media (max-width: 1100px) {
-  .result-toolbar {
-    --result-filter-width: 150px;
-  }
-}
-// 媒体查询不能用内联 style 表达，只在此切换布局变量。
-@media (max-width: 760px) {
-  .connection-dialog {
-    --engine-picker-width: 210px;
-    --engine-picker-padding: 12px;
-    --connection-settings-padding: 20px;
-  }
 }
 
 .empty-state-icon {
   color: var(--primary);
-}
-.empty-state-icon svg {
-  width: 36px;
-  height: 36px;
+  font-size: 36px;
 }
 
 .object-tree .ant-tree-node-selected .ant-tree-title {
@@ -430,34 +297,6 @@ body {
   background: var(--ant-control-item-bg-hover);
 }
 
-// 内层结果导航独立于主页面 Tabs，边框保持统一灰阶。
-// 亮色默认 card 边框与背景过近；显式使用统一实色边框，所有输出项保持连续分隔。
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  border-color: var(--border);
-}
-// 两层连续页签都只画右侧分隔线，避免相邻边框叠加及首项左侧与侧栏边界重复。
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  border-inline-start: 0;
-  border-inline-end: 1px solid var(--border);
-}
-// 亮色页签背景接近次级边框色，使用标准边框色保持标签之间的分隔。
-html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
-html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  border-inline-end-color: var(--ant-color-border);
-}
-.object-tree .ant-tree-node-selected .connection-tree-label {
-  color: inherit;
-}
-.object-tree .ant-tree-title > .ant-dropdown-trigger {
-  display: block;
-}
-
-// 右键命中区域包含节点图标、文字及行内空白，左键保留树箭头的原生展开交互。
-.object-context-target > .anticon {
-  flex: none;
-}
-
 // 叶节点不展示折叠箭头，不为不存在的按钮保留整格空白。
 .object-tree .ant-tree .ant-tree-switcher-noop {
   width: 8px;
@@ -467,19 +306,6 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
 // Agent 问答分隔线与工作区使用同一边框。
 .ant-divider.chat-turn-divider {
   margin: 0;
-}
-.chat-sender .chat-sender-content {
-  padding: var(--ant-padding);
-}
-// Sender 内部文本区不重复绘制边框，焦点反馈由外层输入容器提供。
-.chat-sender .chat-sender-input {
-  border: 0;
-  outline: none;
-  box-shadow: none;
-}
-.chat-sender .chat-sender-footer {
-  padding-inline: var(--ant-padding);
-  padding-block-end: var(--ant-padding);
 }
 .ant-btn.chat-mode-write:not(:disabled) {
   color: var(--ant-color-warning);
@@ -507,70 +333,6 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
   background: currentColor;
   border-radius: var(--ant-border-radius-xs);
 }
-// Think 的展开区由 Card 绘制外框。
-.ant-think .chat-process-content {
-  margin-inline-start: 0;
-  margin-block-start: var(--ant-margin-xs);
-  padding: 0;
-  border-inline-start: 0;
-}
-
-.chat-transcript-region .chat-back-to-bottom {
-  position: absolute;
-  // 宽窗口将按钮放在正文外侧的留白内，窄窗口保留边距。
-  inset-inline-end: max(var(--ant-margin-lg), calc((100% - var(--chat-content-max-width)) * 0.35));
-  inset-block-end: var(--ant-margin-sm);
-  z-index: 1;
-}
-
-.agent-header-title {
-  font-size: var(--ant-font-size-lg);
-}
-
-.chat-scroll {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  overscroll-behavior: contain;
-}
-.chat-sidebar {
-  flex-shrink: 0;
-  height: 100%;
-}
-.chat-history-toggle {
-  display: none;
-}
-@media (max-width: 760px) {
-  .chat-sidebar {
-    display: none;
-  }
-  .chat-history-toggle {
-    display: inline-flex;
-  }
-}
-@media (max-width: 520px) {
-  // 空间不足时右侧操作独立成行，保留入口按钮和设置图标。
-  .topbar {
-    flex-wrap: wrap;
-    padding-block: var(--ant-padding-xs);
-  }
-}
-@media (max-width: 760px) {
-  // Agent 状态在窄屏保留图标、aria-label 和 Tooltip，释放左右操作区宽度。
-  .agent-save-status .save-status .ant-typography {
-    display: none;
-  }
-}
-
-// 中窄窗口避免会话标题覆盖操作按钮；会话名仍在历史列表中可读。
-@media (max-width: 1279px) {
-  .agent-header-title {
-    display: none;
-  }
-}
-
 // 导航刻度的默认、当前、悬停与键盘焦点样式集中定义，避免与内联样式竞争。
 .chat-round-marker {
   border: 0;
@@ -606,35 +368,36 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
   outline-offset: 2px;
 }
 
-// 页面与结果页签不随执行状态着色；统一灰底与正文色。
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  background: var(--surface-raised);
-  box-shadow: none;
-}
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:is(:hover, :focus-within, .ant-tabs-tab-active),
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:is(:hover, :focus-within, .ant-tabs-tab-active) {
-  background: var(--ant-control-item-bg-hover);
-  box-shadow: none;
-}
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn,
-.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn,
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn,
-.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn {
-  color: var(--text);
-  text-shadow: none;
-}
+// 页面与结果页签共用边框和灰阶状态，避免同一属性在多个区块反复覆盖。
+.workspace-tabs,
+.statement-result-tabs {
+  &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+    border-color: var(--border);
+    border-inline-start: 0;
+    border-inline-end: 1px solid var(--border);
+    background: var(--surface-raised);
+    box-shadow: none;
 
-// 页签仅通过低对比灰阶背景区分激活，不增加顶线或文字强调。
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active,
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
-  background: var(--ant-color-fill-secondary);
-  box-shadow: none;
-  border-bottom-color: var(--ant-color-fill-secondary);
+    &:is(:hover, :focus-within) {
+      background: var(--ant-control-item-bg-hover);
+    }
+
+    &.ant-tabs-tab-active {
+      background: var(--ant-color-fill-secondary);
+      border-bottom-color: var(--ant-color-fill-secondary);
+    }
+  }
+
+  > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn,
+  > .ant-tabs-nav .ant-tabs-tab:is(:hover, .ant-tabs-tab-active) .ant-tabs-tab-btn {
+    color: var(--text);
+    text-shadow: none;
+  }
 }
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab:not(.ant-tabs-tab-active) .ant-tabs-tab-btn,
-.statement-result-tabs > .ant-tabs-nav .ant-tabs-tab:not(.ant-tabs-tab-active) .ant-tabs-tab-btn {
-  color: var(--text);
+// 亮色下使用标准边框，保持相邻页签之间的分隔。
+html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
+html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-inline-end-color: var(--ant-color-border);
 }
 
 // 主按钮统一采用中性外观，覆盖工作区、AI 助手及上下文弹框；危险/禁用态保留原生语义。
