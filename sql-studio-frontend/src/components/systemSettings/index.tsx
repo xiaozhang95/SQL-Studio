@@ -1,5 +1,5 @@
 import { DesktopOutlined, MoonOutlined, SettingOutlined, SunOutlined } from '@ant-design/icons'
-import { Button, Divider, Dropdown, Flex, Segmented, theme, Tooltip, Typography } from 'antd'
+import { Button, Divider, Dropdown, Flex, Segmented, theme, Typography } from 'antd'
 import { useId, useState } from 'react'
 
 import type { AppearancePreferences, FontSizePreference, ThemeMode, ThemePreference } from '@/typings/theme'
@@ -18,7 +18,7 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
 
   return (
     <Dropdown
-      placement="bottomRight"
+      placement="bottomLeft"
       styles={{ root: { width: 400, maxWidth: 'calc(100vw - 24px)' } }}
       trigger={['click']}
       autoFocus
@@ -81,9 +81,9 @@ export default function SystemSettings({ themeMode, themePreference, onThemeChan
         </div>
       )}
     >
-      <Tooltip title={open ? null : '系统设置'}>
-        <Button type="text" aria-label="系统设置" aria-haspopup="dialog" aria-expanded={open} icon={<SettingOutlined aria-hidden="true" />} />
-      </Tooltip>
+      <Button type="text" aria-label="系统设置" aria-haspopup="dialog" aria-expanded={open} icon={<SettingOutlined aria-hidden="true" />}>
+        系统设置
+      </Button>
     </Dropdown>
   )
 }
