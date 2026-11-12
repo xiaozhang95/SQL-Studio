@@ -10,6 +10,6 @@ ResultTabs 接收 run:RunState、running:boolean、activeKey:string、onChange(k
 
 标签连续排列，每项只绘制右侧 1px 主题分隔线，不绘制左边框，避免相邻双线及首项冗余边界；亮暗主题一致。结果项图标跟随主题正文色。必要覆盖只在 app.scss，限直属导航，长列表经原生溢出菜单访问。切换不请求数据库。
 
-未激活页签透出栏底色。激活项使用 controlItemBgActive 较深灰色，悬停或聚焦时使用 controlItemBgActiveHover。执行状态显示在结果和消息中。
+未激活页签透出栏底色。激活项使用 controlItemBgActive 较深灰色，悬停和聚焦时保持同一底色。执行状态显示在结果和消息中。
 
 页签栏将半透明的 controlItemBgHover 叠在与顶栏相同的容器底色上，得到与 text Button 悬停一致的灰色。未激活页签保持透明，避免灰色重复叠加。

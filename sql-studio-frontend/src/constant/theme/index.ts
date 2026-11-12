@@ -6,7 +6,9 @@ import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
   const textColor = themeMode === 'dark' ? '#fff' : '#000'
   const primaryColor = antdTheme.defaultSeed.colorSuccess
-  const config: ThemeConfig = {
+  const selectedBackground = themeMode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)'
+
+  return {
     algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       ...(fontSizeMode === 'small' ? { fontSize: 12 } : fontSizeMode === 'large' ? { fontSize: 16 } : {}),
@@ -17,17 +19,10 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       colorText: textColor,
       colorTextHeading: textColor,
       colorTextLabel: textColor,
-      colorBgLayout: themeMode === 'dark' ? '#000' : '#ececec'
-    }
-  }
-  const token = antdTheme.getDesignToken(config)
-  return {
-    ...config,
-    // 所有选中背景沿用 Ant Design 的中性填充，普通悬停使用更浅的层级。
-    token: {
-      ...config.token,
-      controlItemBgActive: token.colorFillSecondary,
-      controlItemBgActiveHover: token.colorFill
+      colorBgLayout: themeMode === 'dark' ? '#000' : '#ececec',
+      // 已选项在静止、悬停和聚焦时保持同一填充。
+      controlItemBgActive: selectedBackground,
+      controlItemBgActiveHover: selectedBackground
     },
     cssVar: { key: 'sql-studio-theme' }
   }
