@@ -85,7 +85,7 @@ Windows 安装包按当前用户安装到 `%LOCALAPPDATA%\Programs\SQL Studio`�
 
 工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 页仍隐藏最上方标题。
 
-图标唯一来源是 `../sql-studio-frontend/public/studio.svg`：原创蓝底数据库圆柱与查询光标组合。启动和构建时，`scripts/icons.mjs` 使用 resvg 生成 1024px PNG 到 `build/icons/icon.png`；electron-builder 再生成对应平台的应用图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo，无需另外维护图标副本。
+图标唯一来源是 [studio.svg](../sql-studio-frontend/public/studio.svg)，由主题绿色渐变底、数据库圆柱与查询光标组成。启动和构建时，`scripts/icons.mjs` 使用 resvg 生成 1024px PNG 到 `build/icons/icon.png`，electron-builder 再生成对应平台的应用图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo。
 
 macOS 单独生成带透明安全区的 `build/icons/mac-icon.png`：在 1024px 画布内居中放置 824px 图形，四周各留 100px，与本机 Chrome/终端图标的可见比例一致。打包版由 macOS 使用应用自带 ICNS，不在运行时覆盖 Dock 图标；开发预览才用带留白的 PNG 替换 Electron 默认图标。开屏、网页和其他平台继续使用未缩小的图标。
 
