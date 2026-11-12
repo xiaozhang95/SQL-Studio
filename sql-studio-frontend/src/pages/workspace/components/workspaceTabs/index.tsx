@@ -21,7 +21,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
     <Tabs
       className="workspace-tabs page-tabs"
       styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
-      tabBarStyle={{ margin: 0, padding: 0, background: 'var(--surface-raised)' }}
+      tabBarStyle={{ margin: 0, padding: 0, background: 'var(--tab-bar-background)' }}
       tabBarGutter={0}
       type="editable-card"
       size={appearance.navigationSize}

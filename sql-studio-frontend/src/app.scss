@@ -22,7 +22,8 @@ html[data-theme='dark'] {
   --workspace-inset: 12px;
   --text: var(--ant-color-text);
   --surface: var(--ant-color-bg-container);
-  --surface-raised: var(--ant-color-fill-alter);
+  // text Button 的悬停色带透明度，页签栏将它叠在与顶栏相同的容器底色上。
+  --tab-bar-background: linear-gradient(var(--ant-control-item-bg-hover), var(--ant-control-item-bg-hover)) var(--surface);
   --border: var(--ant-color-border-secondary);
   --layout-border: var(--ant-color-border);
   --primary: var(--ant-color-primary);
@@ -32,10 +33,6 @@ html[data-theme='dark'] {
     color: var(--ant-color-text-light-solid);
     background: var(--ant-control-item-bg-active);
   }
-}
-// 亮色布局使用主题背景，组件边框继续沿用默认层级。
-html[data-theme='light'] .sql-studio-theme {
-  --surface-raised: var(--ant-color-bg-layout);
 }
 * {
   box-sizing: border-box;
@@ -377,18 +374,18 @@ body,
   outline-offset: 2px;
 }
 
-// 页面与结果页签共用边框和主题选中态，普通 hover 保留灰阶。
+// 未激活页签透出栏底色，避免重复叠加半透明悬停色。
 .workspace-tabs,
 .statement-result-tabs {
   &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
     border-color: var(--border);
     border-inline-start: 0;
     border-inline-end: 1px solid var(--border);
-    background: var(--ant-control-item-bg-hover);
+    background: transparent;
     box-shadow: none;
 
     &:is(:hover, :focus-within) {
-      background: var(--ant-control-item-bg-hover);
+      background: transparent;
     }
 
     &.ant-tabs-tab-active {

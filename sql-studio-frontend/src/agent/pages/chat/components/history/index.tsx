@@ -166,7 +166,15 @@ function HistoryContents({
                     </Typography.Text>
                     <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       <Button type="text" size="small" aria-label={'重命名会话 ' + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                      <Popconfirm okType="default" title="删除这条会话？" description="将删除本机保存的消息和查询结果。" okText="删除" cancelText="取消" onConfirm={() => onDelete(i.id)} disabled={busy || selecting}>
+                      <Popconfirm
+                        okType="default"
+                        title="删除这条会话？"
+                        description="将删除本机保存的消息和查询结果。"
+                        okText="删除"
+                        cancelText="取消"
+                        onConfirm={() => onDelete(i.id)}
+                        disabled={busy || selecting}
+                      >
                         <Button danger type="text" size="small" aria-label={'删除会话 ' + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
                       </Popconfirm>
                     </span>

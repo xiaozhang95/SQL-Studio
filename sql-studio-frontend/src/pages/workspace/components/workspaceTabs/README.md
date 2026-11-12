@@ -30,4 +30,6 @@ model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设
 
 页签不再根据运行成功/失败改变文字、图标或顶线颜色；默认灰阶背景，未选中悬停使用 controlItemBgHover 灰底；选中使用主题绿色实底及浅色文字/图标，悬停和聚焦跟随主题 hover 色。执行状态仍保留在实际结果和消息中。
 
-激活项使用 controlItemBgActive 主题底色及浅色文字（含关闭按钮），未激活项使用 controlItemBgHover 与正文色，背景与 text Button 的悬停灰色一致；字重一致，无顶线。
+激活项使用 controlItemBgActive 主题底色及浅色文字（含关闭按钮），未激活项透出栏底色并使用正文色；字重一致，无顶线。
+
+页签栏将半透明的 controlItemBgHover 叠在与顶栏相同的容器底色上，得到与 text Button 悬停一致的灰色。未激活页签保持透明，避免灰色重复叠加。
