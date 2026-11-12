@@ -206,13 +206,6 @@ body,
 .workspace-tabs > .ant-tabs-body-holder > .ant-tabs-content {
   height: 100%;
 }
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  margin: 0;
-  padding-inline: var(--workspace-inset);
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  transition: background var(--ant-motion-duration-mid, 0.2s);
-}
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
   display: flex;
   align-items: center;
@@ -342,57 +335,26 @@ body,
   outline-offset: 2px;
 }
 
-// 页签透出栏底色，结果页签单独设置激活背景。
-.workspace-tabs,
-.statement-result-tabs {
-  &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-    border-color: var(--border);
-    border-inline-start: 0;
-    border-inline-end: 1px solid var(--border);
-    background: transparent;
-    box-shadow: none;
-  }
-
-  > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-btn {
-    color: inherit;
-    text-shadow: none;
-  }
-
-  > .ant-tabs-nav .ant-tabs-tab:not(.ant-tabs-tab-active, .ant-tabs-tab-disabled):hover {
-    color: var(--text);
-  }
-}
-
-// Card Tabs 默认隐藏指示线，主页面恢复 Ant Design 的主题色底线。
-.workspace-tabs.ant-tabs-card > .ant-tabs-nav {
-  .ant-tabs-tab.ant-tabs-tab-active {
-    background: transparent;
-    border-bottom-color: var(--border);
+// 卡片页签保留 Ant Design 圆角，顶边和两侧使用主题分隔色。
+.workspace-tabs.ant-tabs-card.ant-tabs-top > .ant-tabs-nav {
+  .ant-tabs-tab {
+    border-block-start-color: var(--layout-border);
+    border-inline-color: var(--layout-border);
     color: var(--text);
 
     .ant-tabs-tab-btn {
       color: inherit;
+      text-shadow: none;
     }
   }
 
+  .ant-tabs-tab:not(.ant-tabs-tab-active, .ant-tabs-tab-disabled):hover {
+    background: var(--ant-control-item-bg-hover);
+  }
+
+  // Card Tabs 默认隐藏指示线，主页面使用 Ant Design 的主题色底线。
   .ant-tabs-ink-bar {
     visibility: visible;
     z-index: 1;
   }
-}
-
-.statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
-  background: var(--ant-control-item-bg-active);
-  border-bottom-color: var(--ant-control-item-bg-active);
-
-  &,
-  .ant-tabs-tab-btn,
-  .ant-tabs-tab-remove {
-    color: var(--text);
-  }
-}
-// 亮色下使用标准边框，保持相邻页签之间的分隔。
-html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
-html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  border-inline-end-color: var(--ant-color-border);
 }

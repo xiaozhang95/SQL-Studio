@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons'
+import { LoadingOutlined } from '@ant-design/icons'
 import { Select, Tabs } from 'antd'
 
 import { appearance } from '@/constant/appearance'
@@ -24,16 +24,16 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
       className="statement-result-tabs"
       aria-label="输出内容"
       size={appearance.navigationSize}
-      type="card"
-      tabBarGutter={0}
+      type="line"
       style={{ flex: 'none', minWidth: 0 }}
-      tabBarStyle={{ margin: 0, background: 'var(--tab-bar-background)' }}
+      tabBarStyle={{ margin: 0, paddingInline: 'var(--workspace-inset)', background: 'var(--surface)' }}
       activeKey={activeKey}
       onChange={onChange}
       tabBarExtraContent={
         compact ? (
           <Select
             aria-label="选择结果集"
+            size={appearance.navigationSize}
             style={{ width: appearance.selectWidth }}
             disabled={running}
             placeholder={`选择结果集（共 ${results.length} 个）`}
@@ -49,12 +49,7 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
         ...visibleResults.map(({ item, index, resultIndex }) => ({
           key: String(index),
           disabled: running,
-          label: (
-            <span title={`语句 ${index + 1}\n${item.sql || run.title || ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: 'inherit' }}>
-              <CheckCircleOutlined />
-              结果 {resultIndex + 1}
-            </span>
-          )
+          label: <span title={`语句 ${index + 1}\n${item.sql || run.title || ''}`}>结果 {resultIndex + 1}</span>
         }))
       ]}
     />

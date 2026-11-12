@@ -20,9 +20,8 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
   return (
     <Tabs
       className="workspace-tabs"
-      styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
-      tabBarStyle={{ margin: 0, padding: 0, background: 'var(--tab-bar-background)' }}
-      tabBarGutter={0}
+      styles={{ item: { width: workspaceTabLayout.width, flex: 'none', paddingInline: 'var(--workspace-inset)' } }}
+      tabBarStyle={{ margin: 0, paddingInline: 'var(--ant-padding-xxs)', paddingBlockStart: 'var(--ant-padding-xxs)', background: 'var(--tab-bar-background)' }}
       type="editable-card"
       size={appearance.navigationSize}
       hideAdd
