@@ -1,4 +1,4 @@
-const { copyFile, rename } = require('node:fs/promises')
+const { access, copyFile, rename } = require('node:fs/promises')
 const path = require('node:path')
 
 // electron-builder 的辅助工具与 Electron 本体分别下载，两个镜像都需要设置。
@@ -10,7 +10,6 @@ module.exports = {
   icon: 'build/icons/icon.png',
   directories: { output: process.env.SQL_STUDIO_OUT || 'release', buildResources: 'build' },
   files: ['src/**/*', 'package.json'],
-  asar: true,
   extraResources: [
     { from: 'build/runtime', to: 'runtime' },
     { from: 'build/icons/icon.png', to: 'icon.png' },
@@ -21,6 +20,17 @@ module.exports = {
   win: {
     target: ['zip', 'nsis'],
     artifactName: '${productName}-Portable-${version}-${arch}.${ext}'
+  },
+  async beforePack({ electronPlatformName }) {
+    const windows = electronPlatformName === 'win32'
+    const backend = windows ? 'sql-studio-backend.exe' : 'sql-studio-backend'
+    const resources = ['build/runtime/web/index.html', `build/runtime/${backend}`, 'build/icons/icon.png', 'build/icons/mac-icon.png']
+    if (windows) resources.push('build/launcher.exe')
+    try {
+      await Promise.all(resources.map((file) => access(path.join(__dirname, file))))
+    } catch (error) {
+      throw new Error(`无法读取打包资源，请先执行 pnpm dist。\n${error.message}`)
+    }
   },
   async afterPack({ appOutDir, electronPlatformName, packager }) {
     if (electronPlatformName !== 'win32') return
@@ -34,11 +44,6 @@ module.exports = {
     oneClick: false,
     perMachine: true,
     allowToChangeInstallationDirectory: true,
-    createDesktopShortcut: true,
-    createStartMenuShortcut: true,
-    shortcutName: 'SQL Studio',
-    runAfterFinish: true,
-    deleteAppDataOnUninstall: false,
     differentialPackage: false,
     useZip: true,
     include: 'scripts/windows/installer.nsh'

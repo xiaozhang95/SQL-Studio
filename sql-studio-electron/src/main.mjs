@@ -5,19 +5,10 @@ import { setTimeout as delay } from 'node:timers/promises'
 
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
 
-import { startBackend, waitForService } from './backend.mjs'
+import { startBackend } from './backend.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
-
-function ensureDirectory(directory) {
-  try {
-    mkdirSync(directory, { recursive: true })
-    return true
-  } catch {
-    return false
-  }
-}
 
 // 默认状态目录与独立运行的 Go 服务一致。
 const dataOverride = process.env.SQL_STUDIO_DATA_DIR?.trim()
@@ -28,8 +19,14 @@ const userDataDirectory = path.join(dataDirectory, 'electron')
 const stateDirectory = path.join(dataDirectory, 'state')
 // Chromium 只在默认路径下自建目录，自定义 userData 必须先落盘，否则单实例锁会因
 // “路径不存在”创建失败，进程静默退出（双击没反应）。
-const dataReady = ensureDirectory(userDataDirectory) && ensureDirectory(stateDirectory)
-if (dataReady) app.setPath('userData', userDataDirectory)
+let dataError = ''
+try {
+  mkdirSync(userDataDirectory, { recursive: true })
+  mkdirSync(stateDirectory, { recursive: true })
+  app.setPath('userData', userDataDirectory)
+} catch (cause) {
+  dataError = cause instanceof Error ? cause.message : String(cause)
+}
 
 function trace(message) {
   try {
@@ -39,8 +36,7 @@ function trace(message) {
   }
 }
 
-trace(`starting packaged=${app.isPackaged} data=${dataDirectory} ready=${dataReady}`)
-const dev = !app.isPackaged && process.argv.includes('--dev')
+trace(`starting packaged=${app.isPackaged} data=${dataDirectory} ready=${!dataError}`)
 let backend
 let mainWindow
 let quitting = false
@@ -130,9 +126,10 @@ function createWindow(dark) {
   }
 }
 
-if (!dataReady) {
-  const message = `无法创建数据目录：\n${dataDirectory}\n\n请检查目录权限，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
-  trace(`fatal: 数据目录不可写 ${dataDirectory}`)
+if (dataError) {
+  const message = `无法初始化数据目录：\n${dataDirectory}\n\n${dataError}\n\n请检查目录权限，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
+  console.error(`[electron] ${message}`)
+  trace(`fatal: ${dataError}`)
   dialog.showErrorBox('SQL Studio 无法启动', message)
   app.exit(1)
 } else if (!app.requestSingleInstanceLock()) {
@@ -167,30 +164,27 @@ if (!dataReady) {
       const desktop = createWindow(appearance.dark)
       startupScreen = await createStartupScreen(desktop.window, { icon: desktop.icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
       startupAbort.signal.throwIfAborted()
-      let url = 'http://127.0.0.1:15173'
-      if (dev) {
-        await waitForService(url, { signal: startupAbort.signal })
-      } else {
-        const runtime = app.isPackaged ? path.join(process.resourcesPath, 'runtime') : fileURLToPath(new URL('../build/runtime', import.meta.url))
-        backend = await startBackend(
-          runtime,
-          dataDirectory,
-          () => {
-            if (!quitting) {
-              dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
-              app.quit()
-            }
-          },
-          { signal: startupAbort.signal }
-        )
-      }
+      const runtime = app.isPackaged
+        ? path.join(process.resourcesPath, 'runtime')
+        : process.env.SQL_STUDIO_PREVIEW_RUNTIME_DIR || fileURLToPath(new URL('../build/runtime', import.meta.url))
+      backend = await startBackend(
+        runtime,
+        dataDirectory,
+        () => {
+          if (!quitting) {
+            dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
+            app.quit()
+          }
+        },
+        { signal: startupAbort.signal }
+      )
       if (quitting) {
-        await backend?.stop()
+        await backend.stop()
         backend = undefined
         return
       }
       startupScreen.setStage('workspace')
-      await desktop.loadWorkbench(backend?.url || url)
+      await desktop.loadWorkbench(backend.url)
       await startupScreen.complete()
       if (!desktop.window.isDestroyed()) desktop.window.webContents.focus()
     })
@@ -198,7 +192,8 @@ if (!dataReady) {
       trace(`启动失败: ${error?.stack || error?.message || error}`)
       if (!quitting) {
         startupScreen?.setStage('error')
-        dialog.showErrorBox('SQL Studio 启动失败', `${error.message}\n\n开发模式请先启动 Go 后端和 Vite；本地预览请先执行 pnpm bundle。`)
+        const message = app.isPackaged ? error.message : `${error.message}\n\n请先执行 pnpm dist 生成桌面调试资源。`
+        dialog.showErrorBox('SQL Studio 启动失败', message)
       }
       app.quit()
     })

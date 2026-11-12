@@ -68,4 +68,4 @@ flowchart LR
 
 开发时 Vite 15173 将 /api 同源代理到 Go 18080。构建后 Go 同时提供网页、Swagger 页面与 API，无额外服务进程。启动见 [项目 README](../README.md)，包依赖细节见 [后端架构](BACKEND_ARCHITECTURE.md)。
 
-[Electron 桌面项目](../sql-studio-electron/README.md) 开发时连接现有 Vite。打包后携带 Go 可执行文件和前端 dist，由主进程启动独立本地服务并管理退出。桌面版和独立 Go 服务默认共用用户主目录下的 `.sql-studio/state/`。
+[Electron 桌面项目](../sql-studio-electron/README.md) 的调试版和打包版都由主进程启动 Go 服务，加载构建后的前端页面并管理服务退出。桌面版和独立 Go 服务默认共用用户主目录下的 `.sql-studio/state/`。
