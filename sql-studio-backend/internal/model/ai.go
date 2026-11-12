@@ -53,10 +53,10 @@ type AIConfiguration struct {
 	Configured bool   `json:"configured,omitempty"`
 }
 
-// SelectedConfiguration resolves only an explicit use-site choice; it never picks a default.
+// SelectedConfiguration uses the first usable saved model when no default has been set.
 func (c AIConfig) SelectedConfiguration() (AIConfiguration, bool) {
 	for _, entry := range c.Configurations {
-		if c.ActiveID != "" && entry.ID == c.ActiveID && entry.Model != "" && entry.APIKey != "" {
+		if entry.ID != "" && entry.Model != "" && entry.APIKey != "" && (c.ActiveID == "" || entry.ID == c.ActiveID) {
 			return entry, true
 		}
 	}

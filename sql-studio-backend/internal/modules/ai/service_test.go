@@ -67,9 +67,9 @@ func (g *generator) Generate(ctx context.Context, key string, modelID string, me
 func TestScopeAndValidation(t *testing.T) {
 	c := &connections{}
 	g := &generator{content: `{"completion":" 1"}`}
-	s := New(repository{}, c, g)
+	s := New(repository{data: `{"activeId":"","configurations":[{"id":"a","provider":"deepseek","model":"model-a","apiKey":"fixture-key-a"},{"id":"b","provider":"deepseek","model":"model-b","apiKey":"fixture-key-b"}]}`}, c, g)
 	result, err := s.Assist(context.Background(), model.AIRequest{Action: "complete", ConnectionID: "beta", Prefix: "SELECT"})
-	if err != nil || result.Completion != " 1" || c.id != "beta" {
+	if err != nil || result.Completion != " 1" || c.id != "beta" || g.model != "model-a" || g.key != "fixture-key-a" {
 		t.Fatal(result, err, c.id)
 	}
 	if _, err = s.Assist(context.Background(), model.AIRequest{Action: "invalid"}); err == nil || g.calls != 1 {

@@ -30,6 +30,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
   const { container: containerRef, height, minimum, maximum, resizer } = useComposerResize()
   const question = Form.useWatch('question', form) ?? ''
   const tooLong = new TextEncoder().encode(question).length > CHAT.maxQuestionBytes
+  const selectedModel = aiStatus?.configured ? aiStatus.models.find((model) => model.id === aiStatus.configId) : undefined
   function submit(text: string) {
     if (!busy && !settingsBusy && aiStatus?.configured && text.trim() && new TextEncoder().encode(text).length <= CHAT.maxQuestionBytes) void onSend({ question: text })
   }
@@ -154,10 +155,10 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       aria-label="当前模型"
                       disabled={busy || settingsBusy || !aiStatus?.models.length}
                       title={!aiStatus?.models.length ? '请在右上角系统设置中添加模型' : undefined}
-                      icon={<DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
+                      icon={selectedModel && <DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >
-                      {aiStatus?.models.find((m) => m.id === aiStatus.configId)?.name ?? '请选择模型'}
+                      {selectedModel?.name ?? '请选择模型'}
                       <DropdownChevron disabled={busy || settingsBusy || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>

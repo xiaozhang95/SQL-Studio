@@ -88,7 +88,7 @@ export function useAISettings() {
     baseline.current = snapshot(values, selected)
     setEntries(values)
     setConnectionTests({})
-    setActiveId(selected)
+    setActiveId(selected || values[0]?.id || '')
     setReady(true)
     return values
   }
@@ -129,14 +129,21 @@ export function useAISettings() {
     if (!existing && entries.length >= maxAIConfigurations) return false
     cancelTest(entry.id)
     setEntries((values) => (existing ? values.map((row) => (row.id === entry.id ? entry : row)) : [...values, entry]))
+    if (!activeId) setActiveId(entry.id)
     setError('')
     return true
   }
   const removeEntry = (id: string) => {
     if (!ready || pending.current) return
     cancelTest(id)
-    setEntries((values) => values.filter((entry) => entry.id !== id))
-    if (activeId === id) setActiveId('')
+    const remaining = entries.filter((entry) => entry.id !== id)
+    setEntries(remaining)
+    if (activeId === id) setActiveId(remaining[0]?.id ?? '')
+    setError('')
+  }
+  const selectActive = (id: string) => {
+    if (!ready || pending.current || !entries.some((entry) => entry.id === id)) return
+    setActiveId(id)
     setError('')
   }
   const testConnection = async (id: string) => {
@@ -165,7 +172,7 @@ export function useAISettings() {
     !loading &&
     !saving &&
     pairs.size === entries.length &&
-    (!activeId || entries.some((entry) => entry.id === activeId && Boolean(entry.model))) &&
+    (entries.length === 0 ? activeId === '' : entries.some((entry) => entry.id === activeId)) &&
     entries.every((entry) => {
       const saved = savedEntries.current.get(entry.id)
       const edited = !saved || Boolean(entry.apiKey.trim()) || saved.model !== entry.model || saved.provider !== entry.provider
@@ -200,5 +207,5 @@ export function useAISettings() {
       setSaving(false)
     }
   }
-  return { ready, loading, saving, busy: saving, error, entries, connectionTests, testConnection, upsertEntry, removeEntry, changed, canSave, show, close, save }
+  return { ready, loading, saving, busy: saving, error, entries, activeId, selectActive, connectionTests, testConnection, upsertEntry, removeEntry, changed, canSave, show, close, save }
 }

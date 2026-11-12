@@ -7,7 +7,6 @@ export function useAISettings() {
   const [status, setStatus] = useState<AIStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
   useEffect(
     () =>
       observeSettings(
@@ -26,7 +25,6 @@ export function useAISettings() {
     try {
       const next = await settings('PUT', { configId: model })
       setStatus(next)
-      setNotice('已切换到所选模型配置。')
       window.dispatchEvent(new Event('ai-settings-saved'))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '模型保存失败')
@@ -34,5 +32,5 @@ export function useAISettings() {
       setBusy(false)
     }
   }
-  return { status, busy, error, notice, chooseModel, dismissNotice: () => setNotice('') }
+  return { status, busy, error, chooseModel }
 }

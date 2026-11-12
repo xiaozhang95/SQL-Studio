@@ -4,7 +4,7 @@
 
 输入区默认 4 行、最多 10 行（CHAT.composerRows），字体、背景及外层边框沿用 Sender 默认样式。内部文本区去掉重复边框、轮廓和阴影，焦点反馈由 Sender 外层提供。内容和底部操作区通过 Sender 的 styles 设置内边距。拖拽产生的动态高度通过 Sender 的语义 styles 传入。实心停止符号通过 style 和主题 token 设置外观，继承按钮颜色。
 
-底部模型Dropdown使用默认尺寸文本按钮，无边框和背景色；当前值和所有模型选项统一展示蓝鲸图标。模型菜单的蓝鲸统一使用CHAT.modelMenuIconSize（18px），透传原生图标className并复用菜单默认图文间距，所有选项的图标列和文字起点一致。入口图标使用CHAT.modelTriggerIconSize（20px），复用Button默认图文间距；菜单按完整内容撑宽。字体沿用Ant Design默认值。
+底部模型 Dropdown 使用默认尺寸文本按钮。选中可用模型时显示模型名称和蓝鲸图标，空状态显示「请选择模型」。菜单只展示已添加模型及其图标。菜单和入口图标分别使用 CHAT.modelMenuIconSize（18px）与 CHAT.modelTriggerIconSize（20px），沿用 Ant Design 默认图文间距与字体。
 
 模式和模型的 Dropdown 浮层沿用 Ant Design 默认边框、圆角及背景。模式和模型入口共用公共 DropdownChevron，显式同步按钮禁用态。
 

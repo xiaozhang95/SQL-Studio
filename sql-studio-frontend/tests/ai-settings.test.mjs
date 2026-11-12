@@ -98,6 +98,9 @@ function harness(modulePath, failWrite = false) {
     set document(value) {
       document = value
     },
+    notifySettingsSaved() {
+      browser.dispatchEvent(new Event('ai-settings-saved'))
+    },
     render(...args) {
       cursor = 0
       effectCursor = 0
@@ -131,7 +134,7 @@ test('新格式保存模型显示名称和列表，不包含旧配置字段；�
     await f.render().show()
     const existing = f.render().entries[0]
     assert.equal(existing.modelName, 'Flash')
-    assert.equal(f.render().selectActive, undefined)
+    assert.equal(f.render().activeId, 'a')
     await f.render().testConnection(existing.id)
     assert.equal(f.render().connectionTests.a.success, true)
     assert.equal(f.discovered[0].configId, 'a')
@@ -146,7 +149,7 @@ test('新格式保存模型显示名称和列表，不包含旧配置字段；�
   }
 })
 
-test('同供应商可添加不同模型，列表不提供使用选择；重复与空模型拒绝', async () => {
+test('首个添加的模型为默认，列表可切换，移除默认后选剩余首项', async () => {
   const f = harness('../src/hooks/useAISettings/index.ts')
   try {
     f.document = { revision: 0, data: null }
@@ -158,8 +161,19 @@ test('同供应商可添加不同模型，列表不提供使用选择；重复�
     assert.equal(f.render().upsertEntry(entry('b', 'deepseek-v4-pro', 'fixture-key-b')), true)
     assert.equal(f.render().upsertEntry(entry('c', 'deepseek-flash', 'fixture-key-c')), false)
     assert.equal(f.render().entries.length, 2)
+    assert.equal(f.render().activeId, 'a')
     assert.equal(await f.render().save(), true)
-    assert.equal(f.document.data.activeId, '')
+    assert.equal(f.document.data.activeId, 'a')
+    f.render().selectActive('unknown')
+    assert.equal(f.render().activeId, 'a')
+    f.render().selectActive('b')
+    assert.equal(f.render().changed, true)
+    assert.equal(await f.render().save(), true)
+    assert.equal(f.document.data.activeId, 'b')
+    f.render().removeEntry('b')
+    assert.equal(f.render().activeId, 'a')
+    assert.equal(await f.render().save(), true)
+    assert.equal(f.document.data.activeId, 'a')
     assert.equal('provider' in f.writes[0].data, false)
   } finally {
     f.close()
@@ -231,7 +245,7 @@ test('补全开关按最新修订保存，保留已选模型并广播共享配�
   }
 })
 
-test('模型未选择时隐藏 AI 工具，补全保存失败保留原偏好并显示错误', async () => {
+test('补全保存失败保留原偏好并显示错误', async () => {
   const f = harness('../src/pages/workspace/hooks/useAISQL/index.ts', true)
   const args = [{ connectionId: '', database: '', table: '', sql: '' }, { snapshots: {} }, false]
   try {
@@ -246,13 +260,35 @@ test('模型未选择时隐藏 AI 工具，补全保存失败保留原偏好并�
   } finally {
     f.close()
   }
-  const missing = harness('../src/pages/workspace/hooks/useAISQL/index.ts')
+})
+
+test('已保存模型时显示 SQL AI 工具，选中当前模型后才可使用', async () => {
+  const f = harness('../src/pages/workspace/hooks/useAISQL/index.ts')
+  const args = [{ connectionId: '', database: '', table: '', sql: '' }, { snapshots: {} }, false]
   try {
-    missing.document = { revision: 1, data: { configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-flash', modelName: 'Flash', configured: true }], activeId: '' } }
-    missing.render(...args)
+    const saved = f.document
+    f.document = { revision: 0, data: null }
+    f.render(...args)
     await settle()
-    assert.equal(missing.render(...args).configured, false)
+    assert.equal(f.render(...args).hasSavedModel, false)
+
+    f.document = { ...saved, data: { ...saved.data, activeId: '' } }
+    f.notifySettingsSaved()
+    await settle()
+    let model = f.render(...args)
+    assert.equal(model.hasSavedModel, true)
+    assert.equal(model.configured, false)
+    await model.changeCompletion(true)
+    assert.equal(f.writes.length, 0)
+
+    f.document = { ...saved, revision: saved.revision + 1 }
+    f.notifySettingsSaved()
+    await settle()
+    model = f.render(...args)
+    assert.equal(model.hasSavedModel, true)
+    assert.equal(model.configured, true)
+    assert.equal(model.enabled, false)
   } finally {
-    missing.close()
+    f.close()
   }
 })

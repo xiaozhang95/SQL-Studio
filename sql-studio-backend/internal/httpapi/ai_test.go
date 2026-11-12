@@ -13,7 +13,7 @@ import (
 type aiState struct{}
 
 func (aiState) Read(context.Context, string) (model.StateDocument, error) {
-	return model.StateDocument{Data: json.RawMessage(`{"provider":"deepseek","apiKey":"private-test-key"}`)}, nil
+	return model.StateDocument{Data: json.RawMessage(`{"activeId":"","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-flash","modelName":"Flash","apiKey":"private-test-key"}]}`)}, nil
 }
 
 type aiConnections struct{}
@@ -54,7 +54,8 @@ func TestAIModelDiscoveryRoute(t *testing.T) {
 		body   string
 		status int
 	}{
-		{`{"provider":"deepseek"}`, 200},
+		{`{"provider":"deepseek","configId":"a"}`, 200},
+		{`{"provider":"deepseek"}`, 400},
 		{`{"provider":"deepseek","apiKey":"temporary-key"}`, 200},
 		{`{"provider":"unknown"}`, 400},
 		{`{"provider":"deepseek","unexpected":true}`, 400},

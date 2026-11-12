@@ -89,7 +89,7 @@ func (s *Service) Assist(ctx context.Context, input model.AIRequest) (model.AIRe
 	}
 	selected, ok := config.SelectedConfiguration()
 	if !ok || selected.Provider != "deepseek" {
-		return empty, errors.New("请先添加模型并在使用处选择")
+		return empty, errors.New("请先在系统设置中添加可用的模型")
 	}
 	if input.Action == "complete" && config.CompletionEnabled != nil && !*config.CompletionEnabled {
 		return empty, errors.New("AI 续写已关闭")

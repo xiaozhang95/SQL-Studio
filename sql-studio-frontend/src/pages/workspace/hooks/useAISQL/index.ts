@@ -21,6 +21,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const tables = snapshot?.status === 'connected' ? snapshot.tables[scope.database] : undefined
   const structures = snapshot?.structures
   const editor = useRef<EditorView | null>(null)
+  const [hasSavedModel, setHasSavedModel] = useState(false)
   const [configured, setConfigured] = useState(false)
   const [enabled, setEnabled] = useState(true)
   const [provider, setProvider] = useState<AIProviderType>(getAIAdapter().profile.value)
@@ -49,7 +50,9 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
             setCompletionLoading(false)
             const entries = doc.data === null ? [] : doc.data.configurations
             if (!Array.isArray(entries) || entries.some((entry) => !isAIProvider(entry.provider) || !entry.model || !entry.modelName)) throw new Error('模型列表配置无效')
-            const selected = entries.find((entry) => entry.id === doc.data?.activeId && entry.configured)
+            const savedModels = entries.filter((entry) => entry.configured === true)
+            const selected = savedModels.find((entry) => entry.id === doc.data?.activeId)
+            setHasSavedModel(savedModels.length > 0)
             setConfigured(Boolean(selected))
             setEnabled(doc.data?.completionEnabled !== false)
             if (selected) setProvider(selected.provider)
@@ -58,6 +61,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
         })
         .catch(() => {
           if (alive && current === latest) {
+            setHasSavedModel(false)
             setConfigured(false)
           }
         })
@@ -136,7 +140,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const changeCompletion = (value: boolean) => (configured ? updatePreference({ completionEnabled: value }) : undefined)
   const optimize = async (selectionOnly = false, selectedSQL?: string) => {
     const view = editor.current
-    if (!view || blocked || (loading && requestScope === scopeKey)) return
+    if (!view || !configured || blocked || (loading && requestScope === scopeKey)) return
     const doc = view.state.doc
     const selection = view.state.selection.main
     if (selectionOnly && selection.empty) return
@@ -183,6 +187,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   }
   return {
     onEditorReady,
+    hasSavedModel,
     configured,
     enabled,
     changeCompletion,

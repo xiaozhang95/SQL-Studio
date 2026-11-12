@@ -41,20 +41,34 @@ func TestAgentAndSQLUseSameAIConfig(t *testing.T) {
 	}
 }
 
-func TestSavedModelsWithoutSelectionAreNotUsable(t *testing.T) {
+func TestSavedModelsUseDefaultWhenSelectionIsMissing(t *testing.T) {
 	ctx := context.Background()
 	repo := &aiRepository{}
 	s := New(repo)
-	_, err := s.Write(ctx, model.AIModelsSection, model.StateWrite{Data: json.RawMessage(`{"activeId":"","configurations":[{"id":"a","provider":"deepseek","model":"chosen-model","apiKey":"fixture-key","modelName":"chosen-model"}]}`)})
+	data := aiData("", fixtureEntry("a", "model-a", "fixture-key-a"), fixtureEntry("b", "model-b", "fixture-key-b"))
+	// A saved list from before the default setting remains usable without a write.
+	repo.doc = model.StateDocument{Revision: 1, Data: data}
+	doc, err := s.Read(ctx, model.AIModelsSection)
+	var public model.AIConfig
+	if err != nil || json.Unmarshal(doc.Data, &public) != nil || public.ActiveID != "a" || repo.doc.Revision != 1 || string(repo.doc.Data) != string(data) {
+		t.Fatal("default selection was not resolved on read", err)
+	}
+	status, err := s.AgentStatus(ctx)
+	if err != nil || !status.Configured || status.ConfigID != "a" || status.Model != "model-a" {
+		t.Fatal("agent did not use the same default model", err)
+	}
+
+	doc, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: data})
 	if err != nil {
 		t.Fatal(err)
 	}
-	status, err := s.AgentStatus(ctx)
-	if err != nil || status.Configured || status.Model != "" || len(status.Models) != 1 {
-		t.Fatal("model was auto selected", err)
+	var raw model.AIConfig
+	if json.Unmarshal(repo.doc.Data, &raw) != nil || raw.ActiveID != "a" {
+		t.Fatal("default model was not persisted")
 	}
-	status, err = s.UpdateAgent(ctx, agentmodel.AIUpdate{ConfigID: "a"})
-	if err != nil || !status.Configured || status.Model != "chosen-model" {
-		t.Fatal("explicit model changed or rejected", err)
+	_, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: aiData("b", fixtureEntry("a", "model-a", ""), fixtureEntry("b", "model-b", ""))})
+	status, readErr := s.AgentStatus(ctx)
+	if err != nil || readErr != nil || !status.Configured || status.ConfigID != "b" || status.Model != "model-b" {
+		t.Fatal("model selected in settings did not become the default", err, readErr)
 	}
 }

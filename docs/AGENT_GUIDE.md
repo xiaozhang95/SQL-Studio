@@ -63,7 +63,7 @@ Go 读取共享 AI 配置，用 Bearer Key 请求 `https://api.deepseek.com/chat
 
 上下文按 100 万窗口设定 70 万的保守输入估算，估算依据是序列化后的字节数和预留空间。需要压缩时，先征求用户同意，再发起非思考请求摘要较早的完整轮次。最近两轮及其工具配对保留，原始会话仍可在本机恢复。
 
-助手与 SQL 补全、优化共用一份 Key。模型菜单通过 `/api/agent/settings` 获取脱敏配置。系统设置直接展示服务商、Key 和模型三项配置，当前仅 DeepSeek；配置与助手共用。代码补全开关和 SQL 美化位于查询工具栏导入左侧，以竖线分组，保存 Key 并选中模型后才显示。
+助手与 SQL 补全、美化共用默认模型和对应 Key。系统设置的模型列表可切换默认模型，首次保存时使用列表首条。AI 助手输入区也可切换这一共享选择，模型菜单通过 `/api/agent/settings` 获取脱敏配置。保存可用模型后，代码补全开关和 SQL 美化显示在查询工具栏导入左侧。
 
 源码见[模型传输](../sql-studio-backend/internal/deepseek/agent/stream.go)、[上下文管理](../sql-studio-backend/internal/modules/agent/context.go)、[共享配置](../sql-studio-backend/internal/modules/settings/agent.go)和[系统设置入口](../sql-studio-frontend/src/components/systemSettings/README.md)。
 

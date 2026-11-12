@@ -61,6 +61,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const completion = useSQLCompletionPopup()
   const { update: updateCompletion } = completion
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
+  const aiModelHint = ai.configured ? undefined : '请先在系统设置中保存默认模型'
   const editorExtensions = useMemo(
     () => [sqlEditorAppearance, ...initialHistory, ...extensions, ...completion.extensions, ...ai.extensions],
     [initialHistory, extensions, completion.extensions, ai.extensions]
@@ -114,23 +115,30 @@ export default function QueryEditor({ model, themeMode }: Props) {
           {activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
-          {ai.configured && (
+          {ai.hasSavedModel && (
             <div role="group" aria-label="SQL AI 工具" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CodeOutlined aria-hidden="true" />
-                <span>代码补全</span>
-                <Tooltip title="AI 代码补全">
+              <Tooltip title={aiModelHint ?? 'AI 代码补全'}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <CodeOutlined aria-hidden="true" />
+                  <span>代码补全</span>
                   <Switch
                     size="small"
                     aria-label="代码补全"
-                    checked={ai.enabled}
-                    disabled={running || ai.preferenceSaving}
+                    checked={ai.configured && ai.enabled}
+                    disabled={!ai.configured || running || ai.preferenceSaving}
                     loading={ai.preferenceSaving}
                     onChange={(value) => void ai.changeCompletion(value)}
                   />
-                </Tooltip>
-              </div>
-              <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+                </div>
+              </Tooltip>
+              <ToolbarButton
+                label="SQL 美化"
+                hint={aiModelHint}
+                icon={<FormatPainterOutlined />}
+                disabled={!ai.configured || !hasSQL || running}
+                loading={ai.loading}
+                onClick={() => void ai.optimize()}
+              />
             </div>
           )}
           <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>

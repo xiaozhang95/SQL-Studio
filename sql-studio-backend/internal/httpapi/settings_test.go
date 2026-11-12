@@ -59,8 +59,12 @@ func TestRemoveAIConfigRoute(t *testing.T) {
 		router.ServeHTTP(rec, req)
 		return rec
 	}
-	if rec := call("PUT", "/api/state/ai-models", `{"revision":0,"data":{"activeId":"a","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-flash","modelName":"deepseek-flash","apiKey":"test-secret"}]}}`); rec.Code != 200 {
-		t.Fatal(rec.Code)
+	saved := call("PUT", "/api/state/ai-models", `{"revision":0,"data":{"activeId":"","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-flash","modelName":"deepseek-flash","apiKey":"test-secret"}]}}`)
+	var selected struct {
+		Data model.AIConfig `json:"data"`
+	}
+	if saved.Code != 200 || json.Unmarshal(saved.Body.Bytes(), &selected) != nil || selected.Data.ActiveID != "a" {
+		t.Fatal("first saved model was not returned as the default", saved.Code)
 	}
 	if rec := call("DELETE", "/api/ai/config", `{"revision":0}`); rec.Code != 409 {
 		t.Fatal("missing revision protection", rec.Code)

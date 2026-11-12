@@ -90,6 +90,9 @@ func (s *Service) writeAI(ctx context.Context, input model.StateWrite) (model.St
 	if !activeFound {
 		return model.StateDocument{}, errors.New("使用中的模型记录不存在")
 	}
+	if selected, ok := config.SelectedConfiguration(); ok {
+		config.ActiveID = selected.ID
+	}
 	if len(config.Configurations) == 0 {
 		enabled := false
 		config.CompletionEnabled = &enabled
@@ -116,6 +119,9 @@ func publicAI(doc model.StateDocument) (model.StateDocument, error) {
 	if config.CompletionEnabled == nil {
 		enabled := true
 		config.CompletionEnabled = &enabled
+	}
+	if selected, ok := config.SelectedConfiguration(); ok {
+		config.ActiveID = selected.ID
 	}
 	for i := range config.Configurations {
 		config.Configurations[i].Configured = config.Configurations[i].APIKey != ""

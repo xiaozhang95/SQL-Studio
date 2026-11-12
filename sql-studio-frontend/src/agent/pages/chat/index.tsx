@@ -92,7 +92,6 @@ export function ChatPage({
                 ))}
               </Flex>
             )}
-            {ai.notice && <Alert type="success" title={ai.notice} closable onClose={ai.dismissNotice} style={{ ...CHAT.content, marginBottom: token.margin }} />}
             <div
               className="chat-transcript-region"
               style={{
