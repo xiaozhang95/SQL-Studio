@@ -72,7 +72,7 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
     <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
       {steps.map((step, index) => (
         <Fragment key={entries[index].id}>
-          {index > 0 && <Divider className="chat-process-divider" />}
+          {index > 0 && <Divider style={{ margin: 0 }} />}
           {step}
         </Fragment>
       ))}
@@ -123,7 +123,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
             <ProcessCard
               key={key}
               title={title}
-              icon={hasThinking ? undefined : <CodeOutlined className="chat-process-icon" />}
+              icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
               expanded={expanded.includes(key)}
               onExpand={(open) => {
                 const remaining = expanded.filter((id) => id !== key)
@@ -173,7 +173,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                   <Typography.Text copyable={{ text: e.text, tooltips: ['复制问题', '已复制'] }} />
                 </Flex>
               )}
-              {user && <Divider className="chat-turn-divider" />}
+              {user && <Divider style={{ margin: 0 }} />}
             </Flex>
           )
         })

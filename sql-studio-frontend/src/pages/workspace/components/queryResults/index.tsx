@@ -3,6 +3,7 @@ import { Alert, Dropdown, Empty, Input, Pagination, Table, Typography } from 'an
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
+import EmptyStateIcon from '@/components/emptyStateIcon'
 import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
@@ -337,7 +338,16 @@ export default function QueryResults({ model, themeMode }: Props) {
             />
           </>
         ) : (
-          <Empty className="query-empty" image={<TableOutlined className="empty-state-icon" />} description="暂无结果" style={{ margin: '20px 0' }} />
+          <Empty
+            className="query-empty"
+            image={
+              <EmptyStateIcon>
+                <TableOutlined />
+              </EmptyStateIcon>
+            }
+            description="暂无结果"
+            style={{ margin: '20px 0' }}
+          />
         )}
       </div>
       {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />}

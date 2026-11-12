@@ -1,12 +1,13 @@
 import { theme } from 'antd'
 
+import { createThemeConfig } from '@/constant/theme'
 import type { ThemeMode, ThemePreference } from '@/typings/theme'
 
 import { settingsLayout } from '../../constant/settings'
 
 /** 用原生主题 token 绘制工作区缩略图，不改变应用实际主题。 */
 function WorkspacePreview({ mode }: { mode: ThemeMode }) {
-  const token = theme.getDesignToken({ algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm })
+  const token = theme.getDesignToken(createThemeConfig(mode))
   return (
     <div
       style={{

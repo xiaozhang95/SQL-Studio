@@ -1,6 +1,8 @@
 import { Think } from '@ant-design/x'
-import { Card, Flex, theme } from 'antd'
+import { Flex, theme } from 'antd'
 import type { ReactNode } from 'react'
+
+import ContentCard from '@/components/contentCard'
 
 import { DeepSeekLogo } from '../deepseekLogo'
 
@@ -22,7 +24,7 @@ export function ProcessCard({ title, expanded, onExpand, children, icon }: Props
         onExpand={onExpand}
         styles={{ root: { flex: 1, minWidth: 0 }, content: { marginInlineStart: 0, marginBlockStart: token.marginXS, padding: 0, borderInlineStart: 0 } }}
       >
-        <Card size="small" className="content-frame">{children}</Card>
+        <ContentCard>{children}</ContentCard>
       </Think>
     </Flex>
   )

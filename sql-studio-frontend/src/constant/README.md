@@ -7,3 +7,5 @@
 
 - [统一表格分页](tablePagination/README.md)：SQL工作区和Agent共用尺寸、底栏及计数约定。
 - [共享侧栏尺寸](sidebarLayout/README.md)：工作台连接栏与Agent历史栏的默认值及拖动边界。
+
+- [主题配置](theme/README.md)：纯色文案、布局底色、字号与组件 token。

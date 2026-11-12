@@ -83,3 +83,5 @@ PostgreSQL 数据库及 schema 右键可新建 Schema；schema 右键可重命�
 当前选中项统一使用 controlItemBgHover 灰阶背景与主题正文色，悬停和聚焦保持一致，不使用蓝底白字。
 
 节点加载失败时的重试入口使用 small ToolbarButton 刷新图标，保留“重试加载”提示和可访问名称；点击阻止冒泡，不改变节点选择或展开。
+
+空态图标复用公共 EmptyStateIcon。搜索框伸缩与 Tree 的 root/itemTitle 布局通过 style/styles 提供，节点交互覆盖保留在 app.scss。

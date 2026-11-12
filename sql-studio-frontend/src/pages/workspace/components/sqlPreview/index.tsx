@@ -2,9 +2,10 @@ import { CopyOutlined } from '@ant-design/icons'
 import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { App, Card, Typography } from 'antd'
+import { App, Typography } from 'antd'
 import { memo, useMemo } from 'react'
 
+import ContentCard from '@/components/contentCard'
 import { getDatabaseAdapter } from '@/databases'
 import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
@@ -37,11 +38,11 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
   const editor = <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly style={{ flex: 1, minWidth: 0 }} basicSetup={previewSetup} aria-label="SQL 文本" />
   if (panel)
     return (
-      <Card size="small" className="content-frame code-panel" title={title} extra={copyButton}>
+      <ContentCard code title={title} extra={copyButton}>
         <div className="output-sql-preview" style={{ minWidth: 0 }}>
           {editor}
         </div>
-      </Card>
+      </ContentCard>
     )
   return compact ? (
     <div className="output-sql-preview" style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 8 }}>

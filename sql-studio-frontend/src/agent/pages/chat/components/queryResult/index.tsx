@@ -1,8 +1,9 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Alert, Card, Collapse, Descriptions, Flex, Space, Table, Tooltip, Typography } from 'antd'
+import { Alert, Collapse, Descriptions, Flex, Space, Table, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
+import ContentCard from '@/components/contentCard'
 import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 
@@ -59,14 +60,14 @@ const resultTableClassNames = { section: 'agent-result-grid', pagination: { root
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const cardTitle = showHeader ? (
     <Space size="small">
-      <DatabaseOutlined className="chat-result-icon" />
+      <DatabaseOutlined style={{ color: 'var(--ant-color-primary)' }} />
       <Typography.Text>{title}</Typography.Text>
     </Space>
   ) : undefined
   const result = readResult(value)
   if (isObject(value) && value.isQuery === false)
     return (
-      <Card size="small" className="content-frame" title={cardTitle}>
+      <ContentCard title={cardTitle}>
         <Descriptions
           size="small"
           column={1}
@@ -75,7 +76,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             { key: 'id', label: '新增ID', children: String(value.lastInsertId || '—') }
           ]}
         />
-      </Card>
+      </ContentCard>
     )
   if (result) {
     const columnWidths = result.columns.map((column) => Math.min(280, Math.max(140, column.name.length * 14 + 32)))
@@ -177,7 +178,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   }
   if (tool === 'use_database' && isObject(value) && isObject(value.target)) {
     return (
-      <Card size="small" className="content-frame" title={cardTitle}>
+      <ContentCard title={cardTitle}>
         <Descriptions
           size="small"
           column={1}
@@ -190,7 +191,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             { key: 'engine', label: '引擎', children: cellText(value.engine) }
           ]}
         />
-      </Card>
+      </ContentCard>
     )
   }
   if (Array.isArray(value) && value.every((v) => typeof v === 'string'))
@@ -259,7 +260,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
     )
   }
   return (
-    <Card size="small" className="content-frame" title={cardTitle}>
+    <ContentCard title={cardTitle}>
       <Typography.Paragraph
         style={{
           whiteSpace: 'pre-wrap',
@@ -271,6 +272,6 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       >
         {JSON.stringify(value, null, 2)}
       </Typography.Paragraph>
-    </Card>
+    </ContentCard>
   )
 }

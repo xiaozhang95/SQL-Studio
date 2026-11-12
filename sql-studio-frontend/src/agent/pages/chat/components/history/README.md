@@ -21,3 +21,5 @@ layout 接收公共 useSidebarResize 控制器。桌面侧栏右侧 5px 分隔�
 hook返回的DOM/list ref先单独解构为Ref变量，再传给ref属性；尺寸/导航状态与事件回调独立消费，渲染不读取ref.current。
 
 当前选中项统一使用 controlItemBgHover 灰阶背景与主题正文色，悬停和聚焦保持一致，不使用蓝底白字。
+
+会话操作区的占位宽度通过 style 管理，悬停/聚焦显隐保留在 app.scss。

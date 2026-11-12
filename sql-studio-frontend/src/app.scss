@@ -53,7 +53,6 @@ body {
 .chat-history-actions {
   opacity: 0;
   pointer-events: none;
-  flex-shrink: 0;
 }
 .chat-history-row:hover .chat-history-actions,
 .chat-history-row:focus-within .chat-history-actions {
@@ -72,14 +71,6 @@ body {
 }
 .chat-history-list .ant-conversations-item-active .chat-history-actions .ant-btn:not(:disabled) {
   color: var(--text);
-}
-
-// 手动渲染的下拉箭头与 Ant Design 子菜单保持同一颜色和尺寸。
-.dropdown-chevron {
-  font-size: var(--ant-font-size-icon);
-}
-.ant-btn:not(:disabled) .dropdown-chevron {
-  color: var(--ant-color-icon);
 }
 
 // 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
@@ -113,12 +104,6 @@ body,
 .workspace:has(.sidebar.is-resizing) * {
   cursor: col-resize;
   user-select: none;
-}
-.explorer > .ant-input-affix-wrapper {
-  flex: none;
-}
-.object-tree .ant-tree {
-  background: transparent;
 }
 .object-tree .ant-tree .ant-tree-treenode {
   align-items: center;
@@ -164,13 +149,6 @@ body,
 // Tree 在 showIcon=false 的加载期仍插入额外图标，占位会挤动标题；加载状态已显示在展开箭头中。
 .object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle.ant-tree-icon_loading {
   display: none;
-}
-.object-tree .ant-tree-title {
-  display: block;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 // Ant Design 6 的 body 与活动 content 之间有独立层级，必须连续传递可用高度。
@@ -219,23 +197,13 @@ body,
 .data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);
 }
-// 内容卡片与查询结果共用闭合外框；表格选择器须覆盖原生首项的上边框。
-.ant-card.content-frame,
+// 查询结果保持与 ContentCard 一致的闭合外框，并覆盖原生首项上边框。
 .sql-studio-theme .ant-table-wrapper .ant-table.ant-table-bordered > .ant-table-container.agent-result-grid {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--ant-color-border-secondary);
   border-radius: var(--ant-border-radius-lg);
-}
-.ant-card.code-panel,
-.sql-studio-theme .ant-table-wrapper .ant-table.ant-table-bordered > .ant-table-container.agent-result-grid {
   overflow: hidden;
-}
-.ant-card.code-panel > .ant-card-body {
-  padding: 0;
-}
-.ant-card.code-panel > .ant-card-head {
-  margin-bottom: 0;
 }
 
 // 表格单元格仅绘制内部分隔线，分页复用公共底栏并省去相邻边线。
@@ -274,11 +242,6 @@ body,
   margin-bottom: 0;
 }
 
-.empty-state-icon {
-  color: var(--primary);
-  font-size: 36px;
-}
-
 .object-tree .ant-tree-node-selected .ant-tree-title {
   color: inherit;
 }
@@ -303,47 +266,11 @@ body,
   flex-basis: 8px;
 }
 
-// Agent 问答分隔线与工作区使用同一边框。
-.ant-divider.chat-turn-divider {
-  margin: 0;
-}
 .ant-btn.chat-mode-write:not(:disabled) {
   color: var(--ant-color-warning);
 }
-.chat-mode-hint {
-  color: var(--ant-color-icon);
-}
-.chat-process-icon {
-  color: var(--ant-color-text-secondary);
-  font-size: var(--ant-font-size);
-  width: var(--ant-font-size);
-  height: var(--ant-font-size);
-}
-.ant-divider.chat-process-divider {
-  margin: 0;
-}
-.chat-result-icon {
-  color: var(--ant-color-primary);
-}
-// 实心停止符号继承按钮颜色，大小跟随 Ant Design 字体 token。
-.chat-stop-icon {
-  display: block;
-  width: var(--ant-font-size-sm);
-  height: var(--ant-font-size-sm);
-  background: currentColor;
-  border-radius: var(--ant-border-radius-xs);
-}
-// 导航刻度的默认、当前、悬停与键盘焦点样式集中定义，避免与内联样式竞争。
-.chat-round-marker {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  width: 28px;
-  height: 10px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
+
+// 刻度宽度和底色随当前项、悬停与焦点联动；保留 CSS 减弱动画支持。
 .chat-round-marker span {
   width: 12px;
   height: 2px;
@@ -418,23 +345,10 @@ html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .a
   border-color: var(--ant-color-text-secondary);
 }
 
-// 链接式操作同样使用中性文字；真实链接保留悬停下划线和键盘焦点提示。
-.sql-studio-theme .ant-btn-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled),
-.sql-studio-theme .ant-btn-variant-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled),
-.sql-studio-theme a.ant-typography:not(.ant-typography-disabled),
-.sql-studio-theme .ant-typography a:not(.ant-typography-disabled) {
-  color: var(--ant-color-text);
-}
+// 链接颜色由主题 token 提供，CSS 仅保留悬停下划线。
 .sql-studio-theme .ant-btn-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
 .sql-studio-theme .ant-btn-variant-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
 .sql-studio-theme a.ant-typography:not(.ant-typography-disabled):is(:hover, :active),
 .sql-studio-theme .ant-typography a:not(.ant-typography-disabled):is(:hover, :active) {
-  color: var(--ant-color-text);
   text-decoration: underline;
-}
-// 普通描边按钮的悬停/按下边框也不再变蓝，危险与禁用状态保持原生语义。
-.sql-studio-theme .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active) {
-  color: var(--ant-color-text);
-  border-color: var(--ant-color-text-tertiary);
-  background: var(--ant-control-item-bg-hover);
 }

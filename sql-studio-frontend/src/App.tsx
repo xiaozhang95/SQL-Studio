@@ -1,9 +1,10 @@
-import { App as AntApp, ConfigProvider, theme } from 'antd'
+import { App as AntApp, ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 
 import SidebarWidthProvider from '@/components/sidebarWidthProvider'
 import { appearance } from '@/constant/appearance'
+import { createThemeConfig } from '@/constant/theme'
 import { useAppSection } from '@/hooks/useAppSection'
 import { useThemePreference } from '@/hooks/useThemePreference'
 import Workspace from '@/pages/workspace'
@@ -14,6 +15,7 @@ const AgentPage = lazy(() => import('@/pages/agent'))
 export default function App() {
   const section = useAppSection()
   const { preference, fontSizePreference, savePreferences, mode, error, ready, saving } = useThemePreference()
+  const themeConfig = useMemo(() => createThemeConfig(mode, fontSizePreference), [mode, fontSizePreference])
   const appearancePreferences = {
     themePreference: preference,
     fontSizePreference,
@@ -21,16 +23,7 @@ export default function App() {
     themeReady: ready
   }
   return (
-    <ConfigProvider
-      locale={zhCN}
-      componentSize={appearance.controlSize}
-      tag={{ variant: 'solid' }}
-      theme={{
-        algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: { fontSize: fontSizePreference === 'small' ? 12 : fontSizePreference === 'large' ? 16 : theme.defaultSeed.fontSize },
-        cssVar: { key: 'sql-studio-theme' }
-      }}
-    >
+    <ConfigProvider locale={zhCN} componentSize={appearance.controlSize} tag={{ variant: 'solid' }} theme={themeConfig}>
       <AntApp message={{ styles: { root: { display: 'none' } } }}>
         <SidebarWidthProvider>
           <div style={{ display: section.agent ? 'none' : undefined }}>

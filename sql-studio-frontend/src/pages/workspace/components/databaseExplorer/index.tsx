@@ -23,6 +23,7 @@ import { Dropdown, Empty, Input, Tree } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
+import EmptyStateIcon from '@/components/emptyStateIcon'
 import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
@@ -310,7 +311,15 @@ export default function DatabaseExplorer({ model }: Props) {
       className="explorer connection-explorer"
       style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: 'var(--workspace-inset) var(--workspace-inset) 0', paddingTop: 16 }}
     >
-      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => updateExplorer({ search: event.target.value })} placeholder="搜索连接 / 库 / 表" allowClear aria-label="搜索数据库对象" />
+      <Input
+        style={{ flex: 'none' }}
+        prefix={<SearchOutlined />}
+        value={search}
+        onChange={(event) => updateExplorer({ search: event.target.value })}
+        placeholder="搜索连接 / 库 / 表"
+        allowClear
+        aria-label="搜索数据库对象"
+      />
       <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
         <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
           <div
@@ -328,10 +337,18 @@ export default function DatabaseExplorer({ model }: Props) {
             }}
           >
             {!data.nodes.length && !search ? (
-              <Empty image={<DatabaseOutlined className="empty-state-icon" />} description="暂无连接" />
+              <Empty
+                image={
+                  <EmptyStateIcon>
+                    <DatabaseOutlined />
+                  </EmptyStateIcon>
+                }
+                description="暂无连接"
+              />
             ) : (
               <Tree<ExplorerNode>
                 disabled={running}
+                styles={{ root: { background: 'transparent' }, itemTitle: { display: 'block', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' } }}
                 ref={treeRef}
                 aria-label="数据库连接树"
                 showIcon={false}

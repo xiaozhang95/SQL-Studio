@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
+import EmptyStateIcon from '@/components/emptyStateIcon'
 import { appearance, ComponentSize } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
@@ -163,7 +164,18 @@ export default function QueryHistory({ model, themeMode }: Props) {
               </div>
             )
           }}
-          locale={{ emptyText: <Empty image={<HistoryOutlined className="empty-state-icon" />} description={connectionHistory.length ? '没有匹配的执行记录' : '当前连接暂无执行历史'} /> }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={
+                  <EmptyStateIcon>
+                    <HistoryOutlined />
+                  </EmptyStateIcon>
+                }
+                description={connectionHistory.length ? '没有匹配的执行记录' : '当前连接暂无执行历史'}
+              />
+            )
+          }}
         />
       </div>
     </Drawer>

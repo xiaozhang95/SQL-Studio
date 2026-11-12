@@ -1,7 +1,9 @@
-import { CheckOutlined, DownOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
+import { CheckOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
 import { Alert, Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
+
+import DropdownChevron from '@/components/dropdownChevron'
 
 import type { TokenUsage } from '../../../../typings/chat'
 import type { AIStatus } from '../../../../typings/settings'
@@ -126,13 +128,13 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       className={mode === 'write' ? 'chat-mode-write' : undefined}
                     >
                       {mode === 'write' ? '完全访问模式' : '只读模式'}
-                      <DownOutlined aria-hidden="true" className="dropdown-chevron" />
+                      <DropdownChevron disabled={busy || settingsBusy} />
                     </Button>
                   </Dropdown>
                   <Tooltip
                     title={`只读模式仅查询；完全访问模式可修改数据及结构，执行前逐次确认，操作可能不可撤销。删除和清空始终禁止执行。${usage ? ` 1M上下文 · 输入 ${usage.promptTokens || '—'} token` : ''}`}
                   >
-                    <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined className="chat-mode-hint" />} />
+                    <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
                   </Tooltip>
                 </Flex>
                 <Flex align="center" gap={token.marginXS}>
@@ -156,12 +158,20 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       style={{ paddingInline: token.paddingXS }}
                     >
                       {aiStatus?.models.find((m) => m.id === aiStatus.configId)?.name ?? '请选择模型'}
-                      <DownOutlined aria-hidden="true" className="dropdown-chevron" />
+                      <DropdownChevron disabled={busy || settingsBusy || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>
                   {busy ? (
                     <Tooltip title="终止生成">
-                      <Button {...CHAT.iconButton} danger aria-label="停止生成" icon={<span aria-hidden="true" className="chat-stop-icon" />} onClick={onStop} />
+                      <Button
+                        {...CHAT.iconButton}
+                        danger
+                        aria-label="停止生成"
+                        icon={
+                          <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
+                        }
+                        onClick={onStop}
+                      />
                     </Tooltip>
                   ) : (
                     <Button

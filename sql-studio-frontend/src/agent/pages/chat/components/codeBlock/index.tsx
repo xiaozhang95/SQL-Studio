@@ -4,8 +4,10 @@ import { python } from '@codemirror/lang-python'
 import { sql } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
-import { Card, theme, Typography } from 'antd'
+import { theme, Typography } from 'antd'
 import { useMemo } from 'react'
+
+import ContentCard from '@/components/contentCard'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 
@@ -64,12 +66,7 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
     ]
   }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight, token.paddingSM])
   return (
-    <Card
-      size="small"
-      className="content-frame code-panel"
-      title={title ?? (language || '代码')}
-      extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}
-    >
+    <ContentCard code title={title ?? (language || '代码')} extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}>
       <CodeMirror
         aria-label="代码内容"
         value={displayText}
@@ -80,6 +77,6 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
         theme={token.colorBgBase === '#000' ? 'dark' : 'light'}
         basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, highlightActiveLineGutter: false, autocompletion: false }}
       />
-    </Card>
+    </ContentCard>
   )
 }

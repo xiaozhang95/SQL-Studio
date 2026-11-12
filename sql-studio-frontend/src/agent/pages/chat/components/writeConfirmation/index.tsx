@@ -1,5 +1,7 @@
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Descriptions, Flex, Space, Typography } from 'antd'
+import { Alert, Button, Descriptions, Flex, Space, Typography } from 'antd'
+
+import ContentCard from '@/components/contentCard'
 
 import type { ConfirmationRequest } from '../../../../typings/writeConfirmation'
 import { CHAT } from '../../constant/chat'
@@ -18,9 +20,7 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
   const continueLabel = writing ? '确认执行' : value.kind === 'context' ? '压缩后继续' : '继续'
   const stopLabel = writing ? '取消执行' : value.kind === 'input' ? '返回编辑' : '停止本轮'
   return (
-    <Card
-      size="small"
-      className="content-frame"
+    <ContentCard
       role="region"
       aria-label={writing ? '数据库操作确认' : '继续操作确认'}
       title={
@@ -59,6 +59,6 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
           </Button>
         </Flex>
       </Flex>
-    </Card>
+    </ContentCard>
   )
 }
