@@ -21,19 +21,14 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
   const token = antdTheme.getDesignToken(config)
   return {
     ...config,
-    // 导航与候选项统一使用主题实色选中态，表格数据行另用浅色衬底。
+    // 所有选中背景沿用 Ant Design 的中性填充，普通悬停使用更浅的层级。
     token: {
       ...config.token,
-      controlItemBgActive: token.colorPrimary,
-      controlItemBgActiveHover: token.colorPrimaryHover
+      controlItemBgActive: token.colorFillSecondary,
+      controlItemBgActiveHover: token.colorFill
     },
     cssVar: { key: 'sql-studio-theme' },
     components: {
-      Select: { optionSelectedColor: token.colorTextLightSolid },
-      Menu: { itemSelectedColor: token.colorTextLightSolid },
-      Tree: { nodeSelectedColor: token.colorTextLightSolid },
-      // 数据行包含状态色、NULL 和编辑控件，保留主题浅色选中底以确保内容可读。
-      Table: { rowSelectedBg: token.colorPrimaryBg, rowSelectedHoverBg: token.colorPrimaryBgHover },
       Typography: {
         colorText: textColor,
         colorTextSecondary: textColor,
@@ -42,7 +37,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
         colorTextHeading: textColor,
         colorLink: textColor,
         colorLinkHover: textColor,
-        colorLinkActive: textColor
+        colorLinkActive: textColor,
+        linkHoverDecoration: 'underline'
       }
     }
   }

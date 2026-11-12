@@ -247,9 +247,8 @@ export default function DatabaseExplorer({ model }: Props) {
           <DatabaseFilled
             aria-label={node.databaseState === 'open' ? '数据库已打开' : node.databaseState === 'opening' ? '数据库正在打开' : node.databaseState === 'error' ? '数据库打开失败' : '数据库未打开'}
             style={{
-              color: selectedKeys.includes(node.key)
-                ? 'var(--ant-color-text-light-solid)'
-                : node.databaseState === 'open'
+              color:
+                node.databaseState === 'open'
                   ? 'var(--ant-color-success)'
                   : node.databaseState === 'opening'
                     ? 'var(--ant-color-primary)'

@@ -10,4 +10,4 @@ text-tertiary 是半透明色，灰色底板及兼容品牌模式的灰色状态
 
 仍兼容 profile.iconPresentation=brand 的原色展示与独立状态圆点，可选 iconBackground 提供固定衬底；当前三个引擎均不启用此模式。图标为装饰，名称由相邻文字提供，资源来源见 [资产说明](../../../../assets/databases/README.md)。
 
-原生树、Select、菜单、Tabs 的选中容器内统一由 app.scss 为 engine-symbol 增加 1px 浅色内描边，不改变图标尺寸或底板语义；连接弹窗的自有选项通过 style 提供同类描边。
+对象树、Select 与连接弹窗共用灰色选中底衬托引擎图标，图标尺寸和状态底板保持一致。

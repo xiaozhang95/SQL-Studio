@@ -19,7 +19,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
   const { connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
   return (
     <Tabs
-      className="workspace-tabs page-tabs"
+      className="workspace-tabs"
       styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
       tabBarStyle={{ margin: 0, padding: 0, background: 'var(--tab-bar-background)' }}
       tabBarGutter={0}
@@ -77,7 +77,6 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
           ),
         label: (
           <span
-            className="result-tab-label"
             style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
             title={
               item.kind === 'table-create' || item.kind === 'table-design'

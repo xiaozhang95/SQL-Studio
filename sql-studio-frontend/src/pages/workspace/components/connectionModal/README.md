@@ -10,10 +10,8 @@
 
 测试中、成功和失败统一使用右侧面板底部、按钮栏上方的整宽 Alert 横条，状态独立于表单滚动。成功直接展示版本号，失败展示完整错误；长文本换行，最多占右侧面板高度的 35%，超出时纵向滚动。修改表单或切换引擎后清除旧结果，弹窗关闭后清理状态。
 
-弹窗边框和连接弹窗头部/底栏分隔线全部在 app.scss，主题色来自 Ant Design token，不在组件中另写覆盖。遮罩使用 mask.closable；onCancel、onSaved 由调用者管理开关和保存后刷新。
+弹窗使用共享的暗色 Modal 外框。头部和底栏分隔线通过 Modal 的 styles 设置，颜色取主题 token。遮罩使用 mask.closable；onCancel、onSaved 由调用者管理开关和保存后刷新。
 
-数据库类型选项使用原生 text Button，未选中时保留组件默认 hover；当前项通过 style 使用 colorPrimary 主题实色背景与 colorTextLightSolid 文字，行高及图文排列按图标设置，aria-pressed 提供选中语义。引擎名称沿用默认文字，不额外加粗。
-
-当前数据库类型选中项使用主题绿色实底及浅色文字，图标外圈增加 1px 浅色 outline，与绿色图标底板分隔；outline 不占布局空间，切换不挤动图标。保存/测试忙碌时保留原生禁用文字并回到灰色填充背景。与设置分类、树和页签的主题实底选中态一致，选中容器内的 EngineIcon 统一增加浅色描边。
+数据库类型选项使用原生 text Button，aria-pressed 提供选中语义。选中项由 app.scss 使用共享 controlItemBgActive 灰色底，略深于普通悬停。保存或测试期间，禁用的选中项使用主题禁用填充。文字和引擎图标沿用原有样式。
 
 常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。

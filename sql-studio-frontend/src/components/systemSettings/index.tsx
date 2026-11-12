@@ -77,6 +77,7 @@ export default function SystemSettings({ themeMode, ...preferences }: Props) {
                   <Button
                     key={section.value}
                     type="text"
+                    className="settings-section-choice"
                     icon={<section.icon aria-hidden="true" />}
                     aria-pressed={settings.section === section.value}
                     disabled={settings.busy}
@@ -87,9 +88,7 @@ export default function SystemSettings({ themeMode, ...preferences }: Props) {
                       flexShrink: 0,
                       justifyContent: 'flex-start',
                       textAlign: 'start',
-                      whiteSpace: 'normal',
-                      background: settings.section === section.value && !settings.busy ? token.controlItemBgActive : undefined,
-                      color: settings.section === section.value && !settings.busy ? token.colorTextLightSolid : undefined
+                      whiteSpace: 'normal'
                     }}
                   >
                     {section.label}

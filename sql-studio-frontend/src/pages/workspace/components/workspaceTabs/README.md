@@ -28,8 +28,8 @@ model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设
 
 分片存储释放非活动结果后，标签使用页面轻量来源摘要，不读取结果决定颜色。tabBusy 只锁定实际执行或对象操作，当前页内容加载失败时仍允许切换和关闭标签。
 
-页签不再根据运行成功/失败改变文字、图标或顶线颜色；默认灰阶背景，未选中悬停使用 controlItemBgHover 灰底；选中使用主题绿色实底及浅色文字/图标，悬停和聚焦跟随主题 hover 色。执行状态仍保留在实际结果和消息中。
+主页面页签统一使用主题正文色。运行成功或失败显示在结果和消息中。
 
-激活项使用 controlItemBgActive 主题底色及浅色文字（含关闭按钮），未激活项透出栏底色并使用正文色；字重一致，无顶线。
+主页面激活项通过 Ant Design Tabs 的底部指示线标记，亮暗模式均使用 colorPrimary。页签背景保持透明。
 
-页签栏将半透明的 controlItemBgHover 叠在与顶栏相同的容器底色上，得到与 text Button 悬停一致的灰色。未激活页签保持透明，避免灰色重复叠加。
+页签栏将半透明的 controlItemBgHover 叠在与顶栏相同的容器底色上，得到与 text Button 悬停一致的灰色。所有主页面页签都透出这一栏底色。

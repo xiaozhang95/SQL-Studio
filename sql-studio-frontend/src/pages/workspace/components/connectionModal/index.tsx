@@ -1,5 +1,5 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, theme, Tooltip } from 'antd'
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
 import { connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
@@ -16,7 +16,6 @@ type Props = {
   onSaved: (connection: Connection) => void
 }
 export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
-  const { token } = theme.useToken()
   const { form, selectEngine, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   return (
     <Modal
@@ -90,21 +89,10 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 alignItems: 'center',
                 justifyContent: 'flex-start',
                 whiteSpace: 'normal',
-                textAlign: 'left',
-                background: profile.value === engine.value ? (busy ? token.colorFillTertiary : token.colorPrimary) : undefined,
-                color: profile.value === engine.value && !busy ? token.colorTextLightSolid : undefined
+                textAlign: 'left'
               }}
             >
-              <span
-                style={{
-                  display: 'inline-flex',
-                  flex: 'none',
-                  borderRadius: token.borderRadius,
-                  outline: profile.value === engine.value && !busy ? `1px solid ${token.colorTextLightSolid}` : undefined
-                }}
-              >
-                <EngineIcon type={profile.value} variant="logo" size={32} />
-              </span>
+              <EngineIcon type={profile.value} variant="logo" size={32} />
               <span>{profile.label}</span>
             </Button>
           ))}

@@ -39,7 +39,6 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
             borderRadius: token.borderRadiusLG,
             boxShadow: 'var(--card-shadow), var(--appearance-card-shadow, 0 0 0 0 transparent)',
             cursor: disabled ? 'not-allowed' : 'pointer',
-            transition: `transform ${token.motionDurationMid} ${token.motionEaseInOut}, box-shadow ${token.motionDurationMid} ${token.motionEaseInOut}`,
             background: token.colorBgContainer
           },
           icon: { gridColumn: 1, gridRow: 2 },

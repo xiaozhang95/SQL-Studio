@@ -14,7 +14,7 @@ selecting表示当前会话内容加载中：暂停新建、删除和重命名�
 
 历史列表独立滚动。侧栏和抽屉水平内边距统一为 --workspace-inset（12px），与 PageHeader 一致。
 
-当前会话与 SQL 窗口左侧选中项一致，使用 controlItemBgActive 主题绿色背景及浅色文字，行内操作按钮同步使用浅色，悬停/聚焦使用 controlItemBgActiveHover。规则通过 chat-history-list 限定在 app.scss，桌面侧栏与抽屉共用。
+当前会话与 SQL 窗口左侧选中项一致，使用 controlItemBgActive 灰色背景，悬停或聚焦使用 controlItemBgActiveHover，行内操作保留组件语义色。规则通过 chat-history-list 限定在 app.scss，桌面侧栏与抽屉共用。
 编辑/删除按钮默认透明并禁止鼠标命中，保留宽度防止标题跳动；对应会话行悬停或键盘焦点进入操作区时显示，选中会话不会常驻显示按钮。
 layout 接收公共 useSidebarResize 控制器。桌面侧栏右侧 5px 分隔条支持拖动、键盘左右/Home/End 与双击恢复 272px。宽度与 SQL 工作台连接栏共用并沿用工作台布局持久化，范围 200–560px，实际宽度按主区至少 520px 约束。窄屏继续使用 Drawer。
 

@@ -50,11 +50,7 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
           key: String(index),
           disabled: running,
           label: (
-            <span
-              className="statement-result-label"
-              title={`语句 ${index + 1}\n${item.sql || run.title || ''}`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: 'inherit' }}
-            >
+            <span title={`语句 ${index + 1}\n${item.sql || run.title || ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', color: 'inherit' }}>
               <CheckCircleOutlined />
               结果 {resultIndex + 1}
             </span>
