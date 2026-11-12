@@ -32,7 +32,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
             取消导出
           </Button>
         ) : (
-          <Button type="primary" onClick={model.close}>
+          <Button type="default" onClick={model.close}>
             关闭
           </Button>
         )

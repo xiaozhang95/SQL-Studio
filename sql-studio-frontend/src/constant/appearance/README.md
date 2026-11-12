@@ -8,6 +8,6 @@ ComponentSize 是 Small/Middle/Large 的 as const 尺寸枚举，类型由值推
 
 所有 Modal 及 AntApp 确认弹窗的 1px 主题外框统一放在 app.scss，不在组件或配置对象中维护原生边框覆盖；其余属性保留默认值。
 
-所有 primary 按钮统一使用中性背景、正文色和灰色边框，包括工作区、AI 助手以及弹框默认确认按钮；语义仍可使用 primary，视觉覆盖集中在 app.scss。悬停和按下为灰阶反馈，危险与禁用态保留原生语义，不修改全局主题主色。
+常规操作按钮统一使用 Ant Design default 类型，不再用 primary 再覆盖成普通外观。Modal 及 AntApp 的默认确认按钮通过 modalDefaults（ConfigProviderProps.modal 类型约束）统一配置，Popconfirm 显式使用 okType=default。危险、禁用、加载及回调语义保留，工具栏图标和链接操作按原有 text/link 类型展示。
 
-link Button（如历史载入、对象操作）、Typography.Link（如 AI 回复链接）在默认/悬停/按下时使用正文色，悬停保留下划线反馈。普通描边按钮悬停/按下同样使用灰阶边框和背景；危险、禁用和键盘焦点语义保留。描边按钮及链接颜色由 constant/theme 的组件 token 提供，悬停下划线与 primary 中性外框保留在 app.scss。
+按钮默认、悬停、按下、焦点的颜色、背景、边框及阴影全部沿用 Ant Design 默认值，不在 theme.Button 或 app.scss 中额外覆盖；主色仍由 constant/theme 使用 success 绿色。Typography 链接继续使用正文色及悬停下划线。

@@ -12,6 +12,8 @@
 
 弹窗边框和连接弹窗头部/底栏分隔线全部在 app.scss，主题色来自 Ant Design token，不在组件中另写覆盖。遮罩使用 mask.closable；onCancel、onSaved 由调用者管理开关和保存后刷新。
 
-数据库类型选项使用原生 Button primary/text，边框、阴影、选中和 hover 外观沿用组件默认值；仅设置图标所需的行高及图文排列，aria-pressed 提供选中语义。引擎名称沿用默认文字，不额外加粗。
+数据库类型选项使用原生 text Button，未选中时保留组件默认 hover；当前项通过 style 使用 colorPrimary 主题实色背景与 colorTextLightSolid 文字，行高及图文排列按图标设置，aria-pressed 提供选中语义。引擎名称沿用默认文字，不额外加粗。
 
-当前选中项统一使用 controlItemBgHover 灰阶背景与主题正文色，悬停和聚焦保持一致，不使用蓝底白字。
+当前数据库类型选中项使用主题绿色实底及浅色文字，图标外圈增加 1px 浅色 outline，与绿色图标底板分隔；outline 不占布局空间，切换不挤动图标。保存/测试忙碌时保留原生禁用文字并回到灰色填充背景。与设置分类、树和页签的主题实底选中态一致，选中容器内的 EngineIcon 统一增加浅色描边。
+
+常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。

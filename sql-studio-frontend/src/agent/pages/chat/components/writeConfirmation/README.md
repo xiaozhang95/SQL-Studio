@@ -5,3 +5,5 @@ WriteConfirmation({value:ConfirmationRequest,submitting:boolean,error:string,onD
 卡片内提示、目标明细、SQL、错误和操作区统一使用CHAT.spacing.block（16px），按钮组使用detail（8px）；CodeBlock不叠加外边距。
 
 卡片外框复用公共 ContentCard，尺寸与代码预览一致。
+
+常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。

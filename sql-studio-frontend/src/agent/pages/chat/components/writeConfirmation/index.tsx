@@ -51,7 +51,7 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
         )}
         {error && <Alert type="error" showIcon title={error} />}
         <Flex gap={CHAT.spacing.detail} wrap>
-          <Button type="primary" loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
+          <Button type="default" loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
             {continueLabel}
           </Button>
           <Button disabled={submitting} onClick={() => void onDecide(false)}>

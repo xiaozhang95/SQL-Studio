@@ -3,7 +3,7 @@ import zhCN from 'antd/locale/zh_CN'
 import { lazy, Suspense, useMemo } from 'react'
 
 import SidebarWidthProvider from '@/components/sidebarWidthProvider'
-import { appearance } from '@/constant/appearance'
+import { appearance, modalDefaults } from '@/constant/appearance'
 import { createThemeConfig } from '@/constant/theme'
 import { useAppSection } from '@/hooks/useAppSection'
 import { useThemePreference } from '@/hooks/useThemePreference'
@@ -23,7 +23,7 @@ export default function App() {
     themeReady: ready
   }
   return (
-    <ConfigProvider locale={zhCN} componentSize={appearance.controlSize} tag={{ variant: 'solid' }} theme={themeConfig}>
+    <ConfigProvider locale={zhCN} componentSize={appearance.controlSize} modal={modalDefaults} tag={{ variant: 'solid' }} theme={themeConfig}>
       <AntApp message={{ styles: { root: { display: 'none' } } }}>
         <SidebarWidthProvider>
           <div style={{ display: section.agent ? 'none' : undefined }}>

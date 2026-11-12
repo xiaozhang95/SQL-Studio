@@ -11,3 +11,5 @@ QueryResult({value:unknown,sql?:string,title?:string,tool?:string,showExport?:bo
 二维结果表格的 `#` 序号列宽度固定为 56px。最后一个数据列吸收剩余空间，横向滚动宽度仍按所有列的预设宽度合计。
 
 所有结果表格的分页复用公共tablePaginationDefaults，使用默认32px页码及统一底栏；保留每页数量和列/行内容，不修改查询行为。
+
+三个结果表格分支通过共享 resultTableStyles 的 section 语义样式应用 --card-shadow，与 ContentCard 的轻微阴影一致；颜色随亮暗主题切换，不对工作区主结果表格添加阴影。

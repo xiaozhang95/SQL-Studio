@@ -2,10 +2,9 @@ import { BulbOutlined, CodeOutlined, DownloadOutlined, FormatPainterOutlined, Hi
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Alert, Dropdown, Select, Switch, Tooltip, Upload } from 'antd'
+import { Alert, Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
-import { appearance } from '@/constant/appearance'
 import type { ThemeMode } from '@/typings/theme'
 
 import { useAISQL } from '../../hooks/useAISQL'
@@ -115,38 +114,23 @@ export default function QueryEditor({ model, themeMode }: Props) {
           {activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
-          {ai.models.length > 0 && (
+          {ai.configured && (
             <div role="group" aria-label="SQL AI 工具" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}>
-              <Select<string>
-                aria-label="SQL AI 模型"
-                placeholder="选择 AI 模型"
-                value={ai.activeId || undefined}
-                allowClear
-                disabled={running || ai.preferenceSaving}
-                loading={ai.preferenceSaving}
-                onChange={(value) => void ai.changeModel(value)}
-                style={{ width: appearance.selectWidth }}
-                options={ai.models.map((entry) => ({ value: entry.id, label: entry.modelName }))}
-              />
-              {ai.configured && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CodeOutlined aria-hidden="true" />
-                    <span>代码补全</span>
-                    <Tooltip title="AI 代码补全">
-                      <Switch
-                        size="small"
-                        aria-label="代码补全"
-                        checked={ai.enabled}
-                        disabled={running || ai.preferenceSaving}
-                        loading={ai.preferenceSaving}
-                        onChange={(value) => void ai.changeCompletion(value)}
-                      />
-                    </Tooltip>
-                  </div>
-                  <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
-                </>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CodeOutlined aria-hidden="true" />
+                <span>代码补全</span>
+                <Tooltip title="AI 代码补全">
+                  <Switch
+                    size="small"
+                    aria-label="代码补全"
+                    checked={ai.enabled}
+                    disabled={running || ai.preferenceSaving}
+                    loading={ai.preferenceSaving}
+                    onChange={(value) => void ai.changeCompletion(value)}
+                  />
+                </Tooltip>
+              </div>
+              <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
             </div>
           )}
           <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>

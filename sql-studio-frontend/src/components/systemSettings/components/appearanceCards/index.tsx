@@ -36,15 +36,17 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
             margin: 0,
             padding: token.paddingSM,
             minWidth: 0,
-            border: `1px solid ${option.value === value ? token.colorPrimary : token.colorBorderSecondary}`,
             borderRadius: token.borderRadiusLG,
+            boxShadow: 'var(--card-shadow), var(--appearance-card-shadow, 0 0 0 0 transparent)',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            transition: `transform ${token.motionDurationMid} ${token.motionEaseInOut}, box-shadow ${token.motionDurationMid} ${token.motionEaseInOut}`,
             background: token.colorBgContainer
           },
           icon: { gridColumn: 1, gridRow: 2 },
           label: { display: 'contents' }
         } satisfies RadioProps['styles']
         return (
-          <Radio key={option.value} value={option.value} styles={styles}>
+          <Radio key={option.value} value={option.value} classNames={{ root: 'appearance-option-card' }} styles={styles}>
             <div aria-hidden="true" style={{ gridColumn: '1 / -1', gridRow: 1, minWidth: 0, marginBottom: token.marginXS }}>
               {option.preview}
             </div>

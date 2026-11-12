@@ -49,7 +49,7 @@ export default function SystemSettings({ themeMode, ...preferences }: Props) {
           <Button key="cancel" disabled={settings.busy} onClick={settings.close}>
             取消
           </Button>,
-          <Button key="save" type="primary" loading={settings.busy} disabled={!settings.canSave} onClick={() => void settings.save()}>
+          <Button key="save" type="default" loading={settings.busy} disabled={!settings.canSave} onClick={() => void settings.save()}>
             保存
           </Button>
         ]}
@@ -88,7 +88,8 @@ export default function SystemSettings({ themeMode, ...preferences }: Props) {
                       justifyContent: 'flex-start',
                       textAlign: 'start',
                       whiteSpace: 'normal',
-                      background: settings.section === section.value ? token.controlItemBgHover : undefined
+                      background: settings.section === section.value && !settings.busy ? token.controlItemBgActive : undefined,
+                      color: settings.section === section.value && !settings.busy ? token.colorTextLightSolid : undefined
                     }}
                   >
                     {section.label}

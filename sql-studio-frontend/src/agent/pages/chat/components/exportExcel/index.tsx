@@ -41,7 +41,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
   }
   return (
     <Flex vertical align="start" gap={CHAT.spacing.detail}>
-      <Button type="primary" icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
+      <Button type="default" icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
         导出 Excel{data.truncated ? '（当前截断结果）' : ''}
       </Button>
       {error && <Alert type="error" title={error} />}

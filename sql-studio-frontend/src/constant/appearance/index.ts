@@ -1,4 +1,4 @@
-import type { ButtonProps, TableProps, TabsProps } from 'antd'
+import type { ButtonProps, ConfigProviderProps, TableProps, TabsProps } from 'antd'
 
 export const ComponentSize = { Small: 'small', Middle: 'middle', Large: 'large' } as const
 export type ComponentSize = (typeof ComponentSize)[keyof typeof ComponentSize]
@@ -15,3 +15,6 @@ export const appearance = {
   navigationSize: NonNullable<TabsProps['size']>
   selectWidth: number
 }
+
+/** 原生 Modal 与 AntApp 确认弹窗的操作按钮统一使用 default。 */
+export const modalDefaults = { okButtonProps: { type: 'default' } } as const satisfies NonNullable<ConfigProviderProps['modal']>

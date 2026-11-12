@@ -14,4 +14,4 @@ optimize(false) 优化整页，optimize(true,selectedSQL?) 仅优化选区，空
 
 编辑器现仅按页面重挂载；连接、库、schema、表或引擎变化时，取消优化请求并隐藏旧范围预览，apply再次核对请求范围，避免将旧连接优化应用到新范围。补全扩展仍随实际范围重配。
 
-配置仅来自新的 configurations/activeId/completionEnabled。configured 由使用处明确选择的记录计算，没有选择时不调用模型。models/activeId/changeModel 用于 SQL 工具栏选择，设置管理列表不选择模型。changeCompletion/changeModel 先读最新 revision，按新格式提交完整无 Key 列表和相应偏好，避免覆盖模型记录或串用 Key；成功广播并重建扩展。preferenceSaving 互斥保存，preferenceError 显示错误，卸载取消请求。
+配置仅来自新的 configurations/activeId/completionEnabled。configured 由使用处明确选择的记录计算，没有选择时不调用模型。SQL 工具栏不提供模型选择接口，读取共享配置中已明确选中的 activeId，跟随原有 AI 助手模型入口的切换事件刷新。changeCompletion 先读最新 revision，按新格式提交完整无 Key 列表和补全偏好，并保留最新 activeId，避免覆盖模型记录或串用 Key；成功广播并重建扩展。preferenceSaving 互斥保存，preferenceError 显示错误，卸载取消请求。

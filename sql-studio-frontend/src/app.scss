@@ -1,8 +1,20 @@
+:root {
+  --scrollbar-size: 6px;
+}
 :root,
 html[data-theme='light'] {
+  --thumb: rgba(144, 147, 153, 0.5);
+  --thumb-hover: rgba(144, 147, 153, 0.8);
+  // 内容卡片与 Agent 结果表格复用 ghspace 的轻微阴影。
+  --card-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.1);
+  --card-hover-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.1);
   color-scheme: light;
 }
 html[data-theme='dark'] {
+  --thumb: rgba(255, 255, 255, 0.2);
+  --thumb-hover: rgba(255, 255, 255, 0.35);
+  --card-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.4);
+  --card-hover-shadow: 0 -4px 8px -4px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 // App 与弹窗/抽屉门户共享 Ant Design 变量作用域，所有颜色从当前主题派生。
@@ -17,17 +29,8 @@ html[data-theme='dark'] {
   --inactive-icon: var(--ant-color-text-tertiary);
 
   ::selection {
+    color: var(--ant-color-text-light-solid);
     background: var(--ant-control-item-bg-active);
-  }
-
-  // 滚动条随主题变化，弹窗门户与工作区共用同一规则。
-  &,
-  * {
-    scrollbar-color: var(--ant-color-text-quaternary) transparent;
-  }
-  &::-webkit-scrollbar-thumb,
-  *::-webkit-scrollbar-thumb {
-    background: var(--ant-color-text-quaternary);
   }
 }
 // 亮色布局使用主题背景，组件边框继续沿用默认层级。
@@ -36,7 +39,9 @@ html[data-theme='light'] .sql-studio-theme {
 }
 * {
   box-sizing: border-box;
-  scrollbar-width: thin;
+  // 保留 WebKit 像素尺寸与悬停样式，避免标准属性覆盖伪元素。
+  scrollbar-width: auto;
+  scrollbar-color: auto;
 }
 body {
   margin: 0;
@@ -49,6 +54,21 @@ body {
   -webkit-app-region: drag;
 }
 
+// 外观选项卡复用 ghspace 的悬停上移与阴影；原生伪类交互集中于此。
+.sql-studio-theme .appearance-option-card:not(.ant-radio-wrapper-disabled):is(:hover, :focus-within) {
+  --appearance-card-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sql-studio-theme .appearance-option-card {
+    // 覆盖 Radio.styles 的内联过渡，尊重系统减弱动画偏好。
+    transition: none !important;
+    &:is(:hover, :focus-within) {
+      transform: none;
+    }
+  }
+}
+
 // 会话操作保留宽度占位，只在对应会话悬停或键盘聚焦时显示。
 .chat-history-actions {
   opacity: 0;
@@ -59,31 +79,82 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
-// 历史会话的当前项使用灰阶背景，标题继承激活文字色。
-.chat-history-list .ant-conversations-item-active,
+// 当前会话使用统一选中背景，避免与普通 hover 混淆。
+.chat-history-list .ant-conversations-item-active {
+  background: var(--ant-control-item-bg-active);
+  color: var(--ant-color-text-light-solid);
+}
 .chat-history-list .ant-conversations-item-active:not(.ant-conversations-item-disabled):hover,
 .chat-history-list .ant-conversations-item-active:focus-within {
-  background: var(--ant-control-item-bg-hover);
-  color: var(--text);
+  background: var(--ant-control-item-bg-active-hover);
+  color: var(--ant-color-text-light-solid);
 }
 .chat-history-list .ant-conversations-item-active .chat-history-row > .ant-typography {
-  color: var(--text);
+  color: var(--ant-color-text-light-solid);
 }
 .chat-history-list .ant-conversations-item-active .chat-history-actions .ant-btn:not(:disabled) {
-  color: var(--text);
+  color: var(--ant-color-text-light-solid);
 }
 
-// 所有原生滚动容器统一颜色与宽度，包含表格横向条和弹窗。
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+// 复用 ghspace 的 6px 圆角滚动条；表格重置标准配色后沿用 WebKit 样式。
+.sql-studio-theme .ant-table-wrapper .ant-table.ant-table {
+  scrollbar-color: auto;
 }
-*::-webkit-scrollbar-track,
-*::-webkit-scrollbar-corner {
+::-webkit-scrollbar {
+  width: var(--scrollbar-size) !important;
+  height: var(--scrollbar-size) !important;
+}
+::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: var(--scrollbar-size);
+  background-color: var(--thumb) !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--thumb-hover) !important;
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
 }
-*::-webkit-scrollbar-thumb {
-  border-radius: 0;
+// Table 吸底横向条由 div 模拟，复用同一尺寸与配色。
+.sql-studio-theme .ant-table-wrapper.ant-table-wrapper .ant-table-sticky-scroll {
+  height: var(--scrollbar-size) !important;
+  border-top: 0;
+  background: transparent;
+}
+.sql-studio-theme .ant-table-wrapper.ant-table-wrapper .ant-table-sticky-scroll-bar {
+  height: var(--scrollbar-size);
+  border-radius: var(--scrollbar-size);
+  background-color: var(--thumb);
+  &:hover,
+  &-active {
+    background-color: var(--thumb-hover);
+  }
+}
+// SQL Studio 的虚拟表格与对象树也使用模拟滚动条，覆盖其内联固定尺寸。
+.sql-studio-theme :is(.ant-table-tbody-virtual-scrollbar, .ant-tree-list-scrollbar) {
+  background: transparent;
+  &[class$='-horizontal'],
+  &[class*='-horizontal '] {
+    height: var(--scrollbar-size) !important;
+  }
+  &[class$='-vertical'],
+  &[class*='-vertical '] {
+    width: var(--scrollbar-size) !important;
+  }
+}
+.sql-studio-theme :is(.ant-table-tbody-virtual-scrollbar-thumb, .ant-tree-list-scrollbar-thumb) {
+  border-radius: var(--scrollbar-size) !important;
+  background: var(--thumb) !important;
+  &:hover,
+  &[class$='-moving'] {
+    background: var(--thumb-hover) !important;
+  }
 }
 
 // 全局基础规则与必要的 Ant Design 覆盖；普通布局由组件 style/styles 管理。
@@ -247,8 +318,8 @@ body,
 }
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover,
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:focus-visible {
-  color: var(--text);
-  background: var(--ant-control-item-bg-hover);
+  color: var(--ant-color-text-light-solid);
+  background: var(--ant-control-item-bg-active-hover);
 }
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-title,
 .object-tree .ant-tree .ant-tree-treenode .ant-tree-node-content-wrapper.ant-tree-node-selected:hover .ant-tree-iconEle {
@@ -256,8 +327,19 @@ body,
 }
 
 .object-tree .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
-  color: var(--text);
-  background: var(--ant-control-item-bg-hover);
+  color: var(--ant-color-text-light-solid);
+  background: var(--ant-control-item-bg-active);
+}
+
+// 原生选中容器拥有状态，统一衬出其中的绿色品牌图标，描边向内避免裁切及布局抖动。
+.sql-studio-theme :is(.ant-tree-node-selected, .ant-select-item-option-selected, .ant-dropdown-menu-item-selected, .ant-menu-item-selected, .ant-tabs-tab-active) .engine-symbol {
+  outline: 1px solid var(--ant-color-text-light-solid);
+  outline-offset: -1px;
+}
+// Dropdown 与自定义 Select 标签内部的 Typography 不自动继承选中项文字色。
+.sql-studio-theme .ant-dropdown-menu .ant-dropdown-menu-item-selected:not(.ant-dropdown-menu-item-disabled),
+.sql-studio-theme .ant-select-item-option-selected:not(.ant-select-item-option-disabled) .ant-typography {
+  color: var(--ant-color-text-light-solid);
 }
 
 // 叶节点不展示折叠箭头，不为不存在的按钮保留整格空白。
@@ -295,14 +377,14 @@ body,
   outline-offset: 2px;
 }
 
-// 页面与结果页签共用边框和灰阶状态，避免同一属性在多个区块反复覆盖。
+// 页面与结果页签共用边框和主题选中态，普通 hover 保留灰阶。
 .workspace-tabs,
 .statement-result-tabs {
   &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
     border-color: var(--border);
     border-inline-start: 0;
     border-inline-end: 1px solid var(--border);
-    background: var(--surface-raised);
+    background: var(--ant-control-item-bg-hover);
     box-shadow: none;
 
     &:is(:hover, :focus-within) {
@@ -310,8 +392,12 @@ body,
     }
 
     &.ant-tabs-tab-active {
-      background: var(--ant-color-fill-secondary);
-      border-bottom-color: var(--ant-color-fill-secondary);
+      background: var(--ant-control-item-bg-active);
+      border-bottom-color: var(--ant-control-item-bg-active);
+      &:is(:hover, :focus-within) {
+        background: var(--ant-control-item-bg-active-hover);
+        border-bottom-color: var(--ant-control-item-bg-active-hover);
+      }
     }
   }
 
@@ -321,33 +407,23 @@ body,
     text-shadow: none;
   }
 }
+.workspace-tabs,
+.statement-result-tabs {
+  > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
+    &,
+    .ant-tabs-tab-btn,
+    .ant-tabs-tab-remove {
+      color: var(--ant-color-text-light-solid);
+    }
+  }
+}
 // 亮色下使用标准边框，保持相邻页签之间的分隔。
 html[data-theme='light'] .workspace-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
 html[data-theme='light'] .statement-result-tabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
   border-inline-end-color: var(--ant-color-border);
 }
 
-// 主按钮统一采用中性外观，覆盖工作区、AI 助手及上下文弹框；危险/禁用态保留原生语义。
-.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled) {
-  color: var(--ant-color-text);
-  background: var(--ant-color-bg-container);
-  border-color: var(--ant-color-border);
-  box-shadow: none;
-}
-.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):hover {
-  color: var(--ant-color-text);
-  background: var(--ant-control-item-bg-hover);
-  border-color: var(--ant-color-text-tertiary);
-}
-.sql-studio-theme .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):active {
-  color: var(--ant-color-text);
-  background: var(--ant-color-fill-secondary);
-  border-color: var(--ant-color-text-secondary);
-}
-
-// 链接颜色由主题 token 提供，CSS 仅保留悬停下划线。
-.sql-studio-theme .ant-btn-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
-.sql-studio-theme .ant-btn-variant-link:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled):is(:hover, :active),
+// Typography 链接颜色由主题 token 提供，保留悬停下划线。
 .sql-studio-theme a.ant-typography:not(.ant-typography-disabled):is(:hover, :active),
 .sql-studio-theme .ant-typography a:not(.ant-typography-disabled):is(:hover, :active) {
   text-decoration: underline;

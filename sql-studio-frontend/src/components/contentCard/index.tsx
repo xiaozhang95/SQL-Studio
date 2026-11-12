@@ -10,7 +10,15 @@ export default function ContentCard({ code = false, style, ...props }: ContentCa
     <Card
       {...props}
       size="small"
-      style={{ width: '100%', minWidth: 0, border: '1px solid ' + token.colorBorderSecondary, borderRadius: token.borderRadiusLG, ...(code ? { overflow: 'hidden' } : {}), ...style }}
+      style={{
+        width: '100%',
+        minWidth: 0,
+        border: '1px solid ' + token.colorBorderSecondary,
+        borderRadius: token.borderRadiusLG,
+        boxShadow: 'var(--card-shadow)',
+        ...(code ? { overflow: 'hidden' } : {}),
+        ...style
+      }}
       styles={code ? { body: { padding: 0 }, header: { marginBottom: 0 } } : undefined}
     />
   )

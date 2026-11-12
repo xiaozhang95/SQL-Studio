@@ -31,7 +31,7 @@ export default function ObjectManagementModal({ manager, themeMode }: Props) {
           <Button disabled={!ready || saving} onClick={manager.preview}>
             预览
           </Button>
-          <Button type="primary" danger={destructive} disabled={!ready || loading} loading={saving} onClick={manager.save}>
+          <Button type="default" danger={destructive} disabled={!ready || loading} loading={saving} onClick={manager.save}>
             {destructive ? manager.title : '保存'}
           </Button>
         </Space>

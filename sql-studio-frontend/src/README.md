@@ -42,3 +42,13 @@ MySQL 对象树按“数据库 → 表 → 表名 → 字段/索引”组织；P
 所有业务Modal与确认框使用Ant Design默认位置，不设置centered或自定义位置偏移。
 
 主题集中由 constant/theme 的 createThemeConfig 提供，参照 ghspace 的纯黑/纯白文案与 #ececec/#000 布局底色，保留小/标准/大字号；普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
+
+滚动条沿用 ghspace：横纵统一 6px、圆角滑块、透明轨道；亮色灰色滑块、暗色半透明白色滑块，悬停加深。原生、Table 吸底条及虚拟表格/对象树的模拟滚动条在 app.scss 统一适配。
+
+内容卡片（Agent 的代码、过程、确认、回执，以及 SQL 预览面板）和 Agent 结果表格复用 ghspace 的亮暗轻微阴影，分别通过 ContentCard.style 和 Table.styles.section 应用；不添加悬停上移，主工作区编辑器与结果面板继续保持平面布局。
+
+导航与候选项统一使用 constant/theme 的主题绿色实底、浅色文字，选中悬停使用主题 hover 色。设置分类、数据库类型、对象树、AI 会话和工作区/结果页签共用此约定；选中项内绿色数据库图标加浅色内描边。表格数据行使用主题浅色衬底；主题和字号卡片只通过 Radio 表示选中。
+
+全局主题主色使用 Ant Design 默认 success 绿色，由 constant/theme 的 colorPrimary 统一配置，Radio、Switch 等主色元素自动跟随亮暗算法；导航选中态跟随主题色，常规操作按钮使用原生 default 类型及默认交互。
+
+常规操作按钮统一使用 Ant Design default，原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置；不再通过 Button token 或 primary CSS 覆盖悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。

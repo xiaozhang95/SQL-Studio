@@ -5,3 +5,5 @@ DataExport({model}) 接收 useDataExport 返回值。以 Ant Design Modal/Descri
 内容区按视口限制高度并仅纵向滚动，长名称或窄窗口下仍保留底部取消/关闭按钮。
 
 取消后隐藏进度条及百分比，保留取消日志与关闭按钮；运行、成功及失败状态继续显示相应进度。
+
+常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。

@@ -28,6 +28,6 @@ model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设
 
 分片存储释放非活动结果后，标签使用页面轻量来源摘要，不读取结果决定颜色。tabBusy 只锁定实际执行或对象操作，当前页内容加载失败时仍允许切换和关闭标签。
 
-页签不再根据运行成功/失败改变文字、图标或顶线颜色；默认灰阶背景，悬停/聚焦/选中使用 controlItemBgHover 灰底，文字与图标继承正文色。执行状态仍保留在实际结果和消息中。
+页签不再根据运行成功/失败改变文字、图标或顶线颜色；默认灰阶背景，未选中悬停使用 controlItemBgHover 灰底；选中使用主题绿色实底及浅色文字/图标，悬停和聚焦跟随主题 hover 色。执行状态仍保留在实际结果和消息中。
 
-激活项使用 colorFillSecondary 灰底，未激活项使用 surface-raised；文字颜色与字重一致，无顶线，仅通过背景色区分。
+激活项使用 controlItemBgActive 主题底色及浅色文字（含关闭按钮），未激活项使用 controlItemBgHover 与正文色，背景与 text Button 的悬停灰色一致；字重一致，无顶线。

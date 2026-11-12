@@ -1,6 +1,6 @@
 import { DatabaseOutlined } from '@ant-design/icons'
 import { Alert, Collapse, Descriptions, Flex, Space, Table, Tooltip, Typography } from 'antd'
-import type { TableColumnsType } from 'antd'
+import type { TableColumnsType, TableProps } from 'antd'
 import type { ReactNode } from 'react'
 
 import ContentCard from '@/components/contentCard'
@@ -56,6 +56,7 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
 }
 
 const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
+const resultTableStyles = { section: { boxShadow: 'var(--card-shadow)' } } satisfies TableProps['styles']
 
 function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
   const cardTitle = showHeader ? (
@@ -129,6 +130,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
         {result.truncated && <Alert type="warning" showIcon title="结果已截断，统计全量请使用聚合查询。" banner />}
         <Table<Row>
           classNames={resultTableClassNames}
+          styles={resultTableStyles}
           aria-label="查询结果"
           size={appearance.tableSize}
           bordered
@@ -199,6 +201,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
           classNames={resultTableClassNames}
+          styles={resultTableStyles}
           size={appearance.tableSize}
           bordered
           columns={[{ title: '名称', dataIndex: 'name', key: 'name' }]}
@@ -238,6 +241,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
         <Table
           classNames={resultTableClassNames}
+          styles={resultTableStyles}
           size={appearance.tableSize}
           bordered
           tableLayout="fixed"

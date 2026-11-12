@@ -1,5 +1,5 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, theme, Tooltip } from 'antd'
 
 import { connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
@@ -16,6 +16,7 @@ type Props = {
   onSaved: (connection: Connection) => void
 }
 export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
+  const { token } = theme.useToken()
   const { form, selectEngine, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   return (
     <Modal
@@ -48,7 +49,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             <Button onClick={onClose} disabled={busy}>
               取消
             </Button>
-            <Button type="primary" onClick={save} loading={saving} disabled={testing}>
+            <Button type="default" onClick={save} loading={saving} disabled={testing}>
               保存连接
             </Button>
           </div>
@@ -90,10 +91,20 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 justifyContent: 'flex-start',
                 whiteSpace: 'normal',
                 textAlign: 'left',
-                background: profile.value === engine.value ? 'var(--ant-control-item-bg-hover)' : undefined
+                background: profile.value === engine.value ? (busy ? token.colorFillTertiary : token.colorPrimary) : undefined,
+                color: profile.value === engine.value && !busy ? token.colorTextLightSolid : undefined
               }}
             >
-              <EngineIcon type={profile.value} variant="logo" size={32} />
+              <span
+                style={{
+                  display: 'inline-flex',
+                  flex: 'none',
+                  borderRadius: token.borderRadius,
+                  outline: profile.value === engine.value && !busy ? `1px solid ${token.colorTextLightSolid}` : undefined
+                }}
+              >
+                <EngineIcon type={profile.value} variant="logo" size={32} />
+              </span>
               <span>{profile.label}</span>
             </Button>
           ))}

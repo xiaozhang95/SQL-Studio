@@ -7,7 +7,7 @@ const loadingMinDuration = 1000
 export const CHAT = {
   composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
   roundSwitch: { windowSize: 5, estimatedHeight: 520, loadingMinDuration, edgeTolerance: 2 },
-  iconButton: { type: 'primary', shape: 'circle', size: 'small' },
+  iconButton: { type: 'default', shape: 'circle', size: 'small' },
   resultIndexWidth: 56,
   maxQuestionBytes: 256 * 1024,
   maxTitleLength: 80,

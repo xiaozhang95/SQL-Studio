@@ -10,7 +10,7 @@ roundSwitch 集中虚拟窗口大小（5 轮）、未测高度估算（520px）�
 
 轮次滚动使用 1 秒的最短加载提示时长。过程详情直接展示，使用 Think 原生折叠动画。
 
-iconButton 统一发送、终止生成和回到底部使用的 Ant Design 小号圆形主按钮配置。
+iconButton 统一发送、终止生成和回到底部使用的 Ant Design 小号圆形普通按钮配置，悬停和按下使用原生样式。
 
 resultIndexWidth 统一二维结果表格的序号列宽度（56px）。
 侧栏尺寸与工作台共用[sidebarLayout](../../../../../constant/sidebarLayout/README.md)，不再维护独立默认值。
