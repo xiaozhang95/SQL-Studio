@@ -8,9 +8,9 @@ import (
 	agentmodel "sql-studio-backend/internal/model/agent"
 )
 
-// AgentStatus uses the same ai section as completion and optimization.
+// Agent uses only models explicitly added to the shared ai configuration list.
 func (s *Service) AgentStatus(ctx context.Context) (agentmodel.AIStatus, error) {
-	doc, err := s.repository.Read(ctx, "ai")
+	doc, err := s.repository.Read(ctx, model.AIModelsSection)
 	if err != nil {
 		return agentmodel.AIStatus{}, err
 	}
@@ -18,22 +18,21 @@ func (s *Service) AgentStatus(ctx context.Context) (agentmodel.AIStatus, error) 
 	if doc.Revision > 0 && json.Unmarshal(doc.Data, &cfg) != nil {
 		return agentmodel.AIStatus{}, errors.New("AI配置损坏")
 	}
-	selected := cfg.Model
-	if selected == "" {
-		selected = agentmodel.DeepSeekModel
+	models := []agentmodel.AIModel{}
+	for _, entry := range cfg.Configurations {
+		if entry.Model != "" && entry.APIKey != "" {
+			models = append(models, agentmodel.AIModel{ID: entry.ID, Name: entry.ModelName})
+		}
 	}
-	models := agentmodel.SupportedModels()
-	if !agentmodel.SupportedModel(selected) {
-		models = append(models, agentmodel.AIModel{ID: selected, Name: selected})
-	}
+	selected, configured := cfg.SelectedConfiguration()
 	source := "none"
-	if cfg.APIKey != "" {
+	if configured {
 		source = "saved"
 	}
-	return agentmodel.AIStatus{Configured: cfg.APIKey != "", Model: selected, Source: source, Models: models}, nil
+	return agentmodel.AIStatus{ConfigID: selected.ID, Configured: configured, Model: selected.Model, Source: source, Models: models}, nil
 }
 func (s *Service) UpdateAgent(ctx context.Context, input agentmodel.AIUpdate) (agentmodel.AIStatus, error) {
-	doc, err := s.repository.Read(ctx, "ai")
+	doc, err := s.repository.Read(ctx, model.AIModelsSection)
 	if err != nil {
 		return agentmodel.AIStatus{}, err
 	}
@@ -41,28 +40,33 @@ func (s *Service) UpdateAgent(ctx context.Context, input agentmodel.AIUpdate) (a
 	if doc.Revision > 0 && json.Unmarshal(doc.Data, &cfg) != nil {
 		return agentmodel.AIStatus{}, errors.New("AI配置损坏")
 	}
-	if input.Model != "" && input.Model != cfg.Model && !agentmodel.SupportedModel(input.Model) {
-		return agentmodel.AIStatus{}, errors.New("请选择支持的DeepSeek模型")
+	selected := input.ConfigID
+	if selected == "" {
+		return agentmodel.AIStatus{}, errors.New("请选择已经添加的模型")
 	}
-	cfg.Provider = "deepseek"
-	cfg.APIKey = input.APIKey
-	if input.Model != "" {
-		cfg.Model = input.Model
+	found := false
+	for i := range cfg.Configurations {
+		entry := &cfg.Configurations[i]
+		if selected != "" && entry.ID == selected {
+			cfg.ActiveID = entry.ID
+			found = true
+			break
+		}
 	}
-	if cfg.Model == "" {
-		cfg.Model = agentmodel.DeepSeekModel
+	if !found {
+		return agentmodel.AIStatus{}, errors.New("只能选择已经添加的模型，请先到系统设置中添加")
 	}
 	data, err := json.Marshal(cfg)
 	if err != nil {
 		return agentmodel.AIStatus{}, err
 	}
-	if _, err = s.Write(ctx, "ai", model.StateWrite{Revision: doc.Revision, Data: data}); err != nil {
+	if _, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: data}); err != nil {
 		return agentmodel.AIStatus{}, err
 	}
 	return s.AgentStatus(ctx)
 }
 func (s *Service) ClearAgent(ctx context.Context) (agentmodel.AIStatus, error) {
-	doc, err := s.repository.Read(ctx, "ai")
+	doc, err := s.repository.Read(ctx, model.AIModelsSection)
 	if err != nil {
 		return agentmodel.AIStatus{}, err
 	}

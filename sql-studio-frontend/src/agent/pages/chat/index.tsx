@@ -54,14 +54,10 @@ export function ChatPage({
         title={activeTitle}
         titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
         actions={
-          <SaveStatus
-            restoring={!workspace.ready}
-            saving={workspace.saving}
-            error={workspace.error}
-            label="对话保存状态"
-            savedText="对话保存在本机"
-            savedHint="对话保存在本机，布局和草稿自动保存"
-          />
+          <>
+            <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label="正在保存对话…" />
+            <SystemSettings themeMode={dark ? 'dark' : 'light'} {...appearancePreferences} />
+          </>
         }
       >
         {' '}
@@ -70,7 +66,6 @@ export function ChatPage({
         </Button>
         {mobile && <Button type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />}
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
-        <SystemSettings themeMode={dark ? 'dark' : 'light'} {...appearancePreferences} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History

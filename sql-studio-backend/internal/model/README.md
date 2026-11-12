@@ -18,7 +18,7 @@ StateDocument/StateWrite 定义用户配置 schemaVersion/revision/updatedAt/dat
 
 AIRequest/AIResult/AITable/AIMessage 定义模型输入输出，不携带数据库密码或查询结果。
 
-AIConfig统一AI配置内部结构和脱敏响应，model/CompletionEnabled兼容缺省值；AIModel和AIModelsRequest定义官方模型发现契约。
+AIConfig 只定义 configurations/activeId/completionEnabled 新格式，无旧单条字段或镜像。AIConfiguration 增加 modelName 显示名称，model 为调用 ID，响应逐行清除 Key。SelectedConfiguration 只解析使用处明确选择的记录，不回落默认。AIModelsRequest.configId 精确定位要复用 Key 的记录。
 
 AIRequest.document/table携带注释草稿与选中表，AIConnectionContext仅包含Name/Type安全字段，由AI模块按ConnectionID填充。
 

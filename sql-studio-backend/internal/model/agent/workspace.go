@@ -49,7 +49,7 @@ type ConversationView struct {
 	NextOffset *int    `json:"nextOffset,omitempty"`
 }
 type Layout struct {
-	Mode     string   `json:"mode,omitempty"`
+	Mode     string   `json:"mode"`
 	ActiveID string   `json:"activeId"`
 	Draft    string   `json:"draft"`
 	Expanded []string `json:"expanded"`

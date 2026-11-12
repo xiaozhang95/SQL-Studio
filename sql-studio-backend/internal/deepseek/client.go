@@ -26,7 +26,7 @@ func New() *Client {
 }
 func (c *Client) Generate(ctx context.Context, key string, modelID string, messages []model.AIMessage, tokens int) (string, error) {
 	if modelID == "" {
-		modelID = DefaultModel
+		return "", errors.New("请先选择模型")
 	}
 	body := struct {
 		Model    string            `json:"model"`

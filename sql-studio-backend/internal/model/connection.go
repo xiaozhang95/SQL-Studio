@@ -23,7 +23,7 @@ const TypeMariaDB = "mariadb"
 const TypePostgreSQL = "postgresql"
 const DefaultConnectionGroup = "默认分组"
 
-// NormalizeConnectionGroup 兼容缺少分组的旧配置，留空时归入默认分组。
+// NormalizeConnectionGroup 为新建连接的空分组输入选择当前默认分组。
 func NormalizeConnectionGroup(value string) string {
 	if group := strings.TrimSpace(value); group != "" {
 		return group

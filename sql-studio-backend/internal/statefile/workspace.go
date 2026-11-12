@@ -1,7 +1,6 @@
 package statefile
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -43,7 +42,8 @@ func (s *Store) ReadWorkspace(ctx context.Context) (model.WorkspaceDocument, err
 	if err != nil || doc.Revision != 0 {
 		return doc, err
 	}
-	return s.migrateWorkspace(ctx)
+	doc.Index = model.WorkspaceIndex{Version: 2, Tabs: []model.WorkspacePage{}, ResultViews: map[string]json.RawMessage{}, EditorLayouts: map[string]json.RawMessage{}, Explorer: json.RawMessage(`{"expanded":[],"selected":[],"search":"","top":0}`), ResultHeight: 260, OpenedConnections: []string{}}
+	return s.commitIndex(ctx, doc.Index, 0)
 }
 func (s *Store) part(ctx context.Context, data json.RawMessage) (string, error) {
 	if err := ctx.Err(); err != nil {
@@ -179,99 +179,6 @@ func (s *Store) commitIndex(ctx context.Context, index model.WorkspaceIndex, rev
 	return model.WorkspaceDocument{Revision: doc.Revision, Index: index}, nil
 }
 
-// One-time migration stays on the server. The old workspace.json is never rewritten.
-func (s *Store) migrateWorkspace(ctx context.Context) (model.WorkspaceDocument, error) {
-	legacy, err := s.read("workspace")
-	if err != nil {
-		return model.WorkspaceDocument{}, err
-	}
-	index := model.WorkspaceIndex{Version: 2, Tabs: []model.WorkspacePage{}, ResultViews: map[string]json.RawMessage{}, EditorLayouts: map[string]json.RawMessage{}, Explorer: json.RawMessage(`{"expanded":[],"selected":[],"search":"","top":0}`), ResultHeight: 260, OpenedConnections: []string{}}
-	if legacy.Revision != 0 {
-		var saved struct {
-			model.WorkspaceIndex
-			Tabs []struct {
-				model.WorkspacePage
-				SQL *string `json:"sql"`
-			} `json:"tabs"`
-			Runs map[string]json.RawMessage `json:"runs"`
-		}
-		if json.Unmarshal(legacy.Data, &saved) != nil || saved.Version != 1 || saved.Tabs == nil || saved.Runs == nil {
-			return model.WorkspaceDocument{}, errors.New("旧工作区格式无效，未迁移或覆盖")
-		}
-		index = saved.WorkspaceIndex
-		index.Version = 2
-		index.Tabs = []model.WorkspacePage{}
-		seen := map[string]bool{}
-		for _, tab := range saved.Tabs {
-			if tab.SQL == nil || tab.ID == "" || seen[tab.ID] {
-				return model.WorkspaceDocument{}, errors.New("旧工作区草稿或标签无效，原文件已保留")
-			}
-			seen[tab.ID] = true
-			switch tab.Kind {
-			case "query", "data", "structure", "ddl", "table-create", "table-design":
-			default:
-				return model.WorkspaceDocument{}, errors.New("旧工作区页面类型无效")
-			}
-
-			data, _ := json.Marshal(struct {
-				SQL string `json:"sql"`
-			}{*tab.SQL})
-			tab.DraftRef, err = s.part(ctx, data)
-			if err != nil {
-				return model.WorkspaceDocument{}, err
-			}
-			if result := saved.Runs[tab.ID]; len(result) > 0 && string(result) != "null" {
-				var summary struct {
-					Source     string          `json:"source"`
-					Error      string          `json:"error"`
-					Result     json.RawMessage `json:"result"`
-					Statements []struct {
-						Error  string          `json:"error"`
-						Result json.RawMessage `json:"result"`
-					} `json:"statements"`
-				}
-				if json.Unmarshal(result, &summary) != nil {
-					return model.WorkspaceDocument{}, errors.New("旧结果格式无效，未发布迁移索引")
-				}
-				tab.ResultSource = summary.Source
-				selected := struct {
-					Index int `json:"resultIndex"`
-				}{}
-				_ = json.Unmarshal(index.ResultViews[tab.ID], &selected)
-				failure, data := summary.Error, summary.Result
-				if selected.Index >= 0 && selected.Index < len(summary.Statements) {
-					failure = summary.Statements[selected.Index].Error
-					data = summary.Statements[selected.Index].Result
-				}
-				if failure != "" {
-					tab.ResultStatus = "error"
-				} else if len(data) > 0 && string(data) != "null" {
-					tab.ResultStatus = "success"
-				}
-
-				tab.ResultRef, err = s.part(ctx, compactWorkspaceRun(result))
-				if err != nil {
-					return model.WorkspaceDocument{}, err
-				}
-			}
-			index.Tabs = append(index.Tabs, tab.WorkspacePage)
-		}
-	}
-	if index.ActiveTab != "" {
-		found := false
-		for _, page := range index.Tabs {
-			found = found || page.ID == index.ActiveTab
-		}
-		if !found {
-			index.ActiveTab = ""
-		}
-	}
-	if index.ActiveTab == "" && len(index.Tabs) > 0 {
-		index.ActiveTab = index.Tabs[0].ID
-	}
-	return s.commitIndex(ctx, index, 0)
-}
-
 // CollectWorkspaceParts removes only unreferenced managed blobs by age and orphan budget.
 func (s *Store) CollectWorkspaceParts(ctx context.Context) error {
 	s.mu.Lock()
@@ -354,26 +261,4 @@ func (s *Store) CollectWorkspaceParts(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-// Keep only one copy of an identical last result while retaining all statements and rows.
-func compactWorkspaceRun(raw json.RawMessage) json.RawMessage {
-	var run map[string]json.RawMessage
-	if json.Unmarshal(raw, &run) != nil {
-		return raw
-	}
-	var statements []map[string]json.RawMessage
-	if len(run["result"]) == 0 || json.Unmarshal(run["statements"], &statements) != nil || len(statements) == 0 {
-		return raw
-	}
-	var a, b bytes.Buffer
-	if json.Compact(&a, run["result"]) != nil || json.Compact(&b, statements[len(statements)-1]["result"]) != nil || !bytes.Equal(a.Bytes(), b.Bytes()) {
-		return raw
-	}
-	delete(run, "result")
-	encoded, err := json.Marshal(run)
-	if err != nil {
-		return raw
-	}
-	return encoded
 }

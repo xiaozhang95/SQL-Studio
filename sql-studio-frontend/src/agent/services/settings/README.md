@@ -1,7 +1,5 @@
-# 模型配置服务
+# Agent 模型状态服务
 
-settings(method,input?,signal?)调用同源/api/settings/ai，GET读取脱敏状态、PUT保存、DELETE清除；返回Promise<AIStatus>。运行时核验字段，HTTP错误抛Error，支持AbortSignal。Key只在保存请求内提交，不写入浏览器存储或日志。
+settings(method,input?,signal?) 调用 /api/agent/settings，GET 读取脱敏状态，PUT 仅提交 {configId} 选择已有记录，DELETE 清空配置；返回 Promise<AIStatus>。运行时校验 configId/model/configured/source/models，HTTP 错误抛出并支持取消。Key 不经过该选择接口。
 
-脱敏状态同时校验models(id/name)列表；保存可附选中的DeepSeek模型ID，与Key原子更新。支持目录由应用定义，不是账号额度探测。
-
-observeSettings(onStatus,onError)订阅共享配置保存/移除事件、窗口回焦和页面重新可见，刷新脱敏GET状态；新请求取消前一请求，释放函数取消请求并移除监听。Key编辑弹窗复用公共AISettings。
+observeSettings 订阅共享配置变化、回焦和可见事件，取消旧请求，卸载移除订阅；迟到响应不覆盖。配置字段只采用新协议，不兼容旧请求。

@@ -144,7 +144,9 @@ test('共享Key保存、窗口回焦与移除会刷新Agent状态，迟到响应
   }
   const flush = () => new Promise((resolve) => setImmediate(resolve))
   const response = (configured) =>
-    new Response(JSON.stringify({ configured, model: 'deepseek-flash', source: configured ? 'saved' : 'none', models: [{ id: 'deepseek-flash', name: 'DeepSeek Flash' }] }))
+    new Response(
+      JSON.stringify({ configured, configId: configured ? 'a' : '', model: configured ? 'deepseek-flash' : '', source: configured ? 'saved' : 'none', models: [{ id: 'a', name: 'DeepSeek Flash' }] })
+    )
   let dispose
   try {
     const { observeSettings } = await moduleAt('services/settings/index.ts')

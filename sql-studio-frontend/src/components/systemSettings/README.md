@@ -1,9 +1,16 @@
 # 系统设置入口
 
-SystemSettings 接收 themeMode 与 AppearancePreferences（主题、字号、回调和可选 themeReady，默认 true），由工作区和 AI 助手共用。入口位于两页顶栏左侧按钮组末尾，与其他按钮垂直居中对齐；使用齿轮图标加「系统设置」文字的 text Button，保留 aria-label 和展开状态。
+SystemSettings 接收 themeMode 与 AppearancePreferences（已应用主题、字号、异步 onAppearanceSave 和可选 themeReady，默认 true），由工作区和 AI 助手共用。入口位于两页顶栏右侧，保存期间的 loading 在入口前显示；使用齿轮图标加「系统设置」文字的 text Button，保留 aria-label 和展开状态，外观恢复前禁用。
 
-Ant Design Dropdown 从按钮左缘向右展开 400px 宽的面板，最大宽度为视口减 24px，最大高度为视口减 72px，必要时滚动。背景、间距、圆角及阴影使用原生 token。
+点击入口打开标题为“系统设置”的 Ant Design Modal，沿用默认位置。左侧按“模型服务”和“外观设置”展示次要文字分组标题，前者包含模型配置，后者包含主题模式和界面字号；三个图文列表按钮分别使用 RobotOutlined、SkinOutlined、FontSizeOutlined，整行点击，当前项使用 controlItemBgHover 灰阶背景，不加 Tabs 指示线。右侧保留分区标题；模型页展示已添加模型列表和添加/编辑子弹框，主题和字号页直接展示卡片，不再显示卡片前的“主题：”“字号：”标签或占位列。底部统一提供“取消”和“保存”。弹框头部、内容区和底栏以原生主题边框分隔，左右内容独立滚动，高度随视口收缩。
 
-- 上方以“模型配置”为分组标题，排版与“主题模式”“界面字号”保持相同层级，标题与表单间使用 small 间距。直接展示 AISettings 的服务商、Key、模型配置，不设二级入口或返回按钮；当前只提供 DeepSeek。保存和移除共用后端 ai 分区，成功关闭面板，忙碌时禁止外部关闭。
-- 分隔线下为主题和字号：两组选项均占满 100% 宽度。主题为 system/light/dark，字号为 small/standard/large，对应较小（12px）、标准（默认 14px）、稍大（16px），默认标准；受全局 AppearancePreferences 控制，恢复期间禁用。
-- 模型配置仅在面板打开时挂载，关闭即取消请求并清理输入。外观切换保持面板展开，点击外部或 Escape 关闭；各标题使用 useId 避免两页同时挂载时重复。
+- AISettings 展示已添加模型列表。添加/编辑通过横向子弹框依次选择供应商、输入 Key 自动加载并手动选择模型，再合入设置草稿。同供应商可添加不同模型，相同供应商与模型 ID 不得重复，不采用覆盖流程；当前供应商仅 DeepSeek。
+- 模型发现不选择默认或首个模型；未明确选择模型不得添加或调用。模型列表不展示 Radio 或启用项，只显示图标、供应商与模型名称，并提供编辑、测试连接、移除；实际使用处选择模型。列表编辑、移除和子弹框应用仅更新草稿，底部统一保存才持久化。
+- 主题为 system/light/dark，使用带工作区缩略预览的卡片单选，跟随系统卡片并列展示亮暗预览。字号为 small/standard/large，以较小（12px）、标准（默认 14px）、稍大（16px）的示例文字卡片展示。卡片整张可选、保留原生 Radio 的键盘操作，并随宽度换行。只有字号示例使用对应预览字号，其余普通文字沿用默认排版。
+- 设置编辑仅更新弹框草稿，切换左侧选项保留输入，保存后才应用并持久化外观。
+- 总保存仅提交有变化的分区，成功后关闭；失败保留草稿和错误。模型与外观分别保存，部分成功时明确提示，不把失败显示为全部成功。忙碌时禁用控件、关闭按钮、遮罩关闭和 Escape。
+- 取消、关闭按钮、遮罩或 Escape 放弃未提交的草稿，取消模型请求并清理 Key；下次打开重新读取配置。弹框关闭后销毁内容。
+
+[useSystemSettings](hooks/useSystemSettings/README.md) 管理草稿、模型加载与统一提交；[settings](constant/settings/README.md) 集中导航类型和弹框布局尺寸。
+
+[appearanceCards](components/appearanceCards/README.md) 提供共用的受控单选卡片；[themePreview](components/themePreview/README.md) 用原生主题 token 绘制装饰性工作区缩略图，不读取业务数据。

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test:sql": "node --test tests/mysql.test.mjs",
-    "test:storage": "node --test tests/encrypted-storage.test.mjs",
+    "test:storage": "node --test tests/user-state.test.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
@@ -41,7 +41,6 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "fake-indexeddb": "^6.2.6",
     "oxlint": "^1.88.0",
     "prettier": "^3.9.10",
     "sass": "^1.106.1",

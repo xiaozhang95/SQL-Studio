@@ -12,7 +12,7 @@
 
 连接新增/更新和列表透传可选 group 字段。TestConnectionGroupRoundTrip 使用临时目录验证 API 保存、重启读取、更换及清空分组，同时检查编辑空密码保留原凭据。
 
-缺少或空 group 统一为“默认分组”；TestLegacyConnectionsBelongToDefaultGroup 验证旧配置归类、密码脱敏以及读取不改写文件。
+新建连接的空分组输入初始化为当前默认分组，当前连接文件必须完整保存 type/group；列表读取不转换旧文件。
 
 module_routes_test.go 使用真实业务模块和测试数据库接口验证双连接同名对象的路由归属、字段解码、精确数值透传、未知字段/多 JSON/超限请求拒绝、缺失连接 404 及并发超限 429，不访问真实数据库。
 
@@ -22,7 +22,7 @@ GET/PUT /api/state/:section 调用 settings。PUT 限32MiB，CAS冲突409，沿�
 
 POST /api/ai/assist 调用 AI 模块；严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
 
-POST /api/ai/models 接收provider和可选apiKey，通过AI模块获取真实可用模型；缺省Key从后端读取，响应仅id/name。
+POST /api/ai/models 接收 provider、可选 apiKey/configId，通过 AI 模块获取真实可用模型；空 Key 只复用指定记录的 Key，未知 ID 拒绝，响应仅 id/name。
 
 DELETE /api/ai/config 接收{revision}移除AI配置，冲突409，不改其他配置分区。
 

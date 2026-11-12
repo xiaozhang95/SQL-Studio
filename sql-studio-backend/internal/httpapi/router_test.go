@@ -70,14 +70,14 @@ func TestConnectionGroupRoundTrip(t *testing.T) {
 	}
 }
 
-func TestLegacyConnectionsBelongToDefaultGroup(t *testing.T) {
+func TestNewConnectionsUseDefaultGroup(t *testing.T) {
 	dir := t.TempDir()
 	store, err := connection.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, group := range []string{"", " \t "} {
-		if _, err := store.Save(model.Connection{Name: "legacy", Group: group, Password: "legacy-secret"}); err != nil {
+		if _, err := store.Save(model.Connection{Name: "new connection", Group: group, Password: "fixture-secret"}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -90,16 +90,16 @@ func TestLegacyConnectionsBelongToDefaultGroup(t *testing.T) {
 	New(testServices(store)).ServeHTTP(rec, httptest.NewRequest("GET", "http://127.0.0.1:8080/api/connections", nil))
 	var listed []model.Connection
 	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &listed) != nil || len(listed) != 2 {
-		t.Fatal("legacy connections were lost")
+		t.Fatal("new connections were lost")
 	}
 	for _, item := range listed {
 		if item.Group != model.DefaultConnectionGroup || item.Password != "" {
-			t.Fatal("legacy connection did not use default group or exposed credentials")
+			t.Fatal("new connection did not use default group or exposed credentials")
 		}
 	}
 	after, err := os.ReadFile(filename)
 	if err != nil || !bytes.Equal(before, after) {
-		t.Fatal("listing legacy groups rewrote the existing configuration")
+		t.Fatal("listing groups rewrote the existing configuration")
 	}
 }
 

@@ -3,7 +3,7 @@ import type { HistoryItem } from '@/typings/workspace'
 export type Histories = Record<string, HistoryItem[]>
 export const historyLimit = 50
 
-/** 读取与追加共用上限，旧版本超量记录也不会继续落盘。 */
+/** 读取与追加共用当前历史数量上限。 */
 export function normalizeHistories(stored: Histories, cleanSQL: (sql: string) => string): Histories {
   if (!stored || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('执行历史格式不受支持')
   return Object.fromEntries(

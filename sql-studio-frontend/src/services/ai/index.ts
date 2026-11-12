@@ -13,8 +13,8 @@ export async function assistSQL(input: AIRequest, signal: AbortSignal): Promise<
   return result
 }
 
-export async function listAIModels(provider: AIProviderType, apiKey: string, signal: AbortSignal): Promise<AIModel[]> {
-  const models = await request<AIModel[]>('/ai/models', { method: 'POST', body: JSON.stringify({ provider, apiKey }), signal })
+export async function listAIModels(provider: AIProviderType, apiKey: string, signal: AbortSignal, configId?: string): Promise<AIModel[]> {
+  const models = await request<AIModel[]>('/ai/models', { method: 'POST', body: JSON.stringify({ provider, apiKey, configId }), signal })
   if (!Array.isArray(models) || !models.length || models.some((model) => !model || typeof model.id !== 'string' || !model.id || typeof model.name !== 'string')) throw new Error('模型列表响应无效')
   return models
 }

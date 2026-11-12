@@ -2,7 +2,6 @@
 package connection
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -73,17 +72,18 @@ func Open(dir string) (*Store, error) {
 		Connections []model.Connection `json:"connections"`
 		Groups      []string           `json:"groups"`
 	}
-	if bytes.HasPrefix(bytes.TrimSpace(data), []byte("[")) {
-		err = json.Unmarshal(data, &s.items)
-	} else {
-		err = json.Unmarshal(data, &document)
-		if err == nil && (document.Connections == nil || document.Groups == nil) {
-			err = errors.New("invalid connections document")
-		}
-		s.items, s.groups = document.Connections, document.Groups
+	err = json.Unmarshal(data, &document)
+	if err == nil && (document.Connections == nil || document.Groups == nil) {
+		err = errors.New("invalid connections document")
 	}
+	s.items, s.groups = document.Connections, document.Groups
 	if err != nil {
 		return nil, err
+	}
+	for _, item := range s.items {
+		if item.Type == "" || item.Group == "" {
+			return nil, errors.New("connections document requires type and group")
+		}
 	}
 	return s, nil
 }
@@ -166,6 +166,7 @@ func (s *Store) persistGroups(items []model.Connection, groups []string) error {
 func (s *Store) Save(c model.Connection) (model.Connection, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	c.Type = model.NormalizeDatabaseType(c.Type)
 	group, err := groupName(model.NormalizeConnectionGroup(c.Group))
 	if err != nil {
 		return model.Connection{}, err

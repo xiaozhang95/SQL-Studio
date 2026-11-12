@@ -38,6 +38,14 @@ func TestOfficialContract(t *testing.T) {
 		t.Fatal(value, err)
 	}
 }
+
+func TestNoImplicitDefaultModel(t *testing.T) {
+	client := New()
+	client.http.Transport = transport(func(*http.Request) (*http.Response, error) { t.Fatal("empty model reached upstream"); return nil, nil })
+	if _, err := client.Generate(context.Background(), "fixture-key", "", nil, 100); err == nil {
+		t.Fatal("empty model accepted")
+	}
+}
 func TestRedactsUpstreamError(t *testing.T) {
 	client := New()
 	client.http.Transport = transport(func(r *http.Request) (*http.Response, error) {

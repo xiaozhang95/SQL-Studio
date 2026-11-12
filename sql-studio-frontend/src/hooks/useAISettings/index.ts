@@ -1,174 +1,204 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { aiProviders, getAIAdapter, isAIProvider } from '@/ai'
-import type { AIConfigDocument, AIModel, AIProviderType } from '@/ai/typings'
+import { getAIAdapter, isAIProvider } from '@/ai'
+import { aiModelsSection, maxAIConfigurations } from '@/ai/typings'
+import type { AIConfigDocument, AIConfiguration, AISettingsEntry } from '@/ai/typings'
 import { request } from '@/utils/request'
 
-/** 表单与官方模型发现各自取消，Key 只保留于当前面板。 */
+const snapshot = (entries: readonly AIConfiguration[], activeId: string) =>
+  JSON.stringify({ entries: entries.map(({ id, provider, model, modelName }) => ({ id, provider, model, modelName })), activeId })
+
+/** 管理已完成选择的模型列表；Key 只在本次设置草稿与后端配置中存在。 */
 export function useAISettings() {
-  const [open, setOpen] = useState(false)
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [removing, setRemoving] = useState(false)
-  const busy = saving || removing
   const [error, setError] = useState('')
-  const [configured, setConfigured] = useState(false)
-  const [apiKey, setAPIKey] = useState('')
-  const [provider, setProvider] = useState<AIProviderType>(aiProviders[0].value)
-  const [model, setModel] = useState(getAIAdapter().profile.defaultModel)
-  const [models, setModels] = useState<AIModel[]>([])
-  const [modelsLoading, setModelsLoading] = useState(false)
-  const [modelsError, setModelsError] = useState('')
+  const [entries, setEntries] = useState<AISettingsEntry[]>([])
+  const [activeId, setActiveId] = useState('')
+  const [connectionTests, setConnectionTests] = useState<Record<string, { loading: boolean; success?: boolean; message?: string }>>({})
+  const testRequests = useRef(new Map<string, AbortController>())
   const revision = useRef(0)
+  const baseline = useRef('')
+  const savedEntries = useRef(new Map<string, AIConfiguration>())
   const generation = useRef(0)
-  const modelRequest = useRef<AbortController | null>(null)
-  const modelTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pending = useRef(false)
+  const readRequest = useRef<AbortController | null>(null)
+
+  const cancelAll = () => {
+    readRequest.current?.abort()
+    for (const controller of testRequests.current.values()) controller.abort()
+    testRequests.current.clear()
+  }
+  const cancelTest = (id: string) => {
+    testRequests.current.get(id)?.abort()
+    testRequests.current.delete(id)
+    setConnectionTests((current) => {
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+  }
   useEffect(
     () => () => {
-      clearTimeout(modelTimer.current)
-      modelRequest.current?.abort()
       generation.current++
+      cancelAll()
     },
     []
   )
-  const loadModels = async (target: AIProviderType, key: string, selected: string, session: number) => {
-    clearTimeout(modelTimer.current)
-    modelRequest.current?.abort()
-    const controller = new AbortController()
-    modelRequest.current = controller
-    setModelsLoading(true)
-    setModelsError('')
-    try {
-      const values = await getAIAdapter(target).listModels(key.trim(), controller.signal)
-      if (session !== generation.current || controller.signal.aborted) return
-      setModels(values)
-      const preferred = values.find((item) => item.id === selected) || values.find((item) => item.id === getAIAdapter(target).profile.defaultModel) || values[0]
-      setModel(preferred.id)
-    } catch (cause) {
-      if (session === generation.current && !controller.signal.aborted) setModelsError(cause instanceof Error ? cause.message : '获取模型失败')
-    } finally {
-      if (session === generation.current && !controller.signal.aborted) setModelsLoading(false)
-    }
+
+  const receive = (doc: AIConfigDocument, previous: readonly AISettingsEntry[] = []) => {
+    if (!Number.isSafeInteger(doc.revision) || doc.revision < 0) throw new Error('AI 配置修订号无效')
+    const records = doc.data === null ? [] : doc.data.configurations
+    if (!Array.isArray(records) || records.length > maxAIConfigurations) throw new Error('AI 配置列表无效')
+    const ids = new Set<string>()
+    const values = records.map((record): AISettingsEntry => {
+      if (
+        !record ||
+        typeof record.id !== 'string' ||
+        !/^[a-zA-Z0-9_-]{1,80}$/.test(record.id) ||
+        ids.has(record.id) ||
+        !isAIProvider(record.provider) ||
+        typeof record.model !== 'string' ||
+        !record.model ||
+        typeof record.modelName !== 'string' ||
+        !record.modelName.trim() ||
+        record.configured !== true
+      )
+        throw new Error('AI 配置记录无效')
+      ids.add(record.id)
+      const cached = previous.find((entry) => entry.id === record.id)
+      return {
+        id: record.id,
+        provider: record.provider,
+        model: record.model,
+        modelName: record.modelName,
+        configured: true,
+        apiKey: '',
+        models: cached?.models ?? [],
+        modelsLoading: false,
+        modelsError: ''
+      }
+    })
+    const selected = doc.data === null ? '' : doc.data.activeId
+    if (typeof selected !== 'string') throw new Error('模型配置格式无效')
+    if (selected && !ids.has(selected)) throw new Error('当前模型配置无效')
+    revision.current = doc.revision
+    savedEntries.current = new Map(values.map((entry) => [entry.id, { id: entry.id, provider: entry.provider, model: entry.model, modelName: entry.modelName, configured: true }]))
+    baseline.current = snapshot(values, selected)
+    setEntries(values)
+    setConnectionTests({})
+    setActiveId(selected)
+    setReady(true)
+    return values
   }
   const show = async () => {
-    if (busy) return
-    const id = ++generation.current
-    clearTimeout(modelTimer.current)
-    modelRequest.current?.abort()
-    setOpen(true)
-    setLoading(true)
+    if (pending.current) return
+    cancelAll()
+    const session = ++generation.current
+    const controller = new AbortController()
+    readRequest.current = controller
     setReady(false)
-    setConfigured(false)
-    setModels([])
-    setModelsError('')
-    setModelsLoading(false)
+    setLoading(true)
     setError('')
-    setAPIKey('')
+    setEntries([])
+    setActiveId('')
+    setConnectionTests({})
     try {
-      const doc = await request<AIConfigDocument>('/state/ai')
-      if (id !== generation.current) return
-      if (!Number.isSafeInteger(doc.revision) || (doc.data !== null && !isAIProvider(doc.data.provider))) throw new Error('AI 配置无效')
-      const target = doc.data?.provider || aiProviders[0].value
-      const selected = doc.data?.model || getAIAdapter(target).profile.defaultModel
-      revision.current = doc.revision
-      setProvider(target)
-      setModel(selected)
-      setConfigured(doc.data?.configured === true)
-      setReady(true)
-      if (doc.data?.configured) void loadModels(target, '', selected, id)
+      const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, { signal: controller.signal })
+      if (session !== generation.current || controller.signal.aborted) return
+      receive(doc)
     } catch (cause) {
-      if (id === generation.current) setError(cause instanceof Error ? cause.message : '读取失败')
+      if (session === generation.current && !controller.signal.aborted) setError(cause instanceof Error ? cause.message : '读取失败')
     } finally {
-      if (id === generation.current) setLoading(false)
-    }
-  }
-  const changeKey = (value: string) => {
-    clearTimeout(modelTimer.current)
-    modelRequest.current?.abort()
-    setModels([])
-    setModelsError('')
-    setAPIKey(value)
-    const canLoad = Boolean(value.trim() || configured)
-    setModelsLoading(canLoad)
-    if (canLoad) {
-      const session = generation.current
-      modelTimer.current = setTimeout(() => void loadModels(provider, value, model, session), 500)
+      if (session === generation.current && !controller.signal.aborted) setLoading(false)
     }
   }
   const close = () => {
-    if (busy) return
+    if (pending.current) return
     generation.current++
-    clearTimeout(modelTimer.current)
-    modelRequest.current?.abort()
-    setOpen(false)
-    setAPIKey('')
+    cancelAll()
+    setEntries([])
+    setActiveId('')
+    setReady(false)
   }
-  const refreshModels = () => loadModels(provider, apiKey, model, generation.current)
+  const upsertEntry = (entry: AISettingsEntry) => {
+    if (!ready || pending.current || !entry.model || !entry.modelName || (!entry.configured && !entry.apiKey.trim())) return false
+    if (entries.some((row) => row.id !== entry.id && row.provider === entry.provider && row.model === entry.model)) return false
+    const existing = entries.some((row) => row.id === entry.id)
+    if (!existing && entries.length >= maxAIConfigurations) return false
+    cancelTest(entry.id)
+    setEntries((values) => (existing ? values.map((row) => (row.id === entry.id ? entry : row)) : [...values, entry]))
+    setError('')
+    return true
+  }
+  const removeEntry = (id: string) => {
+    if (!ready || pending.current) return
+    cancelTest(id)
+    setEntries((values) => values.filter((entry) => entry.id !== id))
+    if (activeId === id) setActiveId('')
+    setError('')
+  }
+  const testConnection = async (id: string) => {
+    const entry = entries.find((value) => value.id === id)
+    if (!entry || pending.current || testRequests.current.has(id)) return
+    const controller = new AbortController()
+    testRequests.current.set(id, controller)
+    const session = generation.current
+    setConnectionTests((current) => ({ ...current, [id]: { loading: true } }))
+    try {
+      const models = await getAIAdapter(entry.provider).listModels(entry.apiKey.trim(), controller.signal, entry.configured ? id : undefined)
+      if (controller.signal.aborted || session !== generation.current) return
+      if (!models.some((model) => model.id === entry.model)) throw new Error('连接成功，但此 Key 无法使用该模型')
+      setConnectionTests((current) => ({ ...current, [id]: { loading: false, success: true, message: '连接成功' } }))
+    } catch (cause) {
+      if (!controller.signal.aborted && session === generation.current)
+        setConnectionTests((current) => ({ ...current, [id]: { loading: false, success: false, message: cause instanceof Error ? cause.message : '连接失败' } }))
+    } finally {
+      if (testRequests.current.get(id) === controller) testRequests.current.delete(id)
+    }
+  }
+  const changed = ready && (snapshot(entries, activeId) !== baseline.current || entries.some((entry) => Boolean(entry.apiKey.trim())))
+  const pairs = new Set(entries.map((entry) => JSON.stringify([entry.provider, entry.model])))
+  const canSave =
+    ready &&
+    !loading &&
+    !saving &&
+    pairs.size === entries.length &&
+    (!activeId || entries.some((entry) => entry.id === activeId && Boolean(entry.model))) &&
+    entries.every((entry) => {
+      const saved = savedEntries.current.get(entry.id)
+      const edited = !saved || Boolean(entry.apiKey.trim()) || saved.model !== entry.model || saved.provider !== entry.provider
+      return Boolean(entry.model && entry.modelName) && (!edited || (!entry.modelsLoading && entry.models.some((item) => item.id === entry.model) && Boolean(entry.configured || entry.apiKey.trim())))
+    })
   const save = async () => {
-    if (!ready || busy || modelsLoading || !models.some((item) => item.id === model)) return false
+    if (pending.current || !canSave) return false
+    pending.current = true
     setSaving(true)
     setError('')
     try {
-      await request<AIConfigDocument>('/state/ai', { method: 'PUT', body: JSON.stringify({ revision: revision.current, data: { provider, model, apiKey: apiKey.trim() } }) })
-      window.dispatchEvent(new Event('ai-settings-saved'))
+      const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, {
+        method: 'PUT',
+        body: JSON.stringify({
+          revision: revision.current,
+          data: {
+            activeId,
+            configurations: entries.map(({ id, provider, model, modelName, apiKey }) => ({ id, provider, model, modelName, apiKey: apiKey.trim() }))
+          }
+        })
+      })
+      cancelAll()
       generation.current++
-      clearTimeout(modelTimer.current)
-      modelRequest.current?.abort()
-      setAPIKey('')
-      setOpen(false)
+      receive(doc, entries)
+      window.dispatchEvent(new Event('ai-settings-saved'))
       return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '保存失败')
       return false
     } finally {
+      pending.current = false
       setSaving(false)
     }
   }
-  const remove = async () => {
-    if (!ready || !configured || busy) return false
-    setRemoving(true)
-    setError('')
-    clearTimeout(modelTimer.current)
-    modelRequest.current?.abort()
-    try {
-      await request<AIConfigDocument>('/ai/config', { method: 'DELETE', body: JSON.stringify({ revision: revision.current }) })
-      generation.current++
-      setAPIKey('')
-      setConfigured(false)
-      setModels([])
-      setOpen(false)
-      window.dispatchEvent(new Event('ai-settings-saved'))
-      return true
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '移除失败')
-      return false
-    } finally {
-      setModelsLoading(false)
-      setRemoving(false)
-    }
-  }
-  return {
-    ready,
-    open,
-    loading,
-    saving,
-    removing,
-    busy,
-    remove,
-    error,
-    configured,
-    apiKey,
-    changeKey,
-    show,
-    close,
-    save,
-    provider,
-    model,
-    setModel,
-    models,
-    modelsLoading,
-    modelsError,
-    refreshModels
-  }
+  return { ready, loading, saving, busy: saving, error, entries, connectionTests, testConnection, upsertEntry, removeEntry, changed, canSave, show, close, save }
 }

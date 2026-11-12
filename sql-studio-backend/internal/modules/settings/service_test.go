@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sql-studio-backend/internal/model"
+	"strings"
 	"testing"
 )
 
@@ -19,7 +20,7 @@ func (r *repository) Write(context.Context, string, model.StateWrite) (model.Sta
 func TestValidation(t *testing.T) {
 	r := &repository{}
 	s := New(r)
-	for _, name := range []string{"../x", "", "A", "x.json", "connections"} {
+	for _, name := range []string{"../x", "", "A", "x.json", "connections", "ai"} {
 		if _, err := s.Read(context.Background(), name); err == nil {
 			t.Fatal(name)
 		}
@@ -50,89 +51,89 @@ func (r *aiRepository) Write(_ context.Context, _ string, input model.StateWrite
 	r.doc = model.StateDocument{SchemaVersion: 1, Revision: input.Revision + 1, Data: input.Data}
 	return r.doc, nil
 }
+func aiData(active string, entries ...model.AIConfiguration) json.RawMessage {
+	if entries == nil {
+		entries = []model.AIConfiguration{}
+	}
+	data, _ := json.Marshal(model.AIConfig{Configurations: entries, ActiveID: active})
+	return data
+}
+func fixtureEntry(id, modelID, key string) model.AIConfiguration {
+	return model.AIConfiguration{ID: id, Provider: "deepseek", Model: modelID, ModelName: "Display " + modelID, APIKey: key}
+}
 func TestAISecretAndRetention(t *testing.T) {
 	ctx := context.Background()
 	r := &aiRepository{}
 	s := New(r)
-	for _, data := range []string{`{"provider":"other","apiKey":"test-secret"}`, `{"provider":"deepseek"}`} {
-		if _, err := s.Write(ctx, "ai", model.StateWrite{Data: json.RawMessage(data)}); err == nil {
-			t.Fatal("accepted invalid config")
+	for _, data := range []string{`{"provider":"deepseek","apiKey":"old-key","model":"old-model"}`, `{"configurations":null,"activeId":""}`} {
+		if _, err := s.Write(ctx, model.AIModelsSection, model.StateWrite{Data: json.RawMessage(data)}); err == nil {
+			t.Fatal("old or invalid format accepted")
 		}
 	}
-	doc, err := s.Write(ctx, "ai", model.StateWrite{Data: json.RawMessage(`{"provider":"deepseek","apiKey":"test-secret"}`)})
-	if err != nil {
+	doc, err := s.Write(ctx, model.AIModelsSection, model.StateWrite{Data: aiData("", fixtureEntry("a", "model-a", "fixture-key-a"), fixtureEntry("b", "model-b", "fixture-key-b"))})
+	if err != nil || strings.Contains(string(doc.Data), "fixture-key-") {
+		t.Fatal("write or redaction failed", err)
+	}
+	var public model.AIConfig
+	if json.Unmarshal(doc.Data, &public) != nil || len(public.Configurations) != 2 || public.Configurations[0].APIKey != "" || public.Configurations[0].ModelName != "Display model-a" {
+		t.Fatal("nested key or model name lost")
+	}
+	if _, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: aiData("b", fixtureEntry("a", "model-a", ""), fixtureEntry("b", "model-b", ""))}); err != nil {
 		t.Fatal(err)
 	}
-	if string(doc.Data) != `{"provider":"deepseek","configured":true,"completionEnabled":true}` {
-		t.Fatal("secret exposed")
+	var raw model.AIConfig
+	_ = json.Unmarshal(r.doc.Data, &raw)
+	selected, ok := raw.SelectedConfiguration()
+	if !ok || selected.APIKey != "fixture-key-b" || raw.Configurations[0].APIKey != "fixture-key-a" {
+		t.Fatal("record keys mixed")
 	}
-	doc, err = s.Read(ctx, "ai")
-	if err != nil || string(doc.Data) != `{"provider":"deepseek","configured":true,"completionEnabled":true}` {
-		t.Fatal("read exposed secret")
-	}
-	_, err = s.Write(ctx, "ai", model.StateWrite{Revision: 1, Data: json.RawMessage(`{"provider":"deepseek","apiKey":""}`)})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var stored model.AIConfig
-	_ = json.Unmarshal(r.doc.Data, &stored)
-	if stored.APIKey != "test-secret" {
-		t.Fatal("blank key did not retain secret")
-	}
-	if _, err = s.Write(ctx, "ai", model.StateWrite{Revision: 1, Data: json.RawMessage(`{"provider":"deepseek","apiKey":"replacement"}`)}); err != model.ErrStateConflict {
-		t.Fatal("missing conflict")
+	if _, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: aiData("")}); err != model.ErrStateConflict {
+		t.Fatal("stale list accepted")
 	}
 }
-
-func TestAIModelAndCompletionPreference(t *testing.T) {
+func TestInvalidAIListsDoNotPartiallySave(t *testing.T) {
+	ctx := context.Background()
 	r := &aiRepository{}
 	s := New(r)
-	ctx := context.Background()
-	doc, err := s.Write(ctx, "ai", model.StateWrite{Data: json.RawMessage(`{"provider":"deepseek","model":"deepseek-v4-pro","apiKey":"test-secret","completionEnabled":false}`)})
+	doc, err := s.Write(ctx, model.AIModelsSection, model.StateWrite{Data: aiData("", fixtureEntry("a", "model-a", "fixture-key"))})
 	if err != nil {
 		t.Fatal(err)
 	}
-	var config model.AIConfig
-	_ = json.Unmarshal(doc.Data, &config)
-	if config.Model != "deepseek-v4-pro" || config.CompletionEnabled == nil || *config.CompletionEnabled || config.APIKey != "" {
-		t.Fatal("configuration not preserved or secret leaked")
-	}
-	_, err = s.Write(ctx, "ai", model.StateWrite{Revision: doc.Revision, Data: json.RawMessage(`{"provider":"deepseek","apiKey":""}`)})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = json.Unmarshal(r.doc.Data, &config)
-	if config.Model != "deepseek-v4-pro" || config.CompletionEnabled == nil || *config.CompletionEnabled || config.APIKey != "test-secret" {
-		t.Fatal("legacy update reset configuration")
+	for _, data := range []json.RawMessage{
+		aiData("", fixtureEntry("a", "model-a", ""), fixtureEntry("b", "model-a", "key-b")),
+		aiData("", fixtureEntry("a", "", "")),
+		aiData("", fixtureEntry("new", "model-new", "")),
+		aiData("missing", fixtureEntry("a", "model-a", "")),
+	} {
+		if _, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: data}); err == nil {
+			t.Fatal("invalid accepted")
+		}
+		if r.doc.Revision != doc.Revision {
+			t.Fatal("partially saved")
+		}
 	}
 }
-
 func TestRemoveAIConfigAndRevisionProtection(t *testing.T) {
 	ctx := context.Background()
 	r := &aiRepository{}
 	s := New(r)
-	saved, err := s.Write(ctx, "ai", model.StateWrite{Data: json.RawMessage(`{"provider":"deepseek","apiKey":"test-secret","model":"deepseek-flash"}`)})
+	doc, err := s.Write(ctx, model.AIModelsSection, model.StateWrite{Data: aiData("a", fixtureEntry("a", "model-a", "fixture-key"))})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.RemoveAI(ctx, 0); err != model.ErrStateConflict {
-		t.Fatal("stale removal accepted", err)
+		t.Fatal("stale removal accepted")
 	}
-	removed, err := s.RemoveAI(ctx, saved.Revision)
+	removed, err := s.RemoveAI(ctx, doc.Revision)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var config model.AIConfig
-	if json.Unmarshal(r.doc.Data, &config) != nil || config.APIKey != "" || config.Model != "" || config.CompletionEnabled == nil || *config.CompletionEnabled {
-		t.Fatal("configuration not cleared")
+	var raw model.AIConfig
+	_ = json.Unmarshal(removed.Data, &raw)
+	if len(raw.Configurations) != 0 || raw.ActiveID != "" || raw.CompletionEnabled == nil || *raw.CompletionEnabled {
+		t.Fatal("not cleared")
 	}
-	if removed.Revision <= saved.Revision {
-		t.Fatal("revision not advanced")
-	}
-	if _, err = s.Write(ctx, "ai", model.StateWrite{Revision: saved.Revision, Data: json.RawMessage(`{"provider":"deepseek","apiKey":"old-secret"}`)}); err != model.ErrStateConflict {
-		t.Fatal("stale key resurrected")
-	}
-	if _, err = s.Write(ctx, "ai", model.StateWrite{Revision: removed.Revision, Data: json.RawMessage(`{"provider":"deepseek","apiKey":"new-secret"}`)}); err != nil {
-		t.Fatal("reconfigure failed", err)
+	if _, err = s.Write(ctx, model.AIModelsSection, model.StateWrite{Revision: doc.Revision, Data: aiData("a", fixtureEntry("a", "model-a", "fixture-old"))}); err != model.ErrStateConflict {
+		t.Fatal("stale credential resurrected")
 	}
 }

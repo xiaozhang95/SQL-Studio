@@ -56,7 +56,7 @@ func TestLayoutCASAndCorruptionPreserved(t *testing.T) {
 	if err != nil || initial.Revision != 0 {
 		t.Fatal(err)
 	}
-	initial.State = model.Layout{ActiveID: strings.Repeat("c", 48), Draft: "local draft", Expanded: []string{"thinking-2"}}
+	initial.State = model.Layout{Mode: "readonly", ActiveID: strings.Repeat("c", 48), Draft: "local draft", Expanded: []string{"thinking-2"}}
 	saved, err := store.WriteWorkspace(ctx, initial)
 	if err != nil {
 		t.Fatal(err)

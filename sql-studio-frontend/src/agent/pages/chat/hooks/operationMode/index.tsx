@@ -4,7 +4,7 @@ import type { WorkspaceController } from '../../../../hooks/workspace'
 import { CHAT } from '../../constant/chat'
 
 export function useOperationMode(workspace: WorkspaceController) {
-  const mode = workspace.state.mode ?? 'readonly'
+  const mode = workspace.state.mode
   const { modal } = App.useApp()
   const { token } = theme.useToken()
   function change(next: 'readonly' | 'write') {

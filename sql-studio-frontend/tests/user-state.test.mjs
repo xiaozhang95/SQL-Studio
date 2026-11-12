@@ -18,7 +18,7 @@ test('server state is authoritative, namespace writes serialize, conflicts do no
   }
   try {
     const saved = await readState('test-appearance', async () => {
-      throw Error('must not read legacy')
+      throw Error('must not initialize an existing document')
     })
     assert.equal(saved.theme, 'dark')
     await Promise.all([writeState('test-appearance', { theme: 'light' }), writeState('test-appearance', { theme: 'system' })])
@@ -33,13 +33,13 @@ test('server state is authoritative, namespace writes serialize, conflicts do no
     globalThis.fetch = original
   }
 })
-test('only absent server documents read legacy; unavailable backend does not fall back', async () => {
+test('only missing documents initialize defaults; unavailable backend does not overwrite', async () => {
   const original = globalThis.fetch
   let reads = 0
   try {
     globalThis.fetch = async () => new Response(JSON.stringify({ schemaVersion: 1, revision: 0, updatedAt: '', data: null }))
     assert.deepEqual(
-      await readState('test-migration', async () => {
+      await readState('test-initialization', async () => {
         reads++
         return { version: 1 }
       }),

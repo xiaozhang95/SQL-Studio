@@ -20,29 +20,18 @@ func splitStore(t *testing.T) (*Store, model.WorkspaceDocument) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	legacy := `{"version":1,"tabs":[{"id":"a","title":"one","kind":"query","connectionId":"c1","database":"same","table":"","sql":"SELECT 'draft-a';"},{"id":"b","title":"two","kind":"query","connectionId":"c2","database":"same","table":"","sql":"SELECT 'draft-b';"}],"activeTab":"a","runs":{"a":{"source":"c1/same","result":{"columns":[{"name":"n","type":"BIGINT"}],"rows":[["9007199254740993"]],"isQuery":true}},"b":{"source":"c2/same","error":"old-error"}},"resultViews":{},"editorLayouts":{},"explorer":{"expanded":[],"selected":[],"search":"","top":0},"resultHeight":260,"openedConnections":[],"runningTabId":"b"}`
-	if _, err = store.Write(context.Background(), "workspace", model.StateWrite{Data: json.RawMessage(legacy)}); err != nil {
-		t.Fatal(err)
-	}
-	original, err := os.ReadFile(filepath.Join(store.directory, "workspace.json"))
+	index := model.WorkspaceIndex{Version: 2, Tabs: []model.WorkspacePage{{ID: "a", Title: "one", Kind: "query", ConnectionID: "c1", Database: "same"}, {ID: "b", Title: "two", Kind: "query", ConnectionID: "c2", Database: "same"}}, ActiveTab: "a", RunningTabID: "b", ResultViews: map[string]json.RawMessage{}, EditorLayouts: map[string]json.RawMessage{}, Explorer: json.RawMessage(`{"expanded":[],"selected":[],"search":"","top":0}`), ResultHeight: 260, OpenedConnections: []string{}}
+	doc, err := store.CommitWorkspace(context.Background(), model.WorkspaceCommit{Index: index, Drafts: map[string]string{"a": "SELECT 'draft-a';", "b": "SELECT 'draft-b';"}, Results: map[string]json.RawMessage{"a": json.RawMessage(`{"source":"c1/same","result":{"columns":[{"name":"n","type":"BIGINT"}],"rows":[["9007199254740993"]],"isQuery":true}}`), "b": json.RawMessage(`{"source":"c2/same","error":"fixture-error"}`)}})
 	if err != nil {
 		t.Fatal(err)
-	}
-	doc, err := store.ReadWorkspace(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	after, _ := os.ReadFile(filepath.Join(store.directory, "workspace.json"))
-	if string(after) != string(original) {
-		t.Fatal("migration rewrote the legacy file")
 	}
 	return store, doc
 }
-func TestWorkspaceMigrationAndIncrementalCommit(t *testing.T) {
+func TestCurrentWorkspaceAndIncrementalCommit(t *testing.T) {
 	store, doc := splitStore(t)
 	ctx := context.Background()
 	if doc.Revision != 1 || doc.Index.Version != 2 || len(doc.Index.Tabs) != 2 || doc.Index.RunningTabID != "b" {
-		t.Fatalf("migration: %+v", doc)
+		t.Fatalf("initial commit: %+v", doc)
 	}
 	bytes, _ := os.ReadFile(filepath.Join(store.directory, model.WorkspaceIndexSection+".json"))
 	if strings.Contains(string(bytes), "draft-a") || strings.Contains(string(bytes), "9007199254740993") {
@@ -147,48 +136,6 @@ func TestWorkspaceCorruptionAndCollection(t *testing.T) {
 	}
 }
 
-func TestWorkspaceMigrationFailureDoesNotPublishIndex(t *testing.T) {
-	store, _ := Open(t.TempDir())
-	ctx := context.Background()
-	raw := json.RawMessage(`{"version":1,"tabs":[{"id":"missing-sql","kind":"query"}],"runs":{},"activeTab":"missing-sql"}`)
-	if _, err := store.Write(ctx, "workspace", model.StateWrite{Data: raw}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.ReadWorkspace(ctx); err == nil {
-		t.Fatal("invalid migration accepted")
-	}
-	if _, err := os.Stat(filepath.Join(store.directory, model.WorkspaceIndexSection+".json")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatal("failed migration published an index", err)
-	}
-	if _, err := os.Stat(filepath.Join(store.directory, "workspace.json")); err != nil {
-		t.Fatal("legacy file lost", err)
-	}
-}
-func TestWorkspaceMigrationCompactsDuplicateResultWithoutDroppingRows(t *testing.T) {
-	raw := json.RawMessage(`{"source":"fixture","result":{"columns":[],"rows":[["9007199254740993",null,""]]},"statements":[{"sql":"SELECT fixture","result":{"columns":[],"rows":[["9007199254740993",null,""]]}}]}`)
-	var compact map[string]json.RawMessage
-	if err := json.Unmarshal(compactWorkspaceRun(raw), &compact); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := compact["result"]; ok {
-		t.Fatal("duplicate root result retained")
-	}
-	if !strings.Contains(string(compact["statements"]), "9007199254740993") {
-		t.Fatal("precision/rows lost")
-	}
-}
-
-func TestMigratedWorkspaceRejectsLegacyWriters(t *testing.T) {
-	store, doc := splitStore(t)
-	if _, err := store.Write(context.Background(), "workspace", model.StateWrite{Data: json.RawMessage(`{"version":1}`)}); !errors.Is(err, model.ErrStateConflict) {
-		t.Fatal("old client wrote legacy workspace", err)
-	}
-	current, err := store.ReadWorkspace(context.Background())
-	if err != nil || current.Revision != doc.Revision {
-		t.Fatal(err)
-	}
-}
-
 func TestWorkspaceOrphanBudgetKeepsCurrentReferences(t *testing.T) {
 	store, doc := splitStore(t)
 	directory := filepath.Join(store.directory, "workspace-parts")
@@ -216,7 +163,7 @@ func TestWorkspaceOrphanBudgetKeepsCurrentReferences(t *testing.T) {
 	}
 }
 
-func TestWorkspaceAggregateExceedsLegacyFileLimit(t *testing.T) {
+func TestWorkspaceAggregateExceedsSingleFileLimit(t *testing.T) {
 	store, err := Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -248,7 +195,7 @@ func TestWorkspaceAggregateExceedsLegacyFileLimit(t *testing.T) {
 		total += info.Size()
 	}
 	if total <= maxBytes {
-		t.Fatal("test did not exceed old aggregate limit")
+		t.Fatal("test did not exceed single file limit")
 	}
 	index, err := os.ReadFile(filepath.Join(store.directory, model.WorkspaceIndexSection+".json"))
 	if err != nil || len(index) > 4096 {

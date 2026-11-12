@@ -11,11 +11,30 @@ import (
 
 type repository struct{ data string }
 
+func TestMissingModelDoesNotReachGenerator(t *testing.T) {
+	g := &generator{content: `{"completion":" 1"}`}
+	s := New(repository{data: `{"activeId":"","configurations":[{"id":"a","provider":"deepseek","model":"","modelName":"","apiKey":"fixture-key"}]}`}, &connections{}, g)
+	if _, err := s.Assist(context.Background(), model.AIRequest{Action: "complete", Prefix: "SELECT"}); err == nil || g.calls != 0 {
+		t.Fatal("missing model used a default")
+	}
+}
+
+func TestModelDiscoveryUsesSpecifiedRecordKey(t *testing.T) {
+	g := &generator{}
+	s := New(repository{data: `{"configurations":[{"id":"a","provider":"deepseek","model":"model-a","apiKey":"fixture-key-a","modelName":"model-a"},{"id":"b","provider":"deepseek","model":"model-b","apiKey":"fixture-key-b","modelName":"model-b"}]}`}, &connections{}, g)
+	if _, err := s.Models(context.Background(), model.AIModelsRequest{Provider: "deepseek", ConfigID: "b"}); err != nil || g.key != "fixture-key-b" {
+		t.Fatal("wrong record key", err)
+	}
+	if _, err := s.Models(context.Background(), model.AIModelsRequest{Provider: "deepseek", ConfigID: "missing"}); err == nil {
+		t.Fatal("unknown record fell back to another key")
+	}
+}
+
 func (r repository) Read(context.Context, string) (model.StateDocument, error) {
 	if r.data != "" {
 		return model.StateDocument{Data: json.RawMessage(r.data)}, nil
 	}
-	return model.StateDocument{Data: json.RawMessage(`{"provider":"deepseek","apiKey":"test-secret"}`)}, nil
+	return model.StateDocument{Data: json.RawMessage(`{"activeId":"a","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-flash","modelName":"deepseek-flash","apiKey":"test-secret"}]}`)}, nil
 }
 
 type connections struct{ id string }
@@ -94,14 +113,14 @@ func (g *generator) Models(ctx context.Context, key string) ([]model.AIModel, er
 }
 func TestConfiguredModelAndDisabledCompletion(t *testing.T) {
 	g := &generator{content: `{"sql":"SELECT 1"}`}
-	s := New(repository{data: `{"provider":"deepseek","apiKey":"saved-key","model":"deepseek-v4-pro","completionEnabled":false}`}, &connections{}, g)
+	s := New(repository{data: `{"activeId":"a","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-v4-pro","modelName":"deepseek-v4-pro","apiKey":"saved-key"}],"completionEnabled":false}`}, &connections{}, g)
 	if _, err := s.Assist(context.Background(), model.AIRequest{Action: "complete", Prefix: "SELECT "}); err == nil || g.calls != 0 {
 		t.Fatal("disabled completion reached upstream")
 	}
 	if _, err := s.Assist(context.Background(), model.AIRequest{Action: "optimize", SQL: "SELECT 1"}); err != nil || g.model != "deepseek-v4-pro" {
 		t.Fatal(err, g.model)
 	}
-	values, err := s.Models(context.Background(), model.AIModelsRequest{Provider: "deepseek"})
+	values, err := s.Models(context.Background(), model.AIModelsRequest{Provider: "deepseek", ConfigID: "a"})
 	if err != nil || len(values) != 1 || g.key != "saved-key" {
 		t.Fatal(err, values)
 	}

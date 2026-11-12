@@ -42,8 +42,8 @@ func (c *Client) GenerateStream(ctx context.Context, messages []model.Message, t
 	if configErr != nil {
 		return zero, configErr
 	}
-	if config.APIKey == "" {
-		return zero, errors.New("请在DeepSeek设置中配置API Key")
+	if config.APIKey == "" || config.Model == "" {
+		return zero, errors.New("请先在系统设置中添加并选择模型")
 	}
 	body, err := json.Marshal(struct {
 		Model     string          `json:"model"`

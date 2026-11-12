@@ -1,36 +1,25 @@
 # 用户状态配置格式
 
-默认目录：Go 服务启动时的工作目录下的 `./.sql-studio/state/`。可用 SQLDESK_STATE_DIR 覆盖，路径由 Go config 解析。浏览器客户端保存到运行 Go 的机器，并非访问者机器。
+默认目录为 Go 服务启动工作目录下的 .sql-studio/state，SQLDESK_STATE_DIR 可指定当前状态目录；SQLDESK_DATA_DIR 可显式指定当前连接目录，默认与状态目录相同。只读写当前目录和最新格式，没有其他目录探测、跨目录搬运、字段别名、格式转换或浏览器存储回退。仅一个后端进程拥有目录。
 
-| 文件            | 内容                                                                          |
-| --------------- | ----------------------------------------------------------------------------- |
-| workspace.json  | 页签、连接范围、SQL 草稿、结果快照、树展开/选中、编辑位置、侧栏宽度及结果高度 |
-| history.json    | 按连接 ID 隔离的执行历史，每个连接最多50条                                    |
-| appearance.json | 跟随系统/亮色/暗色主题                                                        |
-| ai.json         | DeepSeek Key、模型及续写开关；只由后端读写密钥，接口响应脱敏                  |
+| 文件 | 当前内容 |
+| --- | --- |
+| workspace-index.json | v2 页面、内容引用、查询范围与布局轻量索引 |
+| workspace-parts/<SHA256>.json | 按页保存的 SQL 草稿与结果 |
+| history.json | 各连接最近50条执行历史 |
+| appearance.json | 完整 theme/fontSize 外观偏好 |
+| ai-models.json | 模型配置列表、使用处选择的记录和补全偏好 |
+| connections.json | connections/groups 对象，连接必须明确保存 type/group，密码为 AES-GCM 密文 |
+| master.key | 连接加密密钥，不能缺失后覆盖已有连接 |
+| agent/layout.json | 当前 mode/activeId/draft/expanded 布局 |
+| agent/conversations/ | 当前 v2 manifest、轻量索引与消息/事件内容块 |
 
-workspace/history/appearance/ai 等状态分区文件格式如下（connections.json 继续使用原连接数组格式，master.key 为二进制密钥）：
+普通状态分区使用 {schemaVersion:1,revision,updatedAt,data,extensions?} 信封，业务内容只接受各自当前格式。GET/PUT /api/state/:section 以 revision 做 CAS，冲突409，不重试覆盖；连接、工作区与 Agent 使用各自专用接口。
 
-```json
-{
-  "schemaVersion": 1,
-  "revision": 3,
-  "updatedAt": "2026-10-26T00:00:00Z",
-  "data": { "theme": "dark" },
-  "extensions": {}
-}
-```
+首次文件缺失初始化当前默认值：空 v2 工作区、空历史、system/standard 外观、空模型列表、只读 Agent 布局。工作区首次创建当前索引，不读取其他文件。现存格式错误、文件损坏或权限故障明确报错，不能静默重置或改写。新建连接的空分组输入使用当前默认分组；读取文件不补缺失字段。
 
-schemaVersion 控制外层格式，data 内由各分区定义业务版本（工作区保留 version=1）；extensions 为未来扩展，不认识的扩展由当前仓库保留。新功能可增加独立命名分区，互不覆盖；不支持的外层版本拒绝读取与覆盖，未来升级必须显式迁移。
+每个分区最多32MiB内容，状态文件最多33MiB；0600临时文件 Sync 后同目录原子替换，目录0700。Windows权限取决于当前目录 ACL。connections.json 与 master.key 须一起备份；公开连接接口不返回密码，模型配置接口逐行清除 Key，普通状态接口禁止访问连接文件与废弃密钥分区。
 
-GET/PUT /api/state/:section 提供读写。PUT 必须携带读取时 revision，旧窗口写入返回409，不自动覆盖。每区最多32MiB对象，读文件最多33MiB；同进程互斥、临时文件写入+Sync+同目录替换，故障不主动清空旧文件；仅一个服务进程拥有目录。Windows实际文件权限由所属用户ACL控制，非Unix权限保证。
+工作区与历史按当前防抖策略保存，顶部只在保存期间展示 loading，错误由页面区域提示。强制关闭可能丢失尚未提交修改。恢复不执行 SQL、不写业务数据库；查询草稿、结果和对话文本可能包含敏感内容。
 
-配置分区缺失时使用默认值并重新生成，浏览器旧记录不再读取。读取失败/损坏不回落浏览器写入。连接配置与原密钥迁入同一目录，密码仍加密存储，密钥不重新生成。配置本身为可读JSON，SQL及结果可能包含敏感业务内容。恢复不自动执行SQL，不写业务数据库。
-
-工作区300ms、历史200ms防抖；等待“已保存到本机”后关闭可确认最新请求成功。强制关闭可能丢失尚未提交变更。多个浏览器窗口并发编辑发生冲突时，需要刷新读取最新配置。
-
-默认不再自动选择用户主目录或旧 .sqloom 目录；旧配置原样保留，可整体复制到新的启动目录配置路径继续使用。显式 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 仍保留。
-
-配置缺失（含运行中删除目录）属于正常初始化：写入时重建目录；重新打开使用默认布局、空历史、跟随系统主题，不再读取浏览器旧记录。真实权限或损坏错误仍提示，提示栏可以关闭。
-
-同目录另有 connections.json（连接及 AES-GCM 密文）与 master.key（原始加密密钥），两者必须一起备份。首次升级从后端旧 data/ 校验迁移，不覆盖不同目标，成功后清理旧文件；显式 SQLDESK_DATA_DIR 可继续使用独立目录。普通 /state/connections 接口禁用，连接仍通过专用 API 操作。
+工作区内容按散列保存，提交先发布分片再提交索引，读取校验散列；未引用内容按当前回收策略清理，不删除仍被索引引用的内容。Agent 只读写当前 v2 分片会话，不转换其他会话格式。

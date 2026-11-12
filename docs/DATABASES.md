@@ -10,7 +10,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前�
 
 连接表单可选引擎，切换新建类型更新默认端口和维护库并保留其他已填信息；编辑已有连接不更换引擎。名称、主机、用户名不预填。密码仅后端 AES-GCM 保存，编辑留空保留旧密码；连接分组默认“默认分组”，只影响树布局。SSL 启用后校验证书链和主机名，不提供跳过校验；暂不支持自定义 CA、客户端证书、SSH 隧道。
 
-连接和加密密码保存在本地 connections.json，密钥位于 master.key。旧连接缺少 type 时兼容 MySQL；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
+连接和加密密码保存在本地 connections.json，密钥位于 master.key。当前连接文件必须明确保存 type/group；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
 每个查询页独立保存连接、数据库、表和 SQL。MySQL/MariaDB/PostgreSQL SQL 窗口显式允许查询、DDL 和 DML；API 未指定 allowWrite 时仍默认只读。每个 API 请求单语句、最长 30 秒、默认 1000 最大 5000 行、约 8 MiB 字段内容。整数/DECIMAL/NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。各条请求不共享事务、SET 或临时表，取消不表示回滚。
 

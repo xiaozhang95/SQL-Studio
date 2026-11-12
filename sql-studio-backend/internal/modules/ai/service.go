@@ -79,13 +79,17 @@ func (s *Service) Assist(ctx context.Context, input model.AIRequest) (model.AIRe
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	doc, err := s.repository.Read(ctx, "ai")
+	doc, err := s.repository.Read(ctx, model.AIModelsSection)
 	if err != nil {
 		return empty, err
 	}
 	var config model.AIConfig
-	if json.Unmarshal(doc.Data, &config) != nil || config.Provider != "deepseek" || config.APIKey == "" {
-		return empty, errors.New("请先在顶部 AI 配置中保存 DeepSeek API Key")
+	if json.Unmarshal(doc.Data, &config) != nil {
+		return empty, errors.New("模型列表配置无效")
+	}
+	selected, ok := config.SelectedConfiguration()
+	if !ok || selected.Provider != "deepseek" {
+		return empty, errors.New("请先添加模型并在使用处选择")
 	}
 	if input.Action == "complete" && config.CompletionEnabled != nil && !*config.CompletionEnabled {
 		return empty, errors.New("AI 续写已关闭")
@@ -97,7 +101,7 @@ func (s *Service) Assist(ctx context.Context, input model.AIRequest) (model.AIRe
 		system += " Optimize the supplied SQL while preserving semantics, result columns, ordering, NULL and duplicate behavior. Return {\"sql\":\"complete rewritten SQL\",\"explanation\":\"Chinese explanation\"}. Explain assumptions, semantic risks and optional index suggestions in Chinese. Without an execution plan do not claim measured performance improvement. Do not include CREATE INDEX or other extra statements in sql."
 	}
 	payload, _ := json.Marshal(input)
-	content, err := s.generator.Generate(ctx, config.APIKey, config.Model, []model.AIMessage{{Role: "system", Content: system}, {Role: "user", Content: string(payload)}}, tokens)
+	content, err := s.generator.Generate(ctx, selected.APIKey, selected.Model, []model.AIMessage{{Role: "system", Content: system}, {Role: "user", Content: string(payload)}}, tokens)
 	if err != nil {
 		return empty, err
 	}
@@ -119,7 +123,7 @@ func (s *Service) Assist(ctx context.Context, input model.AIRequest) (model.AIRe
 
 // Models 允许使用未保存的新 Key 获取模型；缺省复用后端密钥，响应不含密钥。
 func (s *Service) Models(ctx context.Context, input model.AIModelsRequest) ([]model.AIModel, error) {
-	if input.Provider != "deepseek" || len(input.APIKey) > 512 {
+	if input.Provider != "deepseek" || len(input.APIKey) > 512 || len(input.ConfigID) > 80 {
 		return nil, errors.New("AI 服务商或 Key 无效")
 	}
 	select {
@@ -132,15 +136,29 @@ func (s *Service) Models(ctx context.Context, input model.AIModelsRequest) ([]mo
 	defer cancel()
 	key := strings.TrimSpace(input.APIKey)
 	if key == "" {
-		doc, err := s.repository.Read(ctx, "ai")
+		doc, err := s.repository.Read(ctx, model.AIModelsSection)
 		if err != nil {
 			return nil, err
 		}
 		var config model.AIConfig
-		if json.Unmarshal(doc.Data, &config) != nil || config.Provider != input.Provider || config.APIKey == "" {
+		if json.Unmarshal(doc.Data, &config) != nil || input.ConfigID == "" {
 			return nil, errors.New("请先填写 API Key")
 		}
-		key = config.APIKey
+		if input.ConfigID != "" {
+			key = ""
+			for _, entry := range config.Configurations {
+				if entry.ID == input.ConfigID && entry.Provider == input.Provider {
+					key = entry.APIKey
+					break
+				}
+			}
+			if key == "" {
+				return nil, errors.New("指定模型配置不存在或未设置 Key")
+			}
+		}
+		if key == "" {
+			return nil, errors.New("请先填写 API Key")
+		}
 	}
 	lister, ok := s.generator.(ModelLister)
 	if !ok {

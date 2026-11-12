@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -110,31 +109,6 @@ func TestGroupsRejectInvalidOperationsAndFailedWriteKeepsMemory(t *testing.T) {
 	}
 	if !reflect.DeepEqual(store.Groups(), before) {
 		t.Fatal("failed write changed memory")
-	}
-}
-
-func TestExistingConnectionArrayLoadsWithoutRewritingCiphertext(t *testing.T) {
-	dir := t.TempDir()
-	store, err := Open(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = store.Save(model.Connection{Name: "existing", Group: "existing-group", Password: "secret"}); err != nil {
-		t.Fatal(err)
-	}
-	data, err := json.Marshal(store.items)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = os.WriteFile(store.path, data, 0600); err != nil {
-		t.Fatal(err)
-	}
-	reopened, err := Open(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(reopened.items, store.items) || !containsGroup(reopened.Groups(), "existing-group") {
-		t.Fatal("existing connections changed")
 	}
 }
 

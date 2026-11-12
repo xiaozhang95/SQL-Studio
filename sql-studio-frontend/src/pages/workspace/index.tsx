@@ -45,7 +45,12 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
       <PageHeader
         desktopTitle={model.tab.id ? workspacePageTitle(model.tab) : 'SQL Studio'}
         desktopActive={active}
-        actions={<SaveStatus restoring={!model.workspaceReady || (!themeReady && !themeError)} saving={model.saving || themeSaving} error={storageError} />}
+        actions={
+          <>
+            <SaveStatus saving={model.workspaceReady && themeReady && (model.saving || themeSaving)} error={storageError} />
+            <SystemSettings themeMode={themeMode} themeReady={themeReady} {...appearancePreferences} />
+          </>
+        }
       >
         {' '}
         <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
@@ -70,7 +75,6 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
           </Button>
         )}
         <SectionNavigation destination="agent" onSwitch={onOpenAgent} />
-        <SystemSettings themeMode={themeMode} themeReady={themeReady} {...appearancePreferences} />
       </PageHeader>
       {noticeError && (
         <Alert

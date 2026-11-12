@@ -66,16 +66,12 @@ func TestDefaultConfigurationFollowsStartupWorkingDirectory(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
 	for _, dir := range []string{first, second} {
 		t.Chdir(dir)
-		// A stale folder name must not override the requested startup-relative location.
-		if err := os.MkdirAll(filepath.Join(dir, ".sqloom", "state"), 0700); err != nil {
-			t.Fatal(err)
-		}
 		cfg, err := Load()
 		if err != nil {
 			t.Fatal(err)
 		}
 		want := filepath.Join(dir, ".sql-studio", "state")
-		if cfg.StateDir != want || cfg.DataDir != want || cfg.LegacyDataDir != filepath.Join(dir, "data") {
+		if cfg.StateDir != want || cfg.DataDir != want {
 			t.Fatalf("cwd %s: %#v", dir, cfg)
 		}
 		if _, err := os.Stat(want); !os.IsNotExist(err) {
@@ -96,7 +92,7 @@ func TestRelativeConfigurationOverridesUseWorkingDirectory(t *testing.T) {
 	}
 	t.Setenv("SQLDESK_DATA_DIR", "custom-connections")
 	cfg, err = Load()
-	if err != nil || cfg.DataDir != filepath.Join(dir, "custom-connections") || cfg.LegacyDataDir != "" {
+	if err != nil || cfg.DataDir != filepath.Join(dir, "custom-connections") {
 		t.Fatal("relative data override", cfg, err)
 	}
 }

@@ -16,7 +16,6 @@ import { saveSQL } from '@/utils/sqlSave'
 import { resultPanelLayout, scopeCloseDialogLayout } from '../../constant/layout'
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
-import { presentObjectPage, presentTableList } from '../../utils/objectPresentation'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
@@ -171,7 +170,7 @@ export const useWorkspace = (active = true) => {
   const batch = runs[activeTab]
   const statementRun = batch?.statements?.[resultIndex]
   const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, id: `${batch.id}:${resultIndex}` } : batch
-  const result = useMemo(() => (tab.kind === 'structure' && !tab.table ? presentTableList(run?.result, adapter, tab.schema) : run?.result), [run?.result, adapter, tab.kind, tab.table, tab.schema])
+  const result = run?.result
   const resultSearch = resultViews[activeTab]?.search || ''
   const tablePage = resultViews[activeTab]?.page || 1
   const openedKey = JSON.stringify(
@@ -311,14 +310,9 @@ export const useWorkspace = (active = true) => {
     () =>
       reconcileWorkspacePages(tabs, {
         validateSchemas: !objectBusy,
-        snapshots: objects.snapshots,
-        present: (page) => {
-          if (!storage.ready || connectionLoading || connectionError) return page
-          const owner = connections.find((connection) => connection.id === page.connectionId)
-          return owner ? presentObjectPage(page, getDatabaseAdapter(owner.type)) : page
-        }
+        snapshots: objects.snapshots
       }),
-    [tabs, objectBusy, objects.snapshots, storage.ready, connectionLoading, connectionError, connections]
+    [tabs, objectBusy, objects.snapshots]
   )
   // 只调整当前组件自身状态；引用守卫确保校正后下一次渲染稳定。
   if (reconciledTabs !== tabs) setTabs(reconciledTabs)

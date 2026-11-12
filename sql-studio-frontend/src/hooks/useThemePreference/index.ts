@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { readState, writeState } from '@/services/userState'
-import type { FontSizePreference, ThemePreference } from '@/typings/theme'
+import type { AppearanceSettings, FontSizePreference, ThemePreference } from '@/typings/theme'
 
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
 const subscribeTheme = (listener: () => void) => {
@@ -15,17 +15,18 @@ export const useThemePreference = () => {
   const [preference, setPreference] = useState<ThemePreference>('system')
   const [fontSizePreference, setFontSizePreference] = useState<FontSizePreference>('standard')
   const [ready, setReady] = useState(false)
-  const [savedPreference, setSavedPreference] = useState<{ theme: ThemePreference; fontSize: FontSizePreference }>()
+  const [saving, setSaving] = useState(false)
+  const savePending = useRef(false)
   const [error, setError] = useState('')
   useEffect(() => {
     let stale = false
-    void readState<{ theme: ThemePreference; fontSize?: FontSizePreference }>('appearance', async () => ({ theme: 'system' }))
+    void readState<AppearanceSettings>('appearance', async () => ({ theme: 'system', fontSize: 'standard' }))
       .then((saved) => {
         if (!['light', 'dark', 'system'].includes(saved.theme)) throw new Error('外观配置格式不受支持')
-        if (saved.fontSize !== undefined && saved.fontSize !== 'small' && saved.fontSize !== 'standard' && saved.fontSize !== 'large') throw new Error('界面字号配置格式不受支持')
+        if (saved.fontSize !== 'small' && saved.fontSize !== 'standard' && saved.fontSize !== 'large') throw new Error('界面字号配置格式不受支持')
         if (!stale) {
           setPreference(saved.theme)
-          setFontSizePreference(saved.fontSize ?? 'standard')
+          setFontSizePreference(saved.fontSize)
           setReady(true)
         }
       })
@@ -36,23 +37,25 @@ export const useThemePreference = () => {
       stale = true
     }
   }, [])
-  useEffect(() => {
-    if (!ready) return
-    let stale = false
-    void writeState('appearance', { theme: preference, fontSize: fontSizePreference })
-      .then(() => {
-        if (!stale) {
-          setError('')
-          setSavedPreference({ theme: preference, fontSize: fontSizePreference })
-        }
-      })
-      .catch((reason) => {
-        if (!stale) setError(reason instanceof Error ? reason.message : '外观配置保存失败')
-      })
-    return () => {
-      stale = true
+  const savePreferences = async (settings: AppearanceSettings) => {
+    if (!ready) throw new Error('外观配置尚未读取')
+    if (savePending.current) throw new Error('外观配置正在保存')
+    savePending.current = true
+    setSaving(true)
+    setError('')
+    try {
+      await writeState('appearance', settings)
+      setPreference(settings.theme)
+      setFontSizePreference(settings.fontSize)
+    } catch (reason) {
+      const cause = reason instanceof Error ? reason : new Error('外观配置保存失败')
+      setError(cause.message)
+      throw cause
+    } finally {
+      savePending.current = false
+      setSaving(false)
     }
-  }, [ready, preference, fontSizePreference])
+  }
   const systemDark = useSyncExternalStore(subscribeTheme, getSystemTheme)
   const mode = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
   useLayoutEffect(() => {
@@ -61,12 +64,11 @@ export const useThemePreference = () => {
 
   return {
     preference,
-    setPreference,
     fontSizePreference,
-    setFontSizePreference,
+    savePreferences,
     mode,
     error,
     ready,
-    saving: ready && (savedPreference?.theme !== preference || savedPreference?.fontSize !== fontSizePreference) && !error
+    saving
   }
 }

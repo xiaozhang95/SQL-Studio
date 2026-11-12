@@ -6,7 +6,7 @@ const documents = new Map<string, Document<unknown>>()
 const revisions = new Map<string, number>()
 const writes = new Map<string, Promise<void>>()
 /** Go 是唯一持久化目标；缺失分区才使用调用方默认值，读取失败不回退并覆盖配置。 */
-export async function readState<T>(section: string, legacy: () => Promise<T>): Promise<T> {
+export async function readState<T>(section: string, defaults: () => Promise<T>): Promise<T> {
   let pending = reads.get(section)
   if (!pending) {
     pending = request<Document<unknown>>('/state/' + encodeURIComponent(section))
@@ -17,7 +17,7 @@ export async function readState<T>(section: string, legacy: () => Promise<T>): P
   if (doc.schemaVersion !== 1 || !Number.isSafeInteger(doc.revision) || doc.revision < 0) throw new Error('用户配置版本不受支持')
   if (!revisions.has(section)) revisions.set(section, doc.revision)
   documents.set(section, doc)
-  return doc.data === null ? legacy() : (doc.data as T)
+  return doc.data === null ? defaults() : (doc.data as T)
 }
 export function writeState(section: string, value: unknown): Promise<void> {
   return writeSerializedState(section, JSON.stringify(value))

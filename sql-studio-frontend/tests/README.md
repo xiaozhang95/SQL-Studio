@@ -19,17 +19,17 @@ agent.test.mjs覆盖裸JSON/围栏JSON与文字混排、多个表格、字段顺
 - `pnpm test:sql`：MySQL 标识符、表预览、语句拆分、引号/注释边界、历史标记去重，以及结果 SQL 定义/语句列识别和普通元数据列排除。
 - `node --test tests/structure.test.mjs`：模块入口、README、原生样式归属及本地文档链接，已纳入 `pnpm lint`。不读取 data、凭据、依赖或构建目录；后端依赖边界由原生 Go 架构测试独立检查。
 
-`pnpm test:storage` 使用 Node 24 原生测试运行器与仅测试依赖 fake-indexeddb，验证真实 Web Crypto：不可导出密钥、密文与随机 IV、跨客户端密钥恢复、并发写入顺序、密文及认证数据篡改检测。不读取真实浏览器资料或数据库业务数据。
+`pnpm test:storage` 执行当前服务端用户配置测试，覆盖缺失文件初始化、串行保存、修订与冲突。
 
 页面恢复、主题、树布局、SQL 补全与结果状态联动另用虚构接口做浏览器验证。
 
-query-output.test.mjs 验证 104 条批量执行回执不生成数据结果导航、混合查询保留原语句索引、空结果/RETURNING、失败默认消息与旧快照兼容；浏览器另检查摘要分页、超过 8 个结果集的下拉切换与结果内容。
+query-output.test.mjs 验证 104 条批量执行回执不生成数据结果导航、混合查询保留原语句索引、空结果/RETURNING、失败默认消息与当前对象单结果；浏览器另检查摘要分页、超过 8 个结果集的下拉切换与结果内容。
 
 - `pnpm test:objects`：库表操作 SQL 目标转义、默认值/SQL mode、类型与表达式注入拒绝、特殊字段保护及差异 ALTER；无数据库访问。
 
 数据编辑回归：`node --test tests/data-editing.test.mjs`，覆盖精确主键、联合主键、NULL/空字符串、标识符/值注入边界及生成列限制，不访问真实数据库。
 
-用户配置回归：node --test tests/user-state.test.mjs，覆盖服务端优先、旧记录迁移、串行修订及冲突，不访问真实用户文件。
+用户配置回归：node --test tests/user-state.test.mjs，覆盖服务端优先、当前格式读写、串行修订及冲突，不访问真实用户文件。
 
 对象树回归：node --test tests/object-tree.test.mjs，验证数据库及分类节点双击只展开/折叠且不打开页面、Schema/表的原始双击入口、多连接及特殊名称节点身份、复合索引顺序、前缀、降序和表达式说明；浏览器使用独立端口和虚构数据检查，不连接真实数据库。
 
@@ -77,4 +77,4 @@ desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 doc
 
 review-fixes.test.mjs 覆盖快捷键可见/目标/模态框/组合键边界、分页历史及恢复副本取消与写入失败；workspace-split 追加 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。以上均为替身/单元测试，不替代真实 CodeMirror、HTTP/数据库与下载验证。
 
-AI 配置回归：node --test tests/ai-settings.test.mjs。覆盖三项配置不发送地址、不重置补全偏好，补全开关按最新修订保存且保留模型，失败不改变开关，以及未选模型时隐藏工具。通过真实 hook 及替身请求验证，不访问 DeepSeek 或数据库。
+AI 配置回归：node --test tests/ai-settings.test.mjs。覆盖仅新配置格式、模型显示名称、行内连接测试、列表不提供启用选择、多模型去重、发现不自动选择，以及使用处选择和配置保存保留补全偏好。使用真实 hook 与替身请求，不访问 DeepSeek 或数据库；测试代码随行为同步不代表已执行。

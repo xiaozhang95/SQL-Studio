@@ -113,8 +113,6 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
           )
         if (block.type === 'process') {
           const key = `process-${first.id}`
-          const legacyKeys = block.entries.map((e) => `${e.role === 'thinking' ? 'thinking' : 'tools'}-${e.id}`)
-          const groupKeys = new Set([key, ...legacyKeys])
           const toolCount = block.entries.filter((entry) => entry.role === 'tool').length
           const hasThinking = toolCount < block.entries.length
           let title = 'DeepSeek 思考过程'
@@ -126,9 +124,9 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
               key={key}
               title={title}
               icon={hasThinking ? undefined : <CodeOutlined className="chat-process-icon" />}
-              expanded={expanded.some((id) => groupKeys.has(id))}
+              expanded={expanded.includes(key)}
               onExpand={(open) => {
-                const remaining = expanded.filter((id) => !groupKeys.has(id))
+                const remaining = expanded.filter((id) => id !== key)
                 onExpanded(open ? [...remaining, key] : remaining)
               }}
             >

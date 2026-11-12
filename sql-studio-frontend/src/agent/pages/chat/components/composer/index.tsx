@@ -140,8 +140,8 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     trigger={['click']}
                     placement="topRight"
                     menu={{
-                      selectedKeys: aiStatus ? [aiStatus.model] : [],
-                      items: [...(aiStatus?.models.map((m) => ({ key: m.id, label: m.name, icon: <DeepSeekLogo size={CHAT.modelMenuIconSize} />, disabled: !aiStatus.configured })) ?? [])],
+                      selectedKeys: aiStatus ? [aiStatus.configId] : [],
+                      items: [...(aiStatus?.models.map((m) => ({ key: m.id, label: m.name, icon: <DeepSeekLogo size={CHAT.modelMenuIconSize} /> })) ?? [])],
                       onClick: ({ key }) => {
                         void onModelChange(key)
                       }
@@ -150,24 +150,18 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     <Button
                       type="text"
                       aria-label="当前模型"
-                      disabled={busy || settingsBusy || !aiStatus?.configured}
-                      title={!aiStatus?.configured ? '请在左上角系统设置中配置 DeepSeek API' : undefined}
+                      disabled={busy || settingsBusy || !aiStatus?.models.length}
+                      title={!aiStatus?.models.length ? '请在右上角系统设置中添加模型' : undefined}
                       icon={<DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >
-                      {aiStatus?.models.find((m) => m.id === aiStatus.model)?.name ?? 'DeepSeek'}
+                      {aiStatus?.models.find((m) => m.id === aiStatus.configId)?.name ?? '请选择模型'}
                       <DownOutlined aria-hidden="true" className="dropdown-chevron" />
                     </Button>
                   </Dropdown>
                   {busy ? (
                     <Tooltip title="终止生成">
-                      <Button
-                        {...CHAT.iconButton}
-                        danger
-                        aria-label="停止生成"
-                        icon={<span aria-hidden="true" className="chat-stop-icon" />}
-                        onClick={onStop}
-                      />
+                      <Button {...CHAT.iconButton} danger aria-label="停止生成" icon={<span aria-hidden="true" className="chat-stop-icon" />} onClick={onStop} />
                     </Tooltip>
                   ) : (
                     <Button

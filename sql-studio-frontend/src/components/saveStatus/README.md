@@ -1,3 +1,5 @@
 # 配置保存状态
 
-SaveStatus由工作区和Agent共用，接收restoring、saving、可选error；可选label/savedText/savedHint指定可访问名称、完成文案和说明，默认保留工作区“已保存到本机”。错误优先显示红色失败图标；恢复/保存显示蓝色旋转图标；完成显示绿色勾选。颜色使用Ant Design token，亮暗主题自动适配。Tooltip展示错误详情或保存含义，aria-live通知状态变化，不承载持久化逻辑。
+SaveStatus 由工作区和 Agent 共用，接收 saving、可选 error 和 label（默认“正在保存工作区…”）。仅 saving=true 且无 error 时展示 LoadingOutlined 旋转图标，不展示常驻文字、恢复状态、完成勾选或失败状态；空闲和失败时返回 null，不占位。Tooltip 与 aria-label 使用 label，aria-live 提供状态通知，组件不承载持久化逻辑。
+
+工作区与对话页在右侧“系统设置”入口前使用本组件，只在恢复完成后传入保存状态。保存失败由原有页面横幅或错误区域展示，隐藏 loading 不代表故障恢复。

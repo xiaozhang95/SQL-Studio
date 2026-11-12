@@ -4,6 +4,6 @@ import { AIProvider } from '../../typings'
 import type { AIAdapter } from '../../typings'
 
 export const deepseekAPI = {
-  listModels: (apiKey, signal) => listAIModels(AIProvider.DeepSeek, apiKey, signal),
+  listModels: (apiKey, signal, configId) => listAIModels(AIProvider.DeepSeek, apiKey, signal, configId),
   assist: assistSQL
 } satisfies Pick<AIAdapter, 'listModels' | 'assist'>

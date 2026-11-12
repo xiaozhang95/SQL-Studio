@@ -81,15 +81,6 @@ func (s *Store) Write(ctx context.Context, name string, input model.StateWrite) 
 	if name == model.WorkspaceIndexSection {
 		return model.StateDocument{}, errors.New("工作区索引必须通过专用接口保存")
 	}
-	if name == "workspace" {
-		index, err := s.read(model.WorkspaceIndexSection)
-		if err != nil {
-			return model.StateDocument{}, err
-		}
-		if index.Revision > 0 {
-			return model.StateDocument{}, fmt.Errorf("工作区已升级为按页存储，请刷新后继续: %w", model.ErrStateConflict)
-		}
-	}
 	return s.write(ctx, name, input)
 }
 func (s *Store) write(ctx context.Context, name string, input model.StateWrite) (model.StateDocument, error) {

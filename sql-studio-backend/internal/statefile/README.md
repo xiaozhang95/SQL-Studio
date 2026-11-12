@@ -1,19 +1,9 @@
 # 用户配置文件仓库
 
-Open(directory) 创建私有配置目录；Read/Write 接收 context、分区名和 model.StateWrite。每区独立 JSON，schemaVersion/revision/updatedAt/data/extensions；版本不支持或内容损坏拒绝覆盖，extensions 原样保留。分区只允许受限字符，禁止路径穿越；限 33 MiB 文件，0600 临时文件同步后同目录重命名。进程内互斥及修订号 CAS 防止窗口间覆盖，冲突返回 model.ErrStateConflict；仅支持一个服务进程拥有目录。读写前与提交前检查取消，提交后取消不代表回滚。
+Open(directory) 创建当前配置目录；Read/Write 接收 context、分区名和 model.StateWrite，读取唯一当前路径。每区使用 schemaVersion/revision/updatedAt/data/extensions，JSON 损坏或版本无效返回错误，不回落其他文件或浏览器存储。文件最多33MiB，0600临时文件 Sync 后同目录替换，目录0700；同进程锁和 CAS 防止并发覆盖，继承取消，不承诺已提交操作可回滚。
 
-保存前重新确保目录存在；缺失文件视为新分区，允许当前会话旧revision连续重建，现存文件仍严格CAS。
+connections 与 workspace-index 由专用接口管理，不允许绕过仓库边界。目录首次缺失按当前默认值初始化，写入可重建目录；现存文件严格按当前格式校验。
 
-Open 仅确保目录存在，不添加启动强制写入检查。分区及工作区写入若被拒绝，保留系统错误并附带实际服务进程 PID、可执行文件路径和原配置目录，帮助识别旧服务或进程限制；不改目录、不改 ACL、不自动回退为空配置。
+ReadWorkspace/CommitWorkspace/ReadWorkspacePart 只使用 v2 workspace-index.json 与 workspace-parts/<SHA256>.json。首次缺失创建当前空索引，不读取其他工作区文件。索引仅有页面、引用和布局；每份草稿/结果最多32MiB，先发布不可变内容，再 CAS 提交索引。读取校验散列，失败保留当前文件，不转换其他格式。
 
-connections 为保留名称，Read/Write 一律拒绝，防止统一目录中的 connections.json 通过普通状态接口读取或覆盖。master.key 不属于 JSON 状态分区。
-
-ReadWorkspace/CommitWorkspace/ReadWorkspacePart 提供分片工作区：workspace-index.json 为v2轻量索引，workspace-parts/<SHA256>.json 为不可变草稿/结果。先0600临时文件同步、重命名内容，最后以严格CAS原子替换索引；失败或取消提交前不改变旧索引。读取内容校验散列及32MiB大小。普通 Read/Write 禁止访问 workspace-index，防止绕过专用引用校验。
-
-首次ReadWorkspace在后端迁移旧workspace.json，不改写原文件；迁移失败不发布索引。关闭页和更新留下的孤立内容经 CollectWorkspaceParts 清理，仅匹配受管散列文件，超过24小时或孤立内容总量超过128MiB时优先清理最旧内容，当前索引引用始终保留；多窗口持有很旧的索引可能遇到404，前端报告重试/刷新，不自动执行或覆盖。单进程互斥共享原仓库锁，不缓存全文。
-
-已迁移后旧格式 workspace 分区写入返回409，要求旧客户端刷新；不允许旧格式覆盖或与新索引分叉。回收最多每5秒检查一次，128MiB为孤立内容回收目标（不包括当前引用），不是所有用户结果的总容量限制。
-
-迁移会保留页面成功/失败及来源摘要到索引，并去掉与最后一条语句相同的顶层重复结果；所有语句与数据行保留，前端读取时重建共享引用。旧格式中缺少草稿、重复ID或非法页面类型时拒绝发布索引。
-
-孤儿内容枚举、读取文件信息及排序在仓库互斥锁外执行；删除前在锁内重新读取最新索引核验引用，防止误删扫描期间重新被引用的内容。每次最多处理128个候选，沿用24小时/128MiB策略，保存响应不等待回收。
+CollectWorkspaceParts 仅清理未引用的受管内容，按24小时/128MiB孤立内容目标回收；锁外枚举，删除前锁内核对最新引用，每批最多128个候选，不删除当前引用。调用方最多每5秒安排一次独立回收，不延迟保存成功。

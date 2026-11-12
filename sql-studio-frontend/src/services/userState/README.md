@@ -4,6 +4,6 @@ readState<T>(section,defaults) 读取 Go 的版本化分区，分区缺失才调
 
 writeState(section,value) 返回 Promise<void>，使用最近读取的 revision 串行保存同一分区，响应成功才更新本地修订和缓存。未先读取拒绝写入；冲突不重试覆盖，调用者提示刷新。错误交由调用方展示，状态只归属本浏览器会话。
 
-writeSerializedState(section,data) 仅供可信内部序列化器调用，直接组装修订信封，避免 JSON parse/stringify 往返；仍使用同一串行队列及 CAS，不重试覆盖冲突。writeState 在调用时捕获 JSON，兼容原有调用方和保存语义。
+writeSerializedState(section,data) 仅供可信内部序列化器调用，直接组装修订信封，避免 JSON parse/stringify 往返；仍使用同一串行队列及 CAS，不重试覆盖冲突。writeState 在调用时捕获 JSON，调用方使用当前接口与保存语义。
 
 409 使用明确的配置冲突说明；工作台提供恢复入口导出未保存草稿及历史，再由用户重新载入，不在失败后自动推进 revision 或覆盖其他窗口。

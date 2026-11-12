@@ -147,17 +147,18 @@ func (s *Store) load(ctx context.Context, id string) (model.Conversation, error)
 			if err != nil {
 				return zero, err
 			}
-			if v.SchemaVersion == 2 {
-				v.Data.Messages, err = loadParts[model.Message](ctx, s, id, v.MessageParts)
-				if err != nil {
-					return zero, err
-				}
-				v.Data.Events, err = loadParts[model.Event](ctx, s, id, v.EventParts)
-				if err != nil {
-					return zero, err
-				}
+			if v.SchemaVersion != 2 {
+				return zero, errors.New("会话记录版本无效")
 			}
-			if (v.SchemaVersion != 1 && v.SchemaVersion != 2) || v.Data.ID != id || v.Data.Revision != i.Revision || len(v.Data.Messages) == 0 || v.Data.Messages[0].Role != "system" || v.Data.Summary.Through < 0 || v.Data.Summary.Through > len(v.Data.Messages) {
+			v.Data.Messages, err = loadParts[model.Message](ctx, s, id, v.MessageParts)
+			if err != nil {
+				return zero, err
+			}
+			v.Data.Events, err = loadParts[model.Event](ctx, s, id, v.EventParts)
+			if err != nil {
+				return zero, err
+			}
+			if v.Data.ID != id || v.Data.Revision != i.Revision || len(v.Data.Messages) == 0 || v.Data.Messages[0].Role != "system" || v.Data.Summary.Through < 0 || v.Data.Summary.Through > len(v.Data.Messages) {
 				return zero, errors.New("会话记录版本或内容无效")
 			}
 			return v.Data, nil
@@ -197,7 +198,7 @@ func (s *Store) Save(ctx context.Context, value model.Conversation) (model.Conve
 		if err = read(s.path(value.ID, old), &prior); err != nil {
 			return value, err
 		}
-		if (prior.SchemaVersion != 1 && prior.SchemaVersion != 2) || prior.Data.ID != value.ID || prior.Data.Revision != old {
+		if prior.SchemaVersion != 2 || prior.Data.ID != value.ID || prior.Data.Revision != old {
 			return value, errors.New("会话记录版本或内容无效")
 		}
 	}
@@ -258,9 +259,9 @@ func (s *Store) ReadWorkspace(ctx context.Context) (model.Workspace, error) {
 	return s.workspace(ctx)
 }
 func (s *Store) workspace(ctx context.Context) (model.Workspace, error) {
-	fallback := model.Workspace{SchemaVersion: 1, State: model.Layout{Expanded: []string{}}}
+	initial := model.Workspace{SchemaVersion: 1, State: model.Layout{Mode: "readonly", Expanded: []string{}}}
 	if err := ctx.Err(); err != nil {
-		return fallback, err
+		return initial, err
 	}
 	var raw struct {
 		SchemaVersion *int       `json:"schemaVersion"`
@@ -270,27 +271,27 @@ func (s *Store) workspace(ctx context.Context) (model.Workspace, error) {
 			ActiveID *string   `json:"activeId"`
 			Draft    *string   `json:"draft"`
 			Expanded *[]string `json:"expanded"`
-			Mode     string    `json:"mode"`
+			Mode     *string   `json:"mode"`
 		} `json:"state"`
 	}
 	err := read(filepath.Join(s.dir, "layout.json"), &raw)
 	if errors.Is(err, os.ErrNotExist) {
-		return fallback, nil
+		return initial, nil
 	}
 	if err != nil {
-		return fallback, err
+		return initial, err
 	}
-	if raw.SchemaVersion == nil || *raw.SchemaVersion != 1 || raw.Revision == nil || raw.UpdatedAt == nil || raw.State == nil || raw.State.ActiveID == nil || raw.State.Draft == nil || raw.State.Expanded == nil {
-		return fallback, errors.New("布局版本或内容损坏，拒绝覆盖")
+	if raw.SchemaVersion == nil || *raw.SchemaVersion != 1 || raw.Revision == nil || raw.UpdatedAt == nil || raw.State == nil || raw.State.Mode == nil || raw.State.ActiveID == nil || raw.State.Draft == nil || raw.State.Expanded == nil {
+		return initial, errors.New("布局版本或内容损坏，拒绝覆盖")
 	}
 	state := raw.State
 	if (*state.ActiveID != "" && !validID.MatchString(*state.ActiveID)) || len(*state.Draft) > model.MessageMaxBytes || len(*state.Expanded) > 1024 {
-		return fallback, errors.New("本地布局范围无效")
+		return initial, errors.New("本地布局范围无效")
 	}
-	if state.Mode != "" && state.Mode != "readonly" && state.Mode != "write" {
+	if *state.Mode != "readonly" && *state.Mode != "write" {
 		return model.Workspace{}, errors.New("保存的操作模式无效")
 	}
-	return model.Workspace{SchemaVersion: 1, Revision: *raw.Revision, UpdatedAt: *raw.UpdatedAt, State: model.Layout{Mode: state.Mode, ActiveID: *state.ActiveID, Draft: *state.Draft, Expanded: *state.Expanded}}, nil
+	return model.Workspace{SchemaVersion: 1, Revision: *raw.Revision, UpdatedAt: *raw.UpdatedAt, State: model.Layout{Mode: *state.Mode, ActiveID: *state.ActiveID, Draft: *state.Draft, Expanded: *state.Expanded}}, nil
 }
 func (s *Store) WriteWorkspace(ctx context.Context, input model.Workspace) (model.Workspace, error) {
 	s.mu.Lock()
@@ -303,7 +304,10 @@ func (s *Store) WriteWorkspace(ctx context.Context, input model.Workspace) (mode
 		return old, model.ErrConflict
 	}
 	if input.State.Expanded == nil {
-		input.State.Expanded = []string{}
+		return old, errors.New("布局展开状态不能为空")
+	}
+	if input.State.Mode != "readonly" && input.State.Mode != "write" {
+		return old, errors.New("操作模式无效")
 	}
 	input.SchemaVersion = 1
 	input.Revision++

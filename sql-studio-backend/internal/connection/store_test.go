@@ -47,7 +47,7 @@ func TestEncryptedStoreRoundTrip(t *testing.T) {
 		t.Fatal("update/reload lost credentials")
 	}
 	if loaded.Type != model.TypeMySQL || reopened.List()[0].Type != model.TypeMySQL {
-		t.Fatal("legacy connection did not default to MySQL")
+		t.Fatal("new connection did not retain its MySQL type")
 	}
 	reopened.items[0].Password = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 	if _, err = reopened.Get(saved.ID); err == nil {

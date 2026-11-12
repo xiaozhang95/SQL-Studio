@@ -15,7 +15,7 @@ function harness(modulePath, failWrite = false) {
     notifications = []
   const browser = new EventTarget()
   browser.addEventListener('ai-settings-saved', () => notifications.push('saved'))
-  let document = { revision: 7, data: { provider: 'deepseek', configured: true, model: 'deepseek-flash', completionEnabled: false } }
+  let document = { revision: 7, data: { configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-flash', modelName: 'Flash', configured: true }], activeId: 'a', completionEnabled: false } }
   const react = {
     useState(initial) {
       const index = cursor++
@@ -44,19 +44,24 @@ function harness(modulePath, failWrite = false) {
     useCallback: (callback) => callback
   }
   const request = async (path, options = {}) => {
+    assert.equal(path, '/state/ai-models', '模型配置只访问新分区')
     if (options.method === 'PUT') {
       const body = JSON.parse(options.body)
       writes.push(body)
       if (failWrite) throw new Error('配置保存冲突')
       assert.equal(body.revision, document.revision)
-      document = { revision: document.revision + 1, data: { ...document.data, ...body.data } }
+      const data = { ...document.data, ...body.data }
+      if (body.data.configurations) {
+        data.configurations = body.data.configurations.map(({ id, provider, model, modelName }) => ({ id, provider, model, modelName, configured: true }))
+      }
+      document = { revision: document.revision + 1, data }
     }
     return structuredClone(document)
   }
   const adapter = {
     profile: { value: 'deepseek', defaultModel: 'deepseek-flash' },
-    listModels: async (key, signal) => {
-      discovered.push({ key, signal })
+    listModels: async (key, signal, configId) => {
+      discovered.push({ key, signal, configId })
       return [
         { id: 'deepseek-flash', name: 'DeepSeek Flash' },
         { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro' }
@@ -67,6 +72,7 @@ function harness(modulePath, failWrite = false) {
     react,
     '@/ai': { aiProviders: [{ value: 'deepseek' }], getAIAdapter: () => adapter, isAIProvider: (value) => value === 'deepseek' },
     '@/utils/request': { request },
+    '@/ai/typings': { maxAIConfigurations: 64, aiModelsSection: 'ai-models' },
     '@/databases': { getDatabaseAdapter: () => ({}) },
     '../../utils/aiCompletion': { aiCompletion: () => [] },
     '../../utils/aiContext': { buildAIContext: () => ({}) }
@@ -95,7 +101,7 @@ function harness(modulePath, failWrite = false) {
     render(...args) {
       cursor = 0
       effectCursor = 0
-      return (exports.useAISettings || exports.useAISQL)(...args)
+      return (exports.useAISettings || exports.useAISQL || exports.useModelEditor)(...args)
     },
     close() {
       effects.forEach((effect) => effect.cleanup?.())
@@ -103,42 +109,103 @@ function harness(modulePath, failWrite = false) {
   }
 }
 
-test('配置面板读取共享模型，保存只更新服务商、Key 和模型，不重置补全偏好或发送地址', async () => {
+const availableModels = [
+  { id: 'deepseek-flash', name: 'Flash' },
+  { id: 'deepseek-v4-pro', name: 'Pro' }
+]
+const entry = (id, model, apiKey = '') => ({
+  id,
+  provider: 'deepseek',
+  model,
+  modelName: availableModels.find((value) => value.id === model)?.name || '',
+  apiKey,
+  configured: !apiKey,
+  models: availableModels,
+  modelsLoading: false,
+  modelsError: ''
+})
+
+test('新格式保存模型显示名称和列表，不包含旧配置字段；每条记录可测试连接', async () => {
   const f = harness('../src/hooks/useAISettings/index.ts')
   try {
     await f.render().show()
-    await settle()
-    let model = f.render()
-    assert.equal(model.configured, true)
-    assert.equal(model.models.length, 2)
-    model.setModel('deepseek-v4-pro')
-    model = f.render()
-    assert.equal(await model.save(), true)
-    assert.deepEqual(f.writes[0].data, { provider: 'deepseek', model: 'deepseek-v4-pro', apiKey: '' })
-    assert.equal(f.document.data.completionEnabled, false)
-    assert.equal(f.document.data.model, 'deepseek-v4-pro')
-    assert.equal(f.notifications.length, 1)
+    const existing = f.render().entries[0]
+    assert.equal(existing.modelName, 'Flash')
+    assert.equal(f.render().selectActive, undefined)
+    await f.render().testConnection(existing.id)
+    assert.equal(f.render().connectionTests.a.success, true)
+    assert.equal(f.discovered[0].configId, 'a')
     assert.equal(f.discovered[0].key, '')
+    assert.equal(f.render().upsertEntry({ ...existing, model: 'deepseek-v4-pro', modelName: 'Pro', models: availableModels }), true)
+    assert.equal(await f.render().save(), true)
+    assert.deepEqual(f.writes[0].data, { activeId: 'a', configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-v4-pro', modelName: 'Pro', apiKey: '' }] })
+    assert.equal(f.document.data.completionEnabled, false)
+    assert.equal(f.render().changed, false)
   } finally {
     f.close()
   }
 })
 
-test('首次配置填写 Key 后加载模型并保存选择，不发送额外字段', async () => {
+test('同供应商可添加不同模型，列表不提供使用选择；重复与空模型拒绝', async () => {
   const f = harness('../src/hooks/useAISettings/index.ts')
   try {
     f.document = { revision: 0, data: null }
     await f.render().show()
-    let model = f.render()
-    assert.equal(model.configured, false)
-    assert.equal(f.discovered.length, 0)
-    model.changeKey(' fixture-only-key ')
-    await f.render().refreshModels()
-    model = f.render()
-    model.setModel('deepseek-v4-pro')
+    assert.equal(f.render().ready, true)
+    assert.equal(f.render().error, '')
+    assert.equal(f.render().upsertEntry(entry('a', '', 'fixture-key-a')), false)
+    assert.equal(f.render().upsertEntry(entry('a', 'deepseek-flash', 'fixture-key-a')), true)
+    assert.equal(f.render().upsertEntry(entry('b', 'deepseek-v4-pro', 'fixture-key-b')), true)
+    assert.equal(f.render().upsertEntry(entry('c', 'deepseek-flash', 'fixture-key-c')), false)
+    assert.equal(f.render().entries.length, 2)
     assert.equal(await f.render().save(), true)
-    assert.equal(f.discovered[0].key, 'fixture-only-key')
-    assert.deepEqual(f.writes[0], { revision: 0, data: { provider: 'deepseek', model: 'deepseek-v4-pro', apiKey: 'fixture-only-key' } })
+    assert.equal(f.document.data.activeId, '')
+    assert.equal('provider' in f.writes[0].data, false)
+  } finally {
+    f.close()
+  }
+})
+
+test('旧单条格式不转换为列表', async () => {
+  const f = harness('../src/hooks/useAISettings/index.ts')
+  try {
+    f.document = { revision: 1, data: { provider: 'deepseek', model: 'old-model', configured: true } }
+    await f.render().show()
+    assert.equal(f.render().ready, false)
+    assert.equal(f.render().entries.length, 0)
+    assert.match(f.render().error, /配置列表无效/)
+  } finally {
+    f.close()
+  }
+})
+
+test('添加弹框测试连接不自动选择模型，重复供应商模型不可提交', async () => {
+  const selected = []
+  const f = harness('../src/components/aiSettings/hooks/useModelEditor/index.ts')
+  const configured = [entry('saved', 'deepseek-flash')]
+  const args = [
+    configured,
+    (value) => {
+      selected.push(value)
+      return true
+    }
+  ]
+  try {
+    f.render(...args).show()
+    f.render(...args).changeProvider('deepseek')
+    f.render(...args).changeKey('fixture-new-key')
+    await f.render(...args).refreshModels()
+    assert.equal(f.render(...args).draft.model, '')
+    assert.equal(f.render(...args).canCommit, false)
+    f.render(...args).changeModel('deepseek-flash')
+    assert.equal(f.render(...args).duplicate, true)
+    assert.equal(f.render(...args).canCommit, false)
+    f.render(...args).changeModel('deepseek-v4-pro')
+    assert.equal(f.render(...args).canCommit, true)
+    f.render(...args).commit()
+    assert.equal(selected[0].model, 'deepseek-v4-pro')
+    assert.equal(f.render(...args).draft, null)
+    assert.equal(f.discovered[0].key, 'fixture-new-key')
   } finally {
     f.close()
   }
@@ -153,10 +220,10 @@ test('补全开关按最新修订保存，保留已选模型并广播共享配�
     const model = f.render(...args)
     assert.equal(model.configured, true)
     assert.equal(model.enabled, false)
-    f.document = { revision: 9, data: { ...f.document.data, model: 'deepseek-v4-pro' } }
+    f.document = { revision: 9, data: { ...f.document.data, configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-v4-pro', modelName: 'Pro', configured: true }] } }
     await model.changeCompletion(true)
-    assert.deepEqual(f.writes[0], { revision: 9, data: { provider: 'deepseek', completionEnabled: true } })
-    assert.equal(f.document.data.model, 'deepseek-v4-pro')
+    assert.deepEqual(f.writes[0], { revision: 9, data: { activeId: 'a', completionEnabled: true, configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-v4-pro', modelName: 'Pro' }] } })
+    assert.equal(f.document.data.configurations[0].model, 'deepseek-v4-pro')
     assert.equal(f.notifications.length, 1)
     assert.equal(f.render(...args).enabled, true)
   } finally {
@@ -181,7 +248,7 @@ test('模型未选择时隐藏 AI 工具，补全保存失败保留原偏好并�
   }
   const missing = harness('../src/pages/workspace/hooks/useAISQL/index.ts')
   try {
-    missing.document = { revision: 1, data: { provider: 'deepseek', configured: true, model: '' } }
+    missing.document = { revision: 1, data: { configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-flash', modelName: 'Flash', configured: true }], activeId: '' } }
     missing.render(...args)
     await settle()
     assert.equal(missing.render(...args).configured, false)

@@ -4,6 +4,7 @@ import { workspace } from '../../services/workspace'
 import type { Layout } from '../../typings/workspace'
 
 const initial: Layout = {
+  mode: 'readonly',
   activeId: '',
   draft: '',
   expanded: []

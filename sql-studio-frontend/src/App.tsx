@@ -13,12 +13,11 @@ const AgentPage = lazy(() => import('@/pages/agent'))
 /** 动态弹框使用 AntApp 上下文，确保亮暗主题一致。 */
 export default function App() {
   const section = useAppSection()
-  const { preference, setPreference, fontSizePreference, setFontSizePreference, mode, error, ready, saving } = useThemePreference()
+  const { preference, fontSizePreference, savePreferences, mode, error, ready, saving } = useThemePreference()
   const appearancePreferences = {
     themePreference: preference,
-    onThemeChange: setPreference,
     fontSizePreference,
-    onFontSizeChange: setFontSizePreference,
+    onAppearanceSave: savePreferences,
     themeReady: ready
   }
   return (

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestChunkedConversationExceedsOldFileLimitAndReusesHistory(t *testing.T) {
+func TestChunkedConversationReusesHistory(t *testing.T) {
 	ctx := context.Background()
 	s := New(t.TempDir())
 	v := model.Conversation{ID: strings.Repeat("f", 48), Messages: []model.Message{{Role: "system", Content: "rules"}}}
@@ -41,35 +41,5 @@ func TestChunkedConversationExceedsOldFileLimitAndReusesHistory(t *testing.T) {
 	loaded, err := New(s.dir).Load(ctx, saved.ID)
 	if err != nil || len(loaded.Events) != 68 || loaded.Events[0].Text != v.Events[0].Text {
 		t.Fatal("restart lost chunked history", err)
-	}
-}
-
-func TestLegacyConversationMigratesWithoutReplacingOriginalBeforeCommit(t *testing.T) {
-	ctx := context.Background()
-	s := New(t.TempDir())
-	v := model.Conversation{ID: strings.Repeat("e", 48), Revision: 1, Messages: []model.Message{{Role: "system", Content: "rules"}}, Events: []model.Event{{Type: "user", Text: "原文"}}}
-	if err := write(ctx, s.path(v.ID, 1), record{SchemaVersion: 1, Data: v}); err != nil {
-		t.Fatal(err)
-	}
-	if err := write(ctx, s.dir+"/conversations/index.json", index{SchemaVersion: 1, Items: []model.ConversationInfo{{ID: v.ID, Revision: 1}}}); err != nil {
-		t.Fatal(err)
-	}
-	loaded, err := s.Load(ctx, v.ID)
-	if err != nil || loaded.Events[0].Text != "原文" {
-		t.Fatal(err)
-	}
-	saved, err := s.Save(ctx, loaded)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var migrated record
-	if err := read(s.path(v.ID, saved.Revision), &migrated); err != nil || migrated.SchemaVersion != 2 {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(s.partPath(v.ID, migrated.EventParts[0]), []byte(`[{"type":"user","text":"改写"}]`), 0600); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Load(ctx, v.ID); err == nil {
-		t.Fatal("corrupt chunk accepted")
 	}
 }

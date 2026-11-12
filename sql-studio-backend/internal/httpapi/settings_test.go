@@ -59,7 +59,7 @@ func TestRemoveAIConfigRoute(t *testing.T) {
 		router.ServeHTTP(rec, req)
 		return rec
 	}
-	if rec := call("PUT", "/api/state/ai", `{"revision":0,"data":{"provider":"deepseek","apiKey":"test-secret","model":"deepseek-flash"}}`); rec.Code != 200 {
+	if rec := call("PUT", "/api/state/ai-models", `{"revision":0,"data":{"activeId":"a","configurations":[{"id":"a","provider":"deepseek","model":"deepseek-flash","modelName":"deepseek-flash","apiKey":"test-secret"}]}}`); rec.Code != 200 {
 		t.Fatal(rec.Code)
 	}
 	if rec := call("DELETE", "/api/ai/config", `{"revision":0}`); rec.Code != 409 {
@@ -73,9 +73,9 @@ func TestRemoveAIConfigRoute(t *testing.T) {
 		t.Fatal("delete failed or exposed key", rec.Code)
 	}
 	reopened, _ := statefile.Open(directory)
-	doc, err := settings.New(reopened).Read(context.Background(), "ai")
+	doc, err := settings.New(reopened).Read(context.Background(), model.AIModelsSection)
 	var config model.AIConfig
-	if err != nil || json.Unmarshal(doc.Data, &config) != nil || config.Configured || config.CompletionEnabled == nil || *config.CompletionEnabled {
+	if err != nil || json.Unmarshal(doc.Data, &config) != nil || len(config.Configurations) != 0 || config.CompletionEnabled == nil || *config.CompletionEnabled {
 		t.Fatal("removed configuration returned after restart")
 	}
 }
@@ -93,7 +93,7 @@ func TestInvalidJSONDoesNotCreateAIConfig(t *testing.T) {
 		if rec.Code != 400 {
 			t.Fatalf("invalid input %q returned %d", body, rec.Code)
 		}
-		doc, err := store.Read(context.Background(), "ai")
+		doc, err := store.Read(context.Background(), model.AIModelsSection)
 		if err != nil || doc.Revision != 0 {
 			t.Fatalf("invalid request mutated configuration: %+v, %v", doc, err)
 		}
@@ -116,5 +116,45 @@ func TestStateWriteRequiresRevision(t *testing.T) {
 	doc, err := store.Read(context.Background(), "workspace")
 	if err != nil || doc.Revision != 0 {
 		t.Fatal("invalid request created configuration", err)
+	}
+}
+
+func TestNewModelListDoesNotReadOrModifyObsoleteAIFile(t *testing.T) {
+	ctx := context.Background()
+	store, err := statefile.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	obsolete := json.RawMessage(`{"provider":"deepseek","apiKey":"fixture-obsolete-key","model":"obsolete-model"}`)
+	if _, err = store.Write(ctx, "ai", model.StateWrite{Data: obsolete}); err != nil {
+		t.Fatal(err)
+	}
+	router := New(Services{Settings: settings.New(store)})
+	call := func(method, path, body string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(method, "http://127.0.0.1:8080"+path, bytes.NewBufferString(body)))
+		return rec
+	}
+	result := call("GET", "/api/state/ai-models", "")
+	var doc model.StateDocument
+	if result.Code != 200 || json.Unmarshal(result.Body.Bytes(), &doc) != nil || doc.Revision != 0 || string(doc.Data) != "null" {
+		t.Fatal("obsolete format blocked empty new list", result.Code)
+	}
+	if old := call("GET", "/api/state/ai", ""); old.Code != 400 || bytes.Contains(old.Body.Bytes(), []byte("fixture-obsolete-key")) {
+		t.Fatal("obsolete secret was exposed")
+	}
+	body := `{"revision":0,"data":{"activeId":"","configurations":[{"id":"new","provider":"deepseek","model":"model-a","modelName":"Model A","apiKey":"fixture-new-key"}]}}`
+	result = call("PUT", "/api/state/ai-models", body)
+	if result.Code != 200 || bytes.Contains(result.Body.Bytes(), []byte("fixture-new-key")) {
+		t.Fatal("new list could not be saved or key leaked", result.Code)
+	}
+	result = call("GET", "/api/state/ai-models", "")
+	var config model.AIConfig
+	if result.Code != 200 || json.Unmarshal(result.Body.Bytes(), &doc) != nil || json.Unmarshal(doc.Data, &config) != nil || len(config.Configurations) != 1 || config.Configurations[0].ModelName != "Model A" {
+		t.Fatal("new list could not be restored")
+	}
+	previous, err := store.Read(ctx, "ai")
+	if err != nil || !bytes.Equal(previous.Data, obsolete) {
+		t.Fatal("obsolete file was changed", err)
 	}
 }

@@ -38,7 +38,7 @@ Go 服务默认仅监听 127.0.0.1:18080，提供构建网页及 API。退出给
 
 rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和 database/sql，不执行 SQL 或访问HTTP/存储；mysql/postgresql 的导出方法负责方言及只读事务，metadata 负责凭据/并发/期限，httpapi 仅编码 SSE。
 
-modules/workspace 只依赖model和仓库消费接口；statefile实现分片、旧工作区后端迁移、CAS索引提交及旧内容回收。布局/范围是轻量索引，草稿与结果按SHA256独立保存，GET索引不解析返回所有结果，PUT响应也不回传结果。原子性边界为最后的索引替换，崩溃可能留下孤立内容但不会让索引指向尚未写完的内容；旧 workspace.json 原样保留。
+modules/workspace 只依赖model和仓库消费接口；statefile 只实现当前分片、CAS索引提交及未引用内容回收。布局/范围是轻量索引，草稿与结果按SHA256独立保存，GET索引不解析返回所有结果，PUT响应也不回传结果。原子性边界为最后的索引替换，崩溃可能留下孤立内容但不会让索引指向尚未写完的内容；只使用当前 workspace-index 与内容分片。
 
 MariaDB 由 internal/mariadb 组合共享 MySQL 线协议，app 以独立 mariadb 类型注册。只有 mariadb 可以依赖 mysql 的协议客户端；业务模块继续只消费 model 与自身接口，不直接导入具体引擎。MariaDB 拥有独立生命周期状态。
 

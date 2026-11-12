@@ -13,7 +13,6 @@ import (
 type Config struct {
 	Address           string
 	DataDir           string
-	LegacyDataDir     string
 	StateDir          string
 	WebDir            string
 	InitialConnection *model.Connection
@@ -34,12 +33,6 @@ func Load() (Config, error) {
 	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", cfg.StateDir)
 	if err != nil {
 		return cfg, err
-	}
-	if os.Getenv("SQLDESK_DATA_DIR") == "" {
-		cfg.LegacyDataDir, err = filepath.Abs("data")
-		if err != nil {
-			return cfg, err
-		}
 	}
 	// Empty means the build's default frontend source; only an explicit override uses disk.
 	if os.Getenv("SQLDESK_WEB_DIR") != "" {
@@ -65,10 +58,10 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-func resolveDirectory(key, fallback string) (string, error) {
+func resolveDirectory(key, defaultValue string) (string, error) {
 	value := os.Getenv(key)
 	if value == "" {
-		value = fallback
+		value = defaultValue
 	}
 	path, err := filepath.Abs(value)
 	if err != nil {

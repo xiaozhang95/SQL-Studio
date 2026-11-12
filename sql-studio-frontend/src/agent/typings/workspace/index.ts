@@ -1,5 +1,5 @@
 export interface Layout {
-  mode?: 'readonly' | 'write'
+  mode: 'readonly' | 'write'
   activeId: string
   draft: string
   expanded: string[]

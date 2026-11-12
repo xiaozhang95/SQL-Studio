@@ -143,6 +143,6 @@ psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --fil
 
 需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。脚本经过离线检查，尚未在真实数据库上执行。
 
-首次升级会将后端旧 data/ 中的 connections.json 和 master.key 校验后迁入启动目录下的配置目录；两者字节与密码解密均通过后才清理旧文件。目标已有不同数据时停止，不覆盖或合并。SQLDESK_STATE_DIR 覆盖统一目录，SQLDESK_DATA_DIR 仍可显式指定独立连接目录，此时不自动迁移。迁移只在后端单进程启动时进行，升级前先停止旧服务。
+连接与密钥只从当前配置目录读取，不扫描、搬运或合并其他目录。SQLDESK_STATE_DIR 指定当前状态目录，SQLDESK_DATA_DIR 可显式指定当前连接目录；没有旧配置迁移逻辑。
 
 配置路径按服务启动时的工作目录确定，而非可执行文件所在目录。例如从 `/work/project` 启动，默认写入 `/work/project/.sql-studio/state/`；从另一目录启动会使用另一份配置。旧用户目录不会自动导入或删除；如需沿用，停止旧服务后整体复制原 state 目录（包括密钥和工作区分片）到新路径，或显式指定 SQLDESK_STATE_DIR。

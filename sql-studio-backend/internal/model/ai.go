@@ -33,19 +33,42 @@ type AIMessage struct {
 	Content string `json:"content"`
 }
 
+// AIModelsSection isolates the new list format from obsolete single-model files.
+const AIModelsSection = "ai-models"
+
 // AIConfig 仅后端保存 APIKey，公开响应清除 APIKey。
 type AIConfig struct {
-	Provider          string `json:"provider"`
-	Model             string `json:"model,omitempty"`
-	APIKey            string `json:"apiKey,omitempty"`
-	Configured        bool   `json:"configured,omitempty"`
-	CompletionEnabled *bool  `json:"completionEnabled,omitempty"`
+	Configurations    []AIConfiguration `json:"configurations"`
+	ActiveID          string            `json:"activeId"`
+	CompletionEnabled *bool             `json:"completionEnabled,omitempty"`
 }
+
+// AIConfiguration identifies one saved credential/model pair; repeated providers are allowed.
+type AIConfiguration struct {
+	ID         string `json:"id"`
+	Provider   string `json:"provider"`
+	Model      string `json:"model"`
+	ModelName  string `json:"modelName"`
+	APIKey     string `json:"apiKey,omitempty"`
+	Configured bool   `json:"configured,omitempty"`
+}
+
+// SelectedConfiguration resolves only an explicit use-site choice; it never picks a default.
+func (c AIConfig) SelectedConfiguration() (AIConfiguration, bool) {
+	for _, entry := range c.Configurations {
+		if c.ActiveID != "" && entry.ID == c.ActiveID && entry.Model != "" && entry.APIKey != "" {
+			return entry, true
+		}
+	}
+	return AIConfiguration{}, false
+}
+
 type AIModel struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 type AIModelsRequest struct {
+	ConfigID string `json:"configId,omitempty"`
 	Provider string `json:"provider"`
 	APIKey   string `json:"apiKey,omitempty"`
 }

@@ -55,8 +55,8 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:15173/swagger.html`；�
 - **索引**：GET `/connections/{id}/indexes?database=库名&table=表名` 返回 `{name,unique,type,columns:[{name,position,prefixLength,order}] }[]`。MySQL 主键名称为 PRIMARY，PostgreSQL 保留实际索引名，position 从 1 开始，prefixLength 可为 null，order 为 A（升序）、D（降序）或空字符串。表达式索引的字段名为空，仅标记为表达式，不返回表达式文本；无索引返回空数组。
 - **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
-- **AI 配置**：使用 ai 分区，data 为 `{provider:"deepseek",apiKey,model?,completionEnabled?}`。首次填写 Key，后续留空保留；响应仅返回脱敏配置，未配置时 configured 可能省略。移除提交 `{revision}`，保留修订号并关闭续写。
-- **AI 调用**：assist 的 action 为 complete/optimize，分别使用 prefix/suffix 或 sql，可附 document、database、table、tables。SQL 三字段合计最多 48000 字节，document 最多 64000 字节，最多 12 表/每表 128 字段。提供 connectionId 时后端解析名称与引擎，忽略客户端伪造的 connection。续写 12 秒，优化 30 秒，模型发现 10 秒，共享 4 并发；不执行生成 SQL，不发送数据库密码或查询结果。模型发现可使用本次 Key 或已保存 Key。
+- **AI 配置**：ai-models 分区仅使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}` 新格式，最多64条。model 是实际调用 ID，modelName 为显示名称；同供应商可添加不同模型，相同供应商与模型 ID 不得重复。编辑空 Key 仅保留该行原值，完整列表一次 CAS 保存，空数组清空。旧单条数据和旧顶层 provider/model/apiKey 请求不受支持，不做迁移。设置列表只管理记录；activeId 仅由 SQL 工具栏或 Agent 输入区的使用入口选择，空值不可调用且不自动选首项。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
+- **AI 调用**：assist 的 action 为 complete/optimize，分别使用 prefix/suffix 或 sql，可附 document、database、table、tables。SQL 三字段合计最多 48000 字节，document 最多 64000 字节，最多 12 表/每表 128 字段。提供 connectionId 时后端解析名称与引擎，忽略客户端伪造的 connection。续写 12 秒，优化 30 秒，模型发现 10 秒，共享 4 并发；不执行生成 SQL，不发送数据库密码或查询结果。模型发现使用本次 Key，或在空 Key 时必须以 configId 精确指定记录；未知记录拒绝，不复用当前项或其他行的 Key。发现结果不自动选择模型，SQL/Agent 只调用明确选择的模型 ID，Agent 菜单只列出已添加模型。
 
 会话控制 POST `/connections/{id}/session` 接收 `{open:boolean,database?:string}`；省略 database 为整个连接，指定库名只关闭该库。关闭取消在途请求并等待本服务驱动连接释放，超时或失败不返回成功；关闭后请求拒绝，显式打开会测试真实连通性。不会删除保存的连接，也不会终止其他客户端会话。
 
@@ -102,7 +102,7 @@ DELETE `/connection-groups` 请求 `{name:string}`，返回 `{groups:string[],co
 | PUT | `/agent/settings` | 更新共享Key与模型 |
 | DELETE | `/agent/settings` | 清除共享DeepSeek配置 |
 
-同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与SQL续写共用ai分区，空Key保留已有值。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。
+同源 `/api/agent` 路由复用单进程服务；Chat 请求 {sessionId,message}，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与 SQL 续写共用新 ai-models 列表，Agent 设置 PUT 只接收 `{configId}` 切换已添加的模型记录。查询固定allowWrite:false、100行，与SQL窗口共享并发预算。
 
 消息与草稿按 UTF-8 字节计算，单条最多 256 KiB。超过 64 KiB 的输入、超过 32 KiB 的单次工具结果和可压缩的上下文会发送 `continue_confirmation`，携带 `approvalId`、`kind` 和 `detail`。当前后端发出 `input`、`result` 或 `context`。同意后仅继续对应步骤，拒绝以 `stopped` 和 `done` 结束。列库时连接读取失败返回含 `warning` 和 `connectionId` 的 `tool_result`，同批其他工具继续走各自的流程。其他工具失败返回含 `warning` 的 `tool_result`，跳过同批后续工具，并把警告与已取得的结果交回模型。模型可在已确认范围内重新规划一次只读操作。写入失败或恢复阶段再次失败时，仅请求模型总结。会话处理错误通过 `error` 和 `done` 结束。
 

@@ -35,14 +35,11 @@ type App struct{ server *http.Server }
 
 func New(cfg config.Config) (*App, error) {
 	stateDir := cfg.StateDir
-	if stateDir == "" {
-		stateDir = filepath.Join(cfg.DataDir, "state")
+	if stateDir == "" || cfg.DataDir == "" {
+		return nil, errors.New("必须提供当前状态目录和连接目录")
 	}
 	stateStore, err := statefile.Open(stateDir)
 	if err != nil {
-		return nil, err
-	}
-	if err := connection.Migrate(cfg.LegacyDataDir, cfg.DataDir); err != nil {
 		return nil, err
 	}
 	repository, err := connection.Open(cfg.DataDir)

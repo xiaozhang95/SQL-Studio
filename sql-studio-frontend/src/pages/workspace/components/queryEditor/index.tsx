@@ -2,9 +2,10 @@ import { BulbOutlined, CodeOutlined, DownloadOutlined, FormatPainterOutlined, Hi
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Alert, Dropdown, Switch, Tooltip, Upload } from 'antd'
+import { Alert, Dropdown, Select, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import type { ThemeMode } from '@/typings/theme'
 
 import { useAISQL } from '../../hooks/useAISQL'
@@ -114,23 +115,38 @@ export default function QueryEditor({ model, themeMode }: Props) {
           {activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
-          {ai.configured && (
+          {ai.models.length > 0 && (
             <div role="group" aria-label="SQL AI 工具" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CodeOutlined aria-hidden="true" />
-                <span>代码补全</span>
-                <Tooltip title="AI 代码补全">
-                  <Switch
-                    size="small"
-                    aria-label="代码补全"
-                    checked={ai.enabled}
-                    disabled={running || ai.preferenceSaving}
-                    loading={ai.preferenceSaving}
-                    onChange={(value) => void ai.changeCompletion(value)}
-                  />
-                </Tooltip>
-              </div>
-              <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+              <Select<string>
+                aria-label="SQL AI 模型"
+                placeholder="选择 AI 模型"
+                value={ai.activeId || undefined}
+                allowClear
+                disabled={running || ai.preferenceSaving}
+                loading={ai.preferenceSaving}
+                onChange={(value) => void ai.changeModel(value)}
+                style={{ width: appearance.selectWidth }}
+                options={ai.models.map((entry) => ({ value: entry.id, label: entry.modelName }))}
+              />
+              {ai.configured && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CodeOutlined aria-hidden="true" />
+                    <span>代码补全</span>
+                    <Tooltip title="AI 代码补全">
+                      <Switch
+                        size="small"
+                        aria-label="代码补全"
+                        checked={ai.enabled}
+                        disabled={running || ai.preferenceSaving}
+                        loading={ai.preferenceSaving}
+                        onChange={(value) => void ai.changeCompletion(value)}
+                      />
+                    </Tooltip>
+                  </div>
+                  <ToolbarButton label="SQL 美化" icon={<FormatPainterOutlined />} disabled={!hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+                </>
+              )}
             </div>
           )}
           <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
@@ -140,7 +156,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
           <ToolbarButton label="执行历史" icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
         </div>
       </div>
-      {ai.preferenceError && <Alert type="error" showIcon closable title="代码补全设置保存失败" description={ai.preferenceError} onClose={ai.clearPreferenceError} />}
+      {ai.preferenceError && <Alert type="error" showIcon closable title="AI 设置保存失败" description={ai.preferenceError} onClose={ai.clearPreferenceError} />}
       <SQLOptimization model={ai} themeMode={themeMode} />
       {objects.error && <Alert type="error" title="连接加载失败" description={objects.error} />}
       {objects.tableError && <Alert type="error" title="表列表加载失败" description={objects.tableError} />}
@@ -180,7 +196,9 @@ export default function QueryEditor({ model, themeMode }: Props) {
             basicSetup={editorSetup}
             aria-label="SQL 编辑器"
           />
-          {ai.enabled && ai.completionLoading && <LoadingOutlined spin aria-label="SQL补全中" role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />}
+          {ai.enabled && ai.completionLoading && (
+            <LoadingOutlined spin aria-label="SQL补全中" role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />
+          )}
         </div>
       </Dropdown>
       <SQLCompletionSelect completion={completion} objectKinds={objectKinds} />

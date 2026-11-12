@@ -2,7 +2,8 @@ import type { EditorView } from '@codemirror/view'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getAIAdapter, isAIProvider } from '@/ai'
-import type { AIConfigDocument, AIProviderType } from '@/ai/typings'
+import { aiModelsSection } from '@/ai/typings'
+import type { AIConfigDocument, AIConfiguration, AIProviderType } from '@/ai/typings'
 import { getDatabaseAdapter } from '@/databases'
 import type { DatabaseType } from '@/databases/typings'
 import type { AIResult } from '@/typings/ai'
@@ -21,6 +22,8 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const structures = snapshot?.structures
   const editor = useRef<EditorView | null>(null)
   const [configured, setConfigured] = useState(false)
+  const [models, setModels] = useState<AIConfiguration[]>([])
+  const [activeId, setActiveId] = useState('')
   const [enabled, setEnabled] = useState(true)
   const [provider, setProvider] = useState<AIProviderType>(getAIAdapter().profile.value)
   const [settingsRevision, setSettingsRevision] = useState(0)
@@ -42,18 +45,27 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     let latest = 0
     const refresh = () => {
       const current = ++latest
-      void request<AIConfigDocument>('/state/ai')
+      void request<AIConfigDocument>('/state/' + aiModelsSection)
         .then((doc) => {
           if (alive && current === latest) {
             setCompletionLoading(false)
-            setConfigured(doc.data?.configured === true && isAIProvider(doc.data.provider) && Boolean(doc.data.model?.trim()))
+            const entries = doc.data === null ? [] : doc.data.configurations
+            if (!Array.isArray(entries) || entries.some((entry) => !isAIProvider(entry.provider) || !entry.model || !entry.modelName)) throw new Error('模型列表配置无效')
+            const selected = entries.find((entry) => entry.id === doc.data?.activeId && entry.configured)
+            setModels(entries)
+            setActiveId(selected?.id || '')
+            setConfigured(Boolean(selected))
             setEnabled(doc.data?.completionEnabled !== false)
-            if (doc.data && isAIProvider(doc.data.provider)) setProvider(doc.data.provider)
+            if (selected) setProvider(selected.provider)
             setSettingsRevision(doc.revision)
           }
         })
         .catch(() => {
-          if (alive && current === latest) setConfigured(false)
+          if (alive && current === latest) {
+            setConfigured(false)
+            setModels([])
+            setActiveId('')
+          }
         })
     }
     refresh()
@@ -98,31 +110,38 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     setPreview(null)
     setLoading(false)
   }
-  const changeCompletion = async (value: boolean) => {
-    if (!configured || blocked || preferenceRequest.current) return
+  const updatePreference = async (update: { activeId?: string; completionEnabled?: boolean }) => {
+    if (blocked || preferenceRequest.current) return
     const pending = new AbortController()
     preferenceRequest.current = pending
     setPreferenceSaving(true)
     setPreferenceError('')
     try {
-      const doc = await request<AIConfigDocument>('/state/ai', { signal: pending.signal })
-      if (!doc.data?.configured || !doc.data.model || !isAIProvider(doc.data.provider)) throw new Error('请先配置并选择 AI 模型')
-      await request<AIConfigDocument>('/state/ai', {
+      const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, { signal: pending.signal })
+      if (!doc.data || !Array.isArray(doc.data.configurations)) throw new Error('请先添加 AI 模型')
+      if (update.activeId && !doc.data.configurations.some((entry) => entry.id === update.activeId && entry.configured && entry.model)) throw new Error('模型配置已改变，请重新选择')
+      await request<AIConfigDocument>('/state/' + aiModelsSection, {
         method: 'PUT',
         signal: pending.signal,
-        body: JSON.stringify({ revision: doc.revision, data: { provider: doc.data.provider, completionEnabled: value } })
+        body: JSON.stringify({
+          revision: doc.revision,
+          data: {
+            ...doc.data,
+            ...update,
+            configurations: doc.data.configurations.map(({ id, provider, model, modelName }) => ({ id, provider, model, modelName }))
+          }
+        })
       })
-      if (!pending.signal.aborted) {
-        setEnabled(value)
-        window.dispatchEvent(new Event('ai-settings-saved'))
-      }
+      if (!pending.signal.aborted) window.dispatchEvent(new Event('ai-settings-saved'))
     } catch (cause) {
-      if (!pending.signal.aborted) setPreferenceError(cause instanceof Error ? cause.message : '代码补全设置保存失败')
+      if (!pending.signal.aborted) setPreferenceError(cause instanceof Error ? cause.message : 'AI 设置保存失败')
     } finally {
       if (preferenceRequest.current === pending) preferenceRequest.current = null
       if (!pending.signal.aborted) setPreferenceSaving(false)
     }
   }
+  const changeCompletion = (value: boolean) => (configured ? updatePreference({ completionEnabled: value }) : undefined)
+  const changeModel = (id: string | undefined) => updatePreference({ activeId: id || '' })
   const optimize = async (selectionOnly = false, selectedSQL?: string) => {
     const view = editor.current
     if (!view || blocked || (loading && requestScope === scopeKey)) return
@@ -173,6 +192,9 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   return {
     onEditorReady,
     configured,
+    models,
+    activeId,
+    changeModel,
     enabled,
     changeCompletion,
     preferenceSaving,

@@ -6,14 +6,14 @@ type AICredentials struct {
 	Model  string `json:"model"`
 }
 type AIStatus struct {
+	ConfigID   string    `json:"configId"`
 	Configured bool      `json:"configured"`
 	Model      string    `json:"model"`
 	Source     string    `json:"source"`
 	Models     []AIModel `json:"models"`
 }
 type AIUpdate struct {
-	APIKey string `json:"apiKey"`
-	Model  string `json:"model,omitempty"`
+	ConfigID string `json:"configId"`
 }
 
 const DeepSeekModel = "deepseek-flash"

@@ -32,7 +32,7 @@ useWorkspacePersistence 通过 Go 服务启动目录下的配置目录保存轻�
 
 sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏与Agent历史栏同步；宽度继续纳入现有轻量布局索引。恢复通过restoreWidth保留已有宽度；旧快照缺少该字段或不是有效数字时使用272px。Agent打开时工作台保持挂载，调整会触发同一布局保存；展示宽度由useSidebarResize根据窗口边界约束，隐藏/窄屏测量不改写偏好。
 
-进入先恢复索引，再加载活动页后允许编辑；没有快照时为空，兼容迁移旧草稿。恢复时仅重连之前打开的连接、加载必要的库表元数据，SQL 与结果直接取本地记录，不自动查询数据。刷新打断的执行标记 interrupted，完成结果保留并提示手动重跑。元数据加载仍使用连接缓存及取消边界。
+进入先恢复索引，再加载活动页后允许编辑；没有当前索引时创建空工作区，不读取其他草稿格式。恢复时仅重连之前打开的连接、加载必要的库表元数据，SQL 与结果直接取本地记录，不自动查询数据。刷新打断的执行标记 interrupted，完成结果保留并提示手动重跑。元数据加载仍使用连接缓存及取消边界。
 
 ## 历史与编辑
 
@@ -70,7 +70,7 @@ refreshResult 固定已执行查询 scope 和当前选中 SQL，不使用后来�
 
 schemaConnections 由连接及引擎 explorer 能力 memo 化提供给对象缓存，不依赖当前查询选择器。
 
-数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。旧对象标题/结构结果由 objectPresentation 兼容展示，恢复不重跑 SQL。
+数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。只展示当前对象页和结构结果，恢复不转换旧格式或重跑 SQL。
 
 MySQL/PostgreSQL SQL 窗口的手动运行与结果刷新均显式传 allowWrite=true，支持 DDL/DML，不增加只读开关或额外确认；对象数据预览保持读取请求。每条 SQL 独立自动提交，批次失败停止后续语句；累计结果只在整批完成、失败或取消后持久化；不支持跨请求事务或会话状态，取消不保证回滚。
 

@@ -9,7 +9,6 @@ import { cleanPostgreSQLHistory, splitPostgreSQLStatements } from '../src/databa
 import { tableDesign } from '../src/databases/postgresql/tableDesign/index.ts'
 import { ObjectAction } from '../src/databases/typings/objectManagement/index.ts'
 import { buildAIContext } from '../src/pages/workspace/utils/aiContext/index.ts'
-import { presentObjectPage, presentTableList } from '../src/pages/workspace/utils/objectPresentation/index.ts'
 import { indexDescription } from '../src/pages/workspace/utils/objectTree/index.ts'
 
 test('PostgreSQL object operations preserve schema and quote names', () => {
@@ -156,18 +155,4 @@ test('AI references resolve unqualified names in the selected schema and preserv
     context.tables.map((table) => table.name),
     ['"cron"."same"']
   )
-})
-
-test('old structure results and page titles are presented with schema without changing identity', () => {
-  const adapter = { explorer: { tableIdentity: explorerTableIdentity }, tableListResult, tableLabel }
-  const result = { columns: ['表名', '类型', '注释'].map((name) => ({ name, type: '' })), rows: [['"cron"."job"', 'BASE TABLE', '']], rowCount: 1, isQuery: true }
-  const view = presentTableList(result, adapter)
-  assert.deepEqual(view.rows, [['cron', 'job', 'BASE TABLE', '']])
-  assert.equal(result.rows[0][0], '"cron"."job"')
-  const page = { id: 'a', kind: 'data', connectionId: 'pg', database: 'db', table: '"cron"."job"', title: '"cron"."job" · 数据', sql: '' }
-  const shown = presentObjectPage(page, adapter)
-  assert.equal(shown.title, 'cron.job · 数据')
-  assert.equal(shown.table, page.table)
-  assert.equal(shown.schema, 'cron')
-  assert.equal(presentObjectPage({ ...page, kind: 'query', title: '自定义查询' }, adapter).title, '自定义查询')
 })

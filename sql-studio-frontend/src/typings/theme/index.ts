@@ -4,11 +4,15 @@ export type ThemePreference = ThemeMode | 'system'
 
 export type FontSizePreference = 'small' | 'standard' | 'large'
 
+export interface AppearanceSettings {
+  theme: ThemePreference
+  fontSize: FontSizePreference
+}
+
 /** 工作区与 AI 助手共用的受控外观设置。 */
 export interface AppearancePreferences {
   themePreference: ThemePreference
-  onThemeChange: (preference: ThemePreference) => void
   fontSizePreference: FontSizePreference
-  onFontSizeChange: (preference: FontSizePreference) => void
+  onAppearanceSave: (settings: AppearanceSettings) => Promise<void>
   themeReady?: boolean
 }

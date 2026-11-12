@@ -95,7 +95,7 @@ func agentReadError(err error) error {
 type agentCredentials struct{ store *statefile.Store }
 
 func (c agentCredentials) Credentials(ctx context.Context) (agentmodel.AICredentials, error) {
-	doc, err := c.store.Read(ctx, "ai")
+	doc, err := c.store.Read(ctx, model.AIModelsSection)
 	if err != nil {
 		return agentmodel.AICredentials{}, err
 	}
@@ -103,11 +103,11 @@ func (c agentCredentials) Credentials(ctx context.Context) (agentmodel.AICredent
 	if doc.Revision > 0 && json.Unmarshal(doc.Data, &cfg) != nil {
 		return agentmodel.AICredentials{}, errors.New("AI配置损坏")
 	}
-	selected := cfg.Model
-	if selected == "" {
-		selected = agentmodel.DeepSeekModel
+	selected, ok := cfg.SelectedConfiguration()
+	if !ok {
+		return agentmodel.AICredentials{}, errors.New("请先添加模型并在使用处选择")
 	}
-	return agentmodel.AICredentials{APIKey: cfg.APIKey, Model: selected}, nil
+	return agentmodel.AICredentials{APIKey: selected.APIKey, Model: selected.Model}, nil
 }
 
 func (d agentDatabase) Write(ctx context.Context, target agentmodel.Target, sql string) (json.RawMessage, error) {

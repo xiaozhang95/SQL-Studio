@@ -20,13 +20,13 @@ export function useAISettings() {
     []
   )
   async function chooseModel(model: string) {
-    if (busy || !status?.configured) return
+    if (busy || !status?.models.some((entry) => entry.id === model)) return
     setBusy(true)
     setError('')
     try {
-      const next = await settings('PUT', { apiKey: '', model })
+      const next = await settings('PUT', { configId: model })
       setStatus(next)
-      setNotice('模型已更新，共用工作区的 API Key。')
+      setNotice('已切换到所选模型配置。')
       window.dispatchEvent(new Event('ai-settings-saved'))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '模型保存失败')
