@@ -4,7 +4,7 @@
 
 Connection/ConnectionInput、DBTable、Column、QueryRequest、QueryResult 与服务端 API 契约一致。DatabaseType 引用 [数据库能力契约](../../databases/typings/README.md) 中的枚举推导类型，不重复定义。行数据为二维数组，密码只用于输入。
 
-Connection.group 为可选分组名称，与连接配置一起保存；省略或空值兼容旧连接，统一归入“默认分组”。
+Connection.group 为可选分组名称，与连接配置一起保存；界面收到空分组值时按“默认分组”展示。
 
 导入使用 `@/typings/database`，不追加 /index 或扩展名；改契约时同步调用方及本说明。
 

@@ -5,6 +5,8 @@ description: 开发和维护 SQL Studio 的 Vite React TypeScript Ant Design 前
 
 # SQL Studio 前端开发
 
+README 和规范按 [项目通用文档维护规则](../sql-studio/SKILL.md#文档维护) 更新。
+
 适用于本仓库 `sql-studio-frontend`。先读[前端开发规范](../../../docs/FRONTEND_STANDARDS.md)、[源码索引](../../../sql-studio-frontend/src/README.md)，再读实际模块 README。用户最新要求优先；保留 Vite + React + TypeScript + Ant Design，包管理使用 pnpm。
 
 ## 五项约定
@@ -35,7 +37,7 @@ MySQL/PostgreSQL SQL 窗口运行及结果刷新均允许执行查询、DDL 和 
 
 ## 图标与资产
 
-- 图标先复用已有资源和 `@ant-design/icons`。引擎图标经 profile 分派，由 engineIcon 展示；来源和使用范围记录在 [资产说明](../../../sql-studio-frontend/src/assets/databases/README.md)。当前海豚是用户参考图对应的状态图标，不宣称为官方 Logo。
+- 图标先复用已有资源和 `@ant-design/icons`。引擎图标经 profile 分派，由 EngineIcon 展示。MySQL 海豚图形取自官方 SVG，状态底板由 EngineIcon 渲染。资源来源和使用范围记录在 [资产说明](../../../sql-studio-frontend/src/assets/databases/README.md)。
 - 清理前核对源码 import、HTML/favicon、CSS URL、SVG sprite/use、动态路径及构建配置；仅文件名搜索无命中不足以证明动态资源未使用。区分运行资源与设计参考、文档截图，不按“未被 TS 导入”直接删除 public 或参考文件。
 - 只删除确认无调用者的文件或图标导入，同步资产说明；保留仍在使用的图标包，不清理依赖目录或用户数据。
 

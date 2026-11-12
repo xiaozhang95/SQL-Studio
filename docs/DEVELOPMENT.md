@@ -6,7 +6,7 @@
 
 - 前端遵守 [前端规范](FRONTEND_STANDARDS.md)：Ant Design 默认优先；局部布局用 style/styles，必要原生覆盖统一放 app.scss；共享外观使用 appearance。
 - 后端遵守 [后端规范](BACKEND_STANDARDS.md)：业务模块独立、接口由消费方声明、app 单进程装配；HTTP 不承载业务或存储逻辑。
-- 修改公开行为同步类型、调用方、模块 README、[API 列表](API.md) 和 [OpenAPI](../sql-studio-backend/internal/httpapi/openapi.json)。注释解释范围隔离、取消、凭据和修订等边界，不重复代码语法。
+- 修改公开行为同步类型、调用方、模块 README、父级索引、[API 列表](API.md) 和 [OpenAPI](../sql-studio-backend/internal/httpapi/openapi.json)。按当前实现更新原有段落并清理过时或重复的说明。注释解释范围隔离、取消、凭据和修订等边界，不重复代码语法。
 - 仅使用临时目录、测试替身和虚构数据回归；真实数据库集成需显式启用，并只操作随机临时库。保留用户连接、密钥和配置。
 
 ## 检查

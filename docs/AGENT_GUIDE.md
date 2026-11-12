@@ -220,15 +220,16 @@ SQL 先经过项目自己的词法处理，区分字符串、标识符和符号�
 | 相对于状态根目录的路径 | 内容 |
 | --- | --- |
 | `agent/conversations/index.json` | 会话 ID、标题、状态、更新时间和当前版本 |
-| `agent/conversations/<id>-<revision>.json` | 用户问题、思考和回答事件、SQL、工具结果、成功轮次的模型历史、数据库目标和摘要 |
+| `agent/conversations/<id>-<revision>.json` | v2 版本清单，保存会话元数据、摘要、目标和消息/事件分片引用 |
+| `agent/conversations/<id>-parts/<SHA256>.json` | 分块保存模型消息、工具结果和界面事件 |
 | `agent/layout.json` | 当前会话 ID、草稿、展开项和操作模式 |
-| `ai.json` | 共享 DeepSeek 配置及 API Key |
+| `ai-models.json` | 共享 DeepSeek 模型记录、所选模型、API Key 和补全偏好 |
 
-Go 先保存用户问题，工具结果立即做检查点，流式片段约每秒检查一次，结束时再做最终保存。会话仓库先写新版本，再原子更新索引，布局使用 `revision` 处理窗口之间的写入冲突。失败轮次可以保留在界面历史里，成功轮次的模型消息和新目标才进入后续上下文。重启发现会话仍标为 `running` 时，加载阶段将这一轮标记为中断。
+Go 先保存用户问题，工具结果立即做检查点，流式片段约每秒检查一次，结束时再做最终保存。会话仓库先保存新内容分片和版本清单，再原子更新索引，布局使用 `revision` 处理窗口之间的写入冲突。失败轮次可以保留在界面历史里，成功轮次的模型消息和新目标才进入后续上下文。重启发现会话仍标为 `running` 时，加载阶段将这一轮标记为中断。
 
-打开历史会话时，浏览器从本机 Go 服务读取事件并重建展示。会话支持新建、重命名和删除。空列表通过后端的 `ensure` 路径原子创建默认会话，刷新索引时前端保留当前选中项。切换历史和恢复草稿都属于本机状态读写。
+打开历史会话时，浏览器从本机 Go 服务分页读取事件，按 `revision` 与 `eventVersion` 校验后重建展示。会话支持新建、重命名和删除。空列表通过后端的 `ensure` 路径原子创建默认会话，刷新索引时前端保留当前选中项。切换历史和恢复草稿都属于本机状态读写。
 
-本机历史文件与模型请求是两个数据范围。实际提问、所用上下文、相关元数据和有界查询结果会发给 DeepSeek。共享 Key 由浏览器提交给后端保存，设置读取接口仅返回脱敏配置。仓库部分说明提到 Key 另行加密，现行 `settings` 和 `statefile` 实现直接把 `apiKey` 写入 `ai.json` 的 JSON 数据，应按含明文 Key 的配置文件处理。
+本机历史文件与模型请求是两个数据范围。实际提问、所用上下文、相关元数据和有界查询结果会发给 DeepSeek。共享 Key 由浏览器提交给后端保存，设置读取接口仅返回脱敏配置。`apiKey` 保存在本机 `ai-models.json` 的模型记录中，备份时按含明文 Key 的文件保管。
 
 源码见[会话持久化](../sql-studio-backend/internal/modules/agent/persistence.go)、[会话文件仓库](../sql-studio-backend/internal/agentstate/store.go)、[设置服务](../sql-studio-backend/internal/modules/settings/service.go)和[配置文件仓库](../sql-studio-backend/internal/statefile/store.go)。
 

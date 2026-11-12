@@ -23,7 +23,7 @@ Set-Location sql-studio-backend
 go run main.go
 ```
 
-- 同时设置DATA_DIR与STATE_DIR，避免旧data/迁移及用户默认状态读写。
+- 同时设置 DATA_DIR 与 STATE_DIR，隔离用户默认连接和状态目录。
 - 仅后端终端清除初始化密码，防止自动创建额外连接；测试终端另行注入凭据。环境变量不跨工具进程自动持久化，保留并恢复原有值，不覆盖HOME/CODEX_HOME。
 - 保留前台go run的会话句柄，用Ctrl+C结束，不新增启停/PID/部署包装脚本。
 - 先在前端运行 `pnpm build`；Go提供 `../sql-studio-frontend/dist`，浏览器打开 `http://127.0.0.1:8080`。修复后重新构建并加载，不能用旧产物验证新源码。

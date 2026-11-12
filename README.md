@@ -12,7 +12,7 @@
 
 项目级 skill 为 `sql-studio`；后端唯一程序入口为 `sql-studio-backend/main.go`。
 
-内置[数据库 Agent](docs/AGENT.md)：从工作台顶部“AI 助手”进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。查询强制只读，无需启动额外服务。
+内置[数据库 Agent](docs/AGENT.md)：从工作台顶部“AI 助手”进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。默认只读，完全访问模式下的新增、修改及非删除结构操作逐次确认。
 
 ## 功能
 
@@ -88,7 +88,7 @@ pnpm dev
 
 ### 启动失败与配置保存提示
 
-默认配置目录改为服务启动工作目录下的 `./.sql-studio/state/`，打包版同样按启动工作目录解析；目录不存在时创建独立配置。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件，不能仅凭目录属于当前用户就断言该进程可写。
+默认配置目录为服务启动工作目录下的 `./.sql-studio/state/`，打包版同样按启动工作目录解析；目录不存在时创建独立配置。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件，不能仅凭目录属于当前用户就断言该进程可写。
 
 先确认浏览器连接的后端：程序启动日志会输出 PID、可执行文件路径、监听地址及配置目录。若 18080 已有 `go run` 的临时 main.exe，双击新的打包程序会因端口占用退出，浏览器仍然访问旧服务；先正常停止旧服务，再运行打包程序，不需要更换配置目录。
 
@@ -108,9 +108,9 @@ MySQL/MariaDB/PostgreSQL SQL 窗口均支持查询、建表、插入、修改、
 
 默认保存到服务启动工作目录下的 `./.sql-studio/state/`：
 
-- `workspace.json`：布局、页签、查询草稿及结果快照。
+- `workspace-index.json` 保存布局、页签和内容引用，`workspace-parts/` 保存按散列寻址的查询草稿和结果。
 - `history.json`：按连接保存的执行历史。
-- `appearance.json`：主题偏好。
+- `appearance.json` 保存主题和界面字号。
 
 配置采用带版本号和修订号的 JSON 格式，可通过 `SQLDESK_STATE_DIR` 指定目录。配置文件缺失时使用默认布局并重新生成，不再读取浏览器旧记录。恢复页面不会自动执行查询。
 
@@ -120,7 +120,7 @@ MySQL/MariaDB/PostgreSQL SQL 窗口均支持查询、建表、插入、修改、
 
 仅面向本机单用户，默认不对外提供网络服务。
 
-普通查询默认最多返回 1000 行、约 8 MiB 内容，最长30秒。结果筛选和导出仅针对已返回的数据；“结构和数据”转储超过5000行或8 MiB时会提示失败。视图及无完整主键的已有记录不支持直接编辑，生成列和部分特殊字段由数据库处理。
+普通查询默认最多返回 1000 行，最大 5000 行，字段内容上限约 8 MiB，最长 30 秒。结果筛选和 CSV 导出针对已加载结果。库、Schema 和表菜单的“结构和数据”转储通过专用接口分批读取，限制见 [功能汇总](docs/FEATURES.md#10-sql-文件与数据导出)。视图及无完整主键的已有记录不支持直接编辑，生成列和部分特殊字段由数据库处理。
 
 项目维护：[文档索引](docs/README.md) · [项目框架](docs/ARCHITECTURE.md) · [接口列表与 Swagger](docs/API.md)
 
@@ -141,7 +141,7 @@ mariadb --host=127.0.0.1 --port=3307 --user=root --password --default-character-
 psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --file=sql/postgresql.sql
 ```
 
-需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。脚本经过离线检查，尚未在真实数据库上执行。
+需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。
 
 连接与密钥只从当前配置目录读取，不扫描、搬运或合并其他目录。SQLDESK_STATE_DIR 指定当前状态目录，SQLDESK_DATA_DIR 可显式指定当前连接目录；没有旧配置迁移逻辑。
 

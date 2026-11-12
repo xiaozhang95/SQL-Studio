@@ -28,7 +28,7 @@ SQL 补全浮层使用原生 Ant Design Select 的主题、弧度及状态背景
 
 页面重新挂载时通过 getEditorHistory(activeTab) 初始化该页撤销/重做字段，当前主题和补全仍采用新页面配置。切页不丢撤销；关闭页释放历史，浏览器刷新不恢复撤销。
 
-补全 schema 仅使用当前连接的数据库命名空间；选库自动加载表/视图，以 defaultSchema 提供无前缀表名补全，并复用缓存字段。扩展通过 useMemo 稳定配置，输入 SQL 不反复重建语言扩展。编辑器选区与滚动通过 onEditorReady/onEditorUpdate/rememberEditor 加密保存，恢复不执行 SQL。
+补全 schema 仅使用当前连接的数据库命名空间；选库自动加载表/视图，以 defaultSchema 提供无前缀表名补全，并复用缓存字段。扩展通过 useMemo 稳定配置，输入 SQL 不反复重建语言扩展。编辑器选区与滚动通过 onEditorReady/onEditorUpdate/rememberEditor 随工作区索引保存，恢复不执行 SQL。
 
 只有保存了 Key 并选中模型后，导入左侧才显示 AI 工具组：代码图标、代码补全开关和 SQL 美化图标；组末用竖线与导入/导出/历史分隔。美化沿用原整页优化及预览/应用逻辑，选区优化仍在右键菜单。补全开关即时保存到共享 ai 分区，加载时禁用，失败在编辑器顶部显示错误。请求中在编辑器右下角显示 loading，续写 Tab 接受/Esc 关闭；不自动执行 SQL。
 

@@ -4,7 +4,7 @@
 
 Go + Gin 模块化单体：一个 Go module、进程和 HTTP 服务，连接管理、数据库对象、SQL 查询为独立业务模块。每个模块维护自己的入口、最小消费接口、规则、README、包注释和测试；模块之间不直接导入，app 在进程内注入具体实现。
 
-根目录 [main.go](main.go) 为唯一启动入口，只加载配置、创建 app 和处理退出；`internal/app` 装配模块和生命周期；`internal/httpapi` 负责路由、参数与响应；`internal/modules` 按业务拆分；`internal/model` 是共享契约；`internal/mysql` 实现 MySQL；`internal/connection` 负责加密连接仓库；`internal/config` 读取环境变量。依赖与请求边界见 [架构说明](../docs/BACKEND_ARCHITECTURE.md)，HTTP 契约见 [API](../docs/API.md)。
+根目录 [main.go](main.go) 为唯一启动入口，只加载配置、创建 app 和处理退出；`internal/app` 装配模块和生命周期；`internal/httpapi` 负责路由、参数与响应；`internal/modules` 按业务拆分；`internal/model` 是共享契约；`internal/mysql`、`internal/mariadb`、`internal/postgresql` 实现各数据库引擎；`internal/connection` 负责加密连接仓库；`internal/config` 读取环境变量。依赖与请求边界见 [架构说明](../docs/BACKEND_ARCHITECTURE.md)，HTTP 契约见 [API](../docs/API.md)。
 
 ## 启动
 
@@ -17,7 +17,7 @@ go run main.go
 
 服务监听 `127.0.0.1:18080`，日志直接输出终端，Ctrl+C 退出并给予在途请求 5 秒结束时间。当前不提供启停脚本、后台 PID、日志文件和部署配置。
 
-开发时从后端根目录启动，连接与密钥默认与布局配置一起保存在服务启动工作目录下的 `./.sql-studio/state/`，网页目录为 `../sql-studio-frontend/dist`。没有保存连接时可在网页创建；可选首次初始化环境变量及数据库范围见 [数据库支持](../docs/DATABASES.md)。现有配置和密钥不因启动参数而覆盖，不删除运行数据。
+开发时从后端根目录启动，连接与密钥默认与布局配置一起保存在服务启动工作目录下的 `./.sql-studio/state/`，网页目录为 `../sql-studio-frontend/dist`。没有保存连接时可在网页创建；数据库范围见 [数据库支持](../docs/DATABASES.md)。可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。现有配置和密钥不因启动参数而覆盖，不删除运行数据。
 
 ## 含前端的独立可执行文件
 
@@ -27,7 +27,7 @@ go run main.go
 
 监听地址默认 `127.0.0.1:18080`，可通过 `SQLDESK_ADDR` 指定其他地址（例如 `127.0.0.1:18081`）以避开已有服务；不会自动停止已有进程。
 
-默认配置目录保持不变。Windows 打包附带可选 start-sql-studio-<架构>.cmd，失败时暂停窗口以查看端口或权限错误；日志和保存错误带实际 PID/程序路径，避免将旧 go run 服务误认为打包程序。出现 Access is denied 或双击退出时见 [启动失败与配置保存提示](../README.md#启动失败与配置保存提示)。不自动更换目录、修改权限或停止其他服务。
+配置目录按启动工作目录解析。日志和保存错误包含实际 PID 和程序路径。出现 Access is denied 或双击退出时见 [启动失败与配置保存提示](../README.md#启动失败与配置保存提示)。不自动更换目录、修改权限或停止其他服务。
 
 脚本生成资源后可执行 `go test -tags embedded -count=1 ./...`，包含从临时工作目录读取内嵌页面及真实构建 JS 的验证；默认 `go test ./...` 不要求生成 dist。包边界见 [webui](internal/webui/README.md)。
 

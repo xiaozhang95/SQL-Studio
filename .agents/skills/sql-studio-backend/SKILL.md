@@ -1,11 +1,11 @@
 ---
 name: sql-studio-backend
-description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用于连接管理、数据库对象、SQL 查询、MySQL 引擎、API、存储、模块重构及后端脚本日志清理，不用于纯前端任务。
+description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用于连接管理、数据库对象、SQL 查询、数据库引擎、API、存储、模块重构及后端脚本日志清理，不用于纯前端任务。
 ---
 
 # SQL Studio 后端开发
 
-适用于本仓库 `sql-studio-backend`。先读[后端规范](../../../docs/BACKEND_STANDARDS.md)、[架构](../../../docs/BACKEND_ARCHITECTURE.md)、[包索引](../../../sql-studio-backend/internal/README.md)，再读目标包 README；用户最新要求优先。
+适用于本仓库 `sql-studio-backend`。先读[后端规范](../../../docs/BACKEND_STANDARDS.md)、[架构](../../../docs/BACKEND_ARCHITECTURE.md)、[包索引](../../../sql-studio-backend/internal/README.md)，再读目标包 README。README 和 API 按[项目通用文档维护规则](../sql-studio/SKILL.md#文档维护)更新，用户最新要求优先。
 
 ## 模块化单体
 
@@ -18,7 +18,7 @@ description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用�
 - 一个实际功能一个包，包内按职责分文件，源码与单元测试同目录；保留 Go 原生命名与 gofmt，不套前端 index 规则或为局部 helper 建空包。每个实际包有 README.md 与 doc.go，父目录提供索引。
 - README 说明职责、构造器/公开方法、参数类型与默认值、返回值、错误、超时/取消、并发和缓存归属。迁移同步调用者、索引、[API](../../../docs/API.md) 及架构测试。
 - 使用命名类型、struct、const、最小接口及 errors.Is/As 约束边界。跨模块共享契约放 model，私有定义留本模块；不用无约束 any 或任意 map 替代已知业务结构，外部输入做运行时校验。
-- MySQL 专属连接、TLS、语句识别、元数据及执行留在 internal/mysql；连接加密落盘在 internal/connection，环境变量集中在 internal/config。当前只支持 MySQL，不预建未支持引擎的空包或注册框架。
+- 连接、TLS、语句识别、元数据和执行按引擎归入 internal/mysql、internal/mariadb 或 internal/postgresql。MariaDB 组合 MySQL 线协议，internal/database 负责分派。连接加密落盘由 internal/connection 管理，环境变量集中在 internal/config。不预建未支持引擎的空包或注册框架。
 
 ## 行为边界
 
@@ -42,4 +42,4 @@ Agent仅有“只读模式”和“完全访问模式”，默认只读，切换
 
 规则限定Agent，不改动普通SQL工作台能力；模式协议、标签、系统提示和文档一致。实现和测试使用隔离数据，不以完全访问模式为由擅自操作用户业务数据。
 
-完全访问模式的每次新增、更新及非删除结构操作，都必须在执行前等待用户确认。弹窗展示连接、数据库、涉及表/对象和完整SQL（高亮、可复制）；模式切换确认不替代逐次执行确认。后端通过一次性随机确认ID绑定当前SQL和目标，未确认/取消/超时/断开均不执行，拒绝重复确认；取消结束本轮，模型不能自动重试。删除禁令保持不变。
+完全访问模式的每次新增、更新及非删除结构操作，都必须在执行前等待用户确认。确认卡片展示连接、数据库、涉及对象和完整 SQL（高亮、可复制）；模式切换确认不替代逐次执行确认。后端通过一次性随机确认ID绑定当前SQL和目标，未确认/取消/超时/断开均不执行，拒绝重复确认；取消结束本轮，模型不能自动重试。删除禁令保持不变。

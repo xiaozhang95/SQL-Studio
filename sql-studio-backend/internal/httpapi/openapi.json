@@ -35,19 +35,16 @@
     "/workspace": {
       "get": {
         "operationId": "readWorkspaceIndex",
-        "summary": "读取轻量工作区索引，首次后端迁移旧JSON",
+        "summary": "读取当前 v2 工作区索引，缺失时返回空工作区",
         "responses": {
           "200": {
-            "description": "工作区索引或内容JSON"
+            "description": "当前修订号和 v2 索引"
           },
           "400": {
-            "description": "无效请求或损坏的文件"
+            "description": "工作区文件无效或损坏"
           },
           "403": {
             "description": "禁止访问"
-          },
-          "409": {
-            "description": "修订冲突，不覆盖其他窗口"
           },
           "503": {
             "description": "服务未启用"
@@ -59,7 +56,7 @@
         "summary": "只提交变化的草稿及结果，CAS原子提交索引",
         "responses": {
           "200": {
-            "description": "工作区索引或内容JSON"
+            "description": "提交后的修订号和 v2 索引"
           },
           "400": {
             "description": "无效请求或损坏的文件"
@@ -118,16 +115,16 @@
         "summary": "按需读取不可变草稿或结果",
         "responses": {
           "200": {
-            "description": "工作区索引或内容JSON"
+            "description": "草稿或结果 JSON"
           },
           "400": {
-            "description": "无效请求或损坏的文件"
+            "description": "无效的散列或损坏的文件"
           },
           "403": {
             "description": "禁止访问"
           },
-          "409": {
-            "description": "修订冲突，不覆盖其他窗口"
+          "404": {
+            "description": "分片不存在"
           },
           "503": {
             "description": "服务未启用"
@@ -1338,7 +1335,7 @@
         "tags": [
           "配置"
         ],
-        "description": "workspace、history、appearance、ai-models 等独立分区；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
+        "description": "history、appearance、ai-models 等独立分区；工作区索引使用 /workspace；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
         "parameters": [
           {
             "name": "section",

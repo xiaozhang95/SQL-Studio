@@ -53,11 +53,11 @@ PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test
 
 explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
 
-Schema 回归覆盖结构列表拆列、旧记录迁移、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。
+Schema 回归覆盖结构列表拆列、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。
 
 export-stream.test.mjs 覆盖 SSE UTF-8 跨块/心跳/完成和失败、原生文件提交/放弃、两种引擎复合主键删除和 PostgreSQL 外键延后/引号表达式。后端 mysql/postgresql export_test.go 通过真实 database/sql 扫描流程及替身驱动验证6001行分批、精度/二进制、只读及资源释放；HTTP export_test.go 验证SSE事件和显式目标。均不代表真实数据库导出回灌验证。
 
-workspace-split.test.mjs 覆盖100页轻量索引、仅活动页读取、布局/草稿更新不传结果、只读范围草稿不常驻、持久化成功后释放基线，以及冲突、取消和损坏页面保护。workspace-performance.test.mjs 继续验证保存队列背压；原全量工作区序列化实现已移除。真实Go迁移/CAS/失败保留测试见后端statefile/workspace_test.go及httpapi/workspace_test.go。
+workspace-split.test.mjs 覆盖100页轻量索引、仅活动页读取、布局/草稿更新不传结果、只读范围草稿不常驻、持久化成功后释放基线，以及冲突、取消和损坏页面保护。workspace-performance.test.mjs 继续验证保存队列背压；原全量工作区序列化实现已移除。Go 索引初始化、CAS 和提交失败保留测试见后端statefile/workspace_test.go及httpapi/workspace_test.go。
 
 workspace-performance.test.mjs 还验证编辑缓冲的延迟全文读取、连续更新截止提交、切页/导出同步、位置更新不读SQL、关闭取消及分页原始行key/NULL搜索/全量CSV。浏览器另验证立即运行、选区快捷键、切页保留和历史事务，替身不代表真实数据库执行。
 

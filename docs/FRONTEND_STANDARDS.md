@@ -37,7 +37,7 @@ README 至少说明职责、导出接口、参数类型/可选值/默认值、�
 
 ## 数据库按引擎拆分
 
-[databases](../sql-studio-frontend/src/databases/README.md) 是统一分派入口；[mysql](../sql-studio-frontend/src/databases/mysql/README.md) 单独维护 MySQL 实现，按功能拆分 profile、query、statements、history、completion，每个模块都有独立 README。
+[databases](../sql-studio-frontend/src/databases/README.md) 是统一分派入口；[MySQL](../sql-studio-frontend/src/databases/mysql/README.md)、[MariaDB](../sql-studio-frontend/src/databases/mariadb/README.md) 和 [PostgreSQL](../sql-studio-frontend/src/databases/postgresql/README.md) 分别维护各自的适配能力，每个实际模块都有独立 README。
 
 数据库专属的配置、类型、接口、SQL 方法、补全、组件或 hooks 放到对应引擎内；存在实际专属样式对象时也归该功能。外部只通过 DatabaseAdapter 调用，不在通用组件中硬编码 MySQL 标签、3306、图标资源、方言或引号规则。新增引擎按同一契约注册，注册表做类型穷尽检查，不提前创建未支持引擎的空实现。
 
@@ -45,6 +45,6 @@ README 至少说明职责、导出接口、参数类型/可选值/默认值、�
 
 ## 验证
 
-修改后运行 `pnpm format`、`pnpm lint`、`pnpm build` 和根目录 `cd sql-studio-frontend && node --test tests/structure.test.mjs`。功能迁移同步全部调用方、README、目录索引及回归入口；针对行为变化做必要验证。涉及 UI 时核对亮暗主题、长名称、尺寸一致性与伸缩布局，使用隔离数据，不读取业务表满足检查。
+修改后运行 `pnpm format`、`pnpm lint` 和 `pnpm build`。`pnpm lint` 包含模块结构和本地文档链接检查。功能迁移同步全部调用方、README、目录索引及回归入口；针对行为变化做必要验证。涉及 UI 时核对亮暗主题、长名称、尺寸一致性与伸缩布局，使用隔离数据，不读取业务表满足检查。
 
 新增连接、数据库和表只更新对应列表，不自动切换查询范围、选中或展开节点；对象变更仅刷新目标缓存，其他连接的展开/折叠保留。对象树使用虚拟滚动，滚动位置延迟保存，避免逐帧更新整个工作区。

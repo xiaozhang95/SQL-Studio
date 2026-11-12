@@ -14,7 +14,7 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 
 顶栏左侧提供「新建会话」主按钮，与工作区「新建连接」使用相同样式。会话加载或执行期间禁用新建操作。
 
-会话标题使用 Ant Design fontSizeLG，1280px 以下隐藏，避免覆盖操作按钮；各窗口宽度下保存状态都仅在保存时显示 loading 图标，保留 aria-label 与 Tooltip。
+会话标题使用 Ant Design fontSizeLG，由 PageHeader 测量两侧操作区间距并限制可用宽度；各窗口宽度下保存状态都仅在保存时显示 loading 图标，保留 aria-label 与 Tooltip。
 
 完全访问模式的逐次写入确认通过WriteConfirmation卡片显示在当前回复下方，提供目标明细、完整SQL、确认/取消及错误反馈，不打开执行确认弹窗；模式切换确认仍沿用原有流程。
 
@@ -27,5 +27,5 @@ ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输
 右上角「系统设置」弹框集中提供模型、API Key 和外观配置，底部统一保存。输入框的模型菜单用于切换模型。
 顶栏左侧的新建会话按钮组后，以竖线分隔「工作区」入口按钮。点击即可返回工作区。会话执行、管理或初始化期间禁用返回入口。
 
-PageHeader 保留原有 56px 业务高度及上下内边距，仅将 macOS 系统按钮所在的 Electron 标题栏收紧到 24px。Agent消息与内部结果滚动条统一继承全局8px规则，不再单独缩细、改色、改弧度或隐藏主滚动条。
-底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条恢复显示后正文与输入框水平偏移。
+业务顶栏使用共享 PageHeader，最小高度为 `controlHeight + paddingSM`。消息与结果使用全局 6px 滚动条样式。
+底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条出现时正文与输入框水平偏移。

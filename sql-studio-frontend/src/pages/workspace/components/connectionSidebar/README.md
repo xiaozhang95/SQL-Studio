@@ -4,7 +4,7 @@
 
 model 通过 Pick 消费连接列表及加载状态、连接树所需的范围与操作回调；连接列表错误和重试由工作区顶部横幅统一展示，侧栏不消费这两项。
 
-explorer/updateExplorer 将树布局转发为受控状态，由工作区加密保存与恢复，不与查询范围联动。
+explorer/updateExplorer 将树布局转发为受控状态，随工作区索引保存和恢复，不与查询范围联动。
 
 sidebarWidth/setSidebarWidth 为与Agent历史栏共用的受控偏好宽度，交互由 useSidebarResize 管理。右边缘 5px 透明分隔条支持拖拽、键盘左右/Home/End 和双击重置；默认 272px，最小 200px，最大 560px，随工作区大小收紧以保留主区域空间。拖动结束提交一次宽度并随工作台轻量布局索引保存；调整期间不改变连接和查询范围，hover/拖动反馈沿用原生悬停 token。
 

@@ -30,7 +30,7 @@ DatabaseAdapter.explorer? 提供 schema 引擎的 tableIdentity(table):{schema,n
 
 tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(tables,schema?) 提供引擎所属结构列表列/行，PostgreSQL 拆开 Schema 和表名列。SQLCompletionContext.namespace? 表示当前 schema，schema 字段仍是元数据 map。DatabaseExplorerAdapter.referencedTables? 根据所属方言识别 AI 上下文引用。
 
-当前展示按用户要求统一为绿色圆角底板与白色图形，MySQL 和 PostgreSQL 均使用此样式；未连接的 icon 使用灰色底板。SVG 保留源文件，通过图片 filter 显示白色，悬停和选中不改变图形颜色。此展示替代先前的品牌原色、白色衬底和状态小圆点方案。
+MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于绿色或灰色圆角底板上。
 
 DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。deleteRowSQL 根据完整主键生成单行删除，缺少或不支持的主键直接拒绝。
 
