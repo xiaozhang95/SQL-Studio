@@ -15,7 +15,7 @@ export interface AISettingsEntry extends AIConfiguration {
 }
 export type AIConfigDocument = { revision: number; data: AIConfig | null }
 export interface AIAdapter {
-  readonly profile: { readonly value: AIProviderType; readonly label: string; readonly defaultModel: string; readonly icon: string; readonly darkIcon: string }
+  readonly profile: { readonly value: AIProviderType; readonly label: string; readonly defaultModel: string; readonly icon: string }
   listModels: (apiKey: string, signal: AbortSignal, configId?: string) => Promise<AIModel[]>
   assist: (input: AIRequest, signal: AbortSignal) => Promise<AIResult>
 }

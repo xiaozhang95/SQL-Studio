@@ -48,7 +48,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
         actions={
           <>
             <SaveStatus saving={model.workspaceReady && themeReady && (model.saving || themeSaving)} error={storageError} />
-            <SystemSettings themeMode={themeMode} themeReady={themeReady} {...appearancePreferences} />
+            <SystemSettings themeReady={themeReady} {...appearancePreferences} />
           </>
         }
       >

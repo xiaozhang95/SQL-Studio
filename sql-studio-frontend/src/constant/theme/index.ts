@@ -5,12 +5,14 @@ import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 /** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
   const textColor = themeMode === 'dark' ? '#fff' : '#000'
+  const primaryColor = antdTheme.defaultSeed.colorSuccess
   const config: ThemeConfig = {
     algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       ...(fontSizeMode === 'small' ? { fontSize: 12 } : fontSizeMode === 'large' ? { fontSize: 16 } : {}),
-      // 主色采用 Ant Design 默认 success 绿色，亮暗及交互色由算法派生。
-      colorPrimary: antdTheme.defaultSeed.colorSuccess,
+      // 主色与信息色共用绿色，亮暗及交互色由算法派生。
+      colorPrimary: primaryColor,
+      colorInfo: primaryColor,
       colorTextBase: textColor,
       colorText: textColor,
       colorTextHeading: textColor,
@@ -27,19 +29,6 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgActive: token.colorFillSecondary,
       controlItemBgActiveHover: token.colorFill
     },
-    cssVar: { key: 'sql-studio-theme' },
-    components: {
-      Typography: {
-        colorText: textColor,
-        colorTextSecondary: textColor,
-        colorTextDescription: textColor,
-        colorTextTertiary: textColor,
-        colorTextHeading: textColor,
-        colorLink: textColor,
-        colorLinkHover: textColor,
-        colorLinkActive: textColor,
-        linkHoverDecoration: 'underline'
-      }
-    }
+    cssVar: { key: 'sql-studio-theme' }
   }
 }

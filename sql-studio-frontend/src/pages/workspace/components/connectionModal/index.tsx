@@ -103,7 +103,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               <EngineIcon type={engine.value} variant="logo" />
               <span>{engine.label}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <Tag color="blue">默认端口 {engine.port}</Tag>
+                <Tag>默认端口 {engine.port}</Tag>
                 <Tooltip title="连接凭据仅加密保存在当前电脑">
                   <Tag color="success" icon={<SafetyCertificateOutlined />}>
                     本地加密

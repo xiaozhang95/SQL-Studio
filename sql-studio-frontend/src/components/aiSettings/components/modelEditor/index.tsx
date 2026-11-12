@@ -3,12 +3,11 @@ import { Alert, Button, Form, Input, Modal, Select, Space, Tooltip } from 'antd'
 
 import { aiProviders } from '@/ai'
 import type { AIProviderType } from '@/ai/typings'
-import type { ThemeMode } from '@/typings/theme'
 
 import AIProviderIcon from '../../../aiProviderIcon'
 import type { useModelEditor } from '../../hooks/useModelEditor'
 
-export default function ModelEditor({ editor, themeMode }: { editor: ReturnType<typeof useModelEditor>; themeMode: ThemeMode }) {
+export default function ModelEditor({ editor }: { editor: ReturnType<typeof useModelEditor> }) {
   const { draft } = editor
   return (
     <Modal
@@ -34,7 +33,7 @@ export default function ModelEditor({ editor, themeMode }: { editor: ReturnType<
                   value: provider.value,
                   label: (
                     <Space>
-                      <AIProviderIcon provider={provider.value} themeMode={themeMode} />
+                      <AIProviderIcon provider={provider.value} />
                       {provider.label}
                     </Space>
                   )

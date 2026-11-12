@@ -81,6 +81,7 @@ export default function PageHeader({
               transform: 'translateX(-50%)',
               maxWidth: 'var(--header-title-available-width, 0px)',
               fontSize: token.fontSizeLG,
+              fontWeight: token.fontWeightStrong,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

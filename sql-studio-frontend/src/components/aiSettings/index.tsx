@@ -1,22 +1,20 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Empty, Flex, Spin, theme, Tooltip, Typography } from 'antd'
 
-import { aiProviders } from '@/ai'
+import { getAIAdapter } from '@/ai'
 import { maxAIConfigurations } from '@/ai/typings'
 import type { useAISettings } from '@/hooks/useAISettings'
-import type { ThemeMode } from '@/typings/theme'
 
 import AIProviderIcon from '../aiProviderIcon'
 import ModelEditor from './components/modelEditor'
 import { useModelEditor } from './hooks/useModelEditor'
 
 interface Props {
-  themeMode: ThemeMode
   model: ReturnType<typeof useAISettings>
   disabled: boolean
 }
 
-export default function AISettings({ themeMode, model, disabled }: Props) {
+export default function AISettings({ model, disabled }: Props) {
   const { token } = theme.useToken()
   const editor = useModelEditor(model.entries, model.upsertEntry)
   const locked = disabled || !model.ready || model.loading || model.busy
@@ -37,12 +35,13 @@ export default function AISettings({ themeMode, model, disabled }: Props) {
               gap="small"
               style={{ minWidth: 0, padding: token.paddingSM, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: token.borderRadiusLG, background: token.colorFillAlter }}
             >
-              <AIProviderIcon provider={entry.provider} themeMode={themeMode} />
-              <Tooltip title={`${aiProviders.find((provider) => provider.value === entry.provider)?.label} ${entry.modelName}`}>
-                <Typography.Text ellipsis style={{ flex: 1, minWidth: 0 }}>
-                  {aiProviders.find((provider) => provider.value === entry.provider)?.label} {entry.modelName}
+              <AIProviderIcon provider={entry.provider} size={token.controlHeight} />
+              <Flex vertical gap={token.marginXXS} style={{ flex: 1, minWidth: 0 }}>
+                <Typography.Text strong ellipsis={{ tooltip: entry.modelName }}>
+                  {entry.modelName}
                 </Typography.Text>
-              </Tooltip>
+                <Typography.Text type="secondary">{getAIAdapter(entry.provider).profile.label}</Typography.Text>
+              </Flex>
               <Tooltip title={model.connectionTests[entry.id]?.message || '测试连接'}>
                 <Button
                   type="text"
@@ -65,7 +64,7 @@ export default function AISettings({ themeMode, model, disabled }: Props) {
           {!model.entries.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还未添加模型" />}
         </Flex>
       </Spin>
-      <ModelEditor editor={editor} themeMode={themeMode} />
+      <ModelEditor editor={editor} />
     </Flex>
   )
 }

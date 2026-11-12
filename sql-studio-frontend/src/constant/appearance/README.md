@@ -10,4 +10,4 @@ Modal 与 AntApp 确认弹窗使用 Ant Design 容器外观。暗色模式通过
 
 常规操作按钮统一使用 Ant Design default 类型，不再用 primary 再覆盖成普通外观。Modal 及 AntApp 的默认确认按钮通过 modalDefaults（ConfigProviderProps.modal 类型约束）统一配置，Popconfirm 显式使用 okType=default。危险、禁用、加载及回调语义保留，工具栏图标和链接操作按原有 text/link 类型展示。
 
-按钮默认、悬停、按下、焦点的颜色、背景、边框及阴影全部沿用 Ant Design 默认值，不在 theme.Button 或 app.scss 中额外覆盖；主色仍由 constant/theme 使用 success 绿色。Typography 链接继续使用正文色及悬停下划线。
+按钮默认、悬停、按下、焦点的颜色、背景、边框及阴影全部沿用 Ant Design 默认值，不在 theme.Button 或 app.scss 中额外覆盖；主色仍由 constant/theme 使用 success 绿色。Typography 链接沿用当前 Ant Design 主题的默认样式。

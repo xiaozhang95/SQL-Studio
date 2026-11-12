@@ -10,7 +10,7 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。信息 Tag 使用蓝色 solid，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
+App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。普通标签使用中性色，信息提示跟随主题绿色，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
 
 Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。确认按钮使用统一的普通按钮配置。
 

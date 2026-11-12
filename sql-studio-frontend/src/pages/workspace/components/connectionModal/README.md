@@ -15,3 +15,5 @@
 数据库类型选项使用原生 text Button，aria-pressed 提供选中语义。选中项由 app.scss 使用共享 controlItemBgActive 灰色底，略深于普通悬停。保存或测试期间，禁用的选中项使用主题禁用填充。文字和引擎图标沿用原有样式。
 
 常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。
+
+默认端口使用 Ant Design 中性标签，本地加密使用成功状态标签。

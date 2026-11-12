@@ -1,8 +1,7 @@
 import { getAIAdapter } from '@/ai'
 import type { AIProviderType } from '@/ai/typings'
-import type { ThemeMode } from '@/typings/theme'
 
-export default function AIProviderIcon({ provider, themeMode }: { provider: AIProviderType; themeMode: ThemeMode }) {
+export default function AIProviderIcon({ provider, size, className }: { provider: AIProviderType; size?: number; className?: string }) {
   const profile = getAIAdapter(provider).profile
-  return <img src={themeMode === 'dark' ? profile.darkIcon : profile.icon} alt="" aria-hidden="true" style={{ width: 22, height: 18, objectFit: 'contain', flexShrink: 0 }} />
+  return <img className={className} src={profile.icon} alt="" aria-hidden="true" width={size ?? 22} height={size ?? 18} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
 }

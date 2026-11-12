@@ -56,7 +56,7 @@ export function ChatPage({
         actions={
           <>
             <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label="正在保存对话…" />
-            <SystemSettings themeMode={dark ? 'dark' : 'light'} {...appearancePreferences} />
+            <SystemSettings {...appearancePreferences} />
           </>
         }
       >

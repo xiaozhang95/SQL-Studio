@@ -1,12 +1,10 @@
 import { AIProvider } from '../../typings'
 import type { AIAdapter } from '../../typings'
-import deepseekDark from '../assets/logo-mark-dark.svg'
-import deepseekLight from '../assets/logo-mark-light.svg'
+import deepseekLogo from '../assets/logo.svg'
 
 export const deepseekProfile = {
   value: AIProvider.DeepSeek,
   label: 'DeepSeek',
   defaultModel: 'deepseek-flash',
-  icon: deepseekLight,
-  darkIcon: deepseekDark
+  icon: deepseekLogo
 } as const satisfies AIAdapter['profile']

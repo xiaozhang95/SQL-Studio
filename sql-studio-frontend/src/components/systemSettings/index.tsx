@@ -1,7 +1,7 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { Alert, Button, Modal, theme, Typography } from 'antd'
 
-import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
+import type { AppearancePreferences } from '@/typings/theme'
 
 import AISettings from '../aiSettings'
 import AppearanceCards from './components/appearanceCards'
@@ -9,11 +9,7 @@ import ThemePreview from './components/themePreview'
 import { fontSizeOptions, settingsGroups, settingsLayout, SettingsSection, settingsSections, themeOptions } from './constant/settings'
 import { useSystemSettings } from './hooks/useSystemSettings'
 
-interface Props extends AppearancePreferences {
-  themeMode: ThemeMode
-}
-
-export default function SystemSettings({ themeMode, ...preferences }: Props) {
+export default function SystemSettings(preferences: AppearancePreferences) {
   const settings = useSystemSettings(preferences)
   const { token } = theme.useToken()
   const sectionTitle = settingsSections.find((section) => section.value === settings.section)?.label
@@ -102,7 +98,7 @@ export default function SystemSettings({ themeMode, ...preferences }: Props) {
               {sectionTitle}
             </Typography.Title>
             {settings.error && <Alert type="error" showIcon title={settings.error} style={{ marginBottom: token.margin }} />}
-            {settings.section === SettingsSection.Model && <AISettings themeMode={themeMode} model={settings.ai} disabled={settings.busy} />}
+            {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
             {settings.section === SettingsSection.Theme && (
               <AppearanceCards
                 label="主题模式"

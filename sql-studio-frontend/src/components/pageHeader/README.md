@@ -4,7 +4,7 @@
 
 Electron 中在业务 header 前组合 [DesktopTitleBar](../desktopTitleBar/README.md)，标题栏和 header 使用相同 surface 背景并随亮暗主题同步；普通浏览器不增加额外行。调用方容器需沿用纵向 flex 布局。
 
-title/titleClassName/titleOffset 为业务 header 的可选中心标题、样式类和水平偏移，默认偏移 0；通过 ResizeObserver 限制标题宽度，卸载时清理。AI 助手继续显示会话标题，并以侧栏宽度的一半作为偏移。
+title 和 titleOffset 为业务 header 的可选居中标题和水平偏移，默认偏移 0。标题使用 Ant Design 的强调字重，通过 ResizeObserver 限制宽度，卸载时清理。AI 助手显示会话标题，并以侧栏宽度的一半作为偏移。
 
 showDesktopTitle?: boolean 默认 true，只控制 Electron 最上方的 SQL Studio 应用名。AI 助手传 false；它与业务 header 的会话标题是两个独立区域。
 
