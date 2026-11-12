@@ -11,7 +11,6 @@ const cli = require.resolve('electron/cli.js')
 const env = { ...process.env, ELECTRON_MIRROR: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' }
 // 即便包管理器没有把 .npmrc 转成环境变量，Electron 首次运行下载也使用镜像。
 delete env.ELECTRON_RUN_AS_NODE
-delete env.SQL_STUDIO_PREVIEW_RUNTIME_DIR
 
 // Windows 上 Chromium 初始化失败可能在主进程执行前以这两个退出码结束。
 // Windows 下 Node 上报的是无符号 DWORD，shell 里显示为负数，因此统一按 32 位无符号比较。
@@ -31,9 +30,7 @@ async function launchFromTemporaryRuntime(args) {
   const directory = await mkdtemp(path.join(await realpath(tmpdir()), 'sql-studio-electron-'))
   try {
     await cp(source, directory, { recursive: true })
-    const runtime = path.join(directory, 'sql-studio-preview-runtime')
-    await cp(path.join(root, 'build', 'runtime'), runtime, { recursive: true })
-    const environment = { ...env, ELECTRON_OVERRIDE_DIST_PATH: directory, SQL_STUDIO_PREVIEW_RUNTIME_DIR: runtime }
+    const environment = { ...env, ELECTRON_OVERRIDE_DIST_PATH: directory }
     const code = await launch(args, environment)
     if (!isStartupCrash(code) || args.includes('--no-sandbox')) return code
 

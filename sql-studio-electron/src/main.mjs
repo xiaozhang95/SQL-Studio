@@ -3,9 +3,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
 
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme } from 'electron'
 
-import { startBackend } from './backend.mjs'
+import { startBackend, waitForService } from './backend.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
@@ -45,12 +45,40 @@ let startupTask
 let shutdownTask
 let allowQuit = false
 const startupAbort = new AbortController()
+const developmentURL = 'http://127.0.0.1:15173'
 
-function createWindow(dark) {
+async function checkDevelopmentServices(signal) {
+  const response = await fetch(`${developmentURL}/@vite/client`, {
+    redirect: 'error',
+    signal: AbortSignal.any([signal, AbortSignal.timeout(2000)])
+  }).catch(() => null)
+  void response?.body?.cancel().catch(() => {})
+  signal.throwIfAborted()
+  if (!response?.ok || !response.headers.get('content-type')?.includes('javascript')) {
+    throw new Error(`无法连接前端 Vite 开发服务（${developmentURL}）。请在 sql-studio-frontend 目录运行 pnpm dev 后重试。`)
+  }
+
+  try {
+    await waitForService(developmentURL, { signal, timeout: 2000 })
+  } catch (error) {
+    signal.throwIfAborted()
+    throw new Error('无法通过 Vite 代理连接 Go 后端。请在 sql-studio-backend 目录运行 go run main.go，并确认后端监听 127.0.0.1:18080。', { cause: error })
+  }
+}
+
+async function loadIcons() {
+  if (app.isPackaged) {
+    const icon = nativeImage.createFromPath(path.join(process.resourcesPath, 'icon.png'))
+    return { icon, appIcon: icon }
+  }
+  const { renderAppIcon } = await import('../scripts/icons.mjs')
+  const icon = nativeImage.createFromBuffer(renderAppIcon())
+  const appIcon = process.platform === 'darwin' ? nativeImage.createFromBuffer(renderAppIcon(true)) : icon
+  return { icon, appIcon }
+}
+
+function createWindow(dark, appIcon) {
   let origin = ''
-  const iconDirectory = app.isPackaged ? process.resourcesPath : fileURLToPath(new URL('../build/icons/', import.meta.url))
-  const icon = path.join(iconDirectory, 'icon.png')
-  const appIcon = path.join(iconDirectory, process.platform === 'darwin' ? 'mac-icon.png' : 'icon.png')
   const background = dark ? '#141414' : '#ffffff'
   mainWindow = new BrowserWindow({
     title: 'SQL Studio',
@@ -107,7 +135,6 @@ function createWindow(dark) {
   })
   return {
     window,
-    icon,
     async loadWorkbench(url) {
       origin = new URL(url).origin
       const timeout = new AbortController()
@@ -159,32 +186,31 @@ if (dataError) {
   startupTask = app
     .whenReady()
     .then(async () => {
-      const appearance = await readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors)
+      if (!app.isPackaged) await checkDevelopmentServices(startupAbort.signal)
+      const [appearance, { icon, appIcon }] = await Promise.all([
+        readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors),
+        loadIcons()
+      ])
       startupAbort.signal.throwIfAborted()
-      const desktop = createWindow(appearance.dark)
-      startupScreen = await createStartupScreen(desktop.window, { icon: desktop.icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
+      const desktop = createWindow(appearance.dark, appIcon)
+      startupScreen = await createStartupScreen(desktop.window, { icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
       startupAbort.signal.throwIfAborted()
-      const runtime = app.isPackaged
-        ? path.join(process.resourcesPath, 'runtime')
-        : process.env.SQL_STUDIO_PREVIEW_RUNTIME_DIR || fileURLToPath(new URL('../build/runtime', import.meta.url))
-      backend = await startBackend(
-        runtime,
-        dataDirectory,
-        () => {
-          if (!quitting) {
-            dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
-            app.quit()
-          }
-        },
-        { signal: startupAbort.signal }
-      )
-      if (quitting) {
-        await backend.stop()
-        backend = undefined
-        return
+      if (app.isPackaged) {
+        backend = await startBackend(
+          path.join(process.resourcesPath, 'runtime'),
+          dataDirectory,
+          () => {
+            if (!quitting) {
+              dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
+              app.quit()
+            }
+          },
+          { signal: startupAbort.signal }
+        )
       }
+      startupAbort.signal.throwIfAborted()
       startupScreen.setStage('workspace')
-      await desktop.loadWorkbench(backend.url)
+      await desktop.loadWorkbench(backend?.url ?? developmentURL)
       await startupScreen.complete()
       if (!desktop.window.isDestroyed()) desktop.window.webContents.focus()
     })
@@ -192,8 +218,13 @@ if (dataError) {
       trace(`启动失败: ${error?.stack || error?.message || error}`)
       if (!quitting) {
         startupScreen?.setStage('error')
-        const message = app.isPackaged ? error.message : `${error.message}\n\n请先执行 pnpm dist 生成桌面调试资源。`
-        dialog.showErrorBox('SQL Studio 启动失败', message)
+        if (!app.isPackaged) console.error(`[electron] ${error.message}`)
+        dialog.showErrorBox('SQL Studio 启动失败', error.message)
+        if (!app.isPackaged) {
+          startupScreen?.dispose()
+          app.exit(1)
+          return
+        }
       }
       app.quit()
     })

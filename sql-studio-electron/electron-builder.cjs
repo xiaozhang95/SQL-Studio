@@ -29,7 +29,7 @@ module.exports = {
     try {
       await Promise.all(resources.map((file) => access(path.join(__dirname, file))))
     } catch (error) {
-      throw new Error(`无法读取打包资源，请先执行 pnpm dist。\n${error.message}`)
+      throw new Error(`无法读取打包资源。\n${error.message}`)
     }
   },
   async afterPack({ appOutDir, electronPlatformName, packager }) {

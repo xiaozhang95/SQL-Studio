@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import './icons.mjs'
+import { writeAppIcons } from './icons.mjs'
 
 const project = fileURLToPath(new URL('..', import.meta.url))
 const root = path.dirname(project)
@@ -19,6 +19,7 @@ function run(command, args, cwd, env = process.env) {
   if (result.status !== 0) throw new Error(`${command} 构建失败（${result.status}）`)
 }
 
+writeAppIcons()
 // 只清理 Electron 自己的生成目录，不改 Go embed 资源或现有 release。
 rmSync(runtime, { recursive: true, force: true })
 mkdirSync(runtime, { recursive: true })

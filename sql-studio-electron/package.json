@@ -13,8 +13,7 @@
   "packageManager": "pnpm@12.15.0",
   "scripts": {
     "start": "node scripts/electron.mjs",
-    "dist": "node scripts/prepare-runtime.mjs",
-    "build": "electron-builder --publish never"
+    "build": "node scripts/prepare-runtime.mjs && electron-builder --publish never"
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",
