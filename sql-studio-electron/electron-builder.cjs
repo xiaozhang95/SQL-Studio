@@ -1,3 +1,6 @@
+const { copyFile, rename } = require('node:fs/promises')
+const path = require('node:path')
+
 // electron-builder 的辅助工具与 Electron 本体分别下载，两个镜像都需要设置。
 process.env.ELECTRON_BUILDER_BINARIES_MIRROR ||= 'https://npmmirror.com/mirrors/electron-builder-binaries/'
 
@@ -16,16 +19,20 @@ module.exports = {
   electronDownload: { mirror: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
   mac: { target: ['dmg'], icon: 'build/icons/mac-icon.png', category: 'public.app-category.developer-tools', identity: null },
   win: {
-    target: ['nsis'],
-    // Chromium 沙箱初始化失败的机器，可以双击 exe 同级这个脚本（带 --no-sandbox）启动。
-    extraFiles: [{ from: 'scripts/launch.cmd', to: '启动 SQL Studio.cmd' }]
+    target: ['zip', 'nsis'],
+    artifactName: '${productName}-Portable-${version}-${arch}.${ext}'
   },
-  // 默认 oneClick 安装器在某些机器上会静默失败：改成按当前用户安装（%LOCALAPPDATA%），
-  // 不申请管理员权限、允许选择目录，普通账户也能装。
+  async afterPack({ appOutDir, electronPlatformName, packager }) {
+    if (electronPlatformName !== 'win32') return
+    const executable = path.join(appOutDir, `${packager.appInfo.productFilename}.exe`)
+    // 保留安装器和快捷方式使用的入口名，Chromium 及其依赖仍位于同一目录。
+    await rename(executable, path.join(appOutDir, 'sql-studio-runtime.exe'))
+    await copyFile(path.join(__dirname, 'build', 'launcher.exe'), executable)
+  },
   nsis: {
+    artifactName: '${productName}-Setup-${version}-${arch}.${ext}',
     oneClick: false,
-    perMachine: false,
-    allowElevation: false,
+    perMachine: true,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
@@ -33,8 +40,8 @@ module.exports = {
     runAfterFinish: true,
     deleteAppDataOnUninstall: false,
     differentialPackage: false,
-    // 重建带 --no-sandbox 的快捷方式，见 build/installer.nsh。
-    include: 'build/installer.nsh'
+    useZip: true,
+    include: 'scripts/windows/installer.nsh'
   },
   linux: { target: ['AppImage'], category: 'Development' }
 }

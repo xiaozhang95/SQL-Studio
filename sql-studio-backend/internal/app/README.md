@@ -12,7 +12,7 @@
 
 实现按 connection/metadata/query 等职责分文件，测试同目录；包外只使用实际导出方法。修改公开参数/错误行为时同步 model、httpapi、API 文档及相关测试。真实服务回归入口为 go test ./...、go vet ./... 和 go build ./...，集成参数见后端 README。
 
-app.New 装配 statefile/settings，只接受明确的当前 StateDir/DataDir；config.Load 解析启动工作目录下的当前路径，不提供空目录回退。
+app.New 装配 statefile/settings，要求明确的当前 StateDir/DataDir。config.Load 默认使用用户主目录下的 `.sql-studio/state/`。
 
 装配 ai.New(stateStore, repository, deepseek.New())；AI与SQL执行分别拥有并发预算。
 

@@ -17,7 +17,7 @@ go run main.go
 
 服务监听 `127.0.0.1:18080`，日志直接输出终端，Ctrl+C 退出并给予在途请求 5 秒结束时间。当前不提供启停脚本、后台 PID、日志文件和部署配置。
 
-开发时从后端根目录启动，连接与密钥默认与布局配置一起保存在服务启动工作目录下的 `./.sql-studio/state/`，网页目录为 `../sql-studio-frontend/dist`。没有保存连接时可在网页创建；数据库范围见 [数据库支持](../docs/DATABASES.md)。可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。现有配置和密钥不因启动参数而覆盖，不删除运行数据。
+开发时从后端根目录启动，网页目录为 `../sql-studio-frontend/dist`。连接、密钥和布局配置默认保存在 `~/.sql-studio/state/`，Windows 路径为 `%USERPROFILE%\.sql-studio\state`。没有保存连接时可在网页创建。数据库范围见 [数据库支持](../docs/DATABASES.md)，可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。
 
 ## 含前端的独立可执行文件
 
@@ -27,7 +27,7 @@ go run main.go
 
 监听地址默认 `127.0.0.1:18080`，可通过 `SQLDESK_ADDR` 指定其他地址（例如 `127.0.0.1:18081`）以避开已有服务；不会自动停止已有进程。
 
-配置目录按启动工作目录解析。日志和保存错误包含实际 PID 和程序路径。出现 Access is denied 或双击退出时见 [启动失败与配置保存提示](../README.md#启动失败与配置保存提示)。不自动更换目录、修改权限或停止其他服务。
+显式配置的相对目录以启动工作目录为基准。日志和保存错误包含实际 PID 和程序路径。出现 Access is denied 或双击退出时见 [启动失败与配置保存提示](../README.md#启动失败与配置保存提示)。
 
 脚本生成资源后可执行 `go test -tags embedded -count=1 ./...`，包含从临时工作目录读取内嵌页面及真实构建 JS 的验证；默认 `go test ./...` 不要求生成 dist。包边界见 [webui](internal/webui/README.md)。
 

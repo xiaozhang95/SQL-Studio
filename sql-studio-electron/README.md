@@ -44,7 +44,7 @@ pnpm bundle
 pnpm start
 
 # 3. 出成品：先跑 bundle，再打包成 release/
-#    Windows 为 win-unpacked + NSIS 安装包，macOS 为 dmg，Linux 为 AppImage
+#    Windows 为绿色版 ZIP 和 NSIS 安装包，macOS 为 dmg，Linux 为 AppImage
 pnpm build
 ```
 
@@ -52,13 +52,18 @@ pnpm build
 
 当前命令按宿主平台和架构成套构建，不支持附加 electron-builder 跨平台/跨架构参数；请在目标平台构建，避免 Go 与 Electron 架构不匹配。macOS 产物未签名、未公证，Windows 产物未签名；正式分发需另行配置签名。
 
-Windows NSIS 安装包按当前用户安装，默认目录为 `%LOCALAPPDATA%\Programs\SQL Studio`，安装时可修改。`electron-builder.cjs` 的 `nsis` 配置关闭一键安装及提权。`build/installer.nsh` 创建带 `--no-sandbox` 的桌面和开始菜单快捷方式，Windows 产物还包含同样传入该参数的 `启动 SQL Studio.cmd`。
+Windows 在 `release/` 下生成两份分发产物。
+
+- `SQL Studio-Portable-<版本>-<架构>.zip` 完整解压到可写目录后，双击 `SQL Studio.exe`。
+- `SQL Studio-Setup-<版本>-<架构>.exe` 为所有用户安装。安装时需通过 Windows 管理员授权，默认目录为 `%ProgramFiles%\SQL Studio`，安装时可修改。安装后可从桌面、开始菜单或安装目录打开 `SQL Studio.exe`。
+
+安装器按路径检查并请求关闭安装目录中的 SQL Studio 进程，再替换旧卸载程序。覆盖安装和卸载保留用户配置。旧安装目录中已有的 `.sql-studio` 保留在原位置。
 
 ### Windows 构建与启动排查
 
 `pnpm build` 出现 `EBUSY` 且报错路径指向 `app.asar` 时，先关闭运行中的打包版及持有该文件的进程。需要使用新输出目录时，在 PowerShell 设置 `$env:SQL_STUDIO_OUT = 'release-ok'` 后运行 `pnpm build`。
 
-启动诊断日志写入 `<数据根>/state/electron.log`。如果数据根的 `electron/` 目录无法创建，应用会显示目录错误，可用 `SQL_STUDIO_DATA_DIR` 指定可写路径。如果 Electron 在主进程入口执行前以 `STATUS_BREAKPOINT`（`0x80000003`）退出，可能没有这份启动日志。
+启动诊断日志写入 `<数据根>/state/electron.log`。如果数据目录无法创建，应用会显示目录错误，可用 `SQL_STUDIO_DATA_DIR` 指定可写路径。如果 Electron 在主进程入口执行前以 `STATUS_BREAKPOINT`（`0x80000003`）退出，可能没有这份启动日志。
 
 ## 标题栏和应用图标
 
@@ -92,18 +97,12 @@ electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-
 
 桌面预览和打包版自动选择 `127.0.0.1` 空闲端口、启动随包 Go 服务，等待 `/api/health` 就绪后加载同源网页，因此 `/api`、流式请求、导出沿用浏览器实现。关闭最后一个窗口即退出；退出时只清理本次创建的 Go 子进程，macOS/Linux 先给予最多 6 秒退出时间，Windows 使用系统进程终止语义，不承诺在途请求完成。
 
-桌面版显式设置后端的网页、连接、状态目录，不继承终端里的 `SQLDESK_*` 初始数据库参数。桌面预览默认将数据放到 `sql-studio-backend/.sql-studio`，其中状态目录与在后端根目录运行 `go run main.go` 的默认路径相同：
+桌面开发、预览、绿色版和安装版默认都使用当前用户主目录下的 `.sql-studio/`，Windows 路径为 `%USERPROFILE%\.sql-studio`，macOS 和 Linux 路径为 `~/.sql-studio/`。
 
-- `sql-studio-backend/.sql-studio/state`：连接、密钥、工作区及 AI 配置
-- `sql-studio-backend/.sql-studio/electron`：Electron/Chromium 自身数据（窗口状态、缓存等）
+- `state/` 保存连接、密钥、工作区及 AI 配置，与独立运行的 Go 服务共用默认路径。
+- `electron/` 保存 Electron 和 Chromium 自身数据。
 
-打包版优先把数据放在 exe 同级的 `.sql-studio`（绿色版拷到哪，数据就跟到哪），同样是 `state/` 和 `electron/`。安装到 `Program Files` 这类只读位置、建不出该目录时，自动退回系统 appData 下的 `sql-studio-electron`：
-
-- macOS：`~/Library/Application Support/sql-studio-electron/`
-- Windows：`%APPDATA%/sql-studio-electron/`
-- Linux：`${XDG_CONFIG_HOME:-~/.config}/sql-studio-electron/`
-
-`state/` 包含连接、密钥、工作区及 AI 配置，与网页版的启动目录配置独立。桌面预览与 `go run main.go` 共用同一份，两端不要同时启动；需要沿用网页版数据时先退出两端服务，再完整复制原 state 目录（含 `master.key` 和工作区分片）；不会自动搬迁或删除旧数据。桌面应用使用单实例锁。
+桌面预览和打包版为随包后端指定网页、连接和状态目录，并隔离终端里的 `SQLDESK_*` 初始数据库参数。桌面开发模式使用手动启动的后端。同一个状态目录应由一个 Go 服务进程使用。旧配置保留在原位置。如需沿用，在退出应用和服务后将旧 `state/` 整体复制到尚无数据的新位置，包括 `master.key` 和工作区分片。
 
 需要换一个数据根（便携运行、受限终端）时用 `SQL_STUDIO_DATA_DIR` 指定，取绝对路径或相对启动目录的路径，`state/` 与 `electron/` 都会建在它下面：
 
@@ -115,7 +114,7 @@ SQL_STUDIO_DATA_DIR=./.data pnpm start
 $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 ```
 
-开发和桌面预览的启动脚本检测 `STATUS_BREAKPOINT`（`0x80000003`）与访问冲突（`0xC0000005`）。首次运行返回其中一个退出码且未传入 `--no-sandbox` 时，脚本以相同数据目录加上该参数重试一次。Windows 安装包快捷方式和随包启动脚本的参数见上文。
+开发和桌面预览的启动脚本、Windows 打包版的 `SQL Studio.exe` 都会检测 `STATUS_BREAKPOINT`（`0x80000003`）与访问冲突（`0xC0000005`）。首次运行返回其中一个退出码且未传入 `--no-sandbox` 时，启动入口以相同数据目录加上该参数重试一次。
 
 窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 仅提供只读标题栏高度和主题同步接口，不暴露通用 IPC。主进程校验调用来源和颜色；拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
 
@@ -127,6 +126,7 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 - `src/preload.cjs`：最小标题栏主题桥接。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。
 - `scripts/`：Electron 镜像启动入口、桌面资源构建。
+- `scripts/windows/`：Windows GUI 启动入口及 NSIS 安装、升级和卸载逻辑。
 - `electron-builder.cjs`：应用与安装包配置。
 - `tests/`：导航、配置隔离与健康检查契约测试。
 

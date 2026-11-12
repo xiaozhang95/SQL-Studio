@@ -165,7 +165,7 @@ SQL Studio 是面向本机单用户的数据库工作台，提供数据库连接
 - 恢复只读取必要内容和元数据，不自动执行 SQL；保存完成的非活动内容可释放内存。
 - 恢复时在工作区显示加载状态。顶栏在保存期间显示加载指示，保存错误由页面提示。
 - 修订号检查避免旧保存覆盖新状态；损坏/未知版本配置拒绝静默覆盖。
-- 默认保存到服务启动工作目录下的 `.sql-studio/state/`，可通过 SQLDESK_STATE_DIR 指定。
+- 默认保存到用户主目录下的 `.sql-studio/state/`，独立 Go 服务可通过 `SQLDESK_STATE_DIR` 指定。
 - 密码、AI Key 由后端管理并脱敏返回；工作区可能包含 SQL 和结果，备份时需妥善保管。
 - 迁移、备份连接时应同时保留 connections.json 与 master.key；不会自动读取或删除任意旧用户目录。
 
@@ -199,8 +199,8 @@ SQL Studio 是面向本机单用户的数据库工作台，提供数据库连接
 - 构建版由同一个 Go 服务提供页面与 API，目标机器无需 Node、Vite、Go 或外部 dist。
 - 默认监听 127.0.0.1:18080，可用 SQLDESK_ADDR 改地址；SQLDESK_WEB_DIR 可覆盖静态资源目录。
 - 构建脚本支持指定 windows/linux/darwin 与 amd64/arm64；不据此宣称本次已完成全部平台运行验证。
-- 根目录打包脚本在 Windows 生成独立 EXE，状态目录按服务启动工作目录解析。
-- [Electron 桌面项目](../sql-studio-electron/README.md) 提供 NSIS、DMG 或 AppImage，打包版自动启动本地 Go 服务并管理其生命周期。
+- 根目录打包脚本在 Windows 生成独立 EXE，默认状态目录为 `%USERPROFILE%\.sql-studio\state`。
+- [Electron 桌面项目](../sql-studio-electron/README.md) 提供 Windows 绿色版 ZIP 和 NSIS 安装包、macOS DMG 或 Linux AppImage，打包版自动启动本地 Go 服务并管理其生命周期。
 - 提供本地 Swagger UI、OpenAPI JSON、健康检查及连接、对象、查询、工作区、状态、AI 接口。
 - 默认仅面向本机单用户，包含本机 Host/跨站请求检查，不提供开放 CORS 或多人账号体系。
 

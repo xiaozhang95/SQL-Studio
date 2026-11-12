@@ -13,8 +13,7 @@ delete env.ELECTRON_RUN_AS_NODE
 
 // 受限终端（沙箱、白名单管控）会阻止 Chromium 初始化自身沙箱，主进程在执行 main.mjs 之前
 // 就以 STATUS_BREAKPOINT(0x80000003) 或访问冲突(0xC0000005) 退出，且不打印任何日志。
-// 这种情况下自动降级重试一次：关闭 Electron 沙箱。数据目录本来就在项目内
-// （sql-studio-backend/.sql-studio），不需要额外改指向。
+// 这种情况下保持原数据目录设置，关闭 Electron 沙箱重试一次。
 // Windows 下 Node 上报的是无符号 DWORD，shell 里显示为负数，因此统一按 32 位无符号比较。
 const RESTRICTED_EXIT_CODES = new Set([0x80000003, 0xc0000005])
 
@@ -32,7 +31,7 @@ try {
   exitCode = await launch(forwarded, env)
   if (RESTRICTED_EXIT_CODES.has(exitCode >>> 0) && !forwarded.includes('--no-sandbox')) {
     console.warn(`\n[electron] 当前终端限制了 Chromium 沙箱（退出码 ${exitCode}），已自动降级重试。`)
-    console.warn('[electron] 本次关闭 Electron 沙箱，数据仍在 sql-studio-backend/.sql-studio，仅用于本机调试。\n')
+    console.warn('[electron] 本次关闭 Electron 沙箱，仅用于本机调试。\n')
     exitCode = await launch([...forwarded, '--no-sandbox'], env)
     if (RESTRICTED_EXIT_CODES.has(exitCode >>> 0)) {
       console.error('[electron] 降级后仍无法启动：请换到系统自带终端运行，或把本项目加入安全软件信任区。')

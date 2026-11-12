@@ -10,9 +10,6 @@ import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 
-// 数据统一放在 .sql-studio，与 Go 服务（go run main.go）用的是同一个目录：
-// Chromium 用户数据在 electron/，连接、密钥与工作区状态在 state/。便携运行或受限终端
-// （%APPDATA% 不可写）可以用 SQL_STUDIO_DATA_DIR 换一个数据根。
 function ensureDirectory(directory) {
   try {
     mkdirSync(directory, { recursive: true })
@@ -22,25 +19,17 @@ function ensureDirectory(directory) {
   }
 }
 
-const dataDirectory = (() => {
-  const override = process.env.SQL_STUDIO_DATA_DIR?.trim()
-  if (override) return path.resolve(override)
-  if (app.isPackaged) {
-    // 绿色版优先把数据放在 exe 同级的 .sql-studio；portable 目录只读时退回 AppData。
-    const portable = path.join(path.dirname(app.getPath('exe')), '.sql-studio')
-    if (ensureDirectory(path.join(portable, 'electron'))) return portable
-    return path.join(app.getPath('appData'), 'sql-studio-electron')
-  }
-  return fileURLToPath(new URL('../../sql-studio-backend/.sql-studio', import.meta.url))
-})()
+// 默认状态目录与独立运行的 Go 服务一致。
+const dataOverride = process.env.SQL_STUDIO_DATA_DIR?.trim()
+const dataDirectory = dataOverride ? path.resolve(dataOverride) : path.join(app.getPath('home'), '.sql-studio')
 app.setName('SQL Studio')
+if (app.isPackaged && process.platform === 'win32') app.setAppUserModelId('com.sqlstudio.desktop')
 const userDataDirectory = path.join(dataDirectory, 'electron')
 const stateDirectory = path.join(dataDirectory, 'state')
 // Chromium 只在默认路径下自建目录，自定义 userData 必须先落盘，否则单实例锁会因
 // “路径不存在”创建失败，进程静默退出（双击没反应）。
-const userDataReady = ensureDirectory(userDataDirectory)
-ensureDirectory(stateDirectory)
-app.setPath('userData', userDataDirectory)
+const dataReady = ensureDirectory(userDataDirectory) && ensureDirectory(stateDirectory)
+if (dataReady) app.setPath('userData', userDataDirectory)
 
 function trace(message) {
   try {
@@ -50,7 +39,7 @@ function trace(message) {
   }
 }
 
-trace(`starting packaged=${app.isPackaged} data=${dataDirectory} userData=${userDataReady}`)
+trace(`starting packaged=${app.isPackaged} data=${dataDirectory} ready=${dataReady}`)
 const dev = !app.isPackaged && process.argv.includes('--dev')
 let backend
 let mainWindow
@@ -141,9 +130,9 @@ function createWindow(dark) {
   }
 }
 
-if (!userDataReady) {
-  const message = `无法创建数据目录：\n${userDataDirectory}\n\n请检查磁盘空间与安全软件，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
-  trace(`fatal: userData 不可写 ${userDataDirectory}`)
+if (!dataReady) {
+  const message = `无法创建数据目录：\n${dataDirectory}\n\n请检查目录权限，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
+  trace(`fatal: 数据目录不可写 ${dataDirectory}`)
   dialog.showErrorBox('SQL Studio 无法启动', message)
   app.exit(1)
 } else if (!app.requestSingleInstanceLock()) {

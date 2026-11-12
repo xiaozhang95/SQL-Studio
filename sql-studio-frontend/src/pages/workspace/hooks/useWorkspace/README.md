@@ -28,7 +28,7 @@ validateDatabases 仅在有效库列表加载成功后校验查询页范围，�
 
 ## 本地恢复
 
-useWorkspacePersistence 通过 Go 服务启动目录下的配置目录保存轻量标签/范围/布局索引，SQL 草稿和结果各自独立保存。启动只读取活动页，其他页按需读取，已保存的非活动内容可释放；只传页面白名单字段，不保存连接密码或表单凭据。顶部展示保存/错误状态。
+useWorkspacePersistence 通过 Go 服务在配置目录保存轻量标签/范围/布局索引，SQL 草稿和结果各自独立保存。启动只读取活动页，其他页按需读取，已保存的非活动内容可释放。只传页面白名单字段，不保存连接密码或表单凭据。顶部展示保存/错误状态。
 
 sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏与Agent历史栏同步；宽度继续纳入现有轻量布局索引。恢复通过restoreWidth保留已有宽度；旧快照缺少该字段或不是有效数字时使用272px。Agent打开时工作台保持挂载，调整会触发同一布局保存；展示宽度由useSidebarResize根据窗口边界约束，隐藏/窄屏测量不改写偏好。
 
@@ -36,7 +36,7 @@ sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏
 
 ## 历史与编辑
 
-useQueryHistory 通过 Go 服务启动目录下的配置目录配置保存各连接最新 50 条记录，恢复旧记录时也执行上限。连接删除成功清理其历史，列表成功加载后清理已删除连接的遗留历史；列表失败不清理。入口仅位于 SQL 页，打开时重置搜索，QueryHistory 以连接 ID 重挂载。loadHistory 清理记录里旧的来源标记后，追加到当前编辑器末尾并标注一行 -- 历史记录，不新增页、不切库、不执行；CodeMirror 事务保留撤销。来源标记不进入历史 SQL，重复执行仍保留各次执行信息。
+useQueryHistory 通过 Go 服务保存各连接最新 50 条记录，恢复旧记录时也执行上限。连接删除成功清理其历史，列表成功加载后清理已删除连接的遗留历史；列表失败不清理。入口仅位于 SQL 页，打开时重置搜索，QueryHistory 以连接 ID 重挂载。loadHistory 清理记录里旧的来源标记后，追加到当前编辑器末尾并标注一行 -- 历史记录，不新增页、不切库、不执行；CodeMirror 事务保留撤销。来源标记不进入历史 SQL，重复执行仍保留各次执行信息。
 
 右键打开时捕获选区快照，runSelectedSQL 不回退到整页；工具栏和 Ctrl+Enter 优先执行选区，无选区则完整草稿。导入本地 SQL 新建查询而不执行，exportCurrentSQL 原样导出完整草稿。onEditorReady/onEditorUpdate/rememberEditor 负责恢复并保存编辑位置。
 

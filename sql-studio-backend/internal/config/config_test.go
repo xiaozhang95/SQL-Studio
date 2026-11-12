@@ -58,11 +58,15 @@ func TestDefaultWebDirectory(t *testing.T) {
 	}
 }
 
-func TestDefaultConfigurationFollowsStartupWorkingDirectory(t *testing.T) {
+func TestDefaultConfigurationUsesUserHome(t *testing.T) {
 	t.Setenv("SQLDESK_DATA_DIR", "")
 	t.Setenv("SQLDESK_STATE_DIR", "")
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
 	t.Setenv("SQLDESK_WEB_DIR", "")
+	home := t.TempDir()
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("HOME", home)
+	want := filepath.Join(home, ".sql-studio", "state")
 	first, second := t.TempDir(), t.TempDir()
 	for _, dir := range []string{first, second} {
 		t.Chdir(dir)
@@ -70,7 +74,6 @@ func TestDefaultConfigurationFollowsStartupWorkingDirectory(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := filepath.Join(dir, ".sql-studio", "state")
 		if cfg.StateDir != want || cfg.DataDir != want {
 			t.Fatalf("cwd %s: %#v", dir, cfg)
 		}
@@ -82,6 +85,8 @@ func TestDefaultConfigurationFollowsStartupWorkingDirectory(t *testing.T) {
 func TestRelativeConfigurationOverridesUseWorkingDirectory(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
+	t.Setenv("USERPROFILE", "")
+	t.Setenv("HOME", "")
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
 	t.Setenv("SQLDESK_WEB_DIR", "")
 	t.Setenv("SQLDESK_DATA_DIR", "")

@@ -18,25 +18,36 @@ type Config struct {
 	InitialConnection *model.Connection
 }
 
-// Load resolves paths against the service startup working directory, independently of the executable location.
+// Load defaults state to the user's home directory and resolves relative overrides from the working directory.
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:18080"}
 	if address := os.Getenv("SQLDESK_ADDR"); address != "" {
 		cfg.Address = address
 	}
+	stateDir := os.Getenv("SQLDESK_STATE_DIR")
+	if stateDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return cfg, fmt.Errorf("获取用户主目录失败: %w", err)
+		}
+		stateDir = filepath.Join(home, ".sql-studio", "state")
+	}
 	var err error
-	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", filepath.Join(".sql-studio", "state"))
+	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", stateDir)
 	if err != nil {
 		return cfg, err
 	}
-	// 连接与密钥跟随同一启动目录；显式目录覆盖保持原有语义。
-	cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", cfg.StateDir)
-	if err != nil {
-		return cfg, err
+	// 连接与密钥默认与其他用户配置一起保存。
+	cfg.DataDir = cfg.StateDir
+	if dataDir := os.Getenv("SQLDESK_DATA_DIR"); dataDir != "" {
+		cfg.DataDir, err = resolveDirectory("SQLDESK_DATA_DIR", dataDir)
+		if err != nil {
+			return cfg, err
+		}
 	}
 	// Empty means the build's default frontend source; only an explicit override uses disk.
-	if os.Getenv("SQLDESK_WEB_DIR") != "" {
-		cfg.WebDir, err = resolveDirectory("SQLDESK_WEB_DIR", "")
+	if webDir := os.Getenv("SQLDESK_WEB_DIR"); webDir != "" {
+		cfg.WebDir, err = resolveDirectory("SQLDESK_WEB_DIR", webDir)
 		if err != nil {
 			return cfg, err
 		}
@@ -58,11 +69,7 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-func resolveDirectory(key, defaultValue string) (string, error) {
-	value := os.Getenv(key)
-	if value == "" {
-		value = defaultValue
-	}
+func resolveDirectory(key, value string) (string, error) {
 	path, err := filepath.Abs(value)
 	if err != nil {
 		return "", fmt.Errorf("解析 %s 目录失败: %w", key, err)
