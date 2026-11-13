@@ -13,6 +13,10 @@ export function backendEnvironment(parent, runtime, state, address) {
   return { ...env, SQLDESK_ADDR: address, SQLDESK_STATE_DIR: state, SQLDESK_DATA_DIR: state, SQLDESK_WEB_DIR: runtime }
 }
 
+export function allowsFileSystemPermission(permission, requestingOrigin, origin) {
+  return permission === 'fileSystem' && origin !== '' && requestingOrigin === origin
+}
+
 export function validTitleBarTheme(value) {
   return (
     value !== null &&

@@ -8,6 +8,11 @@ export interface DesktopTitleBarTheme {
 export interface DesktopBridge {
   readonly titleBarHeight: number
   setTitleBarTheme: (value: DesktopTitleBarTheme) => void
+  saveFile: {
+    begin: (filename: string) => Promise<{ canceled: boolean; id?: string; filePath?: string }>
+    commit: (id: string, data: string) => Promise<{ filePath: string }>
+    discard: (id: string) => Promise<void>
+  }
   readonly updates: DesktopUpdates
 }
 

@@ -106,20 +106,20 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 
 Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
-窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
+窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求；导出与保存 SQL 走 `save-begin`/`save-commit`/`save-discard` 受限 IPC：begin 先原生选路径、commit 再 Node 写盘，与网页先选位置一致，路径始终由用户选定，不依赖渲染进程 File System Access 权限（`fileSystem` 权限仍仅对本源放行）。API 仍是后端原有的本机单用户 HTTP 服务。
 
 ## 代码与检查
 
-- `src/main.mjs`：窗口、单实例与应用生命周期。
+- `src/main.mjs`：窗口、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
-- `src/policy.mjs`：导航边界与后端环境隔离。
-- `src/preload.cjs`：标题栏和更新桥接。
+- `src/policy.mjs`：导航边界、权限判定与后端环境隔离。
+- `src/preload.cjs`：标题栏、更新与原生保存桥接。
 - `src/updates.mjs`：GitHub 正式版本查询、NSIS 更新下载与安装。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。
 - `scripts/`：Electron 镜像启动入口、桌面资源构建。
 - `scripts/windows/`：Windows GUI 启动入口及 NSIS 安装、升级和卸载逻辑。
 - `electron-builder.cjs`：应用与安装包配置。
-- `tests/`：导航、配置隔离与健康检查契约测试。
+- `tests/`：导航、权限策略、配置隔离与健康检查契约测试。
 
 ```sh
 node --test tests/*.test.mjs

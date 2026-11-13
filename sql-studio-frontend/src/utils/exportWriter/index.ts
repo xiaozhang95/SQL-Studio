@@ -9,6 +9,33 @@ type SavePicker = (options: { suggestedName: string; types: { description: strin
 export async function createExportWriter(title: string, language: Language = getLanguage()) {
   const t = (message: string) => translate(message, language)
   const filename = Array.from(title, (char) => (char.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(char) ? '_' : char)).join('') + '.sql'
+  const desktop = window.sqlStudioDesktop
+  if (desktop?.saveFile) {
+    const begun = await desktop.saveFile.begin(filename)
+    if (begun.canceled || !begun.id) throw new DOMException('save canceled', 'AbortError')
+    const id = begun.id
+    let chunks: string[] = [],
+      bytes = 0
+    return {
+      filename,
+      completion: t('导出成功，文件已保存'),
+      destination: begun.filePath ?? filename + t('（桌面保存）'),
+      write: async (sql: string) => {
+        bytes += new Blob([sql]).size
+        if (bytes > 256 * 1024 * 1024) throw new Error(t('当前浏览器下载缓存超过 256 MiB，请使用支持文件流写入的浏览器重试'))
+        chunks.push(sql)
+        return bytes
+      },
+      close: async () => {
+        await desktop.saveFile.commit(id, chunks.join(''))
+        chunks = []
+      },
+      abort: async () => {
+        chunks = []
+        await desktop.saveFile.discard(id).catch(() => {})
+      }
+    }
+  }
   const target: Window & { showSaveFilePicker?: SavePicker } = window
   const handle = target.showSaveFilePicker ? await target.showSaveFilePicker({ suggestedName: filename, types: [{ description: t('SQL 文件'), accept: { 'text/plain': ['.sql'] } }] }) : undefined
   const writer = handle ? await handle.createWritable() : undefined

@@ -1,4 +1,6 @@
 import { appendFileSync, mkdirSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -6,7 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme } from 'electron'
 
 import { startBackend, waitForService } from './backend.mjs'
-import { isAppURL, validTitleBarTheme } from './policy.mjs'
+import { allowsFileSystemPermission, isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 import { createDesktopUpdates } from './updates.mjs'
@@ -154,9 +156,41 @@ function createWindow(dark, appIcon, updates) {
       }
     })
   }
+  // 桌面端导出/保存 SQL 走原生对话框 + Node 写盘：begin 先选路径、commit 再落盘，与网页先选位置一致。
+  const saveSessions = new Map()
+  ipcMain.handle('sql-studio:save-begin', async (event, filename) => {
+    if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
+    if (typeof filename !== 'string') throw new Error('桌面操作失败')
+    const result = await dialog.showSaveDialog(window, { defaultPath: filename, filters: [{ name: 'SQL 文件', extensions: ['sql'] }] })
+    if (result.canceled || !result.filePath) return { canceled: true }
+    const id = randomUUID()
+    saveSessions.set(id, result.filePath)
+    return { canceled: false, id, filePath: result.filePath }
+  })
+  ipcMain.handle('sql-studio:save-commit', async (event, id, data) => {
+    if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
+    const filePath = typeof id === 'string' ? saveSessions.get(id) : undefined
+    if (typeof data !== 'string' || !filePath) throw new Error('桌面操作失败')
+    try {
+      await writeFile(filePath, data, 'utf8')
+      return { filePath }
+    } catch (error) {
+      trace(`sql-studio:save-commit: ${error.stack ?? error.message}`)
+      throw new Error('桌面操作失败')
+    } finally {
+      saveSessions.delete(id)
+    }
+  })
+  ipcMain.handle('sql-studio:save-discard', async (event, id) => {
+    if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
+    if (typeof id === 'string') saveSessions.delete(id)
+    return {}
+  })
   contents.once('destroyed', () => {
     ipcMain.removeListener('sql-studio:titlebar-theme', syncTheme)
     for (const channel of Object.keys(desktopActions)) ipcMain.removeHandler(channel)
+    for (const channel of ['sql-studio:save-begin', 'sql-studio:save-commit', 'sql-studio:save-discard']) ipcMain.removeHandler(channel)
+    saveSessions.clear()
   })
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
   contents.on('will-navigate', (event, target) => {
@@ -166,8 +200,17 @@ function createWindow(dark, appIcon, updates) {
     if (!isAppURL(target, origin)) event.preventDefault()
   })
   contents.on('will-attach-webview', (event) => event.preventDefault())
-  contents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
-  contents.session.setPermissionCheckHandler(() => false)
+  // 导出/保存 SQL 走 File System Access API，写入目标仍由系统保存对话框逐次选定，故仅对本源放行 fileSystem。
+  contents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    let requestingOrigin = ''
+    try {
+      if (webContents === contents) requestingOrigin = new URL(webContents.getURL()).origin
+    } catch {
+      requestingOrigin = ''
+    }
+    callback(allowsFileSystemPermission(permission, requestingOrigin, origin))
+  })
+  contents.session.setPermissionCheckHandler((_webContents, permission, requestingOrigin) => allowsFileSystemPermission(permission, requestingOrigin, origin))
   mainWindow.on('closed', () => {
     mainWindow = undefined
   })
