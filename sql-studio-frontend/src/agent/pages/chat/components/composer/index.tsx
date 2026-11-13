@@ -1,4 +1,4 @@
-import { CheckOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, CheckOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
 import { Alert, Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
@@ -174,7 +174,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                         danger
                         aria-label={t('停止生成')}
                         icon={
-                          <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
+                          <span aria-hidden="true" style={{ display: 'block', width: token.sizeXS, height: token.sizeXS, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
                         }
                         onClick={onStop}
                       />
@@ -184,11 +184,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       {...CHAT.iconButton}
                       onClick={() => submit(question)}
                       aria-label={t('发送消息')}
-                      icon={
-                        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <path d="M11.1 2.6a1 1 0 0 1 1.8 0l8.3 17a1 1 0 0 1-1.2 1.4L13 18.5V9h-2v9.5L4 21a1 1 0 0 1-1.2-1.4z" />
-                        </svg>
-                      }
+                      icon={<ArrowUpOutlined />}
                       disabled={settingsBusy || !aiStatus?.configured || tooLong}
                     />
                   )}
