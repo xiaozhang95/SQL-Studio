@@ -200,7 +200,7 @@ SQL Studio 是面向本机单用户的数据库工作台，提供数据库连接
 - 默认监听 127.0.0.1:18080，可用 SQLDESK_ADDR 改地址；SQLDESK_WEB_DIR 可覆盖静态资源目录。
 - 构建脚本支持指定 windows/linux/darwin 与 amd64/arm64；不据此宣称本次已完成全部平台运行验证。
 - 根目录打包脚本在 Windows 生成独立 EXE，默认状态目录为 `%USERPROFILE%\.sql-studio\state`。
-- [Electron 桌面项目](../sql-studio-electron/README.md) 提供 Windows 绿色版 ZIP 和 NSIS 安装包、macOS DMG 或 Linux AppImage，打包版自动启动本地 Go 服务并管理其生命周期。
+- [Electron 桌面项目](../sql-studio-electron/README.md) 提供 Windows 绿色版目录和 NSIS 安装包、macOS DMG 或 Linux AppImage，打包版自动启动本地 Go 服务并管理其生命周期。
 - 提供本地 Swagger UI、OpenAPI JSON、健康检查及连接、对象、查询、工作区、状态、AI 接口。
 - 默认仅面向本机单用户，包含本机 Host/跨站请求检查，不提供开放 CORS 或多人账号体系。
 

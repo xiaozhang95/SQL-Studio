@@ -2,9 +2,10 @@ import { BulbOutlined, CodeOutlined, DownloadOutlined, FormatPainterOutlined, Hi
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Alert, Dropdown, Switch, Tooltip, Upload } from 'antd'
+import { Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
 import type { ThemeMode } from '@/typings/theme'
 
 import { useAISQL } from '../../hooks/useAISQL'
@@ -50,7 +51,12 @@ const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactC
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
   const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
-  const { beforeImport, importing } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
+  const {
+    beforeImport,
+    importing,
+    error: importError,
+    clearError: clearImportError
+  } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
   const [contextSQL, setContextSQL] = useState('')
   // UIW receives the initial document only; subsequent edits stay in CodeMirror.
   const [initialSQL] = useState(() => tab.sql)
@@ -148,10 +154,11 @@ export default function QueryEditor({ model, themeMode }: Props) {
           <ToolbarButton label="执行历史" icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
         </div>
       </div>
-      {ai.preferenceError && <Alert type="error" showIcon closable title="AI 设置保存失败" description={ai.preferenceError} onClose={ai.clearPreferenceError} />}
+      <ErrorNotice title="AI 设置保存失败" error={ai.preferenceError} onClose={ai.clearPreferenceError} />
+      <ErrorNotice title="SQL 导入失败" error={importError} onClose={clearImportError} />
       <SQLOptimization model={ai} themeMode={themeMode} />
-      {objects.error && <Alert type="error" title="连接加载失败" description={objects.error} />}
-      {objects.tableError && <Alert type="error" title="表列表加载失败" description={objects.tableError} />}
+      <ErrorNotice title="连接加载失败" error={objects.error} />
+      <ErrorNotice title="表列表加载失败" error={objects.tableError} />
       <Dropdown
         trigger={['contextMenu']}
         menu={{

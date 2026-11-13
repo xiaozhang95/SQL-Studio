@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { request as sendRequest } from '@/utils/request'
+
 import type { ConfirmationRequest } from '../../../../typings/writeConfirmation'
 import { isObject } from '../../../../utils/json'
 
@@ -71,17 +73,13 @@ export function useWriteConfirmation() {
     setSubmitting(true)
     setError('')
     try {
-      const endpoint = 'kind' in request.value ? '/api/agent/continue-confirmation' : '/api/agent/write-confirmation'
-      const response = await fetch(endpoint, {
+      const endpoint = 'kind' in request.value ? '/agent/continue-confirmation' : '/agent/write-confirmation'
+      await sendRequest(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approvalId: request.value.approvalId, allow }),
         signal: request.signal
       })
-      if (!response.ok) {
-        const data: unknown = await response.json().catch(() => null)
-        throw new Error(isObject(data) && typeof data.error === 'string' ? data.error : '操作确认失败')
-      }
       if (active.current === request && !request.signal.aborted) close()
       return !request.signal.aborted
     } catch (cause) {

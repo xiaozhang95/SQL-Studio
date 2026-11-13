@@ -1,4 +1,5 @@
 import type { QueryResult } from '@/typings/database'
+import { fetchResponse, readJSON } from '@/utils/request'
 
 function readEvent(text: string): { type: 'rows'; result: QueryResult } | { type: 'done' } | { type: 'error'; error: string } {
   const value: unknown = JSON.parse(text)
@@ -29,8 +30,12 @@ function readEvent(text: string): { type: 'rows'; result: QueryResult } | { type
 
 /** POST-free SSE read, awaited callbacks provide file-write backpressure. */
 export async function streamTableData(id: string, database: string, table: string, onRows: (result: QueryResult) => Promise<void>, signal: AbortSignal) {
-  const response = await fetch(`/api/connections/${encodeURIComponent(id)}/export-data?${new URLSearchParams({ database, table })}`, { signal, headers: { Accept: 'text/event-stream' } })
-  if (!response.ok || !response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('无法启动数据导出，请检查后端服务')
+  const response = await fetchResponse(`/connections/${encodeURIComponent(id)}/export-data?${new URLSearchParams({ database, table })}`, { signal, headers: { Accept: 'text/event-stream' } })
+  if (!response.ok) await readJSON(response, signal)
+  if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+    await readJSON(response, signal)
+    throw new Error('后端未返回有效的数据流，请检查服务版本。')
+  }
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = '',

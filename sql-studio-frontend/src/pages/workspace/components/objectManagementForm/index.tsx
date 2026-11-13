@@ -3,6 +3,7 @@ import { Alert, AutoComplete, Checkbox, Form, Input, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
@@ -15,7 +16,7 @@ import ToolbarButton from '../toolbarButton'
 
 type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
-  'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview' | 'databaseDefinition'
+  'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'refreshError' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview' | 'databaseDefinition'
 >
 type Props = { manager: FormManager; themeMode: ThemeMode }
 type FormField = { name: number; key: number }
@@ -32,7 +33,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const DatabasePropertiesForm = databaseForm && dialog ? getDatabaseAdapter(dialog.connection.type).databaseEditor?.Form : undefined
   return (
     <>
-      {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
+      <ErrorNotice errors={[error, manager.refreshError]} style={{ marginBottom: 12 }} />
       {destructive && (
         <Alert
           type="warning"

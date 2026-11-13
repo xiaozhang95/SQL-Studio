@@ -1,8 +1,9 @@
 import { KeyOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Alert, Button, Form, Input, Modal, Select, Space, Tooltip } from 'antd'
+import { Button, Form, Input, Modal, Select, Space, Tooltip } from 'antd'
 
 import { aiProviders } from '@/ai'
 import type { AIProviderType } from '@/ai/typings'
+import ErrorNotice from '@/components/errorNotice'
 
 import AIProviderIcon from '../../../aiProviderIcon'
 import type { useModelEditor } from '../../hooks/useModelEditor'
@@ -21,7 +22,7 @@ export default function ModelEditor({ editor }: { editor: ReturnType<typeof useM
     >
       {draft && (
         <>
-          {editor.error && <Alert type="error" showIcon title={editor.error} style={{ marginBottom: 16 }} />}
+          <ErrorNotice error={editor.error} style={{ marginBottom: 16 }} />
           <Form layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} labelAlign="right">
             <Form.Item label="供应商" required>
               <Select<AIProviderType>

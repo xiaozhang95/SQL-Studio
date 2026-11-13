@@ -80,6 +80,7 @@ export const useWorkspace = (active = true) => {
   const [columns, setColumns] = useState<Column[]>([])
   const [ddl, setDDL] = useState('')
   const [structureError, setStructureError] = useState('')
+  const [operationError, setOperationError] = useState('')
   const [structureLoading, setStructureLoading] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historySearch, setHistorySearch] = useState('')
@@ -374,7 +375,7 @@ export const useWorkspace = (active = true) => {
     try {
       exportSQL(sql, tab.title)
     } catch {
-      message.error('SQL 导出失败，请重试')
+      setOperationError('SQL 导出失败，请重试')
     }
   }
   function openHistory() {
@@ -522,7 +523,7 @@ export const useWorkspace = (active = true) => {
                 if (sql) await saveSQL(sql, db || 'SQL Studio 查询')
                 resolve(true)
               } catch (error) {
-                if (!(error instanceof DOMException && error.name === 'AbortError')) message.error('SQL 保存失败，窗口已保留')
+                if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError('SQL 保存失败，窗口已保留')
                 throw error
               }
             },
@@ -574,7 +575,7 @@ export const useWorkspace = (active = true) => {
       }))
       return true
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '关闭失败，窗口已保留')
+      setOperationError(error instanceof Error ? error.message : '关闭失败，窗口已保留')
       return false
     } finally {
       closingScope.current = false
@@ -608,7 +609,7 @@ export const useWorkspace = (active = true) => {
         await objects.loadTables(db, id)
         setExplorer((previous) => ({ ...previous, expanded: [...new Set([...previous.expanded, JSON.stringify(['database', id, db])])] }))
       } catch (error) {
-        message.error(error instanceof Error ? error.message : '打开数据库失败')
+        setOperationError(error instanceof Error ? error.message : '打开数据库失败')
       }
       return
     }
@@ -659,7 +660,7 @@ export const useWorkspace = (active = true) => {
       try {
         await refreshObjectTarget(id, db)
       } catch (reason) {
-        message.error(reason instanceof Error ? reason.message : '刷新失败')
+        setOperationError(reason instanceof Error ? reason.message : '刷新失败')
       }
       return
     }
@@ -750,7 +751,7 @@ export const useWorkspace = (active = true) => {
       try {
         await refreshObjectTarget(targetConnectionId, db)
       } catch (reason) {
-        message.error(reason instanceof Error ? reason.message : '刷新失败')
+        setOperationError(reason instanceof Error ? reason.message : '刷新失败')
       }
       return
     }
@@ -793,7 +794,19 @@ export const useWorkspace = (active = true) => {
       finishRun(controller)
     }
   }
-  const executeSQL = useQueryExecution({ connections, objects, running, request, message, startRun, finishRun, publishResult, setTabs, setResultViews, appendHistory })
+  const executeSQL = useQueryExecution({
+    connections,
+    objects,
+    running,
+    request,
+    message: { ...message, error: setOperationError },
+    startRun,
+    finishRun,
+    publishResult,
+    setTabs,
+    setResultViews,
+    appendHistory
+  })
   const refreshScope = tab.kind === 'query' ? batch?.scope : tab
   const canRefreshResult = Boolean(run && refreshScope && objects.snapshots[refreshScope.connectionId]?.status === 'connected' && (tab.kind !== 'query' || statementRun?.sql))
   async function refreshResult() {
@@ -900,7 +913,7 @@ export const useWorkspace = (active = true) => {
           return type === 'group' || owner !== saved.id
         })
       }))
-      void objects.closeConnection(saved.id).catch((error) => message.error(error instanceof Error ? error.message : '关闭旧连接失败'))
+      void objects.closeConnection(saved.id).catch((error) => setOperationError(error instanceof Error ? error.message : '关闭旧连接失败'))
       setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', schema: '', table: '' } : item)))
       if (connectionId === saved.id) resetStructure()
     }
@@ -914,6 +927,8 @@ export const useWorkspace = (active = true) => {
     pageLoadError: storage.loadError,
     retryPage: storage.retryPage,
     storageError,
+    operationError,
+    clearOperationError: () => setOperationError(''),
     saving,
     explorer,
     updateExplorer,

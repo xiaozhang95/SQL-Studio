@@ -1,6 +1,7 @@
 import { SettingOutlined } from '@ant-design/icons'
-import { Alert, Button, Modal, theme, Typography } from 'antd'
+import { Button, Modal, theme, Typography } from 'antd'
 
+import ErrorNotice from '@/components/errorNotice'
 import type { AppearancePreferences } from '@/typings/theme'
 
 import AISettings from '../aiSettings'
@@ -97,7 +98,7 @@ export default function SystemSettings(preferences: AppearancePreferences) {
             <Typography.Title level={5} style={{ marginTop: 0, marginBottom: token.marginLG }}>
               {sectionTitle}
             </Typography.Title>
-            {settings.error && <Alert type="error" showIcon title={settings.error} style={{ marginBottom: token.margin }} />}
+            <ErrorNotice error={settings.error} style={{ marginBottom: token.margin }} />
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
             {settings.section === SettingsSection.Theme && (
               <AppearanceCards

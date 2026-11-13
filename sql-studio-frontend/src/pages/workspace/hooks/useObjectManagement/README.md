@@ -1,5 +1,7 @@
 # 对象管理生命周期
 
+操作后的刷新失败通过 refreshError 返回，明确提示操作已经生效。表设计页在表单 ErrorNotice 中展示，已关闭弹窗的操作由工作区 PageHeader 展示。clearRefreshError 清理该提示。
+
 [源码](index.ts) · [hooks 索引](../README.md)
 
 useObjectManagement 接收 connections、blocked（普通查询运行锁）、onBusyChange 和异步 onChanged(change)；返回受控 form/dialog、加载/保存/就绪/错误、字符集选项、原字段、SQL 预览及 open/close/preview/save 等方法。open 显式接收 ObjectAction 和 ObjectTarget，不从活动 SQL 页面推断目标。

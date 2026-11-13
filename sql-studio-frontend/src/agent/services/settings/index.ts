@@ -1,3 +1,5 @@
+import { request } from '@/utils/request'
+
 import type { AIStatus, AIUpdate } from '../../typings/settings'
 import { isObject } from '../../utils/json'
 
@@ -7,9 +9,7 @@ export async function settings(method: 'GET' | 'PUT' | 'DELETE', input?: AIUpdat
     options.headers = { 'Content-Type': 'application/json' }
     options.body = JSON.stringify(input)
   }
-  const res = await fetch('/api/agent/settings', options)
-  const data: unknown = await res.json()
-  if (!res.ok) throw new Error(isObject(data) && typeof data.error === 'string' ? data.error : '模型配置请求失败')
+  const data = await request<unknown>('/agent/settings', options)
   if (
     !isObject(data) ||
     typeof data.configId !== 'string' ||

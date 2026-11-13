@@ -1,5 +1,7 @@
 # 执行历史抽屉
 
+执行错误通过共享 ErrorNotice 在对应历史记录的详情内展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 model 提供当前连接 history、clearHistory、historyOpen/setHistoryOpen、搜索值、connections、connectionId、connection、running、loadHistory。useQueryHistory 按当前 SQL 页面的 connectionId 读取独立存储，每连接最多 50 条；左侧树选择不影响历史。

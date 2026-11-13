@@ -12,6 +12,8 @@
 
 App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。普通标签使用中性色，信息提示跟随主题绿色，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
 
+工作台、AI 助手和弹窗的错误统一使用 [ErrorNotice](components/errorNotice/README.md)。页面级错误位于共享 PageHeader 下方，同一原因合并展示。后端不可达或返回无效 JSON 时，所有 API 共用 [request](utils/request/README.md) 的错误文案。
+
 Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。确认按钮使用统一的普通按钮配置。
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型和 NULL 使用普通文字，状态/耗时不使用 Tag，不展示连接来源标签。

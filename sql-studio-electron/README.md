@@ -30,7 +30,7 @@ pnpm install --frozen-lockfile
 
 Windows 在 `release/` 下生成两份分发产物。
 
-- `SQL Studio-Portable-<版本>-<架构>.zip` 完整解压到可写目录后，双击 `SQL Studio.exe`。
+- `win-unpacked/` 为绿色版目录。保留整个目录，双击其中的 `SQL Studio.exe`。目录名随架构变化，例如 `win-arm64-unpacked/`。
 - `SQL Studio-Setup-<版本>-<架构>.exe` 为所有用户安装。安装时需通过 Windows 管理员授权，默认目录为 `%ProgramFiles%\SQL Studio`，安装时可修改。安装后可从桌面、开始菜单或安装目录打开 `SQL Studio.exe`。
 
 安装器按路径检查并请求关闭安装目录中的 SQL Studio 进程，再替换旧卸载程序。覆盖安装和卸载保留用户配置。旧安装目录中已有的 `.sql-studio` 保留在原位置。
@@ -39,7 +39,9 @@ Windows 在 `release/` 下生成两份分发产物。
 
 `pnpm build` 出现 `EBUSY` 且报错路径指向 `app.asar` 时，先关闭运行中的打包版及持有该文件的进程。需要使用新输出目录时，在 PowerShell 设置 `$env:SQL_STUDIO_OUT = 'release-ok'` 后运行 `pnpm build`。
 
-启动诊断日志写入 `<数据根>/state/electron.log`。如果数据目录无法初始化，弹窗和启动终端会显示失败的路径及系统错误，可用 `SQL_STUDIO_DATA_DIR` 指定可写路径。如果 Electron 在主进程入口执行前以 `STATUS_BREAKPOINT`（`0x80000003`）退出，可能没有这份启动日志。
+Windows 发行版的 EXE 启动器将运行路径、退出状态和 Electron 标准错误写入 `<数据根>/state/launcher.log`。主进程的诊断日志位于同目录的 `electron.log`。启动器会在全部启动尝试失败后显示错误和日志路径。数据目录初始化失败时，错误包含实际目录和系统原因。
+
+Windows 打包完成可执行文件编辑后，将生成的应用目录及文件设为普通用户的 Medium 完整性级别。开发工具为工作区设置的 Low 标签会随生成文件继承，使绿色版以低完整性运行，无法写入普通用户配置和临时目录。此步骤限定在生成的应用目录中。
 
 ## 标题栏和应用图标
 
@@ -90,7 +92,7 @@ SQL_STUDIO_DATA_DIR=./.data pnpm start
 $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 ```
 
-Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。重试沿用同一个数据目录，退出后清理运行时副本。临时运行时仍以相同方式退出时，会带 `--no-sandbox` 再试一次。Windows 打包版的 `SQL Studio.exe` 遇到这两个退出码时直接带 `--no-sandbox` 重试。
+Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
 窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 仅提供只读标题栏高度和主题同步接口，不暴露通用 IPC。主进程校验调用来源和颜色；拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
 

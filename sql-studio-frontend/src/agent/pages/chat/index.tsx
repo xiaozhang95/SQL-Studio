@@ -1,7 +1,8 @@
 import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
-import { Alert, Button, Flex, Grid, theme } from 'antd'
+import { Button, Flex, Grid, theme } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
+import ErrorNotice from '@/components/errorNotice'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
@@ -24,11 +25,13 @@ export function ChatPage({
   dark,
   workspace,
   onBack,
+  themeError,
   ...appearancePreferences
 }: AppearancePreferences & {
   dark: boolean
   workspace: WorkspaceController
   onBack: () => void
+  themeError?: string
 }) {
   const operation = useOperationMode(workspace)
   const chat = useChat(workspace, operation.mode)
@@ -38,7 +41,6 @@ export function ChatPage({
   const screens = Grid.useBreakpoint()
   const mobile = screens.md === false
   const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
-  const errors = [...new Set([workspace.error, chat.error, ai.error].filter(Boolean))]
   return (
     <Flex
       style={{
@@ -53,6 +55,7 @@ export function ChatPage({
         showDesktopTitle={false}
         title={activeTitle}
         titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
+        errors={[workspace.error, chat.error, ai.error, themeError]}
         actions={
           <>
             <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label="正在保存对话…" />
@@ -85,13 +88,6 @@ export function ChatPage({
         />
         <Flex vertical style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <Flex vertical className="agent-conversation-column" style={{ width: '100%', flex: 1, minHeight: 0 }}>
-            {errors.length > 0 && (
-              <Flex vertical gap="small" role="region" aria-label="页面错误" style={{ ...CHAT.content, paddingBlock: token.paddingSM, flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
-                {errors.map((error) => (
-                  <Alert key={error} type="error" showIcon title={error} />
-                ))}
-              </Flex>
-            )}
             <div
               className="chat-transcript-region"
               style={{
@@ -107,7 +103,7 @@ export function ChatPage({
                 {chat.loading ? (
                   <ContentLoading label="正在加载会话…" />
                 ) : chat.loadError ? (
-                  <Alert type="error" showIcon title="会话加载失败" description={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>重试</Button>} />
+                  <ErrorNotice title="会话加载失败" error={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>重试</Button>} />
                 ) : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (

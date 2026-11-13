@@ -42,6 +42,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     return () => onDirtyChange(tab.id, false)
   }, [dirty, tab.id, onDirtyChange])
   const [deletionError, setDeletionError] = useState<{ page: string; detail: string }>()
+  const [operationError, setOperationError] = useState<{ page: string; detail: string }>()
   const [saving, setSaving] = useState(false)
   const request = useRef<AbortController | null>(null)
   const busyChange = useRef(onBusyChange)
@@ -57,6 +58,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
   )
   async function begin(row: number, column: number) {
     if (blocked || request.current || !result || !connection || tab.kind !== 'data') return
+    setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
     onBusyChange(tab.id, true)
@@ -83,7 +85,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         columns
       })
     } catch (error) {
-      if (!controller.signal.aborted) message.error(error instanceof Error ? error.message : '无法编辑单元格')
+      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : '无法编辑单元格' })
     } finally {
       if (request.current === controller) {
         request.current = null
@@ -113,6 +115,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
   }
   async function save() {
     if (!dirty || !result || !connection || blocked || request.current) return
+    setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
     setSaving(true)
@@ -159,7 +162,10 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     } catch (error) {
       if (!controller.signal.aborted) {
         if (saved) onResult(tab.id, working)
-        message.error((saved ? '已有 ' + saved + ' 处保存成功，剩余 ' + (Object.keys(pending).length + pendingNew.length) + ' 处未保存。' : '') + (error instanceof Error ? error.message : '保存失败'))
+        setOperationError({
+          page: tab.id,
+          detail: (saved ? '已有 ' + saved + ' 处保存成功，剩余 ' + (Object.keys(pending).length + pendingNew.length) + ' 处未保存。' : '') + (error instanceof Error ? error.message : '保存失败')
+        })
       }
     } finally {
       if (request.current === controller) {
@@ -171,6 +177,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
   }
   async function addRow() {
     if (blocked || request.current || !result || tab.kind !== 'data') return
+    setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
     onBusyChange(tab.id, true)
@@ -182,7 +189,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       setCell(undefined)
       setNewRows((previous) => [{ key: nextKey.current--, cells: result.columns.map(() => undefined), columns }, ...previous])
     } catch (error) {
-      if (!controller.signal.aborted) message.error(error instanceof Error ? error.message : '新增失败')
+      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : '新增失败' })
     } finally {
       if (request.current === controller) {
         request.current = null
@@ -243,6 +250,8 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     deleteRows,
     deletionError: deletionError?.page === tab.id ? deletionError.detail : '',
     clearDeletionError: () => setDeletionError(undefined),
+    operationError: operationError?.page === tab.id ? operationError.detail : '',
+    clearOperationError: () => setOperationError(undefined),
     newRows,
     newColumn: (key: number, index: number) => newRows.find((row) => row.key === key)?.columns.find((column) => column.name === result?.columns[index]?.name),
     canInsert: (column: Column | undefined) => Boolean(column && getDatabaseAdapter(connection?.type).canInsertColumn(column)),

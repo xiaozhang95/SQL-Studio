@@ -1,6 +1,8 @@
 import { Alert, Button, Descriptions, Modal, Progress } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
+
 import type { useDataExport } from '../../hooks/useDataExport'
 
 /** Navicat-style summary, bounded log and table progress with native theme tokens. */
@@ -57,7 +59,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
             ]}
           />
           <Alert type="info" title="导出可访问的表和视图结构；不包含例程、触发器、事件及权限。跨表不保证同一时间快照，导出期间请避免修改结构及数据。" />
-          {state.error && <Alert type="error" showIcon title="导出失败，未保存完整文件" description={state.error} />}
+          <ErrorNotice title="导出失败，未保存完整文件" error={state.error} />
           <div
             ref={logs}
             role="log"

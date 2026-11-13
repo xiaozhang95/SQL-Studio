@@ -1,5 +1,7 @@
 # 页面结果展示
 
+执行和数据删除错误通过共享 ErrorNotice 在所属结果区域展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 QueryResults 接收 model（当前页 run/result、连接信息、运行状态、筛选、分页、结果索引与高度及其回调）和 themeMode:ThemeMode。没有 run 返回 null。query 页输出与编辑器上下共存且可拖动高度，data/structure/ddl 页输出铺满可用区域。

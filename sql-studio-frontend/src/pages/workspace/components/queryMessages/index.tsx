@@ -2,6 +2,7 @@ import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Collapse, Empty, Pagination, Space, Typography } from 'antd'
 import { useState } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import type { DatabaseType } from '@/databases/typings'
 import type { ThemeMode } from '@/typings/theme'
@@ -50,9 +51,13 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
             children: (
               <section aria-label={`语句 ${index + 1} 执行消息`}>
                 {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>此结果未记录执行语句</div>}
-                <Typography.Paragraph type={item.error ? 'danger' : 'success'} style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
-                  {item.error || (item.result?.columns.length ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`)}
-                </Typography.Paragraph>
+                {item.error ? (
+                  <ErrorNotice error={item.error} style={{ marginTop: 8 }} />
+                ) : (
+                  <Typography.Paragraph type="success" style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
+                    {item.result?.columns.length ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`}
+                  </Typography.Paragraph>
+                )}
               </section>
             )
           }

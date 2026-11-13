@@ -1,6 +1,8 @@
-import { Alert, Form, Input, Modal } from 'antd'
+import { Form, Input, Modal } from 'antd'
 import type { InputRef } from 'antd'
 import { useRef } from 'react'
+
+import ErrorNotice from '@/components/errorNotice'
 
 import type { useConnectionGroups } from '../../hooks/useConnectionGroups'
 
@@ -49,7 +51,7 @@ export default function ConnectionGroupModal({ manager }: Props) {
           />
         </Form.Item>
       </Form>
-      {error && <Alert showIcon type="error" title={dialog?.deleting ? '删除分组失败' : '分组保存失败'} description={error} />}
+      <ErrorNotice title={dialog?.deleting ? '删除分组失败' : '分组保存失败'} error={error} />
     </Modal>
   )
 }

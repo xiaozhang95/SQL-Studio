@@ -1,5 +1,7 @@
 # 系统设置入口
 
+加载及保存错误通过共享 ErrorNotice 展示，保留当前草稿。
+
 SystemSettings 接收 AppearancePreferences（已应用主题、字号、异步 onAppearanceSave 和可选 themeReady，默认 true），由工作区和 AI 助手共用。入口位于两页顶栏右侧，保存期间的 loading 在入口前显示；使用齿轮图标加「系统设置」文字的 text Button，保留 aria-label 和展开状态，外观恢复前禁用。
 
 点击入口打开标题为“系统设置”的 Ant Design Modal，沿用默认位置。左侧按“模型服务”和“外观设置”展示次要文字分组标题，前者包含模型配置，后者包含主题模式和界面字号；三个图文列表按钮分别使用 RobotOutlined、SkinOutlined、FontSizeOutlined，整行点击，当前项使用 controlItemBgActive 灰色背景与默认文字色。右侧保留分区标题；模型页展示已添加模型列表和添加/编辑子弹框，主题和字号页直接展示卡片，不再显示卡片前的“主题：”“字号：”标签或占位列。底部统一提供“取消”和“保存”。弹框头部、内容区和底栏以原生主题边框分隔，左右内容独立滚动，高度随视口收缩。

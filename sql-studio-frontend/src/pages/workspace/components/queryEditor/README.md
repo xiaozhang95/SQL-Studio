@@ -1,5 +1,7 @@
 # SQL 页面编辑器
 
+连接、表列表和 AI 偏好保存错误通过共享 ErrorNotice 展示。
+
 补全配置由 useSQLCompletion 按当前连接组织元数据，并调用数据库适配器 completion 构造；组件不导入具体 MySQL 方言。局部 contextSQL 只保留本区域右键菜单的选区快照。
 
 编辑器 basicSetup 与 onUpdate 桥接保持稳定身份，桥接在布局 effect 更新最新回调；避免每次输入、loading 更新或树状态变化都触发 UIW 全量 reconfigure，同时保持当前页面的 SQL 和布局回调正确归属。

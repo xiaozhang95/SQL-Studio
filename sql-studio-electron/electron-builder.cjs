@@ -1,3 +1,4 @@
+const { execFileSync } = require('node:child_process')
 const { access, copyFile, rename } = require('node:fs/promises')
 const path = require('node:path')
 
@@ -17,10 +18,7 @@ module.exports = {
   ],
   electronDownload: { mirror: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
   mac: { target: ['dmg'], icon: 'build/icons/mac-icon.png', category: 'public.app-category.developer-tools', identity: null },
-  win: {
-    target: ['zip', 'nsis'],
-    artifactName: '${productName}-Portable-${version}-${arch}.${ext}'
-  },
+  win: { target: ['nsis'] },
   async beforePack({ electronPlatformName }) {
     const windows = electronPlatformName === 'win32'
     const backend = windows ? 'sql-studio-backend.exe' : 'sql-studio-backend'
@@ -38,6 +36,16 @@ module.exports = {
     // 保留安装器和快捷方式使用的入口名，Chromium 及其依赖仍位于同一目录。
     await rename(executable, path.join(appOutDir, 'sql-studio-runtime.exe'))
     await copyFile(path.join(__dirname, 'build', 'launcher.exe'), executable)
+  },
+  afterSign({ appOutDir, electronPlatformName }) {
+    if (electronPlatformName !== 'win32') return
+    // 工作区可能带 Low 完整性标签，发行程序需要以普通用户的 Medium 级别运行。
+    const icacls = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'icacls.exe')
+    try {
+      execFileSync(icacls, [appOutDir, '/setintegritylevel', '(OI)(CI)M', '/T', '/C', '/Q'], { windowsHide: true, stdio: 'pipe' })
+    } catch (error) {
+      throw new Error('无法设置 Windows 发行目录的完整性级别，请从普通 Windows 终端运行 pnpm build。', { cause: error })
+    }
   },
   nsis: {
     artifactName: '${productName}-Setup-${version}-${arch}.${ext}',

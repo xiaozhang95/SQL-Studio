@@ -1,9 +1,10 @@
 import { DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
-import { Alert, Button, Drawer, Empty, Flex, Form, Input, Modal, Popconfirm, Spin, theme, Tooltip, Typography } from 'antd'
+import { Button, Drawer, Empty, Flex, Form, Input, Modal, Popconfirm, Spin, theme, Tooltip, Typography } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 
 import type { ConversationInfo } from '../../../../typings/workspace'
@@ -91,7 +92,7 @@ export function History(props: Props) {
         keyboard={!rename.busy}
         cancelButtonProps={{ disabled: rename.busy }}
       >
-        {rename.error && <Alert type="error" title={rename.error} style={{ marginBottom: token.margin }} />}
+        <ErrorNotice error={rename.error} style={{ marginBottom: token.margin }} />
         <Form form={rename.form} layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={rename.busy} onFinish={rename.save}>
           <Form.Item
             name="title"

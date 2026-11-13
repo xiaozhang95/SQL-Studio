@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import EmptyStateIcon from '@/components/emptyStateIcon'
+import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
@@ -178,7 +179,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title="上次执行因页面刷新中断，已完成结果保留；未自动继续执行。" />}
-      {editing.deletionError && <Alert type="error" showIcon closable onClose={editing.clearDeletionError} title="删除数据未完成" description={editing.deletionError} />}
+      <ErrorNotice onClose={editing.clearDeletionError} title="删除数据未完成" error={editing.deletionError} />
+      <ErrorNotice onClose={editing.clearOperationError} error={editing.operationError} />
       <ResultTabs
         run={run}
         running={activeRunning}
@@ -307,7 +309,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         ) : activeRunning ? (
           <ContentLoading label="正在加载结果…" />
         ) : run?.error ? (
-          <Alert style={{ margin: 16 }} type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{run.error}</div>} />
+          <ErrorNotice style={{ margin: 16 }} title="执行失败" error={run.error} />
         ) : result ? (
           <>
             <Table

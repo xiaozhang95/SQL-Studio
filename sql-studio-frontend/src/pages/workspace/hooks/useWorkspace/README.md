@@ -4,6 +4,8 @@
 
 useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段。主区域只有一层 query/data/structure/ddl 页面标签。SQL 页共用编辑器和最新一批结果，对象操作打开独立结果页；关闭最后一页保留空状态，不自动新建。
 
+`operationError` 提供导出、刷新和关闭等操作的失败原因，`clearOperationError()` 清理该错误。工作区将它与配置、连接列表错误交给 PageHeader 合并展示。
+
 ## 范围、补全与请求
 
 每页独立保存连接、库、表和 SQL。树高亮独立于右侧页面，单击/展开/双击不修改 SQL 范围；对象操作携带完整 connectionId/db/table。openConnection 只管理元数据，折叠不关闭；关闭取消该连接共享请求和缓存，清空相关 SQL 页范围但保留草稿与已有结果。删除/编辑不修改其他连接的范围。

@@ -1,4 +1,4 @@
-import { App, Form } from 'antd'
+import { Form } from 'antd'
 import { useRef, useState } from 'react'
 
 import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
@@ -16,12 +16,12 @@ type Options = {
 
 /** 只保存分组元数据；不打开、关闭或重建数据库会话。 */
 export function useConnectionGroups({ groups, blocked, onGroupsChanged, onRenamed, onDeleted, onMoved }: Options) {
-  const { modal } = App.useApp()
   const [form] = Form.useForm<{ name: string }>()
   const [dialog, setDialog] = useState<{ original?: string; deleting?: boolean }>()
   const [visible, setVisible] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [moveError, setMoveError] = useState('')
   const pending = useRef(false)
 
   function open(original?: string, deleting = false) {
@@ -63,15 +63,32 @@ export function useConnectionGroups({ groups, blocked, onGroupsChanged, onRename
     if (blocked || pending.current || dialog || connectionGroupName(connection.group) === group) return
     pending.current = true
     setSaving(true)
+    setMoveError('')
     try {
       onMoved(await moveConnectionGroup(connection.id, group))
     } catch (cause) {
-      modal.error({ title: '移动分组失败', content: cause instanceof Error ? cause.message : '请重试' })
+      setMoveError(cause instanceof Error ? cause.message : '移动分组失败，请重试')
     } finally {
       pending.current = false
       setSaving(false)
     }
   }
 
-  return { groups, form, dialog, visible, afterClose: () => setDialog(undefined), saving, error, blocked, open, remove: (name: string) => open(name, true), close, save, move }
+  return {
+    groups,
+    form,
+    dialog,
+    visible,
+    afterClose: () => setDialog(undefined),
+    saving,
+    error,
+    moveError,
+    clearMoveError: () => setMoveError(''),
+    blocked,
+    open,
+    remove: (name: string) => open(name, true),
+    close,
+    save,
+    move
+  }
 }

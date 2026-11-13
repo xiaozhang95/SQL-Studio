@@ -5,8 +5,10 @@ import { useState } from 'react'
 export const useSQLImport = (onImport: (sql: string, title: string) => void) => {
   const { message } = App.useApp()
   const [importing, setImporting] = useState(false)
+  const [error, setError] = useState('')
   const beforeImport = async (file: File) => {
     setImporting(true)
+    setError('')
     try {
       if (!file.name.toLowerCase().endsWith('.sql')) throw new Error('请选择 .sql 文件')
       if (file.size > 1024 * 1024) throw new Error('SQL 文件不能超过 1 MiB')
@@ -21,11 +23,11 @@ export const useSQLImport = (onImport: (sql: string, title: string) => void) => 
       onImport(sql, file.name)
       message.success('SQL 已导入新查询')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'SQL 文件读取失败')
+      setError(error instanceof Error ? error.message : 'SQL 文件读取失败')
     } finally {
       setImporting(false)
     }
     return Upload.LIST_IGNORE
   }
-  return { beforeImport, importing }
+  return { beforeImport, importing, error, clearError: () => setError('') }
 }

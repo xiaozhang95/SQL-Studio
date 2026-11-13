@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 import DesktopTitleBar from '@/components/desktopTitleBar'
+import ErrorNotice from '@/components/errorNotice'
 
 export default function PageHeader({
   children,
@@ -11,7 +12,10 @@ export default function PageHeader({
   titleOffset = 0,
   showDesktopTitle = true,
   desktopTitle,
-  desktopActive = true
+  desktopActive = true,
+  errors = [],
+  errorAction,
+  onErrorClose
 }: {
   children: ReactNode
   actions: ReactNode
@@ -20,6 +24,9 @@ export default function PageHeader({
   showDesktopTitle?: boolean
   desktopTitle?: string
   desktopActive?: boolean
+  errors?: readonly (string | undefined)[]
+  errorAction?: ReactNode
+  onErrorClose?: () => void
 }) {
   const { token } = theme.useToken()
   const titleElement = useRef<HTMLDivElement>(null)
@@ -95,6 +102,9 @@ export default function PageHeader({
           {actions}
         </div>
       </header>
+      <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
+        <ErrorNotice errors={errors} action={errorAction} onClose={onErrorClose} />
+      </div>
     </>
   )
 }

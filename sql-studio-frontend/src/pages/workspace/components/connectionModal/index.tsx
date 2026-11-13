@@ -1,6 +1,7 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
+import ErrorNotice from '@/components/errorNotice'
 import { connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
 import type { Connection } from '@/typings/database'
@@ -179,15 +180,18 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           </div>
           {(testing || status) && (
             <div className="connection-test-result" style={{ flex: 'none', minWidth: 0, maxHeight: '35%', overflowY: 'auto' }}>
-              <Alert
-                banner
-                showIcon
-                role={status?.type === 'error' ? 'alert' : 'status'}
-                type={testing ? 'info' : status?.type}
-                icon={testing ? <LoadingOutlined /> : undefined}
-                title={testing ? '正在测试连接…' : `${status?.type === 'success' ? '连接成功' : '连接失败'}：${status?.message}`}
-                style={{ overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}
-              />
+              {!testing && status?.type === 'error' ? (
+                <ErrorNotice title="连接失败" error={status.message} onClose={() => setStatus(undefined)} />
+              ) : (
+                <Alert
+                  showIcon
+                  role="status"
+                  type={testing ? 'info' : 'success'}
+                  icon={testing ? <LoadingOutlined /> : undefined}
+                  title={testing ? '正在测试连接…' : `连接成功：${status?.message}`}
+                  style={{ overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}
+                />
+              )}
             </div>
           )}
         </div>

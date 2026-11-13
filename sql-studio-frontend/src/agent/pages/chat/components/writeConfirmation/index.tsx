@@ -1,7 +1,8 @@
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { Alert, Button, Descriptions, Flex, Space, Typography } from 'antd'
+import { Button, Descriptions, Flex, Space, Typography } from 'antd'
 
 import ContentCard from '@/components/contentCard'
+import ErrorNotice from '@/components/errorNotice'
 
 import type { ConfirmationRequest } from '../../../../typings/writeConfirmation'
 import { CHAT } from '../../constant/chat'
@@ -49,7 +50,7 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
         ) : (
           <Typography.Text>{value.detail}</Typography.Text>
         )}
-        {error && <Alert type="error" showIcon title={error} />}
+        <ErrorNotice error={error} />
         <Flex gap={CHAT.spacing.detail} wrap>
           <Button type="default" loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
             {continueLabel}

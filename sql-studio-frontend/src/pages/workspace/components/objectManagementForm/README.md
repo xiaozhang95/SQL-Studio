@@ -1,5 +1,7 @@
 # 对象管理表单
 
+操作失败通过共享 ErrorNotice 在表单上方展示。
+
 [源码](index.tsx) · [组件索引](../README.md)
 
 ObjectManagementForm 接收 manager（对象管理 hook 的表单展示子集）和 themeMode。复用库/表名、字符集/排序规则、危险名称确认、字段表格、错误与高亮 SQL 预览；不请求数据库、不生成协议 SQL。

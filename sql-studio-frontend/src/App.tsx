@@ -31,7 +31,7 @@ export default function App() {
           </div>
           {section.agent && (
             <Suspense fallback={null}>
-              <AgentPage onBack={section.openWorkspace} themeMode={mode} {...appearancePreferences} />
+              <AgentPage onBack={section.openWorkspace} themeMode={mode} themeError={error} {...appearancePreferences} />
             </Suspense>
           )}
         </SidebarWidthProvider>

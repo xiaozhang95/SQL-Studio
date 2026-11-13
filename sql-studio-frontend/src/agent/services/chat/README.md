@@ -1,6 +1,6 @@
 # 聊天API
 
-create(signal)空对象创建持久会话；list(signal?)读取轻量历史索引；view(id,signal)读取已保存事件；remove(id)显式删除API。chat通过POST fetch消费text/event-stream，每个data JSON由decodeEvent运行时校验。支持UTF8分片与SSE多行data、注释和心跳，必须有done，否则抛未完成错误。error事件不是成功。
+create(signal) 空对象创建持久会话，list(signal?) 读取轻量历史索引，view(id,signal) 读取已保存事件，remove(id) 调用删除 API。JSON 和 SSE 请求都使用全局 request 工具处理网络和 HTTP 错误。chat 通过 POST 消费 text/event-stream，每个 data JSON 由 decodeEvent 运行时校验。支持 UTF8 分片、SSE 多行 data、注释和心跳，收到 done 才结束。
 
 reasoning_delta和answer_delta分开，模型usage与保守预算也有事件；最终answer用于校验合并，前端不得重复追加。reader在finally释放，AbortSignal向下游取消。无浏览器持久化或自动重试。旧后端拒绝ensure时明确提示重启Go后端，不降级创建、不绕过严格JSON校验。
 

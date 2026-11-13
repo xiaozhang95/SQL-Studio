@@ -1,6 +1,7 @@
-import { Alert, Modal, Typography } from 'antd'
+import { Modal, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
+import ErrorNotice from '@/components/errorNotice'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useAISQL } from '../../hooks/useAISQL'
@@ -19,7 +20,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
       width={1040}
       styles={{ body: { maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
     >
-      {model.error && <Alert type="error" title={model.error} style={{ marginBottom: 12 }} />}
+      <ErrorNotice error={model.error} style={{ marginBottom: 12 }} />
       {model.loading && <ContentLoading label="正在生成建议…" style={{ minHeight: 100 }} />}
       {model.preview && (
         <div style={{ display: 'grid', gap: 20, minWidth: 0 }}>

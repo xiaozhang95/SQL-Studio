@@ -6,6 +6,12 @@ import ts from 'typescript'
 
 async function moduleAt(relative) {
   let text = await fs.readFile(new URL('../src/agent/' + relative, import.meta.url), 'utf8')
+  if (text.includes('@/utils/request')) {
+    const requestSource = await fs.readFile(new URL('../src/utils/request/index.ts', import.meta.url), 'utf8')
+    const requestCode = ts.transpileModule(requestSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
+    const requestURL = 'data:text/javascript;base64,' + Buffer.from(requestCode).toString('base64')
+    text = text.replace(/(['"])@\/utils\/request\1/g, JSON.stringify(requestURL))
+  }
   text = text.replace(
     /import\s+\{\s*isObject\s*\}\s+from\s+["'][^"']+["'];?/,
     "function isObject(v: unknown): v is Record<string, unknown> { return v !== null && typeof v === 'object' && !Array.isArray(v); }"
@@ -424,12 +430,15 @@ test('回答正文渲染加粗、行内代码、列表与链接，不执行HTML�
 })
 
 async function confirmationHarness(fetch) {
+  const transportSource = await fs.readFile(new URL('../src/utils/request/index.ts', import.meta.url), 'utf8')
+  const transportCode = ts.transpileModule(transportSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
+  const transport = new Function('exports', 'fetch', transportCode + '; return exports')({}, fetch)
   const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/writeConfirmation/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
   const slots = []
   const cleanups = []
   let cursor = 0
-  const hook = new Function('exports', 'useState', 'useRef', 'useEffect', 'isObject', 'fetch', code + '; return exports.useWriteConfirmation')(
+  const hook = new Function('exports', 'useState', 'useRef', 'useEffect', 'isObject', 'sendRequest', code + '; return exports.useWriteConfirmation')(
     {},
     (initial) => {
       const index = cursor++
@@ -454,7 +463,7 @@ async function confirmationHarness(fetch) {
       }
     },
     (value) => value !== null && typeof value === 'object' && !Array.isArray(value),
-    fetch
+    transport.request
   )
   return {
     render: () => {

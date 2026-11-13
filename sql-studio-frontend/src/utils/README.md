@@ -1,6 +1,6 @@
 # utils
 
-- [HTTP 请求](request/README.md)
+- [HTTP 请求](request/README.md)，工作台和 AI 助手共用的 JSON、网络及流式请求入口。
 - [SQL 文件导出](sqlExport/README.md)
 - [查询结果 CSV](csv/README.md)
 

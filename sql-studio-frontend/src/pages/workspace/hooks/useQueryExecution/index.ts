@@ -14,7 +14,7 @@ type Options = {
   objects: Pick<ReturnType<typeof useDatabaseObjects>, 'snapshots'>
   running: boolean
   request: { current: AbortController | null }
-  message: Pick<MessageInstance, 'error' | 'info' | 'success'>
+  message: Pick<MessageInstance, 'info' | 'success'> & { error: (reason: string) => unknown }
   startRun: (id: string, run: RunState) => AbortController
   finishRun: (controller: AbortController) => void
   publishResult: (id: string, run: RunState) => void

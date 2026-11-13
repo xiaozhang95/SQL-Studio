@@ -2,6 +2,7 @@ import { Checkbox, Flex, Table, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
+import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import type { DatabaseType } from '@/databases/typings'
@@ -27,11 +28,14 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
     {
       title: '消息',
       width: 300,
-      render: (_, item) => (
-        <Typography.Text type={item.error ? 'danger' : 'success'} style={{ whiteSpace: 'pre-wrap' }}>
-          {item.error || (item.result && !item.result.columns.length ? `OK，影响 ${item.result.affectedRows} 行` : 'OK')}
-        </Typography.Text>
-      )
+      render: (_, item) =>
+        item.error ? (
+          <ErrorNotice error={item.error} />
+        ) : (
+          <Typography.Text type="success" style={{ whiteSpace: 'pre-wrap' }}>
+            {item.result && !item.result.columns.length ? `OK，影响 ${item.result.affectedRows} 行` : 'OK'}
+          </Typography.Text>
+        )
     },
     { title: '查询耗时', width: 120, render: (_, item) => (statementDuration(item) === undefined ? '未记录' : `${statementDuration(item)} ms`) }
   ]

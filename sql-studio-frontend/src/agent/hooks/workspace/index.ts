@@ -14,6 +14,7 @@ export function useWorkspace() {
   const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const current = useRef<Layout>(initial)
   const revision = useRef(0)
   const loaded = useRef(false)
@@ -46,6 +47,7 @@ export function useWorkspace() {
   }
   useEffect(() => {
     mounted.current = true
+    setError('')
     const c = new AbortController()
     workspace('GET', undefined, c.signal)
       .then((v) => {
@@ -71,7 +73,7 @@ export function useWorkspace() {
       void flush(true)
       window.removeEventListener('pagehide', onHide)
     }
-  }, [])
+  }, [loadAttempt])
   function update(patch: Partial<Layout>) {
     if (!loaded.current) return
     const next = { ...current.current, ...patch }
@@ -83,6 +85,9 @@ export function useWorkspace() {
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => void flush(), 400)
   }
-  return { state, ready, error, saving, update }
+  const retry = () => {
+    if (!loaded.current) setLoadAttempt((value) => value + 1)
+  }
+  return { state, ready, error, saving, update, retry }
 }
 export type WorkspaceController = ReturnType<typeof useWorkspace>

@@ -1,6 +1,8 @@
 import { DownloadOutlined } from '@ant-design/icons'
-import { Alert, Button, Flex } from 'antd'
+import { Button, Flex } from 'antd'
 import { useState } from 'react'
+
+import ErrorNotice from '@/components/errorNotice'
 
 import { excelData } from '../../../../utils/excelData'
 import { CHAT } from '../../constant/chat'
@@ -44,7 +46,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
       <Button type="default" icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
         导出 Excel{data.truncated ? '（当前截断结果）' : ''}
       </Button>
-      {error && <Alert type="error" title={error} />}
+      <ErrorNotice error={error} />
     </Flex>
   )
 }

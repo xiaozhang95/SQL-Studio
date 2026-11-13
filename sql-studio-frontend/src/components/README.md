@@ -2,6 +2,7 @@
 
 - [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景。
 - [pageHeader](pageHeader/README.md)：工作区和 AI 助手共用顶栏布局。
+- [errorNotice](errorNotice/README.md)：页面、弹窗和执行结果共用的错误提示。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
 

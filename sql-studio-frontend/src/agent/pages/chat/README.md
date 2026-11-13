@@ -2,7 +2,7 @@
 
 聊天输入框使用 token.padding（默认 16px）作为底部留白，并按自身拖拽逻辑伸缩。
 
-ChatPage组合X会话列表、Bubble回复、Think过程、结果表和Sender输入。workspace提供本地记录状态；dark 和 AppearancePreferences 沿用 SQL Studio 全局主题、字号及恢复状态，onBack返回工作区。系统设置入口位于顶栏右侧，以齿轮图标加文字展示；仅保存期间在入口前显示共用 SaveStatus 的 loading，状态取自 workspace.saving/error，空闲时隐藏，保留 Tooltip 和可访问名称，侧栏无底部说明。布局、会话加载和模型设置错误显示在标题栏下方；对话流式失败与查询错误显示在消息流末尾，随当前聊天内容滚动；弹窗校验和保存错误仍留在各自弹窗。所有状态/请求归hooks，页面只组合；Transcript按activeId重建滚动状态。
+ChatPage 组合会话列表、回复、思考过程、结果表和输入框。workspace 提供本地记录状态，dark 和 AppearancePreferences 沿用全局主题、字号和外观保存状态，onBack 返回工作区。系统设置入口位于顶栏右侧，保存期间在入口前显示 SaveStatus。布局、模型、外观和会话管理错误通过 PageHeader 在顶栏下方合并展示。会话内容加载、流式回复和弹窗错误均使用共享 ErrorNotice，展示于所属内容区域。所有请求和状态由 hooks 管理，Transcript 按 activeId 重建滚动状态。
 
 - [hooks](hooks/README.md)
 - [components](components/README.md)

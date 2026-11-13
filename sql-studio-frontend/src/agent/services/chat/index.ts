@@ -1,19 +1,20 @@
+import { fetchResponse, readJSON, request } from '@/utils/request'
+
 import type { ChatEvent, TokenUsage } from '../../typings/chat'
 import type { ConversationInfo } from '../../typings/workspace'
 import { isObject } from '../../utils/json/index.ts'
 
 async function json(path: string, init?: RequestInit): Promise<unknown> {
-  const r = await fetch(path, init)
-  const v: unknown = await r.json()
-  if (!r.ok) {
-    const message = isObject(v) && typeof v.error === 'string' ? v.error : '本地会话请求失败'
-    if (message === 'json: unknown field "ensure"') throw new Error('当前运行的 Go 后端尚未更新，请停止旧进程，在 sql-studio-backend 目录重新运行 go run main.go，然后刷新页面。')
-    throw new Error(message)
+  try {
+    return await request<unknown>(path, init)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'json: unknown field "ensure"')
+      throw new Error('当前运行的 Go 后端尚未更新，请停止旧进程，在 sql-studio-backend 目录重新运行 go run main.go，然后刷新页面。')
+    throw error
   }
-  return v
 }
 export async function create(signal?: AbortSignal, ensure = false): Promise<string> {
-  const v = await json('/api/agent/sessions', {
+  const v = await json('/agent/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ensure ? { ensure: true } : {}),
@@ -34,7 +35,7 @@ function info(v: unknown): ConversationInfo {
   }
 }
 export async function list(signal?: AbortSignal): Promise<ConversationInfo[]> {
-  const v = await json('/api/agent/sessions', { signal })
+  const v = await json('/agent/sessions', { signal })
   if (!Array.isArray(v)) throw new Error('会话索引无效')
   return v.map(info)
 }
@@ -46,7 +47,7 @@ export async function view(id: string, signal: AbortSignal): Promise<{ events: C
   let busy = false
   while (true) {
     const suffix = offset ? `?offset=${offset}&revision=${revision}${eventVersion === undefined ? '' : `&eventVersion=${eventVersion}`}` : ''
-    const v = await json(`/api/agent/sessions/${encodeURIComponent(id)}${suffix}`, { signal })
+    const v = await json(`/agent/sessions/${encodeURIComponent(id)}${suffix}`, { signal })
     signal.throwIfAborted()
     if (!isObject(v) || !Array.isArray(v.events) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
     if (revision !== undefined && revision !== v.revision) throw new Error('会话已更新，请重新打开后查看。')
@@ -70,10 +71,10 @@ export async function view(id: string, signal: AbortSignal): Promise<{ events: C
 }
 
 export async function remove(id: string) {
-  await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  await json(`/agent/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 export async function rename(id: string, title: string): Promise<ConversationInfo> {
-  return info(await json(`/api/agent/sessions/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) }))
+  return info(await json(`/agent/sessions/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) }))
 }
 export async function ensureHistory(signal?: AbortSignal): Promise<ConversationInfo[]> {
   let items = await list(signal)
@@ -136,18 +137,17 @@ export function decodeEvent(v: unknown): ChatEvent {
   }
 }
 export async function chat(sessionId: string, message: string, signal: AbortSignal, onEvent: (e: ChatEvent) => void, mode: 'readonly' | 'write' = 'readonly') {
-  const r = await fetch('/api/agent/chat', {
+  const r = await fetchResponse('/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId, message, mode }),
     signal
   })
-  if (!r.ok) {
-    const data: unknown = await r.json().catch(() => null)
-    throw new Error(isObject(data) && typeof data.error === 'string' ? data.error : '无法启动聊天')
+  if (!r.ok) await readJSON(r, signal)
+  if (!r.body || !r.headers.get('Content-Type')?.includes('text/event-stream')) {
+    await readJSON(r, signal)
+    throw new Error('后端未返回有效的数据流，请检查服务版本。')
   }
-  if (!r.body) throw new Error('无法启动聊天')
-  if (!r.headers.get('Content-Type')?.includes('text/event-stream')) throw new Error('服务器不支持SSE，请重启新版Agent')
   const reader = r.body.getReader()
   const decoder = new TextDecoder()
   let pending = ''

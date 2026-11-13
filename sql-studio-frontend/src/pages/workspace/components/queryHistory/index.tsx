@@ -1,10 +1,11 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined } from '@ant-design/icons'
-import { Alert, App as AntApp, Drawer, Empty, Input, Table, Tag } from 'antd'
+import { App as AntApp, Drawer, Empty, Input, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
+import ErrorNotice from '@/components/errorNotice'
 import { appearance, ComponentSize } from '@/constant/appearance'
 import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
@@ -160,7 +161,7 @@ export default function QueryHistory({ model, themeMode }: Props) {
             expandedRowRender: (item) => (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} />
-                {item.error && <Alert type="error" showIcon title="执行失败" description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.error}</div>} />}
+                <ErrorNotice title="执行失败" error={item.error} />
               </div>
             )
           }}

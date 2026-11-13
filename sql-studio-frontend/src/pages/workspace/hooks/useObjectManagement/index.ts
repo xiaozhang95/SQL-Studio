@@ -40,6 +40,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
   const [saving, setSaving] = useState(false)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
+  const [refreshError, setRefreshError] = useState('')
   const [collations, setCollations] = useState<CollationOption[]>([])
   const [original, setOriginal] = useState<FieldDefinition[]>([])
   const [sqlMode, setSQLMode] = useState('')
@@ -102,6 +103,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     setLoading(true)
     setReady(false)
     setError('')
+    setRefreshError('')
     setPreviewSQL('')
     setDirty(false)
     onDirtyChange?.(false)
@@ -253,7 +255,9 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     setSaving(true)
     onBusyChange(true)
     setError('')
+    setRefreshError('')
     let reopen: ObjectTarget | undefined
+    let refreshFailure = ''
     try {
       const { action, target, connection } = built.dialog
       if (keepOpen && action === ObjectAction.EditTable) {
@@ -290,7 +294,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
               : (engine.simpleObjects?.resultName(action, target, built.values.name) ?? built.values.name)
         await onChanged({ action, target, name })
       } catch (reason) {
-        message.warning('操作已生效，但对象刷新失败，请手动刷新。' + (reason instanceof Error ? reason.message : ''))
+        refreshFailure = '操作已生效，但对象刷新失败，请手动刷新。' + (reason instanceof Error ? reason.message : '')
       }
       if (keepOpen)
         reopen = { ...target, table: action === ObjectAction.CreateTable ? (getDatabaseAdapter(connection.type).tableDesign?.identity(target, built.values.name) ?? built.values.name) : target.table }
@@ -300,6 +304,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       release(controller)
     }
     if (reopen && !controller.signal.aborted) await open(ObjectAction.EditTable, reopen)
+    if (refreshFailure && !controller.signal.aborted) setRefreshError(refreshFailure)
   }
   const initialize = useEffectEvent(() => {
     if (initial && !blocked && !request.current && !currentDialog.current) void open(initial.action, initial.target)
@@ -318,6 +323,8 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     saving,
     ready,
     error,
+    refreshError,
+    clearRefreshError: () => setRefreshError(''),
     collations,
     original,
     databaseDefinition,
