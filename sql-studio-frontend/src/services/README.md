@@ -9,5 +9,6 @@
 - [AI 请求](ai/README.md)：SQL 续写与优化。
 
 - [dataExport](dataExport/README.md)：只读 SSE 表数据流与协议校验。
+- [queryBatch](queryBatch/README.md)：MySQL 同会话批次与逐条结果流。
 
 - [workspace](workspace/README.md)：轻量索引、分片草稿/结果与页面常驻基线。

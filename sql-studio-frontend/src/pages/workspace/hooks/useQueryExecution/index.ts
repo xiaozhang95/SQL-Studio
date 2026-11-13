@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
 import { executeQuery } from '@/services/database'
+import { executeQueryBatch } from '@/services/queryBatch'
 import type { Connection } from '@/typings/database'
 import type { HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceTab } from '@/typings/workspace'
 
@@ -27,9 +28,10 @@ export function createQueryExecutor({ connections, objects, running, request, me
   async function executeSQL(statement: string, scope: QueryScope, tabId: string, kind: WorkspacePageKind = 'query') {
     const target = connections.find((item) => item.id === scope.connectionId)
     if (!target || objects.snapshots[target.id]?.status !== 'connected' || running || request.current) return
+    const adapter = getDatabaseAdapter(target.type)
     let statements: string[]
     try {
-      statements = getDatabaseAdapter(target.type).splitStatements(statement)
+      statements = adapter.splitStatements(statement)
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'SQL 解析失败')
       return
@@ -39,73 +41,106 @@ export function createQueryExecutor({ connections, objects, running, request, me
       return
     }
     const source = `${target.name} / ${scope.database || '未选择数据库'}${scope.schema ? ' / ' + scope.schema : ''}`
-    const title = kind === 'data' ? `${getDatabaseAdapter(target.type).tableLabel(scope.table)} · 数据` : 'SQL 结果'
+    const title = kind === 'data' ? `${adapter.tableLabel(scope.table)} · 数据` : 'SQL 结果'
     const startedAt = new Date().toISOString()
     const batchStart = performance.now()
     const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
     const completed: StatementRun[] = []
     let executionDatabase = scope.database
-    try {
-      // 驱动继续保持单语句；整批固定连接、取消信号和运行锁，默认库跟随成功的 USE，逐条保留结果与历史。
-      for (const [index, sql] of statements.entries()) {
-        const start = performance.now()
+    const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'durationMs'>, selectedDatabase?: string) => {
+      const sql = statements[index]
+      const entry: StatementRun = { ...outcome, sql, database: executionDatabase, schema: scope.schema }
+      if (selectedDatabase !== undefined) {
+        executionDatabase = selectedDatabase
+        setTabs((previous) =>
+          previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, schema: '', table: '' } : page))
+        )
+      }
+      if (entry.result && !entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
+      if (kind === 'query') {
         const item: HistoryItem = {
           id: crypto.randomUUID(),
           sql,
-          database: executionDatabase,
+          database: entry.database ?? '',
           connectionId: target.id,
           connectionName: target.name,
           databaseType: target.type,
           schema: scope.schema,
           time: new Date().toISOString(),
-          durationMs: 0,
-          ok: false
+          durationMs: entry.durationMs ?? 0,
+          ok: !entry.error,
+          error: entry.error
         }
-        const entry: StatementRun = { sql, database: executionDatabase, schema: scope.schema }
-        try {
-          if (controller.signal.aborted) throw new Error('请求已取消')
-          entry.result = await executeQuery(
-            target.id,
-            { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true } : {}) },
-            controller.signal
-          )
-          if (controller.signal.aborted) throw new Error('请求已取消')
-          const selectedDatabase = getDatabaseAdapter(target.type).useDatabase(sql)
-          if (selectedDatabase !== undefined) {
-            executionDatabase = selectedDatabase
-            setTabs((previous) =>
-              previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, schema: '', table: '' } : page))
+        appendHistory(item)
+      }
+      if (entry.error) {
+        const remaining = statements.length - index - 1
+        if (remaining) entry.error += `\n后续 ${remaining} 条语句未执行。`
+      }
+      completed.push(entry)
+      publishResult(tabId, {
+        scope: { ...scope },
+        kind,
+        result: entry.result,
+        error: entry.error,
+        source,
+        title,
+        statements: [...completed],
+        statementCount: statements.length,
+        startedAt,
+        endedAt: entry.error || index === statements.length - 1 ? new Date().toISOString() : undefined,
+        durationMs: Math.round(performance.now() - batchStart)
+      })
+      setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
+    }
+    try {
+      if (adapter.sessionBatch && kind === 'query' && statements.length > 1) {
+        let lastStep = batchStart
+        await executeQueryBatch(target.id, executionDatabase, statements, controller.signal, (step) => {
+          const now = performance.now()
+          record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - lastStep) }, step.database)
+          lastStep = now
+        })
+      } else {
+        for (const [index, sql] of statements.entries()) {
+          const start = performance.now()
+          try {
+            controller.signal.throwIfAborted()
+            const result = await executeQuery(
+              target.id,
+              { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true } : {}) },
+              controller.signal
             )
+            controller.signal.throwIfAborted()
+            record(index, { result, durationMs: result.durationMs }, adapter.useDatabase(sql))
+          } catch (error) {
+            const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
+            record(index, { error: reason, durationMs: Math.round(performance.now() - start) })
+            break
           }
-          item.ok = true
-          item.durationMs = entry.result.durationMs
-          if (!entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
-        } catch (error) {
-          entry.result = undefined
-          const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
-          const remaining = statements.length - index - 1
-          entry.error = `${reason}${remaining ? `\n后续 ${remaining} 条语句未执行。` : ''}`
-          item.error = reason
-          item.durationMs = Math.round(performance.now() - start)
         }
-        entry.durationMs = item.durationMs
-        completed.push(entry)
-        if (kind === 'query') appendHistory(item)
+      }
+    } catch (error) {
+      const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
+      if (!completed.at(-1)?.error) {
+        const durationMs = Math.round(performance.now() - batchStart)
+        // A dropped stream cannot confirm whether its last in-flight write finished.
         publishResult(tabId, {
           scope: { ...scope },
           kind,
-          result: entry.result,
-          error: entry.error,
           source,
           title,
           statements: [...completed],
           statementCount: statements.length,
+          result: completed.at(-1)?.result,
+          error: reason,
           startedAt,
-          endedAt: entry.error || index === statements.length - 1 ? new Date().toISOString() : undefined,
-          durationMs: Math.round(performance.now() - batchStart)
+          endedAt: new Date().toISOString(),
+          durationMs
         })
-        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
-        if (entry.error) break
+        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: completed.length } }))
+      } else if (!controller.signal.aborted) {
+        message.error(reason)
       }
     } finally {
       finishRun(controller)

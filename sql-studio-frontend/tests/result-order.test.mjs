@@ -35,16 +35,27 @@ test('selected export keeps cross-page keys, staged values and sorting, without 
 
 test('CSV selected export contains a header and only the two chosen cross-page records', async (t) => {
   let blob,
-    clicked = 0
+    clicked = 0,
+    attached = false,
+    revoked = false
   const previousDocument = globalThis.document
   t.after(() => {
     if (previousDocument === undefined) delete globalThis.document
     else globalThis.document = previousDocument
   })
   globalThis.document = {
+    body: {
+      append() {
+        attached = true
+      }
+    },
     createElement: () => ({
       click() {
+        assert.ok(attached)
         clicked++
+      },
+      remove() {
+        attached = false
       }
     })
   }
@@ -52,10 +63,17 @@ test('CSV selected export contains a header and only the two chosen cross-page r
     blob = value
     return 'blob:fixture'
   })
-  t.mock.method(URL, 'revokeObjectURL', () => {})
+  t.mock.method(URL, 'revokeObjectURL', () => {
+    revoked = true
+  })
+  t.mock.timers.enable({ apis: ['setTimeout'] })
   const rows = Array.from({ length: 100 }, (_, i) => [String(i), 'record ' + i])
   exportCSV(['id', 'name'], selectedResultRows(rows, [0, 50]))
   const lines = (await blob.text()).replace(/^\uFEFF/, '').split('\r\n')
   assert.deepEqual(lines, ['"id","name"', '"0","record 0"', '"50","record 50"'])
   assert.equal(clicked, 1)
+  assert.equal(attached, false)
+  assert.equal(revoked, false)
+  t.mock.timers.tick(1000)
+  assert.equal(revoked, true)
 })

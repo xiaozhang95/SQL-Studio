@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"sql-studio-backend/internal/model"
 	"strings"
@@ -35,7 +36,25 @@ func (c *Client) Tables(ctx context.Context, connection model.Connection, databa
 		return nil, err
 	}
 	defer release()
-	rows, err := db.QueryContext(ctx, `SELECT n.nspname,c.relname,CASE WHEN c.relkind IN ('v','m') THEN 'VIEW' ELSE 'BASE TABLE' END,COALESCE(obj_description(c.oid,'pg_class'),'') FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relkind IN ('r','p','v','m','f') AND n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND n.nspname NOT LIKE 'pg_temp_%' AND has_schema_privilege(n.oid,'USAGE') AND has_table_privilege(c.oid,'SELECT') ORDER BY n.nspname,c.relname`)
+	rows, err := db.QueryContext(ctx, `SELECT n.nspname,c.relname,
+		CASE WHEN c.relkind IN ('v','m') THEN 'VIEW' ELSE 'BASE TABLE' END,
+		COALESCE(obj_description(c.oid,'pg_class'),''),
+		CASE WHEN c.relkind IN ('v','m') THEN (
+			SELECT json_agg(DISTINCT ARRAY[dn.nspname::text, dc.relname::text])
+			FROM pg_catalog.pg_rewrite rw JOIN pg_catalog.pg_depend d
+				ON d.classid='pg_catalog.pg_rewrite'::regclass AND d.objid=rw.oid AND d.refclassid='pg_catalog.pg_class'::regclass
+			JOIN pg_catalog.pg_class dc ON dc.oid=d.refobjid
+			JOIN pg_catalog.pg_namespace dn ON dn.oid=dc.relnamespace
+			WHERE rw.ev_class=c.oid AND rw.rulename='_RETURN' AND dc.oid<>c.oid AND dc.relkind IN ('v','m')
+		) END,
+		COALESCE((
+			SELECT e.extname FROM pg_catalog.pg_depend d JOIN pg_catalog.pg_extension e ON e.oid=d.refobjid
+			WHERE d.classid='pg_catalog.pg_class'::regclass AND d.objid=c.oid AND d.objsubid=0
+			AND d.refclassid='pg_catalog.pg_extension'::regclass AND d.deptype='e'
+		),'')
+		FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+		WHERE c.relkind IN ('r','p','v','m','f') AND n.nspname <> 'information_schema' AND left(n.nspname,3) <> 'pg_'
+		AND has_schema_privilege(n.oid,'USAGE') AND has_table_privilege(c.oid,'SELECT') ORDER BY n.nspname,c.relname`)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +63,20 @@ func (c *Client) Tables(ctx context.Context, connection model.Connection, databa
 	for rows.Next() {
 		var schema, name string
 		var table model.Table
-		if err = rows.Scan(&schema, &name, &table.Type, &table.Comment); err != nil {
+		var dependencies []byte
+		if err = rows.Scan(&schema, &name, &table.Type, &table.Comment, &dependencies, &table.Extension); err != nil {
 			return nil, err
 		}
 		table.Name = quoteIdentifier(schema) + "." + quoteIdentifier(name)
+		if len(dependencies) > 0 {
+			var names [][2]string
+			if err = json.Unmarshal(dependencies, &names); err != nil {
+				return nil, err
+			}
+			for _, name := range names {
+				table.ViewDependencies = append(table.ViewDependencies, quoteIdentifier(name[0])+"."+quoteIdentifier(name[1]))
+			}
+		}
 		out = append(out, table)
 	}
 	return out, rows.Err()
@@ -222,7 +251,7 @@ func (c *Client) Schemas(ctx context.Context, connection model.Connection, datab
 		return nil, err
 	}
 	defer release()
-	rows, err := db.QueryContext(ctx, `SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('pg_catalog','information_schema') AND nspname NOT LIKE 'pg_toast%' AND nspname NOT LIKE 'pg_temp_%' AND has_schema_privilege(oid,'USAGE') ORDER BY nspname`)
+	rows, err := db.QueryContext(ctx, `SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname <> 'information_schema' AND left(nspname,3) <> 'pg_' AND has_schema_privilege(oid,'USAGE') ORDER BY nspname`)
 	if err != nil {
 		return nil, err
 	}

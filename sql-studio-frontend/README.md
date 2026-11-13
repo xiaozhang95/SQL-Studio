@@ -12,7 +12,7 @@ pnpm dev
 
 开发地址 `http://127.0.0.1:15173`，/api 同源代理到 Go 18080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
 
-本目录 `package.json` 的 `version` 是网页和 Electron 共用的产品版本。Vite 将它写入前端构建，显示在「系统设置 → 关于」。Electron 打包也读取该版本，检查更新由桌面应用提供。
+本目录 `package.json` 的 `version` 是网页和 Electron 共用的产品版本。Vite 将它写入前端构建，显示在「系统设置 → 关于软件」。Electron 打包也读取该版本，检查更新由桌面应用提供。
 
 前端使用历史路由，`/` 为 SQL 工作区，`/agent` 为 AI 助手。Vite 配置为 SPA 模式，支持直接访问和刷新；构建后的网页由 Go 显式提供这两个页面入口。页面内切换使用 History API，支持浏览器前进、后退。
 

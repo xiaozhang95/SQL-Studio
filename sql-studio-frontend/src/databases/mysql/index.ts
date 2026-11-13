@@ -1,6 +1,6 @@
 import type { DatabaseAdapter } from '../typings'
 import { mysqlCompletion } from './completion'
-import { dumpData } from './dataDump'
+import { dumpData, viewStandIn } from './dataDump'
 import { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL } from './dataEditing'
 import { stripHistoryMarkers } from './history'
 import { mysqlObjects } from './objectManagement'
@@ -11,6 +11,7 @@ import { splitSQLStatements, useDatabaseSQL } from './statements'
 
 /** MySQL 的实际实现归属本目录；外层只依赖统一数据库契约。 */
 const mysql = {
+  sessionBatch: true,
   isSQLColumn,
   dumpFile: {
     metadataSQL: mysqlObjects.databaseInfoSQL,
@@ -25,6 +26,7 @@ const mysql = {
       return `-- SQL Studio 表/视图转储；不包含例程、触发器、事件和权限；跨表不保证同一快照\nCREATE DATABASE IF NOT EXISTS ${quoted} CHARACTER SET ${option(definition.charset)} COLLATE ${option(definition.collation)};\nUSE ${quoted};\nSET @sql_studio_old_fk = @@SESSION.FOREIGN_KEY_CHECKS;\nSET FOREIGN_KEY_CHECKS = 0;\nSET @sql_studio_old_sql_mode = @@SESSION.sql_mode;\nSET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');\n`
     },
     footer: 'SET SESSION sql_mode = @sql_studio_old_sql_mode;\nSET FOREIGN_KEY_CHECKS = @sql_studio_old_fk;\n',
+    viewStandIn,
     prepare: (database, table, ddl, columns) => ({
       before: mysqlObjects.dump(database, table, ddl),
       after: '',

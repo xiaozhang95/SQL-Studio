@@ -15,7 +15,7 @@ func TestModePersistsAcrossWorkspaceReload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	saved, err := s.Save(ctx, old.Revision, model.Layout{Mode: "write", Draft: "继续修改"})
+	saved, err := s.Save(ctx, old.Revision, model.Layout{Mode: "write", Draft: "继续修改", Expanded: []string{}})
 	if err != nil {
 		t.Fatal(err)
 	}

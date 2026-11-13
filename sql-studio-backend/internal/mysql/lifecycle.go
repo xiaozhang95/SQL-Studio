@@ -27,12 +27,17 @@ func (c *Client) openRequest(ctx context.Context, connection model.Connection, d
 }
 
 func (c *Client) openScopedRequest(ctx context.Context, connection model.Connection, database string, probe bool) (context.Context, *sql.DB, func(), error) {
+	ctx, db, _, release, err := c.openLeasedRequest(ctx, connection, database, probe)
+	return ctx, db, release, err
+}
+
+func (c *Client) openLeasedRequest(ctx context.Context, connection model.Connection, database string, probe bool) (context.Context, *sql.DB, *requestLease, func(), error) {
 	c.mu.Lock()
 	parent, target := sessionKey(connection.ID, nil), sessionKey(connection.ID, &database)
 	// 显式“测试连接”可临时探测已关闭配置，但不能在关闭进行中偷偷重建连接。
 	if c.closing[parent] || c.closing[target] || (!probe && (c.closed[parent] || c.closed[target])) {
 		c.mu.Unlock()
-		return ctx, nil, nil, errors.New("连接或数据库已关闭，请重新打开")
+		return ctx, nil, nil, nil, errors.New("连接或数据库已关闭，请重新打开")
 	}
 	requestCtx, cancel := context.WithCancel(ctx)
 	lease := &requestLease{id: connection.ID, database: database, cancel: cancel, done: make(chan struct{})}
@@ -60,9 +65,9 @@ func (c *Client) openScopedRequest(ctx context.Context, connection model.Connect
 	}
 	if err != nil {
 		release()
-		return ctx, nil, nil, err
+		return ctx, nil, nil, nil, err
 	}
-	return requestCtx, db, release, nil
+	return requestCtx, db, lease, release, nil
 }
 
 // SetSession 关闭本客户端拥有的连接，等待驱动资源释放；不会终止其他客户端的 MySQL 会话。

@@ -1,6 +1,26 @@
 import type { Column, QueryResult } from '../../../typings/database/index.ts'
+import { identifier } from '../query/index.ts'
 
-const identifier = (value: string) => '`' + value.replaceAll('`', '``') + '`'
+/** Stand-in views let mutually ordered dump sections reference a view before its definition. */
+export function viewStandIn(database: string, view: string, ddl: string, columns: Column[]) {
+  // SHOW CREATE VIEW starts with CREATE [ALGORITHM ...] [DEFINER ...] VIEW.
+  const definition = ddl.trimStart()
+  if (!/^CREATE\s+(?:ALGORITHM\s*=|DEFINER\s*=|(?:SQL\s+SECURITY\s+(?:INVOKER|DEFINER)\s+)?VIEW\b)/i.test(definition) || !columns.length) {
+    throw new Error('视图定义或字段不完整，请重新导出')
+  }
+  const fields = columns.map(({ name, charset, collation }) => {
+    const valid = /^[a-z0-9_]+$/i
+    if ((charset && !valid.test(charset)) || (collation && (!charset || !valid.test(collation)))) throw new Error('视图字段的字符集或排序规则无效')
+    // Downstream definitions can require a particular character set via COLLATE.
+    const value = charset ? "CONVERT('' USING " + charset + ')' + (collation ? ' COLLATE ' + collation : '') : '1'
+    return value + ' AS ' + identifier(name)
+  })
+  return {
+    placeholder: 'CREATE VIEW ' + identifier(database) + '.' + identifier(view) + ' AS SELECT ' + fields.join(', ') + ';\n',
+    definition: definition.replace(/^CREATE\b/i, 'ALTER')
+  }
+}
+
 function literal(value: unknown, type: string): string {
   if (value === null) return 'NULL'
   if (/GEOMETRY|POINT|POLYGON|LINESTRING|VECTOR/i.test(type)) throw new Error('空间和向量类型暂不支持数据转储')

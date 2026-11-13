@@ -15,7 +15,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
     const char = script[i]
     const next = script[i + 1]
     if (lineComment) {
-      if (char === '\n' || char === '\r') lineComment = false
+      if (char === '\n' || (ansi && char === '\r')) lineComment = false
       continue
     }
     if (blockComment) {
@@ -26,7 +26,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       continue
     }
     if (quote) {
-      if (char === '\\' && !ansi) i++
+      if (char === '\\' && !ansi && quote !== '`') i++
       else if (char === quote) {
         if (next === quote) i++
         else quote = ''
@@ -57,8 +57,13 @@ export function splitSQLStatements(script: string, executableComments: readonly 
 
 /** 仅识别完整 USE；数据库是否存在及访问权限仍由服务端验证。 */
 export function useDatabaseSQL(statement: string, { ansi = false } = {}): string | undefined {
-  const gap = ansi ? String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|--[^\r\n]*(?:[\r\n]|$))*` : String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
-  const match = new RegExp('^' + gap + String.raw`USE\b` + gap + '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+)' + gap + ';?' + gap + '$', 'iu').exec(statement)
+  const gap = ansi ? String.raw`(?:\s|/\*(?![!+]|M!)(?:[^*]|\*+[^*/])*\*+/|--[^\r\n]*(?:[\r\n]|$))*` : String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\n]*(?:\n|$)|--(?=[\x00-\x20]|$)[^\n]*(?:\n|$))*`
+  const doubleQuoted = ansi ? '|"(?:""|[^"])+"' : ''
+  const identifier = '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+' + doubleQuoted + ')'
+  const match = new RegExp('^' + gap + String.raw`USE\b` + gap + identifier + gap + ';?' + gap + '$', 'iu').exec(statement)
   if (!match) return undefined
-  return match[1].startsWith('`') ? match[1].slice(1, -1).replace(/``/g, '`') : match[1]
+  const [, database] = match
+  if (database.startsWith('`')) return database.slice(1, -1).replace(/``/g, '`')
+  if (database.startsWith('"')) return database.slice(1, -1).replace(/""/g, '"')
+  return database
 }

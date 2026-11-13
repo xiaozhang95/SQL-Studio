@@ -2,10 +2,29 @@ package greptimedb
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
 var errSingleStatement = errors.New("GreptimeDB 每次请求只支持一条完整 SQL")
+
+// Match the complete statement, with each comment ending at its first */.
+const useGap = `(?:[\x00-\x20]|--[^\r\n]*(?:[\r\n]|$)|/\*(?:[^*]|\*+[^*/])*\*+/)*`
+
+var doubleQuotedUse = regexp.MustCompile(`(?i)^` + useGap + `USE` + useGap + `("(?:[^"]|"")+")` + useGap + `;?` + useGap + `$`)
+
+// GreptimeDB's MySQL wire path accepts backticks around a database name.
+// Call only after single-statement validation. Send the canonical form because
+// GreptimeDB's wire handler also treats inline comments as part of the name.
+func normalizeUse(statement string) string {
+	match := doubleQuotedUse.FindStringSubmatch(statement)
+	if match == nil {
+		return statement
+	}
+	identifier := match[1]
+	database := strings.ReplaceAll(identifier[1:len(identifier)-1], `""`, `"`)
+	return "USE " + quoteIdentifier(database)
+}
 
 // The server can execute a batch even with the driver's multi-statement option
 // disabled. Check the request before opening a connection.

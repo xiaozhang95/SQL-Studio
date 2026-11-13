@@ -11,7 +11,7 @@
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。
 
-- [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型、外观、语言和关于，版本号共用，检查更新仅在桌面端显示。
+- [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型配置、外观设置、语言设置和关于软件，版本号共用，检查更新仅在桌面端显示。
 - [sectionNavigation](sectionNavigation/README.md)：顶栏左侧的工作区和 AI 助手切换入口。
 
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。

@@ -69,6 +69,11 @@ func TestPostgreSQLIntegration(t *testing.T) {
 	if err != nil || !strings.Contains(strings.Join(schemas, ","), schema) {
 		t.Fatalf("schemas: %v %v", schemas, err)
 	}
+	for _, name := range schemas {
+		if strings.HasPrefix(name, "pg_") || name == "information_schema" {
+			t.Fatalf("system schema exposed: %s", name)
+		}
+	}
 	tables, err := client.Tables(ctx, c, "postgres")
 	if err != nil {
 		t.Fatal(err)

@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/settings"
 	"sql-studio-backend/internal/statefile"
@@ -125,12 +127,18 @@ func TestStateWriteRequiresRevision(t *testing.T) {
 
 func TestNewModelListDoesNotReadOrModifyObsoleteAIFile(t *testing.T) {
 	ctx := context.Background()
-	store, err := statefile.Open(t.TempDir())
+	directory := t.TempDir()
+	store, err := statefile.Open(directory)
 	if err != nil {
 		t.Fatal(err)
 	}
 	obsolete := json.RawMessage(`{"provider":"deepseek","apiKey":"fixture-obsolete-key","model":"obsolete-model"}`)
 	if _, err = store.Write(ctx, "ai", model.StateWrite{Data: obsolete}); err != nil {
+		t.Fatal(err)
+	}
+	oldPath := filepath.Join(directory, "ai.json")
+	original, err := os.ReadFile(oldPath)
+	if err != nil {
 		t.Fatal(err)
 	}
 	router := New(Services{Settings: settings.New(store)})
@@ -157,8 +165,8 @@ func TestNewModelListDoesNotReadOrModifyObsoleteAIFile(t *testing.T) {
 	if result.Code != 200 || json.Unmarshal(result.Body.Bytes(), &doc) != nil || json.Unmarshal(doc.Data, &config) != nil || len(config.Configurations) != 1 || config.Configurations[0].ModelName != "Model A" {
 		t.Fatal("new list could not be restored")
 	}
-	previous, err := store.Read(ctx, "ai")
-	if err != nil || !bytes.Equal(previous.Data, obsolete) {
+	previous, err := os.ReadFile(oldPath)
+	if err != nil || !bytes.Equal(previous, original) {
 		t.Fatal("obsolete file was changed", err)
 	}
 }

@@ -29,3 +29,20 @@ func TestClassifyStatement(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeUse(t *testing.T) {
+	for _, tt := range []struct{ sql, want string }{
+		{`USE "metrics";`, "USE `metrics`"},
+		{"-- head\nuSe /* name */ \"a`b\"\"c\"; -- tail", "USE `a``b\"c`"},
+		{`USE "metrics" /* ; */;`, "USE `metrics`"},
+		{`USE metrics`, `USE metrics`},
+		{"USE `metrics`", "USE `metrics`"},
+		{`SELECT "USE"`, `SELECT "USE"`},
+		{`USE "metrics"; SELECT 1`, `USE "metrics"; SELECT 1`},
+		{`USE "metrics" /* done */ SELECT /* tail */`, `USE "metrics" /* done */ SELECT /* tail */`},
+	} {
+		if got := normalizeUse(tt.sql); got != tt.want {
+			t.Errorf("normalizeUse(%q) = %q; want %q", tt.sql, got, tt.want)
+		}
+	}
+}

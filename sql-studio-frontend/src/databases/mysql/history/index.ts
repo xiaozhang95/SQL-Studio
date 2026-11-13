@@ -8,8 +8,8 @@ export function stripHistoryMarkers(script: string): string {
   for (let i = 0; i < script.length; i++) {
     const char = script[i]
     const next = script[i + 1]
-    if (!quote && !blockComment && !lineComment && (i === 0 || script[i - 1] === '\n' || script[i - 1] === '\r')) {
-      const marker = /^[\t \uFEFF]*-- 历史记录[\t ]*(?:\r\n|[\r\n]|$)/.exec(script.slice(i))
+    if (!quote && !blockComment && !lineComment && (i === 0 || script[i - 1] === '\n')) {
+      const marker = /^[\t \uFEFF]*-- 历史记录[\t ]*(?:\r?\n|$)/.exec(script.slice(i))
       if (marker) {
         output += script.slice(start, i)
         i += marker[0].length - 1
@@ -18,14 +18,14 @@ export function stripHistoryMarkers(script: string): string {
       }
     }
     if (lineComment) {
-      if (char === '\n' || char === '\r') lineComment = false
+      if (char === '\n') lineComment = false
     } else if (blockComment) {
       if (char === '*' && next === '/') {
         blockComment = false
         i++
       }
     } else if (quote) {
-      if (char === '\\') i++
+      if (char === '\\' && quote !== '`') i++
       else if (char === quote) {
         if (next === quote) i++
         else quote = ''

@@ -171,6 +171,42 @@ func TestSlowCheckpointDoesNotHoldServiceMutex(t *testing.T) {
 	}
 }
 
+func TestSessionRemainsBusyUntilCancelledTurnIsSaved(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	r := &blockedRepository{Store: localstate.New(t.TempDir()), entered: make(chan struct{}), release: make(chan struct{})}
+	turn, stop := context.WithCancel(ctx)
+	defer stop()
+	s := New(generatorFunc(func(context.Context, []model.Message, []model.Tool) (model.Message, error) {
+		r.block.Store(true)
+		stop()
+		return model.Message{}, context.Canceled
+	}), &fakeDB{}, r)
+	id, err := s.Create(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finished := make(chan error, 1)
+	go func() { finished <- s.Chat(turn, id, "取消本轮", func(model.Event) error { return nil }) }()
+	select {
+	case <-r.entered:
+	case <-ctx.Done():
+		t.Fatal("final save did not start")
+	}
+	view, err := s.ViewPage(ctx, id, 0, 0)
+	close(r.release)
+	if err != nil || !view.Busy {
+		t.Errorf("unfinished save exposed an idle session: %+v %v", view.ConversationInfo, err)
+	}
+	if err := <-finished; !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	view, err = s.ViewPage(ctx, id, 0, 0)
+	if err != nil || view.Busy || view.Status != "cancelled" {
+		t.Fatalf("saved cancellation did not release the session: %+v %v", view.ConversationInfo, err)
+	}
+}
+
 func TestHistoryPagesStayBoundedAndRejectChangedRevision(t *testing.T) {
 	s := New(nil, &fakeDB{})
 	id, _ := s.Create(context.Background())

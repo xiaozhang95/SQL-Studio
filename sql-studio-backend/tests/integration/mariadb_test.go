@@ -180,4 +180,42 @@ func TestMariaDBIntegration(t *testing.T) {
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"2"`) {
 		t.Fatalf("HTTP: %d %s", rec.Code, rec.Body.String())
 	}
+	input, err = json.Marshal(model.QueryBatchRequest{Database: db, AllowWrite: true, Statements: []string{
+		"SET @saved_mode = @@SESSION.sql_mode",
+		"SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO'",
+		"CREATE TABLE restore_sample (id INT AUTO_INCREMENT PRIMARY KEY)",
+		"INSERT INTO restore_sample VALUES (0) RETURNING id",
+		"SET SESSION sql_mode = @saved_mode",
+		"SELECT id FROM restore_sample",
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("POST", "http://127.0.0.1/api/connections/"+saved.ID+"/query-batch", strings.NewReader(string(input))))
+	lines := strings.Split(strings.TrimSpace(rec.Body.String()), "\n")
+	if rec.Code != 200 || len(lines) != 7 {
+		t.Fatalf("batch response: %d %s", rec.Code, rec.Body.String())
+	}
+	for i, line := range lines {
+		var event struct {
+			Type string `json:"type"`
+			model.QueryBatchStep
+		}
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			t.Fatal(err)
+		}
+		if i == 6 {
+			if event.Type != "done" {
+				t.Fatal(line)
+			}
+			continue
+		}
+		if event.Type != "statement" || event.Index != i || event.Error != "" || event.Result == nil {
+			t.Fatal(line)
+		}
+		if (i == 3 || i == 5) && (len(event.Result.Rows) != 1 || event.Result.Rows[0][0] != "0") {
+			t.Fatal(line)
+		}
+	}
 }

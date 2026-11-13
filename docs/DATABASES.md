@@ -13,9 +13,9 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases`
 
 连接和加密密码保存在本地 connections.json，密钥位于 master.key。当前连接文件必须明确保存 type/group；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。每个 API 请求执行单语句，最长 30 秒，默认 1000 行，最多 5000 行及约 8 MiB 字段内容。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。每条请求独立连接，取消不表示回滚。
+每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。单语句查询及批次中的每条语句最长 30 秒，默认 1000 行，最多 5000 行及约 8 MiB 字段内容。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。MySQL 和 MariaDB 的多语句批次共享一个独立会话，支持脚本内的 SET、用户变量、USE 和 BEGIN/COMMIT。取消时断开批次连接，已提交写入保留。
 
-MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
+MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
 PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 
@@ -45,14 +45,18 @@ Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.
 
 新建连接选择 GreptimeDB。Docker 使用 `-p 127.0.0.1:4002:4002` 映射时，主机填 `127.0.0.1`，端口填 `4002`，维护库默认 `public`。采用其他端口映射时填宿主机端口。未启用鉴权时用户名和密码可留空，启用后填写配置的账号。容器的 MySQL 监听地址须允许容器外访问。见 [GreptimeDB Docker 文档](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)。
 
-支持数据库、表、视图、字段和索引浏览，保留 `TIME INDEX`，提供表数据预览、CSV、原始 DDL、SQL 和 TQL 执行。建表与写入通过 SQL 编辑器完成。图形化表设计、网格行编辑、SQL 转储和 Agent 数据库工具暂未接入。
+支持数据库、表、视图、字段和索引浏览，保留 `TIME INDEX`，提供数据预览、CSV、原始 DDL、SQL 和 TQL 执行。查询结构可显示视图列名和类型。工作台可用 `USE "库名"` 切换数据库，后续语句使用切换后的库。建表与写入通过 SQL 编辑器完成。图形化表设计、网格行编辑、SQL 转储和 Agent 数据库工具暂未接入。
 
 ## SQL 转储
 
-导出开始时固定连接、数据库、Schema 和对象范围，先按引擎收集结构，再通过专用 SSE 接口顺序读取表数据并写入文件。该读取不受普通查询的 1000/5000 行上限约束。视图只导出结构；关闭所属连接或数据库会取消导出，其他范围不受影响。
+导出开始时固定连接、数据库、Schema 和对象范围，先按引擎收集结构，再通过专用 SSE 接口顺序读取表数据并写入文件。该读取不受普通查询的 1000/5000 行上限约束。视图只导出结构；MySQL/MariaDB 先创建占位视图再恢复定义，PostgreSQL 按依赖顺序恢复转储内的视图。关闭所属连接或数据库会取消导出，其他范围不受影响。
 
 每个对象完成后复核 DDL，结构变化或数据列不匹配时停止。后端独立限制为 2 路并发、30 分钟和单行 8 MiB，事件及错误约定见 [流式转储 API](API.md#流式转储)。原生文件流只在全部成功后提交，失败或取消中止写入；兼容下载模式缓存上限 256 MiB，超限不下载部分文件，触发下载也不代表已核验落盘。
 
 转储保留已适配的精确值、二进制、NULL、生成列、自增和自有序列定义，以及字符集、Schema 和延后外键等必要结构。它不提供跨表一致性快照，不包含完整的例程、触发器、事件、授权及外部依赖。完整备份应使用对应数据库的原生工具。
+
+PostgreSQL／PolarDB 的库和 Schema 转储只创建用户 Schema，跳过扩展自身管理的表和视图，例如 PolarDB 默认附带的任务调度表，并在日志报告跳过数量。恢复需要预先安装所依赖的扩展。
+
+MySQL 数据库转储包含原库名。恢复到空实例时可在查询页清空当前库选择，再执行完整脚本，由脚本建库和切库。已有同名表会报错并停止。编辑器导入上限为 1 MiB，较大的转储可用 MySQL 客户端执行。
 
 实现见 [转储编排](../sql-studio-frontend/src/pages/workspace/hooks/useDataExport/README.md)与[文件写入](../sql-studio-frontend/src/utils/exportWriter/README.md)。

@@ -672,7 +672,7 @@ async function chatHarness(view, initialView, apiOverrides = {}) {
     events.applyEvent,
     events.restoreEvents,
     { tools: {} },
-    () => ({ pending: null })
+    () => ({ pending: null, close() {} })
   )
   const render = () => {
     cursor = 0
@@ -682,6 +682,38 @@ async function chatHarness(view, initialView, apiOverrides = {}) {
   await new Promise((resolve) => setTimeout(resolve, 0))
   return { render, workspace, unmount: () => cleanups.forEach((cleanup) => cleanup?.()) }
 }
+
+test('停止后等待后端保存结束才允许同一会话再次发送', async () => {
+  let attempts = 0
+  let releaseStatus
+  const status = new Promise((resolve) => (releaseStatus = resolve))
+  let statusRequested
+  const waiting = new Promise((resolve) => (statusRequested = resolve))
+  const harness = await chatHarness(async () => ({ busy: false, events: [] }), undefined, {
+    chat: (_id, _text, signal) => {
+      attempts++
+      if (attempts > 1) return Promise.resolve()
+      return new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }))
+    },
+    sessionBusy: (id) => {
+      assert.equal(id, 'initial')
+      statusRequested()
+      return status
+    }
+  })
+  const pending = harness.render().send({ question: '正在执行的问题' })
+  harness.render().stop()
+  await waiting
+  assert.equal(harness.render().busy, true)
+  await harness.render().send({ question: '保存期间禁止发送' })
+  assert.equal(attempts, 1)
+  releaseStatus(false)
+  await pending
+  assert.equal(harness.render().busy, false)
+  await harness.render().send({ question: '保存后可以发送' })
+  assert.equal(attempts, 2)
+  harness.unmount()
+})
 
 test('后台刷新缺少当前项或返回空列表时保留选择、正文、草稿与展开，不创建或激活其他会话', async () => {
   let items = []

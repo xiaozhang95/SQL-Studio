@@ -288,6 +288,18 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
           text: c.signal.aborted ? '已停止，当前轮次未完成。' : e instanceof Error ? e.message : '请求失败'
         })
     } finally {
+      if (c.signal.aborted && mounted.current && session.current) {
+        // The HTTP stream can close before the server finishes saving the stopped turn.
+        const id = session.current
+        const settling = AbortSignal.timeout(5000)
+        try {
+          while (mounted.current && (await api.sessionBusy(id, settling))) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 150))
+          }
+        } catch {
+          // Leave the stopped turn visible even if the backend went away.
+        }
+      }
       active.current = null
       if (mounted.current) {
         setBusy(false)

@@ -10,7 +10,7 @@ import (
 )
 
 func TestMetadataPreservesSchemaIdentityAndExplicitDatabase(t *testing.T) {
-	f := &queryFixture{columns: []string{"schema", "name", "kind", "comment"}, types: []string{"TEXT", "TEXT", "TEXT", "TEXT"}, rows: [][]driver.Value{{"a.b", `same"table`, "BASE TABLE", "note"}, {"other", `same"table`, "BASE TABLE", "other"}}}
+	f := &queryFixture{columns: []string{"schema", "name", "kind", "comment", "dependencies", "extension"}, types: []string{"TEXT", "TEXT", "TEXT", "TEXT", "JSON", "TEXT"}, rows: [][]driver.Value{{"a.b", `same"table`, "BASE TABLE", "note", nil, ""}, {"other", `same"table`, "VIEW", "other", `[["a.b","upstream\"view"]]`, "sample_extension"}}}
 	client := NewClient()
 	var receivedDB string
 	client.open = func(c model.Connection, db string) (*sql.DB, error) {
@@ -24,7 +24,7 @@ func TestMetadataPreservesSchemaIdentityAndExplicitDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if receivedDB != "physical" || len(tables) != 2 || tables[0].Name != `"a.b"."same""table"` || tables[1].Name != `"other"."same""table"` {
+	if receivedDB != "physical" || len(tables) != 2 || tables[0].Name != `"a.b"."same""table"` || tables[1].Name != `"other"."same""table"` || len(tables[1].ViewDependencies) != 1 || tables[1].ViewDependencies[0] != `"a.b"."upstream""view"` || tables[1].Extension != "sample_extension" {
 		t.Fatal("schema identity lost")
 	}
 	f = &queryFixture{columns: []string{"name", "type", "nullable", "key", "default", "extra", "comment"}, types: []string{"TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"}, rows: [][]driver.Value{{"id", "bigint", "NO", "PRI", nil, "IDENTITY", ""}}}

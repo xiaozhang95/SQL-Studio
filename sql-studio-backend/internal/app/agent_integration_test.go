@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -35,13 +36,18 @@ func TestAgentRealDatabaseIntegration(t *testing.T) {
 	if os.Getenv("SQLDESK_AGENT_INTEGRATION") != "1" {
 		t.Skip("set SQLDESK_AGENT_INTEGRATION=1, SQLDESK_AGENT_PASSWORD and engine-specific PORT variables for disposable servers")
 	}
-	password := os.Getenv("SQLDESK_AGENT_PASSWORD")
-	if password == "" {
-		t.Fatal("SQLDESK_AGENT_PASSWORD is required")
-	}
+	defaultPassword := os.Getenv("SQLDESK_AGENT_PASSWORD")
 	for _, engine := range []string{model.TypeMySQL, model.TypePostgreSQL, model.TypeMariaDB} {
 		t.Run(engine, func(t *testing.T) {
-			port, err := strconv.Atoi(os.Getenv("SQLDESK_AGENT_" + strings.ToUpper(engine) + "_PORT"))
+			prefix := "SQLDESK_AGENT_" + strings.ToUpper(engine)
+			password := os.Getenv(prefix + "_PASSWORD")
+			if password == "" {
+				password = defaultPassword
+			}
+			if password == "" {
+				t.Fatal("explicit disposable server password is required")
+			}
+			port, err := strconv.Atoi(os.Getenv(prefix + "_PORT"))
 			if err != nil || port < 1 || port > 65535 {
 				t.Fatal("explicit disposable server port is required")
 			}
@@ -119,11 +125,20 @@ func TestAgentRealDatabaseIntegration(t *testing.T) {
 					t.Fatal("unsafe write allowed", sql)
 				}
 			}
-			for _, allow := range []bool{false, true} {
+			for _, decision := range []string{"readonly", "reject", "disconnect", "approve-then-cancel", "approve", "update", "deny-delete"} {
 				step := 0
 				tool := func(name string, arguments any) agentmodel.Message {
 					encoded, _ := json.Marshal(arguments)
 					return agentmodel.Message{Role: "assistant", ToolCalls: []agentmodel.ToolCall{{ID: fmt.Sprint(step), Type: "function", Function: agentmodel.Function{Name: name, Arguments: string(encoded)}}}}
+				}
+				mode, sql := "write", "INSERT INTO items VALUES (800,1,'confirmed')"
+				switch decision {
+				case "readonly":
+					mode = "readonly"
+				case "update":
+					sql = "UPDATE items SET amount=amount+1 WHERE id=800"
+				case "deny-delete":
+					sql = "DELETE FROM items WHERE id=800"
 				}
 				var service *agent.Service
 				service = agent.New(archiveGenerator(func(context.Context, []agentmodel.Message, []agentmodel.Tool) (agentmodel.Message, error) {
@@ -136,17 +151,23 @@ func TestAgentRealDatabaseIntegration(t *testing.T) {
 					case 3:
 						return tool("use_database", target), nil
 					case 4:
-						return tool("execute_write", map[string]string{"sql": qualify("INSERT INTO items VALUES (800,1,'confirmed')")}), nil
+						return tool("execute_write", map[string]string{"sql": qualify(sql)}), nil
 					default:
 						return agentmodel.Message{Role: "assistant", Content: "完成"}, nil
 					}
 				}), adapter)
 				id, _ := service.Create(ctx)
 				approval := ""
-				err := service.ChatMode(ctx, id, "fixture", "write", func(event agentmodel.Event) error {
+				turn, stop := context.WithCancel(ctx)
+				err := service.ChatMode(turn, id, "fixture", mode, func(event agentmodel.Event) error {
 					if event.Type == "write_confirmation" {
-						if run("SELECT COUNT(*) FROM items WHERE id=800").Rows[0][0] != "0" {
-							t.Error("write executed before confirmation")
+						before := run("SELECT amount FROM items WHERE id=800").Rows
+						if decision == "update" {
+							if len(before) != 1 || before[0][0] != "1.0000" {
+								t.Fatal("update executed before confirmation")
+							}
+						} else if len(before) != 0 {
+							t.Fatal("insert executed before confirmation")
 						}
 						var details struct {
 							ApprovalID string `json:"approvalId"`
@@ -155,30 +176,84 @@ func TestAgentRealDatabaseIntegration(t *testing.T) {
 							return err
 						}
 						approval = details.ApprovalID
-						return service.ConfirmWrite(approval, allow)
+						if decision == "disconnect" {
+							stop()
+							return context.Canceled
+						}
+						if err := service.ConfirmContinue(approval, true); err == nil {
+							return errors.New("write confirmation accepted by continue endpoint")
+						}
+						if decision == "approve-then-cancel" {
+							if err := service.ConfirmWrite(approval, true); err != nil {
+								return err
+							}
+							stop()
+							return nil
+						}
+						const clients = 24
+						start := make(chan struct{})
+						results := make(chan error, clients)
+						allow := decision == "approve" || decision == "update"
+						for range clients {
+							go func() {
+								<-start
+								results <- service.ConfirmWrite(approval, allow)
+							}()
+						}
+						close(start)
+						successes := 0
+						for range clients {
+							if <-results == nil {
+								successes++
+							}
+						}
+						if successes != 1 {
+							return fmt.Errorf("%d concurrent confirmations accepted, want 1", successes)
+						}
 					}
 					return nil
 				})
-				if approval == "" || allow && err != nil || !allow && err == nil || service.ConfirmWrite(approval, true) == nil {
-					t.Fatal("confirmation/cancellation/replay contract failed", err)
+				stop()
+				expectApproval := decision != "readonly" && decision != "deny-delete"
+				if (approval != "") != expectApproval || (approval != "" && service.ConfirmWrite(approval, true) == nil) {
+					t.Fatalf("%s: confirmation or replay contract failed", decision)
 				}
-				want := "0"
-				if allow {
-					want = "1"
+				switch decision {
+				case "reject":
+					if err == nil {
+						t.Fatal("rejected write did not stop")
+					}
+				case "disconnect", "approve-then-cancel":
+					if !errors.Is(err, context.Canceled) {
+						t.Fatalf("%s: %v", decision, err)
+					}
+				default:
+					if err != nil {
+						t.Fatalf("%s: %v", decision, err)
+					}
 				}
-				if run("SELECT COUNT(*) FROM items WHERE id=800").Rows[0][0] != want {
-					t.Fatal("confirmation did not control real write")
+				got := run("SELECT amount FROM items WHERE id=800").Rows
+				switch decision {
+				case "approve":
+					if len(got) != 1 || got[0][0] != "1.0000" {
+						t.Fatal("confirmed insert was not applied")
+					}
+				case "update", "deny-delete":
+					if len(got) != 1 || got[0][0] != "2.0000" {
+						t.Fatal("confirmed update or deletion guard failed")
+					}
+				default:
+					if len(got) != 0 {
+						t.Fatal("unconfirmed write was applied")
+					}
 				}
-			}
-			if _, err := adapter.Write(ctx, target, qualify("UPDATE items SET amount=amount+1 WHERE id=800")); err != nil {
-				t.Fatal(err)
 			}
 			// The normal SQL executor retains its independent write capability.
 			run("DELETE FROM items WHERE id=800")
 			if run("SELECT COUNT(*) FROM items WHERE id=800").Rows[0][0] != "0" {
 				t.Fatal("ordinary SQL window was restricted")
 			}
-			t.Log("real precision, NULL, duplicate columns, preview truncation, unsafe-query rejection, explicit confirmation, cancellation, replay and normal SQL write verified")
+			t.Log("real precision, NULL, duplicate columns, preview truncation, unsafe-query rejection, 24 concurrent confirmations, cancellation, replay and normal SQL write verified")
 		})
 	}
 }

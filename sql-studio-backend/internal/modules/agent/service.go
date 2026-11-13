@@ -70,7 +70,7 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 	defer func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		v.busy = false
+		defer func() { v.busy = false }()
 		v.used = time.Now()
 		v.eventVersion++
 		status, outcome := TurnOutcome(turnErr)

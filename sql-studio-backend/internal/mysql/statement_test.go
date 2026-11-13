@@ -18,6 +18,9 @@ func TestIdentifiersAndKeyword(t *testing.T) {
 	if isQuery("WITH ids AS (SELECT 1 AS id) UPDATE sample SET label='test'") {
 		t.Fatal("CTE update misclassified")
 	}
+	if !isQuery("WITH `ends\\` AS (SELECT 1) SELECT * FROM `ends\\`") || isQuery("-- comment\rSELECT 1") {
+		t.Fatal("identifier or line-comment boundary misclassified")
+	}
 }
 
 func TestReadOnlyStatementBoundary(t *testing.T) {
@@ -44,7 +47,7 @@ func TestReadOnlyStatementBoundary(t *testing.T) {
 }
 
 func TestReturningReadsRowsOnlyForTopLevelWriteClauses(t *testing.T) {
-	for _, statement := range []string{"INSERT INTO t VALUES (1) RETURNING id", "DELETE FROM t WHERE id=1 RETURNING *", "REPLACE INTO t VALUES(1) RETURNING id"} {
+	for _, statement := range []string{"INSERT INTO t VALUES (1) RETURNING id", "DELETE FROM t WHERE id=1 RETURNING *", "REPLACE INTO t VALUES(1) RETURNING id", "INSERT INTO `ends\\` VALUES (1--1) RETURNING id"} {
 		if !hasReturning(statement) || isReadOnlyStatement(statement) {
 			t.Fatalf("incorrect RETURNING classification: %s", statement)
 		}

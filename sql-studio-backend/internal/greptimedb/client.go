@@ -3,6 +3,7 @@ package greptimedb
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 
 	"sql-studio-backend/internal/model"
@@ -45,7 +46,29 @@ func (c *Client) Tables(ctx context.Context, connection model.Connection, databa
 }
 
 func (c *Client) Columns(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Column, error) {
-	return c.wire.Columns(ctx, connection, ref)
+	columns, err := c.wire.Columns(ctx, connection, ref)
+	if err != nil || len(columns) != 0 {
+		return columns, err
+	}
+	tables, err := c.Tables(ctx, connection, ref.Database)
+	if err != nil {
+		return nil, err
+	}
+	if !slices.ContainsFunc(tables, func(table model.Table) bool { return table.Name == ref.Name && table.Type == "VIEW" }) {
+		return columns, nil
+	}
+	// GreptimeDB can omit view columns from the catalog. The wire result
+	// exposes their names and types without returning any data rows.
+	result, err := c.wire.ExecuteStatement(ctx, connection, model.QueryRequest{
+		Database: ref.Database, SQL: "SELECT * FROM " + quoteIdentifier(ref.Name) + " LIMIT 0", Limit: 1,
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+	for _, column := range result.Columns {
+		columns = append(columns, model.Column{Name: column.Name, Type: column.Type})
+	}
+	return columns, nil
 }
 
 func (c *Client) Indexes(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Index, error) {
@@ -98,6 +121,7 @@ func (c *Client) Execute(ctx context.Context, connection model.Connection, input
 	if input.Database == "" {
 		input.Database = defaultDatabase(connection)
 	}
+	input.SQL = normalizeUse(input.SQL)
 	return c.wire.ExecuteStatement(ctx, connection, input, returnsRows)
 }
 

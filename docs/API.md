@@ -29,12 +29,13 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | POST   | `/connections/test`           | 测试表单连接，返回版本                      |
 | GET    | `/connections/{id}/databases` | 数据库名称列表                              |
 | GET    | `/connections/{id}/schemas` | 数据库内可访问的 schema（含空 schema） |
-| GET    | `/connections/{id}/tables`    | 表和视图列表                                |
-| GET    | `/connections/{id}/columns`   | 字段列表                                    |
+| GET    | `/connections/{id}/tables`    | 表和视图列表，PostgreSQL 视图附可选依赖       |
+| GET    | `/connections/{id}/columns`   | 字段列表，MySQL 协议文本列附可选字符集和排序规则 |
 | GET    | `/connections/{id}/indexes`   | 索引列表，含唯一性、类型及按顺序排列的字段  |
 | GET    | `/connections/{id}/ddl`       | 对象建表语句                                |
 | GET | `/connections/{id}/export-data` | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
 | POST   | `/connections/{id}/query`     | 执行一条 SQL                                |
+| POST   | `/connections/{id}/query-batch` | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执 |
 | GET    | `/state/{section}`            | 读取配置分区                                |
 | PUT    | `/state/{section}`            | 按修订号保存配置                            |
 | POST   | `/ai/assist`                  | SQL 续写或优化                              |
@@ -49,7 +50,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
-请求必须为单个 JSON 对象，拒绝 null、未知顶层字段、多个 JSON 和超过 1 MiB 的普通请求。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
+请求必须为单个 JSON 对象，拒绝 null、未知顶层字段、多个 JSON 和超过 1 MiB 的普通请求。MySQL／MariaDB 批次的 JSON 上限为 2 MiB。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
 
 ## 请求与行为边界
 
@@ -66,9 +67,11 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 普通状态接口拒绝 `connections`、`workspace-index` 和 `ai` 分区。连接及工作区通过各自的专用 API 读写，`master.key` 不通过接口返回。
 
-PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，返回原始表或视图 DDL。
+PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。
 
-MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。
+MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL 和 MariaDB 多语句走同一会话批次，其余引擎逐条独立请求。
+
+MySQL／MariaDB 批次接收 `{database, statements, allowWrite: true, limit?}`，JSON 上限 2 MiB，最多 10000 条；共享 4 个查询槽，每条 30 秒、整批 30 分钟。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，保存 SQL 模式、用户变量、外键检查和显式事务；断开后释放连接，已提交写入保留。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
@@ -110,7 +113,7 @@ PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunSta
 
 Agent数据库连接与工作台会话状态独立，只复用已保存的连接配置和进程查询并发预算。每次数据库操作结束（含失败、取消）即释放物理连接；不改变工作台打开/关闭状态，也不要求先在工作台打开连接。Agent会话保存目标，不保留物理连接，等待模型回复和用户写入确认期间不占用连接。
 
-会话详情默认返回 `events`、`busy`、`revision`、`eventVersion` 及可选的 `nextOffset`。后续请求携带 `offset`、`revision`、`eventVersion`，版本变化返回 409。每页最多 256 个事件、约 256 KiB，较大的单条事件独占一页。当前 v2 会话按内容散列保存消息和事件，每个分片上限 32 MiB。
+会话详情默认返回 `events`、`busy`、`revision`、`eventVersion` 及可选的 `nextOffset`。本轮执行及最终保存期间 `busy` 为真。后续请求携带 `offset`、`revision`、`eventVersion`，版本变化返回 409。每页最多 256 个事件、约 256 KiB，较大的单条事件独占一页。当前 v2 会话按内容散列保存消息和事件，每个分片上限 32 MiB。
 
 会话重命名去除首尾空白，限 1–80 字符且不含控制字符。手动命名持久保存，优先于首条消息生成的标题。会话索引、详情和重命名响应可包含布尔字段 `customTitle`，表示名称是否由用户指定。前端仅翻译明确为非手动命名的空闲默认标题。首次空历史及删除最后一条后，前端调用 ensure 创建并选中默认会话，此操作只保存会话记录。
 

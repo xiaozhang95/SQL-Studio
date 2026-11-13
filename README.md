@@ -71,7 +71,7 @@ pnpm build
 
 `pnpm build` 一次完成前后端构建和桌面打包，将后端程序和网页资源一起分发。产物位于 `sql-studio-electron/release/`；Windows 为绿色版目录和全局 NSIS 安装包，macOS 为 DMG，Linux 为 AppImage。请在目标平台构建。发行版管理自己的 Go 服务和空闲端口，默认配置路径为 `~/.sql-studio/state/`。绿色版须保留整个目录后运行其中的 `SQL Studio.exe`。
 
-「系统设置 → 关于」显示当前版本，网页和桌面打包共用 [前端 package.json](sql-studio-frontend/package.json) 的 `version`。桌面端可检查 GitHub 正式版，Windows NSIS 安装版可下载并确认安装更新。发版步骤见 [GitHub Release 与更新](sql-studio-electron/README.md#github-release-与更新)。
+「系统设置 → 关于软件」显示当前版本，网页和桌面打包共用 [前端 package.json](sql-studio-frontend/package.json) 的 `version`。桌面端可检查 GitHub 正式版，Windows NSIS 安装版可下载并确认安装更新。发版步骤见 [GitHub Release 与更新](sql-studio-electron/README.md#github-release-与更新)。
 
 ### 启动失败与配置保存提示
 
@@ -89,7 +89,7 @@ pnpm build
 4. “放弃修改”清空尚未提交的更改；已有暂存修改时，需先保存或放弃再刷新。
 5. 在消息、摘要及结果标签之间切换查看执行情况；执行历史可搜索、复制并载入当前查询。
 
-SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快捷键直接执行。多语句顺序提交，失败或取消停止后续语句。每次请求独立连接，已完成的写入不会因后续失败或取消自动回滚。GreptimeDB 默认使用 MySQL 线协议端口 4002 和维护库 `public`。
+SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快捷键直接执行。多语句顺序提交，失败或取消停止后续语句。MySQL 和 MariaDB 的多语句在同一会话内顺序执行，保留 SQL 转储依赖的会话变量、外键开关和事务。批次结束关闭连接，已提交写入保留。GreptimeDB 默认使用 MySQL 线协议端口 4002 和维护库 `public`。
 
 ## 本机配置
 

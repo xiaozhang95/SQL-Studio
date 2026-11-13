@@ -1,9 +1,11 @@
 package model
 
 type Table struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Comment string `json:"comment"`
+	Name             string   `json:"name"`
+	Type             string   `json:"type"`
+	Comment          string   `json:"comment"`
+	ViewDependencies []string `json:"viewDependencies,omitempty"`
+	Extension        string   `json:"extension,omitempty"`
 }
 
 type TableRef struct {
@@ -12,13 +14,15 @@ type TableRef struct {
 }
 
 type Column struct {
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Nullable string  `json:"nullable"`
-	Key      string  `json:"key"`
-	Default  *string `json:"default"`
-	Extra    string  `json:"extra"`
-	Comment  string  `json:"comment"`
+	Name      string  `json:"name"`
+	Type      string  `json:"type"`
+	Nullable  string  `json:"nullable"`
+	Key       string  `json:"key"`
+	Default   *string `json:"default"`
+	Extra     string  `json:"extra"`
+	Comment   string  `json:"comment"`
+	Charset   string  `json:"charset,omitempty"`
+	Collation string  `json:"collation,omitempty"`
 }
 
 // Index 保留复合索引的字段顺序；表达式索引的字段名可能为空。

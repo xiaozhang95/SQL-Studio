@@ -7,7 +7,7 @@ func quoteIdentifier(s string) string { return "`" + strings.ReplaceAll(s, "`", 
 func firstKeyword(s string) string {
 	for {
 		s = strings.TrimSpace(s)
-		if strings.HasPrefix(s, "--") || strings.HasPrefix(s, "#") {
+		if lineCommentAt(s, 0) {
 			if i := strings.IndexByte(s, '\n'); i >= 0 {
 				s = s[i+1:]
 				continue
@@ -44,6 +44,10 @@ func firstKeyword(s string) string {
 	return strings.ToUpper(s[:end])
 }
 
+func lineCommentAt(s string, i int) bool {
+	return i < len(s) && (s[i] == '#' || (i+2 < len(s) && s[i] == '-' && s[i+1] == '-' && s[i+2] <= ' '))
+}
+
 // 分类决定调用 QueryContext 还是 ExecContext；读查询仍需数据库只读事务保护。
 func isQuery(s string) bool {
 	keyword := firstKeyword(s)
@@ -70,7 +74,7 @@ func hasExecutableComment(s string, backslashEscapes bool) bool {
 	var quote byte
 	for i := 0; i < len(s); i++ {
 		if quote != 0 {
-			if backslashEscapes && s[i] == '\\' {
+			if backslashEscapes && quote != '`' && s[i] == '\\' {
 				i++
 			} else if s[i] == quote {
 				if i+1 < len(s) && s[i+1] == quote {
@@ -85,8 +89,8 @@ func hasExecutableComment(s string, backslashEscapes bool) bool {
 			quote = s[i]
 			continue
 		}
-		if s[i] == '#' || (s[i] == '-' && i+2 < len(s) && s[i+1] == '-' && s[i+2] <= ' ') {
-			for i < len(s) && s[i] != '\n' && s[i] != '\r' {
+		if lineCommentAt(s, i) {
+			for i < len(s) && s[i] != '\n' {
 				i++
 			}
 			continue
@@ -137,7 +141,7 @@ func topLevelKeywords(s string) []string {
 			quote := s[i]
 			i++
 			for i < len(s) {
-				if s[i] == '\\' {
+				if quote != '`' && s[i] == '\\' {
 					i += 2
 					continue
 				}
@@ -153,7 +157,7 @@ func topLevelKeywords(s string) []string {
 			}
 			continue
 		}
-		if s[i] == '#' || (s[i] == '-' && i+1 < len(s) && s[i+1] == '-') {
+		if lineCommentAt(s, i) {
 			for i < len(s) && s[i] != '\n' {
 				i++
 			}

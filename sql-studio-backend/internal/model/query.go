@@ -9,6 +9,20 @@ type QueryRequest struct {
 	MatchRows  bool   `json:"matchRows,omitempty"`
 }
 
+type QueryBatchRequest struct {
+	Database   string   `json:"database"`
+	Statements []string `json:"statements"`
+	AllowWrite bool     `json:"allowWrite"`
+	Limit      int      `json:"limit"`
+}
+
+type QueryBatchStep struct {
+	Index    int          `json:"index"`
+	Result   *QueryResult `json:"result,omitempty"`
+	Error    string       `json:"error,omitempty"`
+	Database *string      `json:"database,omitempty"` // New scope after a successful USE.
+}
+
 type ResultColumn struct {
 	Name string `json:"name"`
 	Type string `json:"type"`

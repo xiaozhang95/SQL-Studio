@@ -68,6 +68,8 @@ Agent 有 2 路执行名额，接收问题前检查，等待确认时释放，�
 
 Agent的每次数据库操作使用独立物理连接，成功、失败或取消后在返回前释放，不等到整轮聊天结束。工作台连接/数据库的打开关闭不影响Agent，也不被Agent操作改变；会话只保存目标和发现记录，不持有数据库连接。等待模型生成和写入确认期间不保留数据库连接，下一次操作按当前配置重新建立。
 
+真实库回归可在隔离的 MySQL、MariaDB 和 PostgreSQL 实例上运行 `go test -race -count=1 ./internal/app -run '^TestAgentRealDatabaseIntegration$'`。设置 `SQLDESK_AGENT_INTEGRATION=1` 和 `SQLDESK_AGENT_<MYSQL|MARIADB|POSTGRESQL>_PORT`，密码使用同引擎前缀的 `_PASSWORD`，或共用 `SQLDESK_AGENT_PASSWORD`。模型由本地测试替身驱动，检查真实查询、只读限制、拒绝和断开、24 个同时提交的确认只接受一次、确认后执行前取消及删除拦截。GreptimeDB 暂未接入 Agent 数据库工具。
+
 接口位于/api/agent，见[API](API.md)。Agent布局与SQL工作区布局独立，但共用同一Go进程和全局外观。API Key只由后端读取，前端不回填、不写浏览器持久化；存储使用 `ai-models` 分区。
 
 ## 操作模式与确认

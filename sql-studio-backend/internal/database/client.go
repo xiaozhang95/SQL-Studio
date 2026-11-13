@@ -4,6 +4,8 @@ package database
 import (
 	"context"
 	"errors"
+	"time"
+
 	"sql-studio-backend/internal/model"
 )
 
@@ -89,6 +91,23 @@ func (c *Client) Execute(ctx context.Context, v model.Connection, input model.Qu
 		return model.QueryResult{}, err
 	}
 	return e.Execute(ctx, v, input)
+}
+
+func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, input model.QueryBatchRequest, statementTimeout time.Duration, emit func(model.QueryBatchStep) error) error {
+	if kind := model.NormalizeDatabaseType(connection.Type); kind != model.TypeMySQL && kind != model.TypeMariaDB {
+		return errors.New("该引擎不支持同一会话批量执行")
+	}
+	engine, err := c.engine(connection)
+	if err != nil {
+		return err
+	}
+	executor, ok := engine.(interface {
+		ExecuteBatch(context.Context, model.Connection, model.QueryBatchRequest, time.Duration, func(model.QueryBatchStep) error) error
+	})
+	if !ok {
+		return errors.New("该引擎不支持同一会话批量执行")
+	}
+	return executor.ExecuteBatch(ctx, connection, input, statementTimeout, emit)
 }
 
 func (c *Client) Schemas(ctx context.Context, connection model.Connection, database string) ([]string, error) {

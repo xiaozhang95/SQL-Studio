@@ -16,11 +16,17 @@ type Executor interface {
 	Execute(context.Context, model.Connection, model.QueryRequest) (model.QueryResult, error)
 }
 
+type batchExecutor interface {
+	ExecuteBatch(context.Context, model.Connection, model.QueryBatchRequest, time.Duration, func(model.QueryBatchStep) error) error
+}
+
 const (
 	defaultRowLimit      = 1000
 	maxRowLimit          = 5000
 	maxConcurrentQueries = 4
 	queryTimeout         = 30 * time.Second
+	batchTimeout         = 30 * time.Minute
+	maxBatchStatements   = 10000
 )
 
 var ErrBusy = errors.New("当前查询较多，请稍后重试")

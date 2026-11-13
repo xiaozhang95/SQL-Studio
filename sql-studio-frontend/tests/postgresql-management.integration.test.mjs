@@ -3,8 +3,9 @@ import { randomUUID } from 'node:crypto'
 import test from 'node:test'
 
 import { metadataSQL as databaseSQL, definition, sql as editSQL } from '../src/databases/postgresql/databaseProperties/index.ts'
-import { dump, metadataSQL, querySQL } from '../src/databases/postgresql/dataDump/index.ts'
+import { dump, metadataSQL, prepareDump, querySQL } from '../src/databases/postgresql/dataDump/index.ts'
 import { splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
+import { orderDumpViews } from '../src/pages/workspace/hooks/useDataExport/orderDumpViews/index.ts'
 import { step } from './integration-steps.mjs'
 
 test('real PostgreSQL database edits and structure/data export restore into another database', { skip: process.env.SQLDESK_SQL_WINDOW_INTEGRATION !== '1', timeout: 120000 }, async (t) => {
@@ -90,6 +91,34 @@ test('real PostgreSQL database edits and structure/data export restore into anot
       const sql = dump(source, target, ddl.ddl, await query(source, querySQL(source, target)), columns, await query(source, metadataSQL(source, target)))
       for (const statement of splitPostgreSQLStatements(sql)) await query(destination, statement, true)
       assert.equal((await query(destination, 'SELECT * FROM "s.quote".empty_table')).rowCount, 0)
+    })
+    await step(t, 'restore views whose upstream views sort later, including a cross-schema dependency', async () => {
+      const first = '"s.quote"."a_dep"',
+        middle = '"s.quote"."m_dep"',
+        upstream = '"z.other"."z_src"'
+      await query(source, 'CREATE SCHEMA "z.other"', true)
+      await query(destination, 'CREATE SCHEMA "z.other"', true)
+      await query(source, `CREATE VIEW ${upstream} AS SELECT id, big_value FROM ${table}`, true)
+      await query(source, `CREATE VIEW ${middle} AS SELECT id, big_value FROM ${upstream}`, true)
+      await query(source, `CREATE VIEW ${first} AS SELECT big_value FROM ${middle} WHERE id=1`, true)
+      const path = `/connections/${connection.id}`
+      const tables = await api(`${path}/tables?${new URLSearchParams({ database: source })}`)
+      const views = tables.filter(({ name }) => [first, middle, upstream].includes(name)).map(({ name, viewDependencies }) => ({ name, dependencies: viewDependencies }))
+      assert.deepEqual(
+        views.map(({ name }) => name),
+        [first, middle, upstream]
+      )
+      assert.deepEqual(
+        orderDumpViews(views).map(({ name }) => name),
+        [upstream, middle, first]
+      )
+      for (const { name } of orderDumpViews(views)) {
+        const params = new URLSearchParams({ database: source, table: name })
+        const { ddl } = await api(`${path}/ddl?${params}`)
+        const columns = await api(`${path}/columns?${params}`)
+        for (const statement of splitPostgreSQLStatements(prepareDump(source, name, ddl, columns, undefined, false).before)) await query(destination, statement, true)
+      }
+      assert.deepEqual((await query(destination, `SELECT * FROM ${first}`)).rows, [['9007199254740993']])
     })
     assert.ok(output)
   } finally {

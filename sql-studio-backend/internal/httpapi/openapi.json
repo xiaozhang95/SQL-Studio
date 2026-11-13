@@ -1413,6 +1413,46 @@
         }
       }
     },
+    "/connections/{id}/query-batch": {
+      "post": {
+        "operationId": "queryBatch",
+        "summary": "在同一 MySQL 或 MariaDB 会话内逐条执行 SQL",
+        "tags": ["查询"],
+        "description": "仅 MySQL 和 MariaDB 工作台。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，成功 USE 时附 database；随后发送 done。流开始后的会话错误发送 error 事件。取消不能撤销已提交写入。",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"$ref": "#/components/parameters/AcceptLanguage"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["statements", "allowWrite"],
+                "properties": {
+                  "database": {"type": "string"},
+                  "allowWrite": {"type": "boolean", "enum": [true]},
+                  "limit": {"type": "integer", "default": 1000},
+                  "statements": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"type": "string"}}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "逐行返回语句回执",
+            "content": {"application/x-ndjson": {"schema": {"type": "string"}}}
+          },
+          "400": {"description": "输入、引擎或会话错误"},
+          "403": {"description": "非本机 Host 或跨站请求被拒绝"},
+          "404": {"description": "连接不存在"},
+          "429": {"description": "进程共享并发预算已满"}
+        }
+      }
+    },
     "/state/{section}": {
       "get": {
         "operationId": "readState",
@@ -2804,6 +2844,17 @@
           },
           "comment": {
             "type": "string"
+          },
+          "viewDependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "PostgreSQL 视图直接依赖的视图，使用完整双引号 schema/table 身份；无依赖时省略。"
+          },
+          "extension": {
+            "type": "string",
+            "description": "PostgreSQL 对象所属扩展名称；非扩展对象省略。"
           }
         },
         "required": [
@@ -2840,6 +2891,14 @@
           },
           "comment": {
             "type": "string"
+          },
+          "charset": {
+            "type": "string",
+            "description": "MySQL 协议文本字段的字符集，未提供时省略。"
+          },
+          "collation": {
+            "type": "string",
+            "description": "MySQL 协议文本字段的排序规则，未提供时省略。"
           }
         },
         "required": [

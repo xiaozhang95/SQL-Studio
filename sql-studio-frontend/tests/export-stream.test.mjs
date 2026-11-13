@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { viewStandIn } from '../src/databases/mysql/dataDump/index.ts'
 import { deleteRowSQL as mysqlDelete } from '../src/databases/mysql/dataEditing/index.ts'
 import { prepareDump } from '../src/databases/postgresql/dataDump/index.ts'
 import { deleteRowSQL as pgDelete } from '../src/databases/postgresql/dataEditing/index.ts'
+import { orderDumpViews } from '../src/pages/workspace/hooks/useDataExport/orderDumpViews/index.ts'
 import { streamTableData } from '../src/services/dataExport/index.ts'
 import { createExportWriter } from '../src/utils/exportWriter/index.ts'
 
@@ -21,6 +23,23 @@ const result = {
   isQuery: true
 }
 const frame = (event) => `data: ${JSON.stringify(event)}\n\n`
+test('view export preserves the original definition while staging quoted names, and orders PostgreSQL dependencies', () => {
+  const ddl = 'CREATE ALGORITHM=MERGE DEFINER=`dump`@`localhost` SQL SECURITY INVOKER VIEW `a` AS SELECT `n` FROM `z`'
+  assert.deepEqual(viewStandIn('odd`db', 'a', ddl, [{ name: 'odd`column', charset: 'utf8mb4', collation: 'utf8mb4_bin' }, { name: 'n' }]), {
+    placeholder: "CREATE VIEW `odd``db`.`a` AS SELECT CONVERT('' USING utf8mb4) COLLATE utf8mb4_bin AS `odd``column`, 1 AS `n`;\n",
+    definition: ddl.replace('CREATE', 'ALTER')
+  })
+  assert.throws(() => viewStandIn('db', 'a', 'CREATE TABLE a (id INT)', [{ name: 'id' }]), /视图定义/)
+  assert.deepEqual(
+    orderDumpViews([
+      { name: '"a"."dependent"', dependencies: ['"z"."middle"'] },
+      { name: '"z"."middle"', dependencies: ['"z"."upstream"', '"outside"."prerequisite"'] },
+      { name: '"z"."upstream"' }
+    ]).map(({ name }) => name),
+    ['"z"."upstream"', '"z"."middle"', '"a"."dependent"']
+  )
+})
+
 function response(text) {
   const bytes = new TextEncoder().encode(text)
   return new Response(

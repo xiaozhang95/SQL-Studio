@@ -1,4 +1,4 @@
-# 关于
+# 关于软件
 
 `About({ disabled })` 在系统设置中显示 Vite 从前端 `package.json` 写入的产品版本，布局沿用 Ant Design。Web 和 Electron 共用同一个版本显示，Electron 提供检查更新。`disabled` 随系统设置保存状态禁用操作。
 

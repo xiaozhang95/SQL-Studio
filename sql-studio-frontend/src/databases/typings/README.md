@@ -32,6 +32,6 @@ tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(table
 
 MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于绿色或灰色圆角底板上。
 
-DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。deleteRowSQL 根据完整主键生成单行删除，缺少或不支持的主键直接拒绝。
+DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。支持占位的引擎通过可选 viewStandIn 生成占位语句及最终定义，用于恢复包含多个视图的转储。deleteRowSQL 根据完整主键生成单行删除，缺少或不支持的主键直接拒绝。
 
 DatabaseEngine.MariaDB=mariadb，注册表必须提供独立 DatabaseAdapter；兼容协议能力可以显式组合，MariaDB 配置、方言与元数据差异由 mariadb 模块拥有。

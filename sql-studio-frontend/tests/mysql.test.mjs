@@ -49,6 +49,7 @@ test('preserves semicolons inside strings and quoted identifiers', () => {
   assert.deepEqual(splitSQLStatements(sql), ['SELECT \'a;b\', "c;d", `a;b`;', "SELECT 'it''s;ok';"])
   assert.deepEqual(splitSQLStatements("SELECT 'a\\';b'; SELECT 2;"), ["SELECT 'a\\';b';", 'SELECT 2;'])
   assert.deepEqual(splitSQLStatements('SELECT `a``;b`; SELECT 2;'), ['SELECT `a``;b`;', 'SELECT 2;'])
+  assert.deepEqual(splitSQLStatements('SELECT * FROM `ends\\`; SELECT 2;'), ['SELECT * FROM `ends\\`;', 'SELECT 2;'])
 })
 
 test('preserves comments and ignores their delimiters and quotes', () => {
@@ -56,6 +57,7 @@ test('preserves comments and ignores their delimiters and quotes', () => {
   assert.deepEqual(splitSQLStatements("/* ; ' */ SELECT 1; -- tail ;"), ["/* ; ' */ SELECT 1;"])
   assert.deepEqual(splitSQLStatements('SELECT 1--2; SELECT 3;'), ['SELECT 1--2;', 'SELECT 3;'])
   assert.deepEqual(splitSQLStatements('SELECT 1;--\r\nSELECT 2;'), ['SELECT 1;', '--\r\nSELECT 2;'])
+  assert.deepEqual(splitSQLStatements('SELECT 1;-- comment\rSELECT 2;\nSELECT 3;'), ['SELECT 1;', '-- comment\rSELECT 2;\nSELECT 3;'])
 })
 
 test('does not execute whitespace or ordinary comments as statements', () => {
@@ -78,6 +80,7 @@ test('history markers never accumulate across save and load cycles', () => {
 })
 
 test('history cleanup preserves SQL literals, quoted identifiers, and ordinary comments', () => {
+  assert.equal(stripHistoryMarkers('SELECT * FROM `ends\\`;\n-- 历史记录\nSELECT 2;'), 'SELECT * FROM `ends\\`;\nSELECT 2;')
   for (const sql of [
     "SELECT 'first\n-- 历史记录\nlast';",
     'SELECT "first\n-- 历史记录\nlast";',
@@ -92,6 +95,7 @@ test('history cleanup preserves SQL literals, quoted identifiers, and ordinary c
 })
 
 test('USE extracts only a complete database switch, preserving quoted names and comments', () => {
+  assert.equal(useDatabaseSQL('-- comment\rUSE db'), undefined)
   for (const [sql, database] of [
     ['use qianguanguan;', 'qianguanguan'],
     ['USE `a``b;中文`;', 'a`b;中文'],
@@ -99,13 +103,16 @@ test('USE extracts only a complete database switch, preserving quoted names and 
     ['USE 中文库', '中文库']
   ])
     assert.equal(useDatabaseSQL(sql), database)
-  for (const sql of ["SELECT 'USE wrong'", '-- USE wrong', 'USE db; SELECT 1', 'USEdb', 'USE', 'USE /*!80000 db */', 'USE `broken']) assert.equal(useDatabaseSQL(sql), undefined, sql)
+  for (const sql of ["SELECT 'USE wrong'", '-- USE wrong', 'USE db; SELECT 1', 'USEdb', 'USE', 'USE /*!80000 db */', 'USE `broken', 'USE "metrics"']) assert.equal(useDatabaseSQL(sql), undefined, sql)
 })
 
 test('GreptimeDB script mode splits SQL and TQL with ANSI line comments and quoted names', () => {
-  const script = "--comment;\nUSE `metrics`; SELECT 'a;b'; TQL EVAL (0, 10, '5s') vector(1);"
+  const script = `--comment;\nUSE "metrics"; SELECT 'a;b'; TQL EVAL (0, 10, '5s') vector(1);`
   const statements = splitSQLStatements(script, [], { ansi: true })
-  assert.deepEqual(statements, ['--comment;\nUSE `metrics`;', "SELECT 'a;b';", "TQL EVAL (0, 10, '5s') vector(1);"])
+  assert.deepEqual(statements, ['--comment;\nUSE "metrics";', "SELECT 'a;b';", "TQL EVAL (0, 10, '5s') vector(1);"])
   assert.equal(useDatabaseSQL(statements[0], { ansi: true }), 'metrics')
   assert.equal(useDatabaseSQL('USE `other`; --tail', { ansi: true }), 'other')
+  assert.equal(useDatabaseSQL('USE /* name */ "a""b;中文"; --tail', { ansi: true }), 'a"b;中文')
+  assert.equal(useDatabaseSQL('USE "metrics"; SELECT 1', { ansi: true }), undefined)
+  assert.equal(useDatabaseSQL('USE "metrics" /* done */ SELECT /* tail */', { ansi: true }), undefined)
 })

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
+import { orderDumpViews } from '../src/pages/workspace/hooks/useDataExport/orderDumpViews/index.ts'
 import { canExportDatabase } from '../src/pages/workspace/utils/exportAvailability/index.ts'
 import { translate } from '../src/utils/translate/index.ts'
 
@@ -92,4 +93,46 @@ test('availability is checked again at invocation and reopening permits export',
   assert.equal(output.pickers(), 1)
   assert.equal(output.states[0].connectionId, 'a')
   assert.equal(output.states[0].database, 'db')
+})
+
+test('bulk dumps skip extension-owned tables before reading their DDL while explicit table export still works', async () => {
+  const fixture = [
+    { name: 'cron.job', type: 'BASE TABLE', extension: 'pg_cron_preload' },
+    { name: 'public.items', type: 'BASE TABLE' }
+  ]
+  const ddlReads = []
+  const chunks = []
+  let state
+  const deps = {
+    useTranslation: () => ({ t: (message, values) => translate(message, 'zh-CN', values) }),
+    useState: () => [undefined, (value) => (state = typeof value === 'function' ? value(state) : value)],
+    useRef: () => ({ current: null }),
+    useEffect() {},
+    getDatabaseAdapter: () => ({
+      tableLabel: (name) => name,
+      explorer: { tableIdentity: (name) => ({ schema: name.split('.')[0] }) },
+      dumpFile: { header: () => '', prepare: (_database, name) => ({ before: name, after: '' }), footer: '' }
+    }),
+    createExportWriter: async () => ({ write: async (sql) => chunks.push(sql), close: async () => {}, abort: async () => assert.fail('export aborted') }),
+    getTables: async () => fixture,
+    getSchemas: async () => ['cron', 'public'],
+    getColumns: async () => [],
+    getDDL: async (_id, _database, name) => {
+      ddlReads.push(name)
+      return { ddl: name }
+    },
+    orderDumpViews
+  }
+  const createModel = new Function(...Object.keys(deps), implementation + '; return useDataExport')(...Object.values(deps))
+  const model = createModel(() => true)
+  await model.start({ id: 'a', name: 'fixture' }, 'db', false)
+  assert.equal(state.status, 'completed')
+  assert.equal(state.total, 1)
+  assert.deepEqual(ddlReads, ['public.items', 'public.items'])
+  assert.ok(!chunks.includes('cron.job'))
+  assert.ok(state.logs.some((line) => line.includes('已跳过 1 个')))
+  await model.start({ id: 'a', name: 'fixture' }, 'db', false, 'cron.job')
+  assert.equal(state.status, 'completed')
+  assert.deepEqual(ddlReads.slice(-2), ['cron.job', 'cron.job'])
+  assert.ok(chunks.includes('cron.job'))
 })

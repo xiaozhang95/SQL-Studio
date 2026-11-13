@@ -9,6 +9,11 @@ export function exportCSV(columns: string[], rows: unknown[][]) {
   const a = document.createElement('a')
   a.href = url
   a.download = `query-${Date.now()}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  document.body.append(a)
+  try {
+    a.click()
+  } finally {
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 }

@@ -37,7 +37,7 @@ Windows 在 `release/` 下生成两份分发产物。
 
 ### GitHub Release 与更新
 
-「系统设置 → 关于」显示当前版本。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，确认后退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
+「系统设置 → 关于软件」显示当前版本。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，确认后退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
 
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。

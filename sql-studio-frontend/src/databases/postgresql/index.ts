@@ -15,8 +15,11 @@ const postgresql = {
   profile: postgresqlProfile,
   dumpFile: {
     header: (database, schemas) =>
-      `-- PostgreSQL database: ${database.replace(/[\r\n]/g, ' ')}\n-- 表/视图结构与数据；外部类型、函数、授权需预先存在；跨表不保证同一快照\n` +
-      schemas.map((schema) => `CREATE SCHEMA IF NOT EXISTS "${schema.replaceAll('"', '""')}";`).join('\n') +
+      `-- PostgreSQL database: ${database.replace(/[\r\n]/g, ' ')}\n-- 表/视图结构与数据；库/Schema 转储不包含扩展管理的对象，相关扩展、外部类型、函数、授权需预先存在；跨表不保证同一快照\n` +
+      schemas
+        .filter((schema) => !schema.startsWith('pg_') && schema !== 'information_schema')
+        .map((schema) => `CREATE SCHEMA IF NOT EXISTS "${schema.replaceAll('"', '""')}";`)
+        .join('\n') +
       '\n',
     footer: '',
     prepare: prepareDump

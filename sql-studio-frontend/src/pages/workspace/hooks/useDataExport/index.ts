@@ -8,6 +8,8 @@ import { streamTableData } from '@/services/dataExport'
 import type { Connection } from '@/typings/database'
 import { createExportWriter } from '@/utils/exportWriter'
 
+import { orderDumpViews } from './orderDumpViews'
+
 type ExportState = {
   connectionId: string
   connection: string
@@ -74,13 +76,16 @@ export function useDataExport(canExport: (connectionId: string, database: string
         signal.throwIfAborted()
       }
       const all = await getTables(connection.id, database, signal)
-      const tables = all.filter((item) => (!table || item.name === table) && (!schema || adapter.explorer?.tableIdentity(item.name).schema === schema))
+      const scoped = all.filter((item) => (!table || item.name === table) && (!schema || adapter.explorer?.tableIdentity(item.name).schema === schema))
+      const tables = table ? scoped : scoped.filter((item) => !item.extension)
+      if (tables.length !== scoped.length) log(t('已跳过 {count} 个由扩展管理的对象', { count: scoped.length - tables.length }))
+      const useStandIns = tables.filter((item) => item.type.includes('VIEW')).length > 1
       if (table && !tables.length) throw new Error(t('目标表不存在或无权访问'))
       const schemas = adapter.explorer ? (schema ? [schema] : await getSchemas(connection.id, database, signal)) : []
       patch({ total: tables.length })
       const metadata = dumpFile.metadataSQL ? await executeQuery(connection.id, { database, sql: dumpFile.metadataSQL(database) }, signal) : undefined
       await write(dumpFile.header(database, schemas, metadata))
-      const plans: { name: string; view: boolean; ddl: string; plan: DumpPlan }[] = []
+      const plans: { name: string; view: boolean; ddl: string; dependencies?: string[]; placeholder?: string; plan: DumpPlan }[] = []
       // Emit all base structures before any records; views and foreign keys follow data.
       for (const [index, item] of tables.entries()) {
         log(t('读取结构：{name}', { name: adapter.tableLabel(item.name) }))
@@ -88,8 +93,9 @@ export function useDataExport(canExport: (connectionId: string, database: string
         const [{ ddl }, columns] = await Promise.all([getDDL(connection.id, database, item.name, signal), getColumns(connection.id, database, item.name, signal)])
         const sequenceSQL = !view && adapter.dataDump?.metadataSQL?.(database, item.name)
         const sequence = sequenceSQL ? await executeQuery(connection.id, { database, sql: sequenceSQL, limit: 5000 }, signal) : undefined
-        const plan = dumpFile.prepare(database, item.name, ddl, columns, sequence, withData && !view)
-        plans.push({ name: item.name, view, ddl, plan })
+        const standIn = view && useStandIns ? dumpFile.viewStandIn?.(database, item.name, ddl, columns) : undefined
+        const plan = dumpFile.prepare(database, item.name, standIn?.definition ?? ddl, columns, sequence, withData && !view)
+        plans.push({ name: item.name, view, ddl, dependencies: item.viewDependencies, placeholder: standIn?.placeholder, plan })
         if (!view) await write(plan.before)
         patch({ percent: Math.round((20 * (index + 1)) / tables.length) })
       }
@@ -117,7 +123,9 @@ export function useDataExport(canExport: (connectionId: string, database: string
         patch({ completed: index + 1, percent: Math.round(20 + (75 * (index + 1)) / plans.length) })
       }
       for (const item of plans) if (item.plan.constraints) await write(item.plan.constraints)
-      for (const item of plans) if (item.view) await write(item.plan.before)
+      const views = orderDumpViews(plans.filter((item) => item.view))
+      for (const view of views) if (view.placeholder) await write(view.placeholder)
+      for (const view of views) await write(view.plan.before)
       await write(dumpFile.footer)
       signal.throwIfAborted()
       await output.close()

@@ -8,6 +8,8 @@ MySQL 的连接测试、结构读取、DDL 与 SQL 执行。
 
 GreptimeDB 通过 `NewClientWithDefaultDatabase` 指定维护库，沿用连接租约和元数据读取。`ExecuteStatement` 接收调用引擎已校验和分类的单条 SQL，使用共享的自动提交、结果读取、取消和大小限制。
 
+`ExecuteBatch` 为 MySQL 和 MariaDB 工作台提供独立物理连接，在连接内依次执行已切分的 SQL。SQL 模式、用户变量和显式事务持续至批次结束。成功 USE 更新租约的数据库范围，关闭目标数据库可取消请求。结果超出限制时在语句期限内关闭并排空游标，以复用同一连接。驱动仍关闭协议级多语句。
+
 ## 约束与调用
 
 SQL 默认只读事务，单语句执行；结果行数/约 8MiB 限制，保留 BIGINT/DECIMAL 精度与 NULL；标识符严格转义。

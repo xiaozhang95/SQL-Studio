@@ -36,6 +36,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
   })
   return (
     <div ref={contentRef} style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {run.error && !statements.some((item) => item.error) && <ErrorNotice error={run.error} />}
       <Collapse
         destroyOnHidden
         key={`${identity}:${offset}:${visible.flatMap((item, index) => (item.error ? [index + offset] : [])).join(',')}`}

@@ -40,6 +40,11 @@ export async function list(signal?: AbortSignal): Promise<ConversationInfo[]> {
   if (!Array.isArray(v)) throw new Error('会话索引无效')
   return v.map(info)
 }
+export async function sessionBusy(id: string, signal: AbortSignal): Promise<boolean> {
+  const v = await json(`/agent/sessions/${encodeURIComponent(id)}`, { signal })
+  if (!isObject(v) || typeof v.busy !== 'boolean') throw new Error('会话记录无效')
+  return v.busy
+}
 export async function view(id: string, signal: AbortSignal): Promise<{ events: ChatEvent[]; busy: boolean }> {
   const events: ChatEvent[] = []
   let offset = 0

@@ -45,11 +45,13 @@ export interface DumpPlan {
 }
 
 export interface DatabaseAdapter {
+  readonly sessionBatch?: boolean
   readonly dumpFile?: {
     metadataSQL?: (database: string) => string
     header: (database: string, schemas: string[], metadata?: QueryResult) => string
     footer: string
     prepare: (database: string, table: string, ddl: string, columns: Column[], metadata: QueryResult | undefined, withData: boolean) => DumpPlan
+    viewStandIn?: (database: string, view: string, ddl: string, columns: Column[]) => { placeholder: string; definition: string }
   }
   readonly explorer?: DatabaseExplorerAdapter
   isSQLColumn: (name: string) => boolean

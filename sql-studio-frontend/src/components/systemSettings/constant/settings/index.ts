@@ -7,9 +7,9 @@ export type SettingsSection = (typeof SettingsSection)[keyof typeof SettingsSect
 
 export const settingsSections = [
   { value: SettingsSection.Model, label: '模型配置', icon: RobotOutlined },
-  { value: SettingsSection.Appearance, label: '外观', icon: SkinOutlined },
-  { value: SettingsSection.Language, label: '语言', icon: GlobalOutlined },
-  { value: SettingsSection.About, label: '关于', icon: InfoCircleOutlined }
+  { value: SettingsSection.Appearance, label: '外观设置', icon: SkinOutlined },
+  { value: SettingsSection.Language, label: '语言设置', icon: GlobalOutlined },
+  { value: SettingsSection.About, label: '关于软件', icon: InfoCircleOutlined }
 ] as const
 
 export const settingsGroups = [

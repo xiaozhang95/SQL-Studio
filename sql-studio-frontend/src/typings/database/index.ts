@@ -18,7 +18,7 @@ export type Connection = {
 export type ConnectionInput = Omit<Connection, 'id' | 'hasPassword'> & {
   id?: string
 }
-export type DBTable = { name: string; type: string; comment: string }
+export type DBTable = { name: string; type: string; comment: string; viewDependencies?: string[]; extension?: string }
 export type Column = {
   name: string
   type: string
@@ -27,6 +27,8 @@ export type Column = {
   default: string | null
   extra: string
   comment: string
+  charset?: string
+  collation?: string
 }
 export type DBIndex = {
   primary?: boolean

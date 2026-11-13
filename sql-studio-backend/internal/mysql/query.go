@@ -65,12 +65,21 @@ func executeResult(ctx context.Context, db *sql.DB, statement string, limit int,
 	return executeAutocommit(ctx, db, statement, limit, isQuery(statement) || returning)
 }
 
-func executeAutocommit(ctx context.Context, db *sql.DB, statement string, limit int, returnsRows bool) (result model.QueryResult, err error) {
+type statementExecutor interface {
+	querier
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
+func executeAutocommit(ctx context.Context, db statementExecutor, statement string, limit int, returnsRows bool) (result model.QueryResult, err error) {
 	start := time.Now()
 	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
 	if returnsRows {
 		return readRows(ctx, db, statement, limit, start)
 	}
+	return execStatement(ctx, db, statement)
+}
+
+func execStatement(ctx context.Context, db statementExecutor, statement string) (result model.QueryResult, err error) {
 	result.Columns = []model.ResultColumn{}
 	result.Rows = [][]any{}
 	r, e := db.ExecContext(ctx, statement)
@@ -89,15 +98,27 @@ type querier interface {
 }
 
 func readRows(ctx context.Context, q querier, statement string, limit int, start time.Time) (model.QueryResult, error) {
-	result := model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}, IsQuery: true}
+	return scanRows(ctx, q, statement, limit, start, false)
+}
+
+func scanRows(ctx context.Context, q querier, statement string, limit int, start time.Time, keepConnection bool) (result model.QueryResult, err error) {
+	result = model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}, IsQuery: true}
 	queryCtx, cancel := context.WithCancel(ctx)
 	rows, err := q.QueryContext(queryCtx, statement)
 	if err != nil {
 		cancel()
 		return result, err
 	}
-	// 超出返回上限后先取消查询再关闭游标，避免继续排空整个大结果集。
-	defer func() { cancel(); _ = rows.Close() }()
+	defer func() {
+		if keepConnection {
+			// Drain under the statement deadline so the batch can reuse the session.
+			err = errors.Join(err, rows.Close(), queryCtx.Err())
+			cancel()
+			return
+		}
+		cancel()
+		_ = rows.Close()
+	}()
 	types, err := rows.ColumnTypes()
 	if err != nil {
 		return result, err

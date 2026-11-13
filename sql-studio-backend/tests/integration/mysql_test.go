@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +27,13 @@ func TestMySQLIntegration(t *testing.T) {
 		t.Skip("set SQLDESK_INTEGRATION=1 and SQLDESK_MYSQL_PASSWORD to run")
 	}
 	c := model.Connection{Name: "integration", Host: "127.0.0.1", Port: 3306, Username: "root", Password: os.Getenv("SQLDESK_MYSQL_PASSWORD")}
+	if value := os.Getenv("SQLDESK_MYSQL_PORT"); value != "" {
+		port, err := strconv.Atoi(value)
+		if err != nil || port < 1 || port > 65535 {
+			t.Fatalf("invalid SQLDESK_MYSQL_PORT: %q", value)
+		}
+		c.Port = port
+	}
 	if h := os.Getenv("SQLDESK_MYSQL_HOST"); h != "" {
 		c.Host = h
 	}

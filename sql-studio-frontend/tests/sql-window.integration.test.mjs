@@ -6,10 +6,12 @@ import test from 'node:test'
 
 import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/statements/index.ts'
 import { splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
+import { executeQueryBatch } from '../src/services/queryBatch/index.ts'
 import { step } from './integration-steps.mjs'
 
 // Opt in against an isolated SQL Studio backend. Credentials only come from the environment.
 const enabled = process.env.SQLDESK_SQL_WINDOW_INTEGRATION === '1'
+const enabledEngine = process.env.SQLDESK_SQL_WINDOW_ENGINE
 const base = process.env.SQLDESK_TEST_API || 'http://127.0.0.1:18080/api'
 const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
 const implementation = stripTypeScriptTypes(executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL')))
@@ -22,7 +24,10 @@ async function api(path, body, signal, method = body === undefined ? 'GET' : 'PO
 }
 
 function windowRunner(connection, scope) {
-  const adapter = connection.type === 'mysql' ? { splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL } : { splitStatements: splitPostgreSQLStatements, useDatabase: () => undefined }
+  const adapter =
+    connection.type === 'mysql'
+      ? { sessionBatch: true, splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL }
+      : { splitStatements: splitPostgreSQLStatements, useDatabase: () => undefined }
   return async (script, cancelAfter) => {
     const calls = [],
       histories = [],
@@ -58,6 +63,16 @@ function windowRunner(connection, scope) {
         calls.push({ id, ...input })
         return api(`/connections/${id}/query`, input, signal)
       },
+      executeQueryBatch: async (id, database, statements, signal, onStep) => {
+        calls.push({ id, database, statements })
+        const fetchOriginal = globalThis.fetch
+        globalThis.fetch = (path, options) => fetchOriginal(base + path.slice('/api'.length), options)
+        try {
+          await executeQueryBatch(id, database, statements, signal, onStep)
+        } finally {
+          globalThis.fetch = fetchOriginal
+        }
+      },
       setTabs: (update) => {
         pages = update(pages)
       },
@@ -77,14 +92,14 @@ function windowRunner(connection, scope) {
 }
 
 for (const type of ['mysql', 'postgresql']) {
-  test(`${type}: real SQL window orchestration and HTTP execution`, { skip: !enabled, timeout: 90000 }, async (t) => {
+  test(`${type}: real SQL window orchestration and HTTP execution`, { skip: !enabled || (enabledEngine && enabledEngine !== type), timeout: 90000 }, async (t) => {
     const name = 'sqldesk_window_' + randomUUID().replaceAll('-', '')
     const connection = await api('/connections', {
       name,
       group: 'SQL window integration',
       type,
       host: '127.0.0.1',
-      port: type === 'mysql' ? 3306 : 5432,
+      port: type === 'mysql' ? Number(process.env.SQLDESK_MYSQL_PORT || 3306) : 5432,
       username: type === 'mysql' ? 'root' : 'postgres',
       password: process.env[type === 'mysql' ? 'SQLDESK_MYSQL_PASSWORD' : 'SQLDESK_PG_PASSWORD'],
       ...(type === 'postgresql' ? { database: 'postgres' } : {})
@@ -103,7 +118,7 @@ for (const type of ['mysql', 'postgresql']) {
       const run = windowRunner(connection, scope)
       const success = async (script, count = 1) => {
         const output = await run(script)
-        assert.equal(output.calls.length, count)
+        assert.equal(output.calls.length, type === 'mysql' ? 1 : count)
         assert.equal(output.histories.length, count)
         assert.equal(output.batch.statements.length, count)
         assert.ok(
@@ -163,7 +178,7 @@ for (const type of ['mysql', 'postgresql']) {
       })
       await step(t, 'SQL error stops later statements and retains the completed result', async () => {
         const output = await run('SELECT 11 AS kept; SELECT * FROM missing_window_table; SELECT 33 AS never_sent;')
-        assert.equal(output.calls.length, 2)
+        assert.equal(output.calls.length, type === 'mysql' ? 1 : 2)
         assert.equal(output.batch.statements[0].result.rows[0][0], '11')
         assert.match(output.batch.statements[1].error, /后续 1 条语句未执行/)
         assert.deepEqual(
@@ -186,8 +201,10 @@ for (const type of ['mysql', 'postgresql']) {
         const output = await run(type === 'mysql' ? 'SELECT SLEEP(3); SELECT 2;' : 'SELECT pg_sleep(3); SELECT 2;', 120)
         assert.equal(output.calls.length, 1)
         assert.match(output.batch.error, /请求已取消/)
-        assert.match(output.batch.error, /后续 1 条语句未执行/)
-        assert.equal(output.histories[0].ok, false)
+        if (type === 'postgresql') {
+          assert.match(output.batch.error, /后续 1 条语句未执行/)
+          assert.equal(output.histories[0].ok, false)
+        } else assert.equal(output.histories.length, 0)
         assert.equal((await success('SELECT 55'))[0].rows[0][0], '55')
       })
       await step(t, 'default and explicit row limits', async () => {
@@ -203,9 +220,54 @@ for (const type of ['mysql', 'postgresql']) {
         assert.equal(small.truncated, true)
       })
       if (type === 'mysql') {
+        await step(t, 'restore session variables and preserve transactions across dump statements', async () => {
+          const original = (await query('SELECT @@SESSION.sql_mode, @@SESSION.foreign_key_checks')).rows[0]
+          const output = await success(
+            `SET @sql_studio_old_sql_mode = @@SESSION.sql_mode;
+             SET @sql_studio_old_fk = @@SESSION.foreign_key_checks;
+             SET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'NO_AUTO_VALUE_ON_ZERO');
+             SET FOREIGN_KEY_CHECKS = 0;
+             CREATE TABLE parent(id INT PRIMARY KEY);
+             CREATE TABLE child(id INT AUTO_INCREMENT PRIMARY KEY, parent_id INT, FOREIGN KEY (parent_id) REFERENCES parent(id));
+             BEGIN; INSERT INTO child VALUES(0,9); COMMIT;
+             INSERT INTO parent VALUES(9);
+             SELECT id,parent_id FROM child;
+             SET SESSION sql_mode = @sql_studio_old_sql_mode;
+             SET FOREIGN_KEY_CHECKS = @sql_studio_old_fk;
+             SELECT @@SESSION.sql_mode, @@SESSION.foreign_key_checks;`,
+            14
+          )
+          assert.deepEqual(output[10].rows, [['0', '9']])
+          assert.deepEqual(output[13].rows[0], original)
+          const failed = await run('BEGIN; INSERT INTO parent VALUES(20); INSERT INTO parent VALUES(20); COMMIT;')
+          assert.equal(failed.batch.statements.length, 3)
+          assert.match(failed.batch.error, /后续 1 条语句未执行/)
+          assert.deepEqual((await query('SELECT id FROM parent')).rows, [['9']])
+          assert.deepEqual((await query('SELECT @@SESSION.sql_mode, @@SESSION.foreign_key_checks')).rows[0], original)
+        })
+        await step(t, 'truncated results retain the session and cancellation rolls back an open transaction', async () => {
+          const batch = `/connections/${connection.id}/query-batch`
+          const response = await fetch(base + batch, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ database: name, statements: ['SET @window_state = 42', 'SELECT 1 AS n UNION ALL SELECT 2', 'SELECT @window_state'], allowWrite: true, limit: 1 })
+          })
+          assert.equal(response.status, 200)
+          const events = (await response.text()).trim().split('\n').map(JSON.parse)
+          assert.equal(events[1].result.truncated, true)
+          assert.deepEqual(events[2].result.rows, [['42']])
+          assert.equal(events[3].type, 'done')
+          const cancelled = await run('BEGIN; INSERT INTO parent VALUES(30); SELECT SLEEP(3); COMMIT;', 120)
+          assert.match(cancelled.batch.error, /请求已取消/)
+          assert.deepEqual(
+            cancelled.histories.map(({ ok }) => ok),
+            [true, true]
+          )
+          assert.deepEqual((await query('SELECT id FROM parent')).rows, [['9']])
+        })
         await step(t, 'USE changes only the originating page and subsequent request scope', async () => {
           const output = await run(`USE ${quote(name)}; SELECT DATABASE(); SELECT COUNT(*) FROM sample;`)
-          assert.equal(output.calls.length, 3)
+          assert.equal(output.calls.length, 1)
           assert.ok(
             output.histories.every((h) => h.ok),
             output.batch.error
@@ -240,7 +302,7 @@ for (const type of ['mysql', 'postgresql']) {
         })
         await step(t, 'committed writes before an error stay committed and later writes are not sent', async () => {
           const output = await run("INSERT INTO flow VALUES(10,'kept'); INSERT INTO flow VALUES(10,'duplicate'); INSERT INTO flow VALUES(11,'never');")
-          assert.equal(output.calls.length, 2)
+          assert.equal(output.batch.statements.length, 2)
           assert.match(output.batch.error, /后续 1 条语句未执行/)
           assert.deepEqual((await success('SELECT * FROM flow'))[0].rows, [['10', 'kept']])
         })
@@ -290,6 +352,20 @@ for (const type of ['mysql', 'postgresql']) {
       }
       await step(t, 'API rejects multiple statements in one request', async () => {
         await assert.rejects(query('SELECT 1; SELECT 2', { allowWrite: true }))
+        if (type === 'mysql') {
+          const batch = `/connections/${connection.id}/query-batch`
+          await assert.rejects(api(batch, { database: name, statements: ['SELECT 1'] }), /显式允许写入/)
+          const response = await fetch(base + batch, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ database: name, statements: ["INSERT INTO flow VALUES(99,'never'); SELECT 2", 'SELECT 3'], allowWrite: true })
+          })
+          const events = (await response.text()).trim().split('\n').map(JSON.parse)
+          assert.equal(events.length, 2)
+          assert.ok(events[0].error)
+          assert.equal(events[1].type, 'done')
+          assert.deepEqual((await query('SELECT id FROM flow')).rows, [['10']])
+        }
       })
     } finally {
       if (created)
