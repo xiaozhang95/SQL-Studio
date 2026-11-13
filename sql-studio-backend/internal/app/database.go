@@ -2,6 +2,7 @@ package app
 
 import (
 	"sql-studio-backend/internal/database"
+	"sql-studio-backend/internal/greptimedb"
 	"sql-studio-backend/internal/mariadb"
 	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/mysql"
@@ -15,5 +16,6 @@ func newDatabaseClient() *database.Client {
 		model.TypeMySQL:      mysql.NewClient(),
 		model.TypeMariaDB:    mariadb.NewClient(),
 		model.TypePostgreSQL: postgresql.NewClient(),
+		model.TypeGreptimeDB: greptimedb.NewClient(),
 	})
 }

@@ -20,6 +20,8 @@ func TestInternalDependencyDirection(t *testing.T) {
 		"statefile": {"model": true}, "modules/settings": {"model": true, "model/agent": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {}, "webui": {},
 	}
 	allowed["localization"] = map[string]bool{}
+	allowed["app"]["greptimedb"] = true
+	allowed["greptimedb"] = map[string]bool{"mysql": true, "model": true}
 	allowed["agentstate"] = map[string]bool{"model/agent": true}
 	allowed["deepseek/agent"] = map[string]bool{"model/agent": true}
 	allowed["modules/agent"] = map[string]bool{"model/agent": true}

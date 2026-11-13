@@ -5,14 +5,15 @@
 | MySQL | mysql | 3306 | 不需要 |
 | MariaDB | mariadb | 3306 | 不需要；Docker 端口映射按宿主机填写 |
 | PolarDB PostgreSQL / PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
+| GreptimeDB | greptimedb | 4002 | public，可改为账号有权连接的库 |
 
-PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前端实现分别放在 `src/databases/mysql`、`src/databases/mariadb` 和 `src/databases/postgresql`，后端在 `internal/mysql`、`internal/mariadb` 和 `internal/postgresql`；统一入口只组合和分派。新增引擎按契约注册，不在 MySQL 模块或通用 UI 中拼另一种方言。
+PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases` 和后端 `internal` 下独立注册，统一入口负责分派。MariaDB 和 GreptimeDB 复用 MySQL 线协议，并各自维护 SQL 与对象能力。
 
 连接表单可选引擎，切换新建类型更新默认端口和维护库并保留其他已填信息；编辑已有连接不更换引擎。名称、主机、用户名不预填。密码仅后端 AES-GCM 保存，编辑留空保留旧密码；连接分组默认“默认分组”，只影响树布局。SSL 启用后校验证书链和主机名，不提供跳过校验；暂不支持自定义 CA、客户端证书、SSH 隧道。
 
 连接和加密密码保存在本地 connections.json，密钥位于 master.key。当前连接文件必须明确保存 type/group；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询页独立保存连接、数据库、表和 SQL。MySQL/MariaDB/PostgreSQL SQL 窗口显式允许查询、DDL 和 DML；API 未指定 allowWrite 时仍默认只读。每个 API 请求单语句、最长 30 秒、默认 1000 最大 5000 行、约 8 MiB 字段内容。整数/DECIMAL/NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。各条请求不共享事务、SET 或临时表，取消不表示回滚。
+每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。每个 API 请求执行单语句，最长 30 秒，默认 1000 行，最多 5000 行及约 8 MiB 字段内容。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。每条请求独立连接，取消不表示回滚。
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
@@ -39,6 +40,12 @@ MariaDB 为独立 mariadb 类型，前端 src/databases/mariadb、后端 interna
 转储范围为表/视图，不包含独立序列、系统版本历史、例程、触发器、事件和授权；系统版本表带数据转储明确提示使用 mariadb-dump。单表流式读取有界内存并支持取消，跨表不保证一致快照。
 
 Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.1，端口填 3307，账号使用授权账号；打开后可选择容器初始化的 testdb。产品默认端口仍为 3306，映射端口由连接配置决定。密码不进入源码、文档或工作区快照。
+
+## GreptimeDB
+
+新建连接选择 GreptimeDB。Docker 使用 `-p 127.0.0.1:4002:4002` 映射时，主机填 `127.0.0.1`，端口填 `4002`，维护库默认 `public`。采用其他端口映射时填宿主机端口。未启用鉴权时用户名和密码可留空，启用后填写配置的账号。容器的 MySQL 监听地址须允许容器外访问。见 [GreptimeDB Docker 文档](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)。
+
+支持数据库、表、视图、字段和索引浏览，保留 `TIME INDEX`，提供表数据预览、CSV、原始 DDL、SQL 和 TQL 执行。建表与写入通过 SQL 编辑器完成。图形化表设计、网格行编辑、SQL 转储和 Agent 数据库工具暂未接入。
 
 ## SQL 转储
 

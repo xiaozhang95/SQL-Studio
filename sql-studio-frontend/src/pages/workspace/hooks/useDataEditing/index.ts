@@ -20,6 +20,8 @@ type Cell = { row: number; column: number; type: string; value: string; isNull: 
 /** 仅对象数据页显式保存；每次打开编辑重新检查主键与对象类型，写入后读取服务端真实值。 */
 export function useDataEditing({ tab, connection, result, blocked, onBusyChange, onDirtyChange, onResult }: Options) {
   const { t } = useTranslation()
+  const adapter = getDatabaseAdapter(connection?.type)
+  const dataEditing = adapter.dataEditing
 
   const { message, modal } = App.useApp()
   const [cell, setCell] = useState<Cell>()
@@ -60,7 +62,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     [tab.id]
   )
   async function begin(row: number, column: number) {
-    if (blocked || request.current || !result || !connection || tab.kind !== 'data') return
+    if (!dataEditing || blocked || request.current || !result || !connection || tab.kind !== 'data') return
     setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
@@ -73,11 +75,10 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       const draft = drafts[row + ':' + column]
       const added = newRows.find((item) => item.key === row)
       const original = added ? added.cells[column] : result.rows[row]?.[column]
-      const adapter = getDatabaseAdapter(connection.type)
       if (added) {
         const field = columns.find((item) => item.name === result.columns[column].name)
-        if (!field || !adapter.canInsertColumn(field)) throw new Error(t('该字段由数据库生成或暂不支持编辑'))
-      } else adapter.updateCellSQL(tab.database, tab.table, columns, result, result.rows[row], column, original === null ? null : String(original))
+        if (!field || !dataEditing.canInsertColumn(field)) throw new Error(t('该字段由数据库生成或暂不支持编辑'))
+      } else dataEditing.updateCellSQL(tab.database, tab.table, columns, result, result.rows[row], column, original === null ? null : String(original))
       setCell({
         type: columns.find((item) => item.name === result.columns[column].name)?.type ?? '',
         row,
@@ -117,7 +118,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     })
   }
   async function save() {
-    if (!dirty || !result || !connection || blocked || request.current) return
+    if (!dataEditing || !dirty || !result || !connection || blocked || request.current) return
     setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
@@ -130,14 +131,13 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     try {
       const columns = await getColumns(tab.connectionId, tab.database, tab.table, controller.signal)
       if ([...Object.values(pending), ...pendingNew].some((draft) => JSON.stringify(draft.columns) !== JSON.stringify(columns))) throw new Error(t('表结构已变化，请放弃修改并重新打开表'))
-      const adapter = getDatabaseAdapter(connection.type)
       // 主键修改最后执行；每次成功后使用最新主键定位同一行的后续修改。
       const entries = Object.entries(pending).sort(
         ([, a], [, b]) => Number(columns.find((c) => c.name === result.columns[a.column].name)?.key === 'PRI') - Number(columns.find((c) => c.name === result.columns[b.column].name)?.key === 'PRI')
       )
       for (const [key, draft] of entries) {
         const value = draft.isNull ? null : draft.value
-        const sql = adapter.updateCellSQL(tab.database, tab.table, columns, working, working.rows[draft.row], draft.column, value)
+        const sql = dataEditing.updateCellSQL(tab.database, tab.table, columns, working, working.rows[draft.row], draft.column, value)
         const updated = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal, true)
         if (updated.affectedRows !== 1) throw new Error(t('目标行或原值已变化，请重新打开表确认'))
         working.rows[draft.row][draft.column] = value
@@ -146,7 +146,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         setDrafts({ ...pending })
       }
       for (const row of [...pendingNew]) {
-        const sql = adapter.insertRowSQL(tab.database, tab.table, columns, result, row.cells)
+        const sql = dataEditing.insertRowSQL(tab.database, tab.table, columns, result, row.cells)
         const inserted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
         if (inserted.affectedRows !== 1) throw new Error(t('新增行未成功，请核对数据'))
         pendingNew.splice(
@@ -181,7 +181,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     }
   }
   async function addRow() {
-    if (blocked || request.current || !result || tab.kind !== 'data') return
+    if (!dataEditing || blocked || request.current || !result || tab.kind !== 'data') return
     setOperationError(undefined)
     const controller = new AbortController()
     request.current = controller
@@ -203,7 +203,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     }
   }
   function deleteRows(keys: number[], onDeleted: () => void) {
-    if (blocked || dirty || request.current || !result || !connection || tab.kind !== 'data' || !keys.length) return
+    if (!dataEditing || blocked || dirty || request.current || !result || !connection || tab.kind !== 'data' || !keys.length) return
     const selected = [...new Set(keys)].filter((key) => key >= 0 && result.rows[key])
     if (!selected.length) return
     modal.confirm({
@@ -224,8 +224,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
           const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
           const table = tables.find((item) => item.name === tab.table)
           if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接删除数据，请打开基础表'))
-          const adapter = getDatabaseAdapter(connection.type)
-          const statements = selected.map((key) => ({ key, sql: adapter.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
+          const statements = selected.map((key) => ({ key, sql: dataEditing.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
           for (const { key, sql } of statements) {
             const deleted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
             if (deleted.affectedRows !== 1) throw new Error(t('目标行已变化或不存在，请刷新后重试'))
@@ -262,7 +261,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     clearOperationError: () => setOperationError(undefined),
     newRows,
     newColumn: (key: number, index: number) => newRows.find((row) => row.key === key)?.columns.find((column) => column.name === result?.columns[index]?.name),
-    canInsert: (column: Column | undefined) => Boolean(column && getDatabaseAdapter(connection?.type).canInsertColumn(column)),
+    canInsert: (column: Column | undefined) => Boolean(column && dataEditing?.canInsertColumn(column)),
     changeNew: (key: number, index: number, value: string | null | undefined) => {
       if (!blocked && !saving) setNewRows((previous) => previous.map((row) => (row.key === key ? { ...row, cells: row.cells.map((cell, column) => (column === index ? value : cell)) } : row)))
     },

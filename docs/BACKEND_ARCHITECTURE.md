@@ -7,7 +7,7 @@
 | 包                    | 职责与依赖                                                         |
 | --------------------- | ------------------------------------------------------------------ |
 | main.go（后端根目录） | 加载 config、创建 app、处理退出信号                                |
-| app                   | 创建存储、MySQL/MariaDB/PostgreSQL 和 AI 客户端，注入业务模块并装配 HTTP     |
+| app                   | 创建存储、各数据库引擎和 AI 客户端，注入业务模块并装配 HTTP |
 | httpapi               | Gin 路由、单 JSON 解码、本机同源保护和错误映射；仅调用模块公开入口 |
 | modules/connections   | 连接校验、分组、保存与 7 秒测试                                    |
 | modules/metadata      | 显式连接与对象范围，10 秒超时                                      |
@@ -17,6 +17,7 @@
 | model                 | 跨层命名结构、错误与只读定义                                       |
 | mysql                 | MySQL 驱动、TLS、SQL 识别、元数据和结果编码                        |
 | mariadb               | 独立连接生命周期，组合 MySQL 线协议与 MariaDB 元数据适配           |
+| greptimedb            | 组合 MySQL 线协议，处理 GreptimeDB 语句、表结构和会话 |
 | postgresql            | PostgreSQL 驱动、schema 元数据和结果编码                           |
 | database              | 只按连接类型分派，具体实现由 app 注入                              |
 | connection            | AES-GCM 密码与原子落盘                                             |
@@ -44,7 +45,7 @@ rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和
 
 modules/workspace 只依赖model和仓库消费接口；statefile 只实现当前分片、CAS索引提交及未引用内容回收。布局/范围是轻量索引，草稿与结果按SHA256独立保存，GET索引不解析返回所有结果，PUT响应也不回传结果。原子性边界为最后的索引替换，崩溃可能留下孤立内容但不会让索引指向尚未写完的内容；只使用当前 workspace-index 与内容分片。未引用内容异步回收，删除前重新核对最新引用。
 
-MariaDB 由 internal/mariadb 组合共享 MySQL 线协议，app 以独立 mariadb 类型注册。只有 mariadb 可以依赖 mysql 的协议客户端；业务模块继续只消费 model 与自身接口，不直接导入具体引擎。MariaDB 拥有独立生命周期状态。
+MariaDB 与 GreptimeDB 组合共享的 MySQL 线协议客户端，app 分别注册独立类型和生命周期。业务模块继续只消费 model 与自身接口。
 
 ## 数据库Agent
 

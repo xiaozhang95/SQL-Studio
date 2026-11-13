@@ -10,4 +10,4 @@ Engine/Client.Schemas 透传显式连接和数据库到所属引擎；不推断 
 
 StreamTableData 按连接类型分派可选流式引擎能力，缺少实现时拒绝，不跨引擎回退。
 
-MariaDB 由 app 以 mariadb 显式注册，不通过 MySQL 缺省分支回退；注册表副本及目标/取消回归包含该身份。
+MariaDB 和 GreptimeDB 由 app 分别按 `mariadb` 和 `greptimedb` 注册，各自管理生命周期。两者共用 MySQL 线协议。GreptimeDB 提供 SQL、TQL 和对象元数据，流式转储能力由支持的引擎单独实现。

@@ -2739,6 +2739,7 @@
               "mysql",
               "mariadb",
               "postgresql",
+              "greptimedb",
               ""
             ],
             "default": "mysql",
@@ -2746,7 +2747,7 @@
           },
           "database": {
             "type": "string",
-            "description": "PostgreSQL 维护库，省略或留空默认 postgres；MySQL/MariaDB 不使用。"
+            "description": "PostgreSQL 与 GreptimeDB 的维护库，缺省分别为 postgres 和 public。"
           },
           "tls": {
             "type": "boolean",
@@ -2768,7 +2769,8 @@
             "maximum": 65535
           },
           "username": {
-            "type": "string"
+            "type": "string",
+            "description": "GreptimeDB 未启用鉴权时可留空，其他引擎需要用户名。"
           },
           "password": {
             "type": "string",
@@ -2783,8 +2785,7 @@
         "required": [
           "name",
           "host",
-          "port",
-          "username"
+          "port"
         ],
         "additionalProperties": false
       },

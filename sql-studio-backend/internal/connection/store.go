@@ -89,6 +89,9 @@ func Open(dir string) (*Store, error) {
 }
 
 func (s *Store) encrypt(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
 	nonce := make([]byte, s.aead.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
@@ -96,6 +99,9 @@ func (s *Store) encrypt(value string) (string, error) {
 	return base64.StdEncoding.EncodeToString(s.aead.Seal(nonce, nonce, []byte(value), nil)), nil
 }
 func (s *Store) decrypt(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
 	data, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
 		return "", err
@@ -208,7 +214,7 @@ func (s *Store) Save(c model.Connection) (model.Connection, error) {
 		return c, err
 	}
 	c.Password = ""
-	c.HasPassword = true
+	c.HasPassword = encrypted != ""
 	return c, nil
 }
 

@@ -66,7 +66,11 @@ func validateConnection(c model.Connection) error {
 	if !model.SupportedDatabaseType(c.Type) {
 		return errors.New("不支持的数据库类型")
 	}
-	if strings.TrimSpace(c.Name) == "" || strings.TrimSpace(c.Host) == "" || strings.TrimSpace(c.Username) == "" {
+	if c.Type == model.TypeGreptimeDB {
+		if strings.TrimSpace(c.Name) == "" || strings.TrimSpace(c.Host) == "" {
+			return errors.New("请填写连接名称和主机")
+		}
+	} else if strings.TrimSpace(c.Name) == "" || strings.TrimSpace(c.Host) == "" || strings.TrimSpace(c.Username) == "" {
 		return errors.New("请填写连接名称、主机和用户名")
 	}
 	if c.Port < 1 || c.Port > 65535 {

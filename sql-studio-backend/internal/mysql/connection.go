@@ -29,6 +29,19 @@ func NewClient() *Client {
 	return &Client{control: make(chan struct{}, 1), active: make(map[*requestLease]bool), closed: make(map[string]bool), closing: make(map[string]bool), open: Open, openMatched: func(c model.Connection, database string) (*sql.DB, error) { return openConfigured(c, database, true) }}
 }
 
+// NewClientWithDefaultDatabase uses the supplied database when a wire request
+// opens without an explicit scope.
+func NewClientWithDefaultDatabase(defaultDatabase func(model.Connection) string) *Client {
+	client := NewClient()
+	client.open = func(connection model.Connection, database string) (*sql.DB, error) {
+		if database == "" {
+			database = defaultDatabase(connection)
+		}
+		return Open(connection, database)
+	}
+	return client
+}
+
 // Open 集中维护底层连接参数，业务代码应使用 Client 的请求方法。
 func Open(c model.Connection, schema string) (*sql.DB, error) {
 	return openConfigured(c, schema, false)

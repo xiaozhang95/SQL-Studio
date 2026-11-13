@@ -2,7 +2,7 @@
 
 ## 技术栈与目录
 
-前端使用 Vite + React + TypeScript + Ant Design + SCSS，SQL 编辑器使用 CodeMirror；后端使用 Go + Gin 模块化单体，数据库支持 MySQL、MariaDB 和 PostgreSQL / PolarDB PostgreSQL。前端包管理使用 pnpm。
+前端使用 Vite、React、TypeScript、Ant Design 和 SCSS，SQL 编辑器使用 CodeMirror。后端为 Go Gin 模块化单体，支持 MySQL、MariaDB、PostgreSQL / PolarDB PostgreSQL 与 GreptimeDB。前端包管理使用 pnpm。
 
 ```text
 SQL-Studio/
@@ -12,6 +12,7 @@ SQL-Studio/
 │  ├─ src/services/           HTTP 接口
 │  ├─ src/databases/mysql/    MySQL SQL、补全、对象与数据操作
 │  ├─ src/databases/mariadb/  MariaDB 方言与兼容适配
+│  ├─ src/databases/greptimedb/ GreptimeDB 连接配置、补全和查询
 │  ├─ src/databases/postgresql/ PostgreSQL 方言、补全与数据编辑
 │  ├─ src/agent/              数据库 Agent 页面与会话
 │  ├─ src/ai/                 AI 服务商适配器
@@ -29,6 +30,7 @@ SQL-Studio/
 │  ├─ internal/model/         跨层数据契约
 │  ├─ internal/mysql/         MySQL 驱动、元数据及执行
 │  ├─ internal/mariadb/       MariaDB 引擎及独立会话
+│  ├─ internal/greptimedb/    GreptimeDB 引擎及独立会话
 │  ├─ internal/postgresql/    PostgreSQL 驱动、schema 元数据及执行
 │  ├─ internal/database/      引擎分派
 │  ├─ internal/connection/    AES-GCM 连接仓库
@@ -52,6 +54,7 @@ flowchart LR
   Modules --> Engines[数据库分派]
   Engines --> MySQL[MySQL 驱动]
   Engines --> MariaDB[MariaDB 适配器]
+  Engines --> GreptimeDB[GreptimeDB 适配器]
   Engines --> PG[PostgreSQL 驱动]
   Modules --> Connections[加密连接仓库]
   Modules --> State[用户配置文件]
@@ -62,12 +65,12 @@ flowchart LR
 
 页面采用历史路由：`/` 是 SQL 工作区，`/agent` 是 AI 助手。useAppSection 以 pushState 和 popstate 同步 React 页面与浏览器历史，工作区保持挂载以保留未保存内容。Vite SPA 模式处理开发入口，Go 显式将两条路径映射到 index.html，Electron 加载同源网页，因此刷新与直接访问使用相同入口。
 
-每次查询绑定发起页面和连接；前端顺序拆分多语句，后端每次只执行单语句，使用共享并发预算并传递取消。旧请求不得覆盖新范围。MySQL/MariaDB/PostgreSQL SQL 窗口均显式允许查询和写入；元数据及表数据预览沿用默认读取请求，对象/数据保存显式写入；取消不能视为已回滚。
+每次查询绑定发起页面和连接。前端顺序拆分多语句，后端每次执行单语句，使用共享并发预算并传递取消。旧请求不得覆盖新范围。SQL 窗口显式允许查询和写入，元数据及表数据预览沿用默认读取请求。取消不会回滚已经完成的写入。
 
 ## SQL 工作区核心流程
 
 1. 每页独立持有连接、数据库、Schema、SQL 草稿和最新输出。运行优先使用选区，否则使用完整草稿；右键运行只使用当次捕获的选区，空选区不回退整页执行。
-2. 引擎适配器识别字符串、注释等边界后切分脚本，前端按序调用单语句查询 API。成功执行 USE 后，MySQL/MariaDB 的后续请求显式使用更新后的库；PostgreSQL 使用独立的数据库和 Schema 范围。
+2. 引擎适配器识别字符串、注释等边界后切分脚本，前端按序调用单语句查询 API。MySQL、MariaDB 和 GreptimeDB 成功执行 USE 后，后续请求显式使用更新后的库。PostgreSQL 使用独立的数据库和 Schema 范围。
 3. 每条响应写回发起页面的当前运行。失败或取消停止后续语句，保留已完成结果；切换页面或变更范围后，旧响应不能覆盖新状态。各请求不共享事务、SET 或临时表会话。
 4. 数据集进入结果标签，无数据列的回执进入消息与摘要。筛选、排序、分页和 CSV 导出针对已加载数据，保留重复列、NULL 和精确数值文本。刷新使用该结果原来的 SQL 与范围，写入语句也会再次执行。
 5. 表数据页将单元格和新行修改保留为草稿，显式保存时逐项提交；已有行更新、删除要求完整主键，更新还核对原值和表结构。失败保留剩余草稿并报告已成功数量，整批不保证事务原子性。视图和不支持字段不能直接编辑。

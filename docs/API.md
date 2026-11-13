@@ -53,7 +53,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 ## 请求与行为边界
 
-- **连接**支持 `mysql`、`mariadb` 和 `postgresql`。`name`、`host`、`port`（1–65535）和 `username` 必填。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 连接配置的 `database` 是维护库，默认 `postgres`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
+- **连接**支持 `mysql`、`mariadb`、`postgresql` 和 `greptimedb`。`name`、`host`、`port`（1–65535）必填，GreptimeDB 未启用鉴权时 `username` 和密码可留空，其他引擎需要用户名。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 和 GreptimeDB 的维护库分别默认 `postgres` 和 `public`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
 - **分组**：名称去首尾空白，拒绝空名称、控制字符、重名；默认分组为固定回退项，不可重命名。空分组独立保存，连接表单输入新分组后保存也会登记。重命名更新全部成员。删除接收 `{name}`，将成员移回默认分组并返回 `{groups,connections}`。删除默认分组返回 400，写入失败保留原状态。移动只修改归属，不打开/关闭数据库会话、不修改凭据；不存在连接/原分组返回 404，不存在移动目标返回 400。
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**返回 `name`、`unique`、`type`、可选的 `primary` 及 `columns`。列项为 `{name,position,prefixLength,order}`，位置从 1 开始，顺序为 `A`、`D` 或空字符串。MySQL 和 MariaDB 的主键索引名为 `PRIMARY`，表达式字段的 `name` 为空。PostgreSQL 保留实际索引名，以 `primary` 标记主键，`name` 保存索引列定义（含表达式），`prefixLength` 为 `null`。无索引返回空数组。
@@ -66,13 +66,15 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 普通状态接口拒绝 `connections`、`workspace-index` 和 `ai` 分区。连接及工作区通过各自的专用 API 读写，`master.key` 不通过接口返回。
 
-PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL 和 MariaDB 查询使用数据库范围，拒绝非空的独立 `schema`。
+PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，返回原始表或视图 DDL。
 
 MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。多语句逐条独立请求，不能跨请求使用 BEGIN/COMMIT 或 SET 维护会话。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
 ## 流式转储
+
+流式 SQL 转储适用于 MySQL、MariaDB 和 PostgreSQL。
 
 `GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功；约每10秒发送注释心跳。断开取消、后端独立2并发/30分钟限制、单行8MiB限制，不改变普通查询1000/5000行限制。客户端分批写入文件，失败/取消不提交文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
 

@@ -40,6 +40,9 @@ export function useDataExport(canExport: (connectionId: string, database: string
   }
   async function start(connection: Connection, database: string, withData: boolean, table?: string, schema?: string) {
     if (request.current || !canExport(connection.id, database)) return
+    const adapter = getDatabaseAdapter(connection.type)
+    const dumpFile = adapter.dumpFile
+    if (!dumpFile) return
     const controller = new AbortController()
     request.current = controller
     const signal = controller.signal
@@ -61,7 +64,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
     let writer: Awaited<ReturnType<typeof createExportWriter>> | undefined
     try {
       // Must run before any network await so the native picker retains user activation.
-      writer = await createExportWriter(table ? getDatabaseAdapter(connection.type).tableLabel(table) : database + (schema ? '_' + schema : ''), language)
+      writer = await createExportWriter(table ? adapter.tableLabel(table) : database + (schema ? '_' + schema : ''), language)
       signal.throwIfAborted()
       const output = writer
       patch({ destination: output.destination })
@@ -70,14 +73,13 @@ export function useDataExport(canExport: (connectionId: string, database: string
         patch({ bytes: await output.write(sql) })
         signal.throwIfAborted()
       }
-      const adapter = getDatabaseAdapter(connection.type)
       const all = await getTables(connection.id, database, signal)
       const tables = all.filter((item) => (!table || item.name === table) && (!schema || adapter.explorer?.tableIdentity(item.name).schema === schema))
       if (table && !tables.length) throw new Error(t('目标表不存在或无权访问'))
       const schemas = adapter.explorer ? (schema ? [schema] : await getSchemas(connection.id, database, signal)) : []
       patch({ total: tables.length })
-      const metadata = adapter.dumpFile.metadataSQL ? await executeQuery(connection.id, { database, sql: adapter.dumpFile.metadataSQL(database) }, signal) : undefined
-      await write(adapter.dumpFile.header(database, schemas, metadata))
+      const metadata = dumpFile.metadataSQL ? await executeQuery(connection.id, { database, sql: dumpFile.metadataSQL(database) }, signal) : undefined
+      await write(dumpFile.header(database, schemas, metadata))
       const plans: { name: string; view: boolean; ddl: string; plan: DumpPlan }[] = []
       // Emit all base structures before any records; views and foreign keys follow data.
       for (const [index, item] of tables.entries()) {
@@ -86,7 +88,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
         const [{ ddl }, columns] = await Promise.all([getDDL(connection.id, database, item.name, signal), getColumns(connection.id, database, item.name, signal)])
         const sequenceSQL = !view && adapter.dataDump?.metadataSQL?.(database, item.name)
         const sequence = sequenceSQL ? await executeQuery(connection.id, { database, sql: sequenceSQL, limit: 5000 }, signal) : undefined
-        const plan = adapter.dumpFile.prepare(database, item.name, ddl, columns, sequence, withData && !view)
+        const plan = dumpFile.prepare(database, item.name, ddl, columns, sequence, withData && !view)
         plans.push({ name: item.name, view, ddl, plan })
         if (!view) await write(plan.before)
         patch({ percent: Math.round((20 * (index + 1)) / tables.length) })
@@ -116,7 +118,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
       }
       for (const item of plans) if (item.plan.constraints) await write(item.plan.constraints)
       for (const item of plans) if (item.view) await write(item.plan.before)
-      await write(adapter.dumpFile.footer)
+      await write(dumpFile.footer)
       signal.throwIfAborted()
       await output.close()
       patch({ status: 'completed', endedAt: Date.now(), percent: 100 })

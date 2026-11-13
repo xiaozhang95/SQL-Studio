@@ -111,6 +111,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   连接分组: 'Group',
   '输入或选择分组，留空归入默认分组': 'Enter or select a group; leave blank for the default group',
   数据库类型: 'Database type',
+  'GreptimeDB 时序数据库': 'GreptimeDB time-series database',
   默认端口: 'Default port',
   连接凭据仅加密保存在当前电脑: 'Credentials are encrypted and stored on this computer only',
   本地加密: 'Encrypted locally',

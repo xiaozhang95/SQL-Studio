@@ -6,6 +6,8 @@
 
 MySQL 的连接测试、结构读取、DDL 与 SQL 执行。
 
+GreptimeDB 通过 `NewClientWithDefaultDatabase` 指定维护库，沿用连接租约和元数据读取。`ExecuteStatement` 接收调用引擎已校验和分类的单条 SQL，使用共享的自动提交、结果读取、取消和大小限制。
+
 ## 约束与调用
 
 SQL 默认只读事务，单语句执行；结果行数/约 8MiB 限制，保留 BIGINT/DECIMAL 精度与 NULL；标识符严格转义。

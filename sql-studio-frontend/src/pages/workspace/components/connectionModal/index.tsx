@@ -168,7 +168,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                             <Input placeholder={engine.database} />
                           </Form.Item>
                         )}
-                        <Form.Item name="username" label={t('用户名')} rules={[{ required: true, whitespace: true, message: t('请输入用户名') }]}>
+                        <Form.Item name="username" label={t('用户名')} rules={engine.optionalUsername ? [] : [{ required: true, whitespace: true, message: t('请输入用户名') }]}>
                           <Input autoComplete="username" placeholder={t('请输入数据库用户名')} />
                         </Form.Item>
                         <Form.Item name="password" label={t('密码')} extra={connection?.hasPassword ? t('留空保留原密码') : undefined}>

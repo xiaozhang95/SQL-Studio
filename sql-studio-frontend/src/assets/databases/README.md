@@ -8,8 +8,10 @@ postgresql.svg 使用 [PostgreSQL 官方单色白色大象图标](https://wiki.p
 
 实际调用者为 postgresql/profile，经 engineIcon 用于类型选择、表单头部、对象树和连接选择器。
 
-MySQL、MariaDB 和 PostgreSQL 统一使用绿色圆角底板与白色图形；未连接的 icon 保留圆角方形底板和白色图形，底板与未打开数据库图标共用 --inactive-icon（text-tertiary）主题色。SVG 保留源文件，图形通过图片 filter 显示白色，悬停和选中不改变图形颜色。
+MySQL、MariaDB、PostgreSQL 和 GreptimeDB 使用绿色圆角底板与白色图形。未连接时底板与未打开数据库图标共用 --inactive-icon（text-tertiary）主题色。SVG 保留源文件，图形通过图片 filter 显示白色，悬停和选中不改变图形颜色。
 
 engineIcon 将半透明灰色先合成到主题容器底色 --surface 上，避免亮暗主题的选中背景混入灰色底板。
 
 [mariadb.svg](mariadb.svg) 使用 [Simple Icons MariaDB 图标](https://github.com/simple-icons/simple-icons/blob/develop/icons/mariadb.svg)（Simple Icons，CC0），从 jsDelivr simple-icons v15 发布包取得，保留原始 24×24 路径。调用者为 mariadb/profile，经 engineIcon 用于类型选择、表单、对象树及连接选择；沿用现有绿色底板与白色图形。
+
+[greptimedb.svg](greptimedb.svg) 原样取自 [GreptimeDB 官方文档仓库的 logo-routine.svg](https://github.com/GreptimeTeam/docs/blob/2e5e230f129fea81801907b7c4944a37c966a60b/static/img/logo-routine.svg)。由 GreptimeDB profile 用于连接表单、对象树和连接选择器。显示时使用共享白色滤镜和圆角底板。

@@ -1,5 +1,5 @@
 /** MySQL 默认转义规则：仅在字符串、标识符与注释之外按分号切分，保留原 SQL。 */
-export function splitSQLStatements(script: string, executableComments: readonly string[] = ['!']): string[] {
+export function splitSQLStatements(script: string, executableComments: readonly string[] = ['!'], { ansi = false } = {}): string[] {
   const statements: string[] = []
   let start = 0
   let quote = ''
@@ -26,14 +26,14 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       continue
     }
     if (quote) {
-      if (char === '\\') i++
+      if (char === '\\' && !ansi) i++
       else if (char === quote) {
         if (next === quote) i++
         else quote = ''
       }
       continue
     }
-    if (char === '#' || (char === '-' && next === '-' && (i + 2 === script.length || script.charCodeAt(i + 2) <= 32))) {
+    if ((!ansi && char === '#') || (char === '-' && next === '-' && (ansi || i + 2 === script.length || script.charCodeAt(i + 2) <= 32))) {
       lineComment = true
       continue
     }
@@ -56,8 +56,8 @@ export function splitSQLStatements(script: string, executableComments: readonly 
 }
 
 /** 仅识别完整 USE；数据库是否存在及访问权限仍由服务端验证。 */
-export function useDatabaseSQL(statement: string): string | undefined {
-  const gap = String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
+export function useDatabaseSQL(statement: string, { ansi = false } = {}): string | undefined {
+  const gap = ansi ? String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|--[^\r\n]*(?:[\r\n]|$))*` : String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\r\n]*(?:[\r\n]|$)|--(?=[\s]|$)[^\r\n]*(?:[\r\n]|$))*`
   const match = new RegExp('^' + gap + String.raw`USE\b` + gap + '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+)' + gap + ';?' + gap + '$', 'iu').exec(statement)
   if (!match) return undefined
   return match[1].startsWith('`') ? match[1].slice(1, -1).replace(/``/g, '`') : match[1]

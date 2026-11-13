@@ -131,7 +131,7 @@ export default function QueryResults({ model, themeMode }: Props) {
       onCell: (row: { key: number }) => ({
         className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
         onDoubleClick: () => {
-          if (tab.kind === 'data' && row.key >= 0) void editing.begin(row.key, index)
+          if (tab.kind === 'data' && adapter.dataEditing && row.key >= 0) void editing.begin(row.key, index)
         }
       }),
       width: run?.kind === 'ddl' ? undefined : adapter.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : resultTableLayout.columnWidth,
@@ -213,7 +213,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           }}
         >
           <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
-            {tab.kind === 'data' && (
+            {tab.kind === 'data' && adapter.dataEditing && (
               <>
                 <ToolbarButton
                   label={t('新增行')}

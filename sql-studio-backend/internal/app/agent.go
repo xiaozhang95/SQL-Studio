@@ -27,6 +27,9 @@ func (d agentDatabase) Connections(ctx context.Context) ([]agentmodel.Connection
 	}
 	out := []agentmodel.Connection{}
 	for _, c := range d.connections.ListConnections() {
+		if c.Type == model.TypeGreptimeDB {
+			continue
+		}
 		out = append(out, agentmodel.Connection{ID: c.ID, Name: c.Name, Type: c.Type})
 	}
 	if data, err := json.Marshal(out); err != nil || len(data) > 256*1024 {
@@ -139,7 +142,7 @@ func (d agentDatabase) agentTargetEngine(id string) (string, error) {
 		return "", nil
 	}
 	for _, c := range d.connections.ListConnections() {
-		if c.ID == id {
+		if c.ID == id && c.Type != model.TypeGreptimeDB {
 			return c.Type, nil
 		}
 	}

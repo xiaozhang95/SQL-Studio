@@ -20,7 +20,7 @@ DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承�
 
 DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句；仅在请求成功后应用返回库名。
 
-DatabaseEngine.PostgreSQL=postgresql。DatabaseProfile.database? 为维护库默认值（MySQL 省略，PostgreSQL 为 postgres）。DatabaseAdapter.objects 可为 undefined，UI 与执行入口均据此限制可视化对象管理；exportDDL(database,table,ddl) 单独负责结构参考导出。
+DatabaseProfile.database 为可选维护库默认值，PostgreSQL 为 `postgres`，GreptimeDB 为 `public`。optionalUsername 表示连接表单允许省略用户名。适配器以 objects、dataEditing 和 dumpFile 声明可视化对象管理、网格行编辑及 SQL 转储能力。exportDDL 提供结构定义文本。
 
 databaseEditor.Form 接收 creating:boolean 和可选 definition:DatabaseDefinition，新建/编辑共用属性行；库名称字段由共享 ObjectManagementForm 注册。引擎组件按实际支持能力禁用属性，新建禁用字段不注册、不校验或提交；数据库 SQL、读取和提交能力保持原契约。
 

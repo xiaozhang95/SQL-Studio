@@ -35,13 +35,23 @@ func execute(ctx context.Context, db *sql.DB, statement string, limit int, allow
 	return executeResult(ctx, db, statement, limit, allowWrite, false)
 }
 
+// ExecuteStatement runs a statement classified and validated by another
+// MySQL-protocol engine, using this client's request lifecycle and result limits.
+func (c *Client) ExecuteStatement(ctx context.Context, connection model.Connection, input model.QueryRequest, returnsRows bool) (model.QueryResult, error) {
+	ctx, db, release, err := c.openRequest(ctx, connection, input.Database)
+	if err != nil {
+		return model.QueryResult{}, err
+	}
+	defer release()
+	return executeAutocommit(ctx, db, input.SQL, input.Limit, returnsRows)
+}
+
 func executeResult(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite, returning bool) (result model.QueryResult, err error) {
-	start := time.Now()
-	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
-	result.Columns = []model.ResultColumn{}
-	result.Rows = [][]any{}
 	// DDL 可隐式提交并逃离只读事务，必须在发送 SQL 前拒绝；读查询仍保留数据库只读事务。
 	if !allowWrite {
+		start := time.Now()
+		defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
+		result = model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}}
 		if !isReadOnlyStatement(statement) {
 			return result, errors.New("只读查询不允许该语句；写入需通过显式写入操作提交")
 		}
@@ -52,9 +62,17 @@ func executeResult(ctx context.Context, db *sql.DB, statement string, limit int,
 		defer tx.Rollback()
 		return readRows(ctx, tx, statement, limit, start)
 	}
-	if isQuery(statement) || returning {
+	return executeAutocommit(ctx, db, statement, limit, isQuery(statement) || returning)
+}
+
+func executeAutocommit(ctx context.Context, db *sql.DB, statement string, limit int, returnsRows bool) (result model.QueryResult, err error) {
+	start := time.Now()
+	defer func() { result.DurationMS = time.Since(start).Milliseconds() }()
+	if returnsRows {
 		return readRows(ctx, db, statement, limit, start)
 	}
+	result.Columns = []model.ResultColumn{}
+	result.Rows = [][]any{}
 	r, e := db.ExecContext(ctx, statement)
 	if e != nil {
 		return result, e

@@ -101,3 +101,11 @@ test('USE extracts only a complete database switch, preserving quoted names and 
     assert.equal(useDatabaseSQL(sql), database)
   for (const sql of ["SELECT 'USE wrong'", '-- USE wrong', 'USE db; SELECT 1', 'USEdb', 'USE', 'USE /*!80000 db */', 'USE `broken']) assert.equal(useDatabaseSQL(sql), undefined, sql)
 })
+
+test('GreptimeDB script mode splits SQL and TQL with ANSI line comments and quoted names', () => {
+  const script = "--comment;\nUSE `metrics`; SELECT 'a;b'; TQL EVAL (0, 10, '5s') vector(1);"
+  const statements = splitSQLStatements(script, [], { ansi: true })
+  assert.deepEqual(statements, ['--comment;\nUSE `metrics`;', "SELECT 'a;b';", "TQL EVAL (0, 10, '5s') vector(1);"])
+  assert.equal(useDatabaseSQL(statements[0], { ansi: true }), 'metrics')
+  assert.equal(useDatabaseSQL('USE `other`; --tail', { ansi: true }), 'other')
+})

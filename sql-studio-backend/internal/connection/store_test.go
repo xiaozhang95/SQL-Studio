@@ -70,3 +70,26 @@ func TestMissingMasterKeyDoesNotOverwriteCredentials(t *testing.T) {
 		t.Fatal("missing master key should fail")
 	}
 }
+
+func TestGreptimeConnectionWithoutPassword(t *testing.T) {
+	dir := t.TempDir()
+	store, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := store.Save(model.Connection{Name: "greptime", Type: model.TypeGreptimeDB, Host: "localhost", Port: 4002})
+	if err != nil || saved.HasPassword {
+		t.Fatalf("save without password: hasPassword=%t, err=%v", saved.HasPassword, err)
+	}
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := reopened.Get(saved.ID)
+	if err != nil || loaded.Password != "" || reopened.List()[0].HasPassword {
+		t.Fatalf("load without password: err=%v", err)
+	}
+	if _, err := reopened.Save(saved); err != nil {
+		t.Fatal(err)
+	}
+}

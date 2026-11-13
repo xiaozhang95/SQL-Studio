@@ -224,6 +224,7 @@ export default function DatabaseExplorer({ model }: Props) {
             : item
         )
     }
+    if (!engine.dumpFile) items = items.filter((item) => item && 'key' in item && item.key !== 'export')
     if (running) items = items.filter((item) => item && 'key' in item && item.key === 'close')
     if (!items.length) return undefined
     return {

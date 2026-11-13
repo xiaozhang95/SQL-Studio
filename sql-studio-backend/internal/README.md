@@ -8,6 +8,7 @@
 - [应用消息语言](localization/README.md)：请求语言选择与系统消息翻译，只由 HTTP 层使用。
 - [跨层业务契约](model/README.md)
 - [MariaDB 引擎](mariadb/README.md)：独立类型、组合 MySQL 线协议及生命周期。
+- [GreptimeDB 引擎](greptimedb/README.md)：独立类型，使用 MySQL 线协议执行 SQL/TQL 并读取对象元数据。
 - [MySQL 协议驱动](mysql/README.md)
 - [独立业务模块](modules/README.md)：连接管理、对象结构、SQL 查询。
 

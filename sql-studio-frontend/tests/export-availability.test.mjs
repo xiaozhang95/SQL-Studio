@@ -21,7 +21,7 @@ function harness(canExport) {
       pickers++
       throw new DOMException('cancel fixture picker', 'AbortError')
     },
-    getDatabaseAdapter: () => ({ tableLabel: (name) => name })
+    getDatabaseAdapter: () => ({ tableLabel: (name) => name, dumpFile: {} })
   }
   const createModel = new Function(...Object.keys(dependencies), implementation + '; return useDataExport')(...Object.values(dependencies))
   return { model: createModel(canExport), states, pickers: () => pickers }

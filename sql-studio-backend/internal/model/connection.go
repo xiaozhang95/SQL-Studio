@@ -21,6 +21,7 @@ type Connection struct {
 const TypeMySQL = "mysql"
 const TypeMariaDB = "mariadb"
 const TypePostgreSQL = "postgresql"
+const TypeGreptimeDB = "greptimedb"
 const DefaultConnectionGroup = "默认分组"
 
 // NormalizeConnectionGroup 为新建连接的空分组输入选择当前默认分组。
@@ -45,4 +46,6 @@ func SupportedDatabaseType(value string) bool {
 func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }
 
 // IsMySQLProtocol 只描述协议复用，不改变连接保存的引擎身份。
-func IsMySQLProtocol(value string) bool { return IsMySQL(value) || value == TypeMariaDB }
+func IsMySQLProtocol(value string) bool {
+	return IsMySQL(value) || value == TypeMariaDB || value == TypeGreptimeDB
+}
