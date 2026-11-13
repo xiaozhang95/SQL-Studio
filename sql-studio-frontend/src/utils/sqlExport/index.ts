@@ -1,14 +1,22 @@
 /** 原样导出完整草稿，文件名兼容常见桌面文件系统。 */
+export function sqlFilename(title: string) {
+  const characters = Array.from(title.replace(/\.sql$/i, ''), (char) => (char.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(char) ? '_' : char))
+  const encoder = new TextEncoder()
+  let bytes = 0
+  let filename = ''
+  for (const character of characters) {
+    bytes += encoder.encode(character).length
+    if (bytes > 120) break
+    filename += character
+  }
+  return (filename.trim().replace(/\.+$/, '').trimEnd() || 'query') + '.sql'
+}
+
 export function exportSQL(statement: string, title: string) {
-  const filename =
-    Array.from(title.replace(/\.sql$/i, ''), (char) => (char.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(char) ? '_' : char))
-      .join('')
-      .replace(/[.\s]+$/g, '')
-      .slice(0, 120) || 'query'
   const url = URL.createObjectURL(new Blob([statement], { type: 'text/plain;charset=utf-8' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = `${filename}.sql`
+  link.download = sqlFilename(title)
   document.body.appendChild(link)
   try {
     link.click()

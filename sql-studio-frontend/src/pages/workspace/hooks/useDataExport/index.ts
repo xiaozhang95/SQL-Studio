@@ -66,7 +66,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
     let writer: Awaited<ReturnType<typeof createExportWriter>> | undefined
     try {
       // Must run before any network await so the native picker retains user activation.
-      writer = await createExportWriter(table ? adapter.tableLabel(table) : database + (schema ? '_' + schema : ''), language)
+      writer = await createExportWriter(table ? adapter.tableLabel(table) : database + (schema ? '_' + schema : ''), language, signal)
       signal.throwIfAborted()
       const output = writer
       patch({ destination: output.destination })

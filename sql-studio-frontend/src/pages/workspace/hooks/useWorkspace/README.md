@@ -44,7 +44,7 @@ sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏
 
 useQueryHistory 通过 Go 服务保存各连接最新 50 条记录，恢复旧记录时也执行上限。连接删除成功清理其历史，列表成功加载后清理已删除连接的遗留历史；列表失败不清理。入口仅位于 SQL 页，打开时重置搜索，QueryHistory 以连接 ID 重挂载。loadHistory 清理记录里旧的来源标记后，追加到当前编辑器末尾并标注一行 -- 历史记录，不新增页、不切库、不执行；CodeMirror 事务保留撤销。来源标记不进入历史 SQL，重复执行仍保留各次执行信息。
 
-右键打开时捕获选区快照，runSelectedSQL 不回退到整页；工具栏和 Ctrl+Enter 优先执行选区，无选区则完整草稿。导入本地 SQL 新建查询而不执行，exportCurrentSQL 原样导出完整草稿。onEditorReady/onEditorUpdate/rememberEditor 负责恢复并保存编辑位置。
+右键打开时捕获选区快照，runSelectedSQL 不回退到整页；工具栏和 Ctrl+Enter 优先执行选区，无选区则完整草稿。导入本地 SQL 新建查询而不执行，exportCurrentSQL 原样导出完整草稿，Electron 使用原生保存。onEditorReady/onEditorUpdate/rememberEditor 负责恢复并保存编辑位置。
 
 Ctrl/Command+Enter 由 useQueryShortcut 在 window 捕获阶段处理，仅限可见工作台、就绪的查询编辑器内部且无模态框；其他控件、AI 助手、历史搜索、连接表单不触发。先于 CodeMirror 插入空行读取原选区，不修改 SQL 草稿。浏览器回归需同时验证两种引擎的单条选区、多条选区、无选区和运行中重复按键，避免意外执行整份脚本。
 

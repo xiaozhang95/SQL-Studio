@@ -7,6 +7,7 @@ import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme } from 'e
 
 import { startBackend, waitForService } from './backend.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
+import { createSQLSaves } from './sql-save.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 import { createDesktopUpdates } from './updates.mjs'
@@ -44,6 +45,7 @@ let quitting = false
 let startupScreen
 let startupTask
 let shutdownTask
+let saveCleanup
 let allowQuit = false
 const startupAbort = new AbortController()
 const developmentURL = 'http://127.0.0.1:15173'
@@ -54,7 +56,7 @@ function shutdown(afterStop = () => app.quit()) {
   startupScreen?.dispose()
   shutdownTask ??= (async () => {
     await startupTask?.catch(() => {})
-    await backend?.stop()
+    await Promise.all([backend?.stop(), saveCleanup?.()])
     allowQuit = true
     afterStop()
   })().catch((error) => {
@@ -154,9 +156,35 @@ function createWindow(dark, appIcon, updates) {
       }
     })
   }
+  const saves = createSQLSaves((options) => dialog.showSaveDialog(window, options))
+  saveCleanup = () => saves.reset()
+  const saveActions = {
+    'sql-studio:save-begin': saves.begin,
+    'sql-studio:save-append': saves.append,
+    'sql-studio:save-commit': saves.commit,
+    'sql-studio:save-discard': saves.discard
+  }
+  for (const [channel, action] of Object.entries(saveActions)) {
+    ipcMain.handle(channel, async (event, ...args) => {
+      if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
+      try {
+        return await action(...args)
+      } catch (error) {
+        trace(`${channel}: ${error.stack ?? error.message}`)
+        throw new Error('桌面操作失败')
+      }
+    })
+  }
+  const resetSaves = () => void saves.reset()
+  contents.on('did-start-navigation', ({ isMainFrame, isSameDocument }) => {
+    if (isMainFrame && !isSameDocument) resetSaves()
+  })
+  contents.on('render-process-gone', resetSaves)
   contents.once('destroyed', () => {
     ipcMain.removeListener('sql-studio:titlebar-theme', syncTheme)
     for (const channel of Object.keys(desktopActions)) ipcMain.removeHandler(channel)
+    for (const channel of Object.keys(saveActions)) ipcMain.removeHandler(channel)
+    resetSaves()
   })
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
   contents.on('will-navigate', (event, target) => {

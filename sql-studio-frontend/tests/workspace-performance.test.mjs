@@ -261,6 +261,7 @@ test('run and export actions read the live draft while React still has the old s
     },
     activeTabRef: { current: 'a' },
     tab: { sql: 'SELECT stale;', title: 'draft' },
+    window: {},
     exportSQL: (sql, title) => exported.push({ sql, title }),
     message: { error: () => {} },
     getSelectedSQL: () => selected,
@@ -270,7 +271,7 @@ test('run and export actions read the live draft while React still has the old s
   actions.runSQL()
   selected = 'SELECT selected;'
   actions.runSQL()
-  actions.exportCurrentSQL()
+  await actions.exportCurrentSQL()
   assert.deepEqual(executed, ['SELECT latest;', 'SELECT selected;'])
   assert.deepEqual(exported, [{ sql: 'SELECT latest;', title: 'draft' }])
   assert.equal(flushed, 3)

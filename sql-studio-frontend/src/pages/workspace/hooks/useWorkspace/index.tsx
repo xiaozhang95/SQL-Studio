@@ -372,13 +372,14 @@ export const useWorkspace = (active = true) => {
     const change = editorSession.flush()
     return change?.id === activeTabRef.current && change.sql !== undefined ? change.sql : editorSession.read(activeTabRef.current, tab.sql)
   }
-  function exportCurrentSQL() {
+  async function exportCurrentSQL() {
     const sql = getCurrentSQL()
     if (!sql.trim()) return
     try {
-      exportSQL(sql, tab.title)
-    } catch {
-      setOperationError(t('SQL 导出失败，请重试'))
+      if (window.sqlStudioDesktop?.saveFile?.append) await saveSQL(sql, tab.title)
+      else exportSQL(sql, tab.title)
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError(t('SQL 导出失败，请重试'))
     }
   }
   function openHistory() {
