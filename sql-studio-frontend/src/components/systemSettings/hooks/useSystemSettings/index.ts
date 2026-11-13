@@ -6,7 +6,7 @@ import type { AppearancePreferences } from '@/typings/theme'
 
 import { SettingsSection } from '../../constant/settings'
 
-/** 三个设置页共用草稿与提交入口，切换页面不会保存或丢失输入。 */
+/** 系统设置共用草稿与提交入口，切换页面保留输入。 */
 export function useSystemSettings({ themePreference, fontSizePreference, language = 'zh-CN', onAppearanceSave, themeReady = true }: AppearancePreferences) {
   const { t } = useTranslation()
   const ai = useAISettings()

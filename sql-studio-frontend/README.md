@@ -12,6 +12,8 @@ pnpm dev
 
 开发地址 `http://127.0.0.1:15173`，/api 同源代理到 Go 18080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
 
+构建从同仓库的 `sql-studio-electron/package.json` 读取产品版本，显示在「系统设置 → 关于」。Electron 使用自身运行时版本并提供检查更新。
+
 前端使用历史路由，`/` 为 SQL 工作区，`/agent` 为 AI 助手。Vite 配置为 SPA 模式，支持直接访问和刷新；构建后的网页由 Go 显式提供这两个页面入口。页面内切换使用 History API，支持浏览器前进、后退。
 
 [源码索引](src/README.md) · [前端规范](../docs/FRONTEND_STANDARDS.md) · [项目框架](../docs/ARCHITECTURE.md) · [测试](tests/README.md)

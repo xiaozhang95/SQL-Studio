@@ -71,6 +71,8 @@ pnpm build
 
 `pnpm build` 一次完成前后端构建和桌面打包，将后端程序和网页资源一起分发。产物位于 `sql-studio-electron/release/`；Windows 为绿色版目录和全局 NSIS 安装包，macOS 为 DMG，Linux 为 AppImage。请在目标平台构建。发行版管理自己的 Go 服务和空闲端口，默认配置路径为 `~/.sql-studio/state/`。绿色版须保留整个目录后运行其中的 `SQL Studio.exe`。
 
+「系统设置 → 关于」显示当前版本。桌面端可检查 GitHub 正式版，Windows NSIS 安装版可下载并确认安装更新。发版步骤见 [GitHub Release 与更新](sql-studio-electron/README.md#github-release-与更新)。
+
 ### 启动失败与配置保存提示
 
 默认配置目录为 `~/.sql-studio/state/`，首次启动时创建。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件。

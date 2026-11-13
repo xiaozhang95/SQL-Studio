@@ -1,4 +1,4 @@
-/** Electron 只暴露标题栏主题能力，不向页面提供通用 IPC 或 Node API。 */
+/** Electron 仅暴露受限的桌面能力。 */
 export interface DesktopTitleBarTheme {
   background: string
   foreground: string
@@ -8,6 +8,17 @@ export interface DesktopTitleBarTheme {
 export interface DesktopBridge {
   readonly titleBarHeight: number
   setTitleBarTheme: (value: DesktopTitleBarTheme) => void
+  getVersion: () => Promise<string>
+  readonly updates: DesktopUpdates
+}
+
+export type DesktopUpdateStatus = { status: 'upToDate' } | { status: 'available'; version: string; canDownload: boolean } | { status: 'downloaded'; version: string }
+
+export interface DesktopUpdates {
+  check: () => Promise<DesktopUpdateStatus>
+  download: () => Promise<Extract<DesktopUpdateStatus, { status: 'downloaded' }>>
+  openRelease: () => Promise<void>
+  install: () => Promise<void>
 }
 
 declare global {

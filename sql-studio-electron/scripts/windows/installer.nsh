@@ -86,6 +86,15 @@
   !endif
 !macroend
 
+!macro customInstall
+  ; Only a completed NSIS installation can offer an in-place desktop update.
+  ClearErrors
+  FileOpen $0 "$INSTDIR\resources\sql-studio-installed" w
+  ${IfNot} ${Errors}
+    FileClose $0
+  ${EndIf}
+!macroend
+
 !macro ProtectPreviousInstallData ROOT_KEY
   StrCpy $PreviousDataBackup ""
   ReadRegStr $PreviousInstallDir ${ROOT_KEY} "${INSTALL_REGISTRY_KEY}" InstallLocation

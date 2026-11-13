@@ -31,9 +31,19 @@ pnpm install --frozen-lockfile
 Windows 在 `release/` 下生成两份分发产物。
 
 - `win-unpacked/` 为绿色版目录。保留整个目录，双击其中的 `SQL Studio.exe`。目录名随架构变化，例如 `win-arm64-unpacked/`。
-- `SQL Studio-Setup-<版本>-<架构>.exe` 为所有用户安装。安装时需通过 Windows 管理员授权，默认目录为 `%ProgramFiles%\SQL Studio`，安装时可修改。安装后可从桌面、开始菜单或安装目录打开 `SQL Studio.exe`。
+- `SQL-Studio-Setup-<版本>-<架构>.exe` 为所有用户安装。安装时需通过 Windows 管理员授权，默认目录为 `%ProgramFiles%\SQL Studio`，安装时可修改。安装后可从桌面、开始菜单或安装目录打开 `SQL Studio.exe`。
 
 安装器按路径检查并请求关闭安装目录中的 SQL Studio 进程，再替换旧卸载程序。覆盖安装和卸载保留用户配置。旧安装目录中已有的 `.sql-studio` 保留在原位置。
+
+### GitHub Release 与更新
+
+「系统设置 → 关于」显示当前版本。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，确认后退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
+
+1. 修改本目录 `package.json` 的 `version`，在 Windows 上运行 `pnpm build`。版本同时用于网页构建和桌面安装包。
+2. 按版本号创建 GitHub Release，例如 `0.1.2`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-0.1.2-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
+3. 已安装 `0.1.1` 的用户先下载新版安装包覆盖安装一次。从带更新功能的版本开始，可在应用内安装后续版本。Windows 安装版升级时可能出现管理员授权提示。
+
+`pnpm build` 生成产物和更新清单，上传在 GitHub Release 页面完成。公开下载无需 GitHub Token。
 
 ### Windows 构建与启动排查
 
@@ -96,14 +106,15 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 
 Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
-窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 仅提供只读标题栏高度和主题同步接口，不暴露通用 IPC。主进程校验调用来源和颜色；拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
+窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步、应用版本和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
 
 ## 代码与检查
 
 - `src/main.mjs`：窗口、单实例与应用生命周期。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/policy.mjs`：导航边界与后端环境隔离。
-- `src/preload.cjs`：最小标题栏主题桥接。
+- `src/preload.cjs`：标题栏、应用版本和更新桥接。
+- `src/updates.mjs`：GitHub 正式版本查询、NSIS 更新下载与安装。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。
 - `scripts/`：Electron 镜像启动入口、桌面资源构建。
 - `scripts/windows/`：Windows GUI 启动入口及 NSIS 安装、升级和卸载逻辑。

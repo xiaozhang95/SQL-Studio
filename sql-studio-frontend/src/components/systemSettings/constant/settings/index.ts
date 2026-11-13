@@ -1,19 +1,20 @@
-import { GlobalOutlined, RobotOutlined, SkinOutlined } from '@ant-design/icons'
+import { GlobalOutlined, InfoCircleOutlined, RobotOutlined, SkinOutlined } from '@ant-design/icons'
 
 import type { FontSizePreference, Language, ThemePreference } from '@/typings/theme'
 
-export const SettingsSection = { Model: 'model', Appearance: 'appearance', Language: 'language' } as const
+export const SettingsSection = { Model: 'model', Appearance: 'appearance', Language: 'language', About: 'about' } as const
 export type SettingsSection = (typeof SettingsSection)[keyof typeof SettingsSection]
 
 export const settingsSections = [
   { value: SettingsSection.Model, label: '模型配置', icon: RobotOutlined },
   { value: SettingsSection.Appearance, label: '外观', icon: SkinOutlined },
-  { value: SettingsSection.Language, label: '语言', icon: GlobalOutlined }
+  { value: SettingsSection.Language, label: '语言', icon: GlobalOutlined },
+  { value: SettingsSection.About, label: '关于', icon: InfoCircleOutlined }
 ] as const
 
 export const settingsGroups = [
   { label: '模型服务', sections: [settingsSections[0]] },
-  { label: '偏好设置', sections: [settingsSections[1], settingsSections[2]] }
+  { label: '偏好设置', sections: [settingsSections[1], settingsSections[2], settingsSections[3]] }
 ] as const
 
 export const themeOptions = [

@@ -9,6 +9,7 @@ import { startBackend, waitForService } from './backend.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
+import { createDesktopUpdates } from './updates.mjs'
 
 // 默认状态目录与独立运行的 Go 服务一致。
 const dataOverride = process.env.SQL_STUDIO_DATA_DIR?.trim()
@@ -47,6 +48,22 @@ let allowQuit = false
 const startupAbort = new AbortController()
 const developmentURL = 'http://127.0.0.1:15173'
 
+function shutdown(afterStop = () => app.quit()) {
+  quitting = true
+  startupAbort.abort()
+  startupScreen?.dispose()
+  shutdownTask ??= (async () => {
+    await startupTask?.catch(() => {})
+    await backend?.stop()
+    allowQuit = true
+    afterStop()
+  })().catch((error) => {
+    trace(`退出失败: ${error.stack ?? error.message}`)
+    allowQuit = true
+    app.quit()
+  })
+}
+
 async function checkDevelopmentServices(signal) {
   const response = await fetch(`${developmentURL}/@vite/client`, {
     redirect: 'error',
@@ -77,7 +94,7 @@ async function loadIcons() {
   return { icon, appIcon }
 }
 
-function createWindow(dark, appIcon) {
+function createWindow(dark, appIcon, updates) {
   let origin = ''
   const background = dark ? '#141414' : '#ffffff'
   mainWindow = new BrowserWindow({
@@ -112,14 +129,36 @@ function createWindow(dark, appIcon) {
   // 打包版使用 ICNS，由 macOS 统一管理 Dock 图标；开发预览才覆盖 Electron 默认图标。
   if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(appIcon)
   const contents = mainWindow.webContents
+  const isWorkbench = (event) => event.sender === contents && event.senderFrame && event.senderFrame === contents.mainFrame && isAppURL(event.senderFrame.url, origin)
   const syncTheme = (event, value) => {
-    if (event.sender !== contents || event.senderFrame !== contents.mainFrame || !isAppURL(event.senderFrame.url, origin) || !validTitleBarTheme(value)) return
+    if (!isWorkbench(event) || !validTitleBarTheme(value)) return
     mainWindow?.setBackgroundColor(value.background)
     if (process.platform !== 'darwin') mainWindow?.setTitleBarOverlay({ color: value.background, symbolColor: value.foreground, height: 32 })
     reportThemeReady()
   }
   ipcMain.on('sql-studio:titlebar-theme', syncTheme)
-  contents.once('destroyed', () => ipcMain.removeListener('sql-studio:titlebar-theme', syncTheme))
+  const desktopActions = {
+    'sql-studio:version': () => app.getVersion(),
+    'sql-studio:check-updates': updates.check,
+    'sql-studio:download-update': updates.download,
+    'sql-studio:open-release': updates.openRelease,
+    'sql-studio:install-update': () => updates.install(shutdown)
+  }
+  for (const [channel, action] of Object.entries(desktopActions)) {
+    ipcMain.handle(channel, async (event) => {
+      if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
+      try {
+        return await action()
+      } catch (error) {
+        trace(`${channel}: ${error.stack ?? error.message}`)
+        throw new Error('桌面操作失败')
+      }
+    })
+  }
+  contents.once('destroyed', () => {
+    ipcMain.removeListener('sql-studio:titlebar-theme', syncTheme)
+    for (const channel of Object.keys(desktopActions)) ipcMain.removeHandler(channel)
+  })
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
   contents.on('will-navigate', (event, target) => {
     if (!isAppURL(target, origin)) event.preventDefault()
@@ -173,15 +212,7 @@ if (dataError) {
   app.on('before-quit', (event) => {
     if (allowQuit) return
     event.preventDefault()
-    quitting = true
-    startupAbort.abort()
-    startupScreen?.dispose()
-    shutdownTask ||= (async () => {
-      await startupTask?.catch(() => {})
-      await backend?.stop()
-      allowQuit = true
-      app.quit()
-    })()
+    shutdown()
   })
   startupTask = app
     .whenReady()
@@ -192,7 +223,7 @@ if (dataError) {
         loadIcons()
       ])
       startupAbort.signal.throwIfAborted()
-      const desktop = createWindow(appearance.dark, appIcon)
+      const desktop = createWindow(appearance.dark, appIcon, createDesktopUpdates(trace))
       startupScreen = await createStartupScreen(desktop.window, { icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
       startupAbort.signal.throwIfAborted()
       if (app.isPackaged) {

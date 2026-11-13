@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
 import AISettings from '../aiSettings'
+import About from './components/about'
 import AppearanceCards from './components/appearanceCards'
 import ThemePreview from './components/themePreview'
 import { fontSizeOptions, languageOptions, settingsGroups, settingsLayout, SettingsSection, settingsSections, themeOptions } from './constant/settings'
@@ -103,6 +104,7 @@ export default function SystemSettings(preferences: AppearancePreferences) {
             </Typography.Title>
             <ErrorNotice error={settings.error} style={{ marginBottom: token.margin }} />
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
+            {settings.section === SettingsSection.About && <About disabled={settings.busy} />}
             {settings.section === SettingsSection.Appearance && (
               <>
                 <Typography.Text strong style={{ display: 'block', marginBottom: token.marginSM }}>

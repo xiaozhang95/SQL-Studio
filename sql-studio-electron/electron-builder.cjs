@@ -18,7 +18,10 @@ module.exports = {
   ],
   electronDownload: { mirror: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
   mac: { target: ['dmg'], icon: 'build/icons/mac-icon.png', category: 'public.app-category.developer-tools', identity: null },
-  win: { target: ['nsis'] },
+  win: {
+    target: ['nsis'],
+    publish: { provider: 'github', owner: 'xiaozhang95', repo: 'SQL-Studio', vPrefixedTagName: false }
+  },
   async beforePack({ electronPlatformName }) {
     const windows = electronPlatformName === 'win32'
     const backend = windows ? 'sql-studio-backend.exe' : 'sql-studio-backend'
@@ -48,7 +51,7 @@ module.exports = {
     }
   },
   nsis: {
-    artifactName: '${productName}-Setup-${version}-${arch}.${ext}',
+    artifactName: 'SQL-Studio-Setup-${version}-${arch}.${ext}',
     oneClick: false,
     perMachine: true,
     allowToChangeInstallationDirectory: true,
