@@ -138,7 +138,6 @@ function createWindow(dark, appIcon, updates) {
   }
   ipcMain.on('sql-studio:titlebar-theme', syncTheme)
   const desktopActions = {
-    'sql-studio:version': () => app.getVersion(),
     'sql-studio:check-updates': updates.check,
     'sql-studio:download-update': updates.download,
     'sql-studio:open-release': updates.openRelease,

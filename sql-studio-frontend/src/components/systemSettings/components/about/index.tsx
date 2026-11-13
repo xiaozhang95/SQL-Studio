@@ -8,7 +8,7 @@ import { useDesktopUpdates } from '../../hooks/useDesktopUpdates'
 export default function About({ disabled }: { disabled: boolean }) {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const { version, desktop, result, pending, error, run } = useDesktopUpdates()
+  const { desktop, result, pending, error, run } = useDesktopUpdates()
   const busy = disabled || Boolean(pending)
   const status = {
     upToDate: '当前已是最新版本',
@@ -30,7 +30,7 @@ export default function About({ disabled }: { disabled: boolean }) {
     <Flex vertical gap="middle">
       <Flex gap="middle" align="baseline" wrap>
         <Typography.Text>{t('当前版本')}</Typography.Text>
-        <Typography.Text>{version}</Typography.Text>
+        <Typography.Text>{import.meta.env.VITE_SQL_STUDIO_VERSION}</Typography.Text>
       </Flex>
       {desktop && (
         <>

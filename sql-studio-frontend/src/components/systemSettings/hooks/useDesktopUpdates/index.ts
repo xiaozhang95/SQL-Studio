@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import type { DesktopUpdateStatus } from '@/typings/desktop'
 
@@ -13,25 +13,10 @@ const actionErrors = {
 
 export function useDesktopUpdates() {
   const desktop = window.sqlStudioDesktop
-  const [version, setVersion] = useState<string>(import.meta.env.VITE_SQL_STUDIO_VERSION)
   const [result, setResult] = useState<DesktopUpdateStatus>()
   const [pending, setPending] = useState<UpdateAction>()
   const [error, setError] = useState('')
   const running = useRef(false)
-
-  useEffect(() => {
-    if (!desktop) return
-    let active = true
-    void desktop.getVersion().then(
-      (value) => {
-        if (active) setVersion(value)
-      },
-      () => {} // The same release version is also embedded in the web build.
-    )
-    return () => {
-      active = false
-    }
-  }, [desktop])
 
   async function run(action: UpdateAction) {
     if (!desktop || running.current) return
@@ -50,5 +35,5 @@ export function useDesktopUpdates() {
     }
   }
 
-  return { version, desktop: Boolean(desktop), result, pending, error, run }
+  return { desktop: Boolean(desktop), result, pending, error, run }
 }

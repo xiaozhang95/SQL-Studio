@@ -39,8 +39,8 @@ Windows 在 `release/` 下生成两份分发产物。
 
 「系统设置 → 关于」显示当前版本。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，确认后退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
 
-1. 修改本目录 `package.json` 的 `version`，在 Windows 上运行 `pnpm build`。版本同时用于网页构建和桌面安装包。
-2. 按版本号创建 GitHub Release，例如 `0.1.2`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-0.1.2-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
+1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
+2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
 3. 已安装 `0.1.1` 的用户先下载新版安装包覆盖安装一次。从带更新功能的版本开始，可在应用内安装后续版本。Windows 安装版升级时可能出现管理员授权提示。
 
 `pnpm build` 生成产物和更新清单，上传在 GitHub Release 页面完成。公开下载无需 GitHub Token。
@@ -106,14 +106,14 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 
 Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
-窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步、应用版本和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
+窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。API 仍是后端原有的本机单用户 HTTP 服务。
 
 ## 代码与检查
 
 - `src/main.mjs`：窗口、单实例与应用生命周期。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/policy.mjs`：导航边界与后端环境隔离。
-- `src/preload.cjs`：标题栏、应用版本和更新桥接。
+- `src/preload.cjs`：标题栏和更新桥接。
 - `src/updates.mjs`：GitHub 正式版本查询、NSIS 更新下载与安装。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。
 - `scripts/`：Electron 镜像启动入口、桌面资源构建。

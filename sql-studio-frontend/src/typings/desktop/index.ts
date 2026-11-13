@@ -8,7 +8,6 @@ export interface DesktopTitleBarTheme {
 export interface DesktopBridge {
   readonly titleBarHeight: number
   setTitleBarTheme: (value: DesktopTitleBarTheme) => void
-  getVersion: () => Promise<string>
   readonly updates: DesktopUpdates
 }
 

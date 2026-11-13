@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import { app, net, shell } from 'electron'
@@ -9,6 +10,7 @@ const releaseURL = 'https://github.com/xiaozhang95/SQL-Studio/releases'
 const latestReleaseAPI = 'https://api.github.com/repos/xiaozhang95/SQL-Studio/releases/latest'
 
 export function createDesktopUpdates(log) {
+  const currentVersion = app.isPackaged ? app.getVersion() : createRequire(import.meta.url)('../../sql-studio-frontend/package.json').version
   const installed = app.isPackaged && process.platform === 'win32' && existsSync(path.join(process.resourcesPath, 'sql-studio-installed'))
   const updater = installed ? new electronUpdater.NsisUpdater() : undefined
   if (updater) {
@@ -31,7 +33,7 @@ export function createDesktopUpdates(log) {
     const data = await response.json()
     const version = typeof data?.tag_name === 'string' && semver.valid(data.tag_name)
     if (!version || data.draft !== false || data.prerelease !== false || !Array.isArray(data.assets)) throw new Error('无效的 GitHub 正式发行版')
-    if (!semver.gt(version, app.getVersion())) return { status: 'upToDate' }
+    if (!semver.gt(version, currentVersion)) return { status: 'upToDate' }
 
     const installer = `SQL-Studio-Setup-${version}-${process.arch}.exe`
     const assets = data.assets.map((asset) => asset?.name)

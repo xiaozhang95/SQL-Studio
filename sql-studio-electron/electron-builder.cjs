@@ -1,6 +1,7 @@
 const { execFileSync } = require('node:child_process')
 const { access, copyFile, rename } = require('node:fs/promises')
 const path = require('node:path')
+const { version } = require('../sql-studio-frontend/package.json')
 
 // electron-builder 的辅助工具与 Electron 本体分别下载，两个镜像都需要设置。
 process.env.ELECTRON_BUILDER_BINARIES_MIRROR ||= 'https://npmmirror.com/mirrors/electron-builder-binaries/'
@@ -8,6 +9,7 @@ process.env.ELECTRON_BUILDER_BINARIES_MIRROR ||= 'https://npmmirror.com/mirrors/
 module.exports = {
   appId: 'com.sqlstudio.desktop',
   productName: 'SQL Studio',
+  extraMetadata: { version },
   icon: 'build/icons/icon.png',
   directories: { output: process.env.SQL_STUDIO_OUT || 'release', buildResources: 'build' },
   files: ['src/**/*', 'package.json'],

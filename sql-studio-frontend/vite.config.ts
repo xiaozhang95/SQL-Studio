@@ -3,13 +3,13 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-import desktopPackage from '../sql-studio-electron/package.json' with { type: 'json' }
+import frontendPackage from './package.json' with { type: 'json' }
 
 // https://vite.dev/config/
 export default defineConfig({
   appType: 'spa',
   plugins: [react()],
-  define: { 'import.meta.env.VITE_SQL_STUDIO_VERSION': JSON.stringify(desktopPackage.version) },
+  define: { 'import.meta.env.VITE_SQL_STUDIO_VERSION': JSON.stringify(frontendPackage.version) },
   // Swagger 独立构建，工作台无需加载文档 UI；Go 可直接提供同一份静态页面。
   build: {
     rollupOptions: {
