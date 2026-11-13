@@ -16,6 +16,6 @@ export interface AppearancePreferences {
   themePreference: ThemePreference
   fontSizePreference: FontSizePreference
   language?: Language
-  onAppearanceSave: (settings: AppearanceSettings) => Promise<void>
+  onAppearanceSave: (settings: AppearanceSettings) => Promise<boolean>
   themeReady?: boolean
 }

@@ -4,7 +4,7 @@
 
 聊天输入框使用 token.padding（默认 16px）作为底部留白，并按自身拖拽逻辑伸缩。
 
-ChatPage 组合会话列表、回复、思考过程、结果表和输入框。workspace 提供本地记录状态，dark 和 AppearancePreferences 沿用全局主题、字号和外观保存状态，onBack 返回工作区。系统设置入口位于顶栏右侧，保存期间在入口前显示 SaveStatus。布局、模型、外观和会话管理错误通过 PageHeader 在顶栏下方合并展示。会话内容加载、流式回复和弹窗错误均使用共享 ErrorNotice，展示于所属内容区域。所有请求和状态由 hooks 管理，Transcript 按 activeId 重建滚动状态。
+ChatPage 组合会话列表、回复、思考过程、结果表和输入框。workspace 提供本地记录状态，dark 和 AppearancePreferences 沿用全局主题、字号和外观保存状态，onBack 返回工作区。系统设置入口位于顶栏右侧，保存期间在入口前显示 SaveStatus。后台配置冲突后应用服务端最新配置。会话管理错误在 PageHeader 下方展示。会话内容加载、流式回复和弹窗错误均使用共享 ErrorNotice，展示于所属内容区域。所有请求和状态由 hooks 管理，Transcript 按 activeId 重建滚动状态。
 
 - [hooks](hooks/README.md)
 - [components](components/README.md)

@@ -18,19 +18,20 @@ export function useQueryHistory(connectionId: string) {
   const [histories, setHistories] = useState<Histories>({})
   const [ready, setReady] = useState(false)
   const [savedHistories, setSavedHistories] = useState<Histories | null>(null)
-  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [available, setAvailable] = useState(true)
   useEffect(() => {
     let stale = false
     void (restored ??= restoreHistories())
       .then((records) => {
-        if (!stale) setHistories(records)
-      })
-      .catch((reason) => {
         if (!stale) {
-          setAvailable(false)
-          setError(reason instanceof Error ? reason.message : '无法恢复执行历史')
+          setHistories(records)
+          setSavedHistories(records)
         }
+      })
+      .catch(() => {
+        restored = undefined
+        if (!stale) setAvailable(false)
       })
       .finally(() => {
         if (!stale) setReady(true)
@@ -40,28 +41,28 @@ export function useQueryHistory(connectionId: string) {
     }
   }, [])
   useEffect(() => {
-    if (!ready || !available) return
+    if (!ready || !available || savedHistories === histories) return
     let stale = false
     const timer = window.setTimeout(() => {
+      setSaving(true)
       void writeState('history', histories)
-        .then(() => {
-          restored = Promise.resolve(histories)
-          if (!stale) {
-            setSavedHistories(histories)
-            setError('')
-          }
+        .then((result) => {
+          const records = result.saved ? histories : normalizeHistories(result.data ?? {}, (sql) => sql)
+          restored = Promise.resolve(records)
+          if (!result.saved) setHistories(records)
+          if (!stale || !result.saved) setSavedHistories(records)
         })
-        .catch((reason) => {
-          if (!stale) {
-            setError(reason instanceof Error ? reason.message : '历史保存失败')
-          }
+        .catch(() => {})
+        .finally(() => {
+          if (!stale) setSaving(false)
         })
     }, 200)
     return () => {
       stale = true
       window.clearTimeout(timer)
+      setSaving(false)
     }
-  }, [ready, available, histories])
+  }, [ready, available, histories, savedHistories])
   const appendHistory = useCallback((item: HistoryItem) => {
     if (!item.connectionId) return
     setHistories((previous) => ({
@@ -79,5 +80,5 @@ export function useQueryHistory(connectionId: string) {
       )
   }, [])
   const pruneHistory = useCallback((connectionIds: readonly string[]) => setHistories((previous) => retainConnectionHistories(previous, connectionIds)), [])
-  return { histories, history: histories[connectionId] || [], appendHistory, clearHistory, pruneHistory, ready, saving: ready && available && savedHistories !== histories && !error, error }
+  return { histories, history: histories[connectionId] || [], appendHistory, clearHistory, pruneHistory, ready, saving }
 }

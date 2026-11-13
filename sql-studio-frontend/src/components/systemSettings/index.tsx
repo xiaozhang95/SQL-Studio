@@ -1,7 +1,6 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { Button, Modal, theme, Typography } from 'antd'
 
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
@@ -102,7 +101,6 @@ export default function SystemSettings(preferences: AppearancePreferences) {
             <Typography.Title level={5} style={{ marginTop: 0, marginBottom: token.marginLG }}>
               {sectionTitle}
             </Typography.Title>
-            <ErrorNotice error={settings.error} style={{ marginBottom: token.margin }} />
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
             {settings.section === SettingsSection.About && <About disabled={settings.busy} />}
             {settings.section === SettingsSection.Appearance && (

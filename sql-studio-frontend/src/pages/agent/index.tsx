@@ -13,7 +13,6 @@ import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 interface Props extends AppearancePreferences {
   themeMode: ThemeMode
   onBack: () => void
-  themeError?: string
 }
 export default function AgentPage(props: Props) {
   const { t } = useTranslation()
@@ -24,19 +23,16 @@ export default function AgentPage(props: Props) {
   if (!workspace.ready)
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: token.colorBgContainer }}>
-        <PageHeader
-          showDesktopTitle={false}
-          errors={[workspace.error, props.themeError]}
-          errorAction={workspace.error ? <Button onClick={workspace.retry}>{t('重试')}</Button> : undefined}
-          actions={<SystemSettings {...props} />}
-        >
+        <PageHeader showDesktopTitle={false} actions={<SystemSettings {...props} />}>
           <Button type="text" icon={<PlusOutlined />} disabled>
             {t('新建会话')}
           </Button>
           <SectionNavigation destination="workspace" onSwitch={props.onBack} />
         </PageHeader>
-        <div style={{ flex: 1, minHeight: 0 }}>{!workspace.error && <ContentLoading label={t('正在恢复Agent记录…')} />}</div>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ContentLoading label={t('正在恢复Agent记录…')} />
+        </div>
       </div>
     )
-  return <ChatPage workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
+  return <ChatPage key={workspace.epoch} workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
 }

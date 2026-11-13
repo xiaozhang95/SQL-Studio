@@ -341,6 +341,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     confirmWrite,
     decideConfirmation,
     busy: busy || loading || managing || Boolean(loadError),
+    inFlight: busy || loading || managing,
     deleteHistory,
     loading,
     error,

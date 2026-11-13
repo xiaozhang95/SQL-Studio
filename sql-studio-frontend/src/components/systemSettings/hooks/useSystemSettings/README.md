@@ -1,9 +1,9 @@
 # 系统设置草稿
 
-useSystemSettings(AppearancePreferences) 组合共享 useAISettings，管理 open、section、主题/字号/语言草稿、busy、canSave 与 error；show/close/save 和草稿 setter 供 SystemSettings 调用。language 缺省为 zh-CN。
+useSystemSettings(AppearancePreferences) 组合共享 useAISettings，管理 open、section、主题/字号/语言草稿、busy 和 canSave；show/close/save 和草稿 setter 供 SystemSettings 调用。language 缺省为 zh-CN。
 
 打开时恢复外观草稿并读取模型列表；切换导航不保存已完成的模型列表草稿，外观也不即时应用。添加模型子弹框仅把完成选择的记录合入列表，移除仅更改列表草稿。关闭取消读取并清理 Key，下次打开重新读取；外观恢复前禁止打开和保存。
 
-save 为唯一持久化入口：先保存变化的模型列表及当前使用项，再一次保存变化的主题、字号和语言；全部成功才关闭，保存期间禁止关闭和重复提交。未添加模型时可独立保存偏好，语言选择在保存成功前不影响全局文案。
+save 为唯一持久化入口：先保存变化的模型列表及当前使用项，再一次保存变化的主题、字号和语言；保存完成才关闭，保存期间禁止关闭和重复提交。未添加模型时可独立保存偏好，语言选择在保存成功前不影响全局文案。
 
-模型与外观分区无跨分区事务：模型成功而外观失败时明确提示，保留外观草稿；重试跳过模型已完成部分。任何失败不自动重试覆盖冲突。
+模型与外观独立保存。模型冲突后展示服务端最新列表；外观冲突后应用服务端最新偏好。请求失败时保留可编辑草稿。

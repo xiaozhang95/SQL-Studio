@@ -199,9 +199,14 @@ export const useWorkspace = (active = true) => {
     }),
     [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, restoringConnections, openedConnections, runningTabId]
   )
+  const queryRunning = Boolean(runningTabId)
+  const uiBlocked = objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
   const storage = useWorkspacePersistence(
     snapshot,
     (saved) => {
+      editorSession.discard(new Set(tabs.map(({ id }) => id)))
+      pendingDrafts.current.clear()
+      closedPages.current.clear()
       setTabs(saved.tabs)
       const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
       setActiveTab(active)
@@ -209,6 +214,8 @@ export const useWorkspace = (active = true) => {
       setRuns(saved.runs)
       setResultViews(saved.resultViews)
       setEditorLayouts(saved.editorLayouts)
+      objects.retainConnections(new Set(saved.openedConnections))
+      resetStructure()
       const restoredConnectionIds = new Set(saved.openedConnections)
       setExplorer({
         ...saved.explorer,
@@ -222,6 +229,7 @@ export const useWorkspace = (active = true) => {
       setRestoringConnections(saved.openedConnections)
     },
     {
+      busy: queryRunning || uiBlocked || Object.values(designerDirty).some(Boolean),
       hydrate: ({ id, sql, run, expectedSQL, expectedRun }) => {
         setTabs((previous) => previous.map((page) => (page.id === id && page.sql === expectedSQL ? { ...page, sql } : page)))
         setRuns((previous) => {
@@ -277,12 +285,10 @@ export const useWorkspace = (active = true) => {
       setExplorer((previous) => ({ ...previous, expanded: previous.expanded.map((key) => (key === oldKey ? newKey : key)), selected: previous.selected.map((key) => (key === oldKey ? newKey : key)) }))
     }
   })
-  const queryRunning = Boolean(runningTabId)
-  const uiBlocked = objectBusy || Boolean(objectManagement.dialog) || connectionGroups.saving || Boolean(connectionGroups.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
-  const tabBusy = queryRunning || uiBlocked
+  const tabsBlocked = uiBlocked || connectionGroups.saving || Boolean(connectionGroups.dialog)
+  const tabBusy = queryRunning || tabsBlocked
   const running = tabBusy || !storage.pageReady
   const workspaceReady = storage.ready && historyStore.ready
-  const storageError = storage.error || historyStore.error
   const saving = storage.saving || editorSession.pending || historyStore.saving
   useEffect(() => {
     if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
@@ -936,9 +942,8 @@ export const useWorkspace = (active = true) => {
     dataExport,
     workspaceReady,
     pageReady: storage.pageReady,
-    pageLoadError: storage.loadError,
+    pageLoadFailed: storage.pageLoadFailed,
     retryPage: storage.retryPage,
-    storageError,
     operationError,
     clearOperationError: () => setOperationError(''),
     saving,
@@ -955,7 +960,7 @@ export const useWorkspace = (active = true) => {
     resultViews,
     running,
     queryRunning,
-    uiBlocked,
+    uiBlocked: tabsBlocked,
     tabBusy,
     runningTabId,
     activeRunning,

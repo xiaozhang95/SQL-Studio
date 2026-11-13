@@ -49,6 +49,16 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
     }
   }, [])
 
+  const retainConnections = useCallback((ids: ReadonlySet<string>) => {
+    for (const [id, session] of sessions.current) {
+      if (ids.has(id)) continue
+      session.controller.abort()
+      sessions.current.delete(id)
+    }
+    setSnapshots((previous) => Object.fromEntries(Object.entries(previous).filter(([id]) => ids.has(id))))
+    setClosedDatabases({})
+  }, [])
+
   const closeConnection = useCallback(async (id: string) => {
     sessions.current.get(id)?.controller.abort()
     await setConnectionSession(id, false)
@@ -316,6 +326,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
 
   return {
     snapshots,
+    retainConnections,
     closedDatabases,
     closeDatabase,
     openConnection,

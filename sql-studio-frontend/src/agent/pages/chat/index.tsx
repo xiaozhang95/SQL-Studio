@@ -1,6 +1,6 @@
 import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Flex, Grid, theme } from 'antd'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
@@ -29,18 +29,20 @@ export function ChatPage({
   dark,
   workspace,
   onBack,
-  themeError,
   ...appearancePreferences
 }: AppearancePreferences & {
   dark: boolean
   workspace: WorkspaceController
   onBack: () => void
-  themeError?: string
 }) {
   const { t } = useTranslation()
 
   const operation = useOperationMode(workspace)
   const chat = useChat(workspace, operation.mode)
+  const { applyLatest } = workspace
+  useEffect(() => {
+    if (!chat.inFlight) applyLatest()
+  }, [chat.inFlight, applyLatest])
   const ai = useAISettings()
   const sidebar = useAgentSidebar()
   const { token } = theme.useToken()
@@ -66,10 +68,10 @@ export function ChatPage({
         showDesktopTitle={false}
         title={activeTitle}
         titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
-        errors={[workspace.error, chat.error, ai.error, themeError]}
+        errors={[chat.error]}
         actions={
           <>
-            <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label={t('正在保存对话…')} />
+            <SaveStatus saving={workspace.ready && workspace.saving} label={t('正在保存对话…')} />
             <SystemSettings {...appearancePreferences} />
           </>
         }

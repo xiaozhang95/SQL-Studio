@@ -1,6 +1,6 @@
 # 模型列表设置状态
 
-useAISettings() 返回 ready/loading/saving/busy/error、entries、activeId、connectionTests、changed/canSave，以及 show/close/save/upsertEntry/removeEntry/selectActive/testConnection。
+useAISettings() 返回 ready/loading/saving/busy、entries、activeId、connectionTests、changed/canSave，以及 show/close/save/upsertEntry/removeEntry/selectActive/testConnection。
 
 show 读取 AIConfigDocument。缺失分区 data=null 使用空列表，其余必须为 configurations 数组、activeId 字符串，每条包含 id/provider/model/modelName/configured。旧单条格式报错。已有记录但 activeId 为空时，列表选中首条作为默认草稿。modelName 与实际 model ID 分开保留。
 

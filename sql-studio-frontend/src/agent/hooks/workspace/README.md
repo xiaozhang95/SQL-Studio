@@ -1,5 +1,3 @@
 # useWorkspace
 
-初始化读取 Go 布局，返回 state/ready/error/saving、update(patch) 和 retry()。初次加载失败时由 retry 手动重新读取，成功加载后该入口停止重试。未完成读取时保持自动保存暂停。保存采用 400ms 防抖、单请求串行、服务端修订号和变更合并。冲突或写入错误暂停保存并显示原因。pagehide 或卸载时尽力 flush，强制关闭前应给自动保存时间。状态仅保存在 Go 文件和当前页面内存中。
-
-仅草稿变更先同步更新 current 内存快照，在防抖保存开始时发布 state，避免逐字触发整个聊天页面重渲染。实时输入由 Form 持有；会话、展开及模式变更仍即时发布。保存和离开页面读取最新内存快照。
+初始化读取 Go 布局，返回 state、ready、saving、update、applyLatest 和 epoch。加载失败时以本次会话默认布局继续使用，窗口重新聚焦后尝试读取。保存采用 400ms 防抖和单请求串行。409 后读取最新布局并暂停提交旧草稿，ChatPage 在会话空闲时调用 applyLatest，借助 epoch 重新初始化当前会话及草稿。pagehide 或卸载时尽力保存。

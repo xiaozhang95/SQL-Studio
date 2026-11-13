@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { readState, writeState } from '../src/services/userState/index.ts'
 
-test('server state is authoritative, namespace writes serialize, conflicts do not retry-overwrite', async () => {
+test('conflict returns the latest configuration, drops queued stale writes, and permits fresh edits', async () => {
   const original = globalThis.fetch
   let server = { schemaVersion: 1, revision: 2, updatedAt: '', data: { theme: 'dark' } }
   const calls = []
@@ -25,10 +25,14 @@ test('server state is authoritative, namespace writes serialize, conflicts do no
     assert.equal(server.revision, 4)
     assert.equal(server.data.theme, 'system')
     assert.equal((await readState('test-appearance', async () => ({}))).theme, 'system')
-    server.revision++
-    await assert.rejects(writeState('test-appearance', { theme: 'light' }), /冲突|conflict/)
-    assert.equal(server.data.theme, 'system')
+    server = { ...server, revision: 5, data: { theme: 'dark' } }
+    const conflicts = await Promise.all([writeState('test-appearance', { theme: 'light' }), writeState('test-appearance', { theme: 'system' })])
+    assert.deepEqual(conflicts, Array(2).fill({ saved: false, data: { theme: 'dark' } }))
+    assert.equal((await readState('test-appearance', async () => ({}))).theme, 'dark')
+    assert.equal(server.data.theme, 'dark')
     assert.equal(calls.filter((c) => c.options?.method === 'PUT').length, 3)
+    assert.deepEqual(await writeState('test-appearance', { theme: 'light' }), { saved: true })
+    assert.equal(server.data.theme, 'light')
   } finally {
     globalThis.fetch = original
   }
@@ -55,6 +59,8 @@ test('only missing documents initialize defaults; unavailable backend does not o
       /unavailable/
     )
     assert.equal(reads, 1)
+    globalThis.fetch = async () => new Response(JSON.stringify({ schemaVersion: 1, revision: 2, updatedAt: '', data: { version: 2 } }))
+    assert.deepEqual(await readState('test-unavailable', async () => ({})), { version: 2 })
   } finally {
     globalThis.fetch = original
   }

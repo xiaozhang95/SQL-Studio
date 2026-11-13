@@ -161,7 +161,6 @@ export default function QueryEditor({ model, themeMode }: Props) {
           <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
         </div>
       </div>
-      <ErrorNotice title={t('AI 设置保存失败')} error={ai.preferenceError} onClose={ai.clearPreferenceError} />
       <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearImportError} />
       <SQLOptimization model={ai} themeMode={themeMode} />
       <ErrorNotice title={t('连接加载失败')} error={objects.error} />

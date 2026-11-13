@@ -424,7 +424,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   关闭旧连接失败: 'Failed to close the previous connection',
   '正在保存工作区…': 'Saving workspace…',
   '正在恢复工作区…': 'Restoring workspace…',
-  标签内容加载失败: 'Failed to load tab content',
+  标签内容暂不可用: 'Tab content is temporarily unavailable',
   '正在加载当前标签…': 'Loading tab…',
   '点击顶部“新建查询”开始编写 SQL，双击左侧表查看数据；数据库结构列表可从右键菜单打开。':
     'Select “New query” above to write SQL. Double-click a table to view its data, or use the context menu to view database structure.',

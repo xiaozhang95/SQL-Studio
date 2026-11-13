@@ -2,7 +2,6 @@ import { CodeOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons'
 import { Button, Empty } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
-import ErrorNotice from '@/components/errorNotice'
 import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
@@ -30,16 +29,14 @@ type Props = AppearancePreferences & {
   onOpenAgent: () => void
   themeReady: boolean
   themeSaving: boolean
-  themeError?: string
   themeMode: ThemeMode
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ active, onOpenAgent, themeMode, themeError, themeReady, themeSaving, ...appearancePreferences }: Props) {
+export default function Workspace({ active, onOpenAgent, themeMode, themeReady, themeSaving, ...appearancePreferences }: Props) {
   const { t } = useTranslation()
 
   const model = useWorkspace(active)
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
-  const storageError = model.storageError || themeError
   return (
     <div
       className="app-shell"
@@ -48,14 +45,14 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
       <PageHeader
         desktopTitle={model.tab.id ? workspacePageTitle(model.tab) : 'SQL Studio'}
         desktopActive={active}
-        errors={[storageError, model.connectionError, model.operationError, model.connectionGroups.moveError, model.objectManagement.refreshError]}
+        errors={[model.connectionError, model.operationError, model.connectionGroups.moveError, model.objectManagement.refreshError]}
         onErrorClose={() => {
           model.clearOperationError()
           model.connectionGroups.clearMoveError()
           model.objectManagement.clearRefreshError()
         }}
         errorAction={
-          !storageError && model.connectionError ? (
+          model.connectionError ? (
             <Button loading={model.connectionLoading} onClick={() => void model.loadConnections()}>
               {t('重试')}
             </Button>
@@ -63,7 +60,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
         }
         actions={
           <>
-            <SaveStatus saving={model.workspaceReady && themeReady && (model.saving || themeSaving)} error={storageError} />
+            <SaveStatus saving={model.workspaceReady && (model.saving || themeSaving)} />
             <SystemSettings themeReady={themeReady} {...appearancePreferences} />
           </>
         }
@@ -121,8 +118,10 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
                 >
                   <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
                     {!model.pageReady ? (
-                      model.pageLoadError ? (
-                        <ErrorNotice title={t('标签内容加载失败')} error={model.pageLoadError} action={<Button onClick={model.retryPage}>{t('重试')}</Button>} />
+                      model.pageLoadFailed ? (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('标签内容暂不可用')}>
+                          <Button onClick={model.retryPage}>{t('重试')}</Button>
+                        </Empty>
                       ) : (
                         <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
                           <ContentLoading label={t('正在加载当前标签…')} />

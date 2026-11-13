@@ -159,12 +159,7 @@ export class WorkspaceStore {
     // Omit only the duplicate last result; selected/earlier result sets remain intact.
     const compact = Object.fromEntries(Object.entries(results).map(([id, run]) => [id, run ? { ...run, result: run.result === run.statements?.at(-1)?.result ? undefined : run.result } : null]))
     if (!this.needsCommit && !Object.keys(drafts).length && !Object.keys(results).length && JSON.stringify(index) === JSON.stringify(this.doc.index)) return
-    try {
-      this.doc = document(await request<unknown>('/workspace', { method: 'PUT', body: JSON.stringify({ revision: this.doc.revision, index, drafts, results: compact }) }))
-    } catch (error) {
-      if (error instanceof RequestError && error.status === 409) throw new RequestError('工作区保存冲突：其他窗口已更新本机配置。当前草稿尚未保存，请通过“恢复保存”导出副本并重新载入。', 409)
-      throw error
-    }
+    this.doc = document(await request<unknown>('/workspace', { method: 'PUT', body: JSON.stringify({ revision: this.doc.revision, index, drafts, results: compact }) }))
     this.needsCommit = false
     for (const [id, sql] of Object.entries(drafts)) {
       this.draftsLoaded.add(id)

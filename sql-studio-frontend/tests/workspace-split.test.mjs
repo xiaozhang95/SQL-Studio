@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
+import { setImmediate as settle } from 'node:timers/promises'
 
 import { WorkspaceStore } from '../src/services/workspace/index.ts'
+import { createLatestWriter } from '../src/utils/latestWriter/index.ts'
+import { RequestError } from '../src/utils/request/index.ts'
 
 function fixture() {
   const parts = new Map(),
@@ -78,14 +83,114 @@ test('stale windows retain their draft and revision after repeated conflicts', a
     const stale = b.snapshot({ id: 'p0', ...contents })
     stale.tabs[0] = { ...stale.tabs[0], sql: 'unsaved local draft' }
     await a.commit({ ...a.snapshot(), resultHeight: 999 })
-    await assert.rejects(b.commit(stale), /保存冲突/)
-    await assert.rejects(b.commit(stale), /保存冲突/)
+    await assert.rejects(b.commit(stale), { status: 409 })
+    await assert.rejects(b.commit(stale), { status: 409 })
     assert.equal(b.doc.revision, 1)
     assert.equal(stale.tabs[0].sql, 'unsaved local draft')
     assert.equal(f.doc().revision, 2)
   } finally {
     globalThis.fetch = old
   }
+})
+
+test('workbench silently restores the latest index after a conflict and saves new edits on that revision', async (t) => {
+  const f = fixture()
+  const old = globalThis.fetch
+  globalThis.fetch = f.fetch
+  t.after(() => {
+    globalThis.fetch = old
+  })
+  const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspacePersistence/index.ts', import.meta.url), 'utf8')
+  const code = stripTypeScriptTypes(source.slice(source.indexOf('type Content')).replace('export function', 'function'))
+  const slots = []
+  const timers = new Map()
+  let cursor = 0,
+    timerId = 0
+  const slot = (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = initial
+    return index
+  }
+  const effect = (callback, deps) => {
+    const index = slot({})
+    const previous = slots[index]
+    if (deps && previous.deps && deps.every((value, i) => Object.is(value, previous.deps[i]))) return
+    previous.cleanup?.()
+    slots[index] = { deps, cleanup: callback() }
+  }
+  const browser = Object.assign(new EventTarget(), {
+    setTimeout(callback) {
+      timers.set(++timerId, callback)
+      return timerId
+    },
+    clearTimeout: (id) => timers.delete(id)
+  })
+  const deps = {
+    WorkspaceStore,
+    RequestError,
+    createLatestWriter,
+    window: browser,
+    useLayoutEffect: effect,
+    useEffect: effect,
+    useCallback: (callback) => slots[slot(callback)],
+    useRef: (current) => slots[slot({ current })],
+    useState(initial) {
+      const index = slot(initial)
+      return [
+        slots[index],
+        (value) => {
+          slots[index] = typeof value === 'function' ? value(slots[index]) : value
+        }
+      ]
+    }
+  }
+  const hook = new Function(...Object.keys(deps), code + '\nreturn useWorkspacePersistence')(...Object.values(deps))
+  const external = await WorkspaceStore.open()
+  await external.commit({ ...external.snapshot(), activeTab: '' })
+  let snapshot = external.snapshot()
+  let busy = false
+  let restored = 0
+  const render = () => {
+    cursor = 0
+    return hook(
+      snapshot,
+      (latest) => {
+        restored++
+        snapshot = latest
+      },
+      { busy, hydrate() {}, evict: () => [] }
+    )
+  }
+  const tick = async () => {
+    const current = [...timers.values()]
+    timers.clear()
+    for (const callback of current) callback()
+    await settle()
+  }
+  render()
+  await settle()
+  assert.equal(render().ready, true)
+  await external.commit({ ...external.snapshot(), activeTab: '', resultHeight: 777 })
+  snapshot = { ...snapshot, resultHeight: 333 }
+  busy = true
+  render()
+  await tick()
+  assert.equal(render().saving, false)
+  assert.equal(restored, 1)
+  assert.equal(f.doc().index.resultHeight, 777)
+  busy = false
+  render()
+  await settle()
+  render()
+  assert.equal(restored, 2)
+  assert.equal(snapshot.resultHeight, 777)
+  await tick()
+  snapshot = { ...snapshot, resultHeight: 888 }
+  render()
+  await tick()
+  assert.equal(f.doc().index.resultHeight, 888)
+  assert.equal(JSON.parse(f.calls.at(-1).body).revision, 3)
+  slots.forEach((entry) => entry?.cleanup?.())
 })
 
 test('running batches save their index but upload cumulative results only on completion', async () => {

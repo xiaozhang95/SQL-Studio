@@ -4,7 +4,7 @@ export type Histories = Record<string, HistoryItem[]>
 export const historyLimit = 50
 
 /** 读取与追加共用当前历史数量上限。 */
-export function normalizeHistories(stored: Histories, cleanSQL: (sql: string) => string): Histories {
+export function normalizeHistories(stored: unknown, cleanSQL: (sql: string) => string): Histories {
   if (!stored || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('执行历史格式不受支持')
   return Object.fromEntries(
     Object.entries(stored).map(([id, records]) => {

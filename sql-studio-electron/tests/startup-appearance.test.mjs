@@ -17,7 +17,7 @@ test('固定亮暗主题优先于系统，system 与未配置时跟随系统', a
     ['system', true, true],
     ['system', false, false]
   ]) {
-    await writeFile(file, JSON.stringify({ schemaVersion: 1, data: { theme: preference } }))
+    await writeFile(file, JSON.stringify({ schemaVersion: 1, data: { theme: preference, fontSize: 'standard', language: 'zh-CN' } }))
     assert.deepEqual(await readStartupAppearance(directory, systemDark), { preference, dark })
   }
 })
@@ -29,8 +29,9 @@ test('损坏、未知版本或非法主题只回退开屏显示，保留原文�
   for (const content of [
     'invalid',
     'null',
-    '{"schemaVersion":2,"data":{"theme":"dark"}}',
-    '{"schemaVersion":1,"data":{"theme":"unknown"}}',
+    '{"schemaVersion":2,"data":{"theme":"dark","fontSize":"standard","language":"zh-CN"}}',
+    '{"schemaVersion":1,"data":{"theme":"unknown","fontSize":"standard","language":"zh-CN"}}',
+    '{"schemaVersion":1,"data":{"theme":"dark","fontSize":"standard"}}',
     ' '.repeat(65537)
   ]) {
     await writeFile(file, content)

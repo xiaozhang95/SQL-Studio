@@ -5,6 +5,8 @@ import { setImmediate as settle } from 'node:timers/promises'
 
 import ts from 'typescript'
 
+import { RequestError } from '../src/utils/request/index.ts'
+
 function harness(modulePath, failWrite = false) {
   const slots = [],
     effects = []
@@ -48,7 +50,7 @@ function harness(modulePath, failWrite = false) {
     if (options.method === 'PUT') {
       const body = JSON.parse(options.body)
       writes.push(body)
-      if (failWrite) throw new Error('配置保存冲突')
+      if (failWrite) throw new RequestError('配置保存冲突', 409)
       assert.equal(body.revision, document.revision)
       const data = { ...document.data, ...body.data }
       if (body.data.configurations) {
@@ -71,7 +73,7 @@ function harness(modulePath, failWrite = false) {
   const dependencies = {
     react,
     '@/ai': { aiProviders: [{ value: 'deepseek' }], getAIAdapter: () => adapter, isAIProvider: (value) => value === 'deepseek' },
-    '@/utils/request': { request },
+    '@/utils/request': { request, RequestError },
     '@/ai/typings': { maxAIConfigurations: 64, aiModelsSection: 'ai-models' },
     '@/databases': { getDatabaseAdapter: () => ({}) },
     '../../utils/aiCompletion': { aiCompletion: () => [] },
@@ -155,7 +157,6 @@ test('首个添加的模型为默认，列表可切换，移除默认后选剩�
     f.document = { revision: 0, data: null }
     await f.render().show()
     assert.equal(f.render().ready, true)
-    assert.equal(f.render().error, '')
     assert.equal(f.render().upsertEntry(entry('a', '', 'fixture-key-a')), false)
     assert.equal(f.render().upsertEntry(entry('a', 'deepseek-flash', 'fixture-key-a')), true)
     assert.equal(f.render().upsertEntry(entry('b', 'deepseek-v4-pro', 'fixture-key-b')), true)
@@ -187,7 +188,7 @@ test('旧单条格式不转换为列表', async () => {
     await f.render().show()
     assert.equal(f.render().ready, false)
     assert.equal(f.render().entries.length, 0)
-    assert.match(f.render().error, /配置列表无效/)
+    assert.equal(f.writes.length, 0)
   } finally {
     f.close()
   }
@@ -245,7 +246,7 @@ test('补全开关按最新修订保存，保留已选模型并广播共享配�
   }
 })
 
-test('补全保存失败保留原偏好并显示错误', async () => {
+test('补全保存冲突后自动刷新服务器偏好', async () => {
   const f = harness('../src/pages/workspace/hooks/useAISQL/index.ts', true)
   const args = [{ connectionId: '', database: '', table: '', sql: '' }, { snapshots: {} }, false]
   try {
@@ -255,8 +256,7 @@ test('补全保存失败保留原偏好并显示错误', async () => {
     await model.changeCompletion(true)
     model = f.render(...args)
     assert.equal(model.enabled, false)
-    assert.match(model.preferenceError, /配置保存冲突/)
-    assert.equal(f.notifications.length, 0)
+    assert.equal(f.notifications.length, 1)
   } finally {
     f.close()
   }

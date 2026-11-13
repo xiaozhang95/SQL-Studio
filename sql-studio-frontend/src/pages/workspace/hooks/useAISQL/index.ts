@@ -36,7 +36,6 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const controller = useRef<AbortController | null>(null)
   const preferenceRequest = useRef<AbortController | null>(null)
   const [preferenceSaving, setPreferenceSaving] = useState(false)
-  const [preferenceError, setPreferenceError] = useState('')
   useEffect(() => () => preferenceRequest.current?.abort(), [])
 
   useEffect(() => {
@@ -113,7 +112,6 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     const pending = new AbortController()
     preferenceRequest.current = pending
     setPreferenceSaving(true)
-    setPreferenceError('')
     try {
       const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, { signal: pending.signal })
       if (!doc.data || !Array.isArray(doc.data.configurations)) throw new Error('请先添加 AI 模型')
@@ -129,12 +127,14 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
           }
         })
       })
-      if (!pending.signal.aborted) window.dispatchEvent(new Event('ai-settings-saved'))
-    } catch (cause) {
-      if (!pending.signal.aborted) setPreferenceError(cause instanceof Error ? cause.message : 'AI 设置保存失败')
+    } catch {
+      // Refresh the applied preference below even if a concurrent change won the write.
     } finally {
       if (preferenceRequest.current === pending) preferenceRequest.current = null
-      if (!pending.signal.aborted) setPreferenceSaving(false)
+      if (!pending.signal.aborted) {
+        window.dispatchEvent(new Event('ai-settings-saved'))
+        setPreferenceSaving(false)
+      }
     }
   }
   const changeCompletion = (value: boolean) => (configured ? updatePreference({ completionEnabled: value }) : undefined)
@@ -192,8 +192,6 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     enabled,
     changeCompletion,
     preferenceSaving,
-    preferenceError,
-    clearPreferenceError: () => setPreferenceError(''),
     completionLoading,
     extensions,
     error,

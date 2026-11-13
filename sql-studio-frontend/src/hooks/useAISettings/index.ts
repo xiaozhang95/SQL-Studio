@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getAIAdapter, isAIProvider } from '@/ai'
 import { aiModelsSection, maxAIConfigurations } from '@/ai/typings'
 import type { AIConfigDocument, AIConfiguration, AISettingsEntry } from '@/ai/typings'
-import { request } from '@/utils/request'
+import { request, RequestError } from '@/utils/request'
 
 const snapshot = (entries: readonly AIConfiguration[], activeId: string) =>
   JSON.stringify({ entries: entries.map(({ id, provider, model, modelName }) => ({ id, provider, model, modelName })), activeId })
@@ -13,7 +13,6 @@ export function useAISettings() {
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
   const [entries, setEntries] = useState<AISettingsEntry[]>([])
   const [activeId, setActiveId] = useState('')
   const [baseline, setBaseline] = useState<{ signature: string; entries: ReadonlyMap<string, Pick<AIConfiguration, 'provider' | 'model'>> }>({
@@ -104,7 +103,6 @@ export function useAISettings() {
     readRequest.current = controller
     setReady(false)
     setLoading(true)
-    setError('')
     setEntries([])
     setActiveId('')
     setConnectionTests({})
@@ -112,8 +110,8 @@ export function useAISettings() {
       const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, { signal: controller.signal })
       if (session !== generation.current || controller.signal.aborted) return
       receive(doc)
-    } catch (cause) {
-      if (session === generation.current && !controller.signal.aborted) setError(cause instanceof Error ? cause.message : '读取失败')
+    } catch {
+      // Keep model editing disabled until the current configuration can be read.
     } finally {
       if (session === generation.current && !controller.signal.aborted) setLoading(false)
     }
@@ -134,7 +132,6 @@ export function useAISettings() {
     cancelTest(entry.id)
     setEntries((values) => (existing ? values.map((row) => (row.id === entry.id ? entry : row)) : [...values, entry]))
     if (!activeId) setActiveId(entry.id)
-    setError('')
     return true
   }
   const removeEntry = (id: string) => {
@@ -143,12 +140,10 @@ export function useAISettings() {
     const remaining = entries.filter((entry) => entry.id !== id)
     setEntries(remaining)
     if (activeId === id) setActiveId(remaining[0]?.id ?? '')
-    setError('')
   }
   const selectActive = (id: string) => {
     if (!ready || pending.current || !entries.some((entry) => entry.id === id)) return
     setActiveId(id)
-    setError('')
   }
   const testConnection = async (id: string) => {
     const entry = entries.find((value) => value.id === id)
@@ -186,7 +181,6 @@ export function useAISettings() {
     if (pending.current || !canSave) return false
     pending.current = true
     setSaving(true)
-    setError('')
     try {
       const doc = await request<AIConfigDocument>('/state/' + aiModelsSection, {
         method: 'PUT',
@@ -204,12 +198,16 @@ export function useAISettings() {
       window.dispatchEvent(new Event('ai-settings-saved'))
       return true
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '保存失败')
+      if (cause instanceof RequestError && cause.status === 409) {
+        pending.current = false
+        await show()
+        window.dispatchEvent(new Event('ai-settings-saved'))
+      }
       return false
     } finally {
       pending.current = false
       setSaving(false)
     }
   }
-  return { ready, loading, saving, busy: saving, error, entries, activeId, selectActive, connectionTests, testConnection, upsertEntry, removeEntry, changed, canSave, show, close, save }
+  return { ready, loading, saving, busy: saving, entries, activeId, selectActive, connectionTests, testConnection, upsertEntry, removeEntry, changed, canSave, show, close, save }
 }

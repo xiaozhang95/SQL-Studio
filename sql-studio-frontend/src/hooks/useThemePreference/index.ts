@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import 'dayjs/locale/zh-cn'
 
 import { readState, writeState } from '@/services/userState'
-import type { AppearanceSettings, FontSizePreference, Language, ThemePreference } from '@/typings/theme'
+import type { AppearanceSettings } from '@/typings/theme'
 
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
 const subscribeTheme = (listener: () => void) => {
@@ -12,53 +12,49 @@ const subscribeTheme = (listener: () => void) => {
   return () => systemTheme.removeEventListener('change', listener)
 }
 const getSystemTheme = () => systemTheme.matches
+const defaults = { theme: 'system', fontSize: 'standard', language: 'zh-CN' } satisfies AppearanceSettings
+
+function isAppearance(value: unknown): value is AppearanceSettings {
+  if (!value || typeof value !== 'object') return false
+  const saved = value as Partial<AppearanceSettings>
+  return (
+    (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system') &&
+    (saved.fontSize === 'small' || saved.fontSize === 'standard' || saved.fontSize === 'large') &&
+    (saved.language === 'zh-CN' || saved.language === 'en-US')
+  )
+}
 
 /** 统一保存用户偏好，并在首帧绘制前同步主题，避免闪烁。 */
 export const useThemePreference = () => {
-  const [preference, setPreference] = useState<ThemePreference>('system')
-  const [fontSizePreference, setFontSizePreference] = useState<FontSizePreference>('standard')
-  const [language, setLanguage] = useState<Language>('zh-CN')
+  const [{ theme: preference, fontSize: fontSizePreference, language }, setAppearance] = useState<AppearanceSettings>(defaults)
   const [ready, setReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const savePending = useRef(false)
-  const [error, setError] = useState('')
   useEffect(() => {
     let stale = false
-    void readState<AppearanceSettings>('appearance', async () => ({ theme: 'system', fontSize: 'standard', language: 'zh-CN' }))
+    void readState<unknown>('appearance', async () => defaults)
       .then((saved) => {
-        if (!['light', 'dark', 'system'].includes(saved.theme)) throw new Error('外观配置格式不受支持')
-        if (saved.fontSize !== 'small' && saved.fontSize !== 'standard' && saved.fontSize !== 'large') throw new Error('界面字号配置格式不受支持')
-        const savedLanguage = saved.language === undefined ? 'zh-CN' : saved.language
-        if (savedLanguage !== 'zh-CN' && savedLanguage !== 'en-US') throw new Error('语言配置格式不受支持')
-        if (!stale) {
-          setPreference(saved.theme)
-          setFontSizePreference(saved.fontSize)
-          setLanguage(savedLanguage)
-          setReady(true)
-        }
+        if (!stale && isAppearance(saved)) setAppearance(saved)
       })
-      .catch((reason) => {
-        if (!stale) setError(reason instanceof Error ? reason.message : '外观配置读取失败')
+      .catch(() => {})
+      .finally(() => {
+        if (!stale) setReady(true)
       })
     return () => {
       stale = true
     }
   }, [])
   const savePreferences = async (settings: AppearanceSettings) => {
-    if (!ready) throw new Error('外观配置尚未读取')
-    if (savePending.current) throw new Error('外观配置正在保存')
+    if (!ready || savePending.current) return false
     savePending.current = true
     setSaving(true)
-    setError('')
     try {
-      await writeState('appearance', settings)
-      setPreference(settings.theme)
-      setFontSizePreference(settings.fontSize)
-      setLanguage(settings.language)
-    } catch (reason) {
-      const cause = reason instanceof Error ? reason : new Error('外观配置保存失败')
-      setError(cause.message)
-      throw cause
+      await readState<unknown>('appearance', async () => defaults)
+      const result = await writeState('appearance', settings)
+      setAppearance(result.saved ? settings : isAppearance(result.data) ? result.data : defaults)
+      return true
+    } catch {
+      return false
     } finally {
       savePending.current = false
       setSaving(false)
@@ -80,7 +76,6 @@ export const useThemePreference = () => {
     language,
     savePreferences,
     mode,
-    error,
     ready,
     saving
   }

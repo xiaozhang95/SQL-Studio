@@ -84,7 +84,7 @@ dataExport 独立管理导出请求和文件；数据库/Schema/表菜单显式�
 
 导出前按目标连接的 connected 状态和 closedDatabases 复核；未连接或数据库已关闭时不启动导出，不以当前查询页范围替代目标范围。
 
-工作区使用分片持久化：非活动且已保存的页面仅保留标签/范围/布局；pageReady/pageLoadError/retryPage 控制当前内容等待与恢复。hydrate 按预期SQL和结果身份合并，不覆盖读取期间的新执行或已关闭页面；evict 只删除匹配已提交版本的非活动内容，保留活动/运行窗口。closeScope 在提示保存前按需读取范围内草稿，不读其他结果，防止把卸载后的占位空字符串当作丢失草稿。加载与恢复均不自动执行SQL。
+工作区使用分片持久化：非活动且已保存的页面仅保留标签/范围/布局；pageReady/pageLoadFailed/retryPage 控制当前内容等待与恢复。hydrate 按预期SQL和结果身份合并，不覆盖读取期间的新执行或已关闭页面；evict 只删除匹配已提交版本的非活动内容，保留活动/运行窗口。closeScope 在提示保存前按需读取范围内草稿，不读其他结果，防止把卸载后的占位空字符串当作丢失草稿。加载与恢复均不自动执行SQL。
 
 编辑会话由useWorkspaceEditor持有，草稿与位置250ms批量同步；runSQL/exportCurrentSQL/getCurrentSQL在操作时读取最新编辑内容，选区/右键仍使用当前选区快照。切页和范围关闭先同步，关闭页取消缓冲；关闭其他页使用函数式更新，保留活动页刚输入的SQL。pendingDrafts只保护React提交前的短暂草稿，避免持久化回包在快速切页间隙卸载新内容。QueryEditor仅按页面重挂载，范围变化重配补全且不清空当前文本。
 
@@ -94,6 +94,6 @@ getEditorHistory(id) 提供会话内该页撤销/重做的初始化扩展；切�
 
 失效schema及对象标题迁移改由reconcileWorkspacePages在提交前统一校正当前组件状态；未知元数据和对象操作期保留范围，无变化返回原引用，校正稳定后不重复更新，不再通过Effect级联setTabs。
 
-连接列表、批次执行、快捷键分别归属 useWorkspaceConnections/useQueryExecution/useQueryShortcut，组合根负责页面范围和跨模块协调。queryRunning 与 uiBlocked 区分执行及界面占用，树显示禁用状态和原因。执行中切页后顶栏保留取消入口。保存失败不推进旧 revision；加载或保存失败仅保留错误状态，不提供恢复弹窗。
+连接列表、批次执行、快捷键分别归属 useWorkspaceConnections/useQueryExecution/useQueryShortcut，组合根负责页面范围和跨模块协调。queryRunning 与 uiBlocked 区分执行及界面占用，树显示禁用状态和原因。执行中切页后顶栏保留取消入口。工作区配置冲突后自动采用服务端最新快照，重新加载活动标签。
 
 查询页 tabs/runs/resultViews/editorLayouts、运行请求及取消边界集中到 useQuerySession；useWorkspace 继续负责范围关闭、对象操作与上述模块的组合协调，不再直接拥有这些底层状态。

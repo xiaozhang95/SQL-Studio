@@ -21,7 +21,7 @@ const AgentPage = lazy(() => import('@/pages/agent'))
 /** 动态弹框使用 AntApp 上下文，确保亮暗主题一致。 */
 export default function App() {
   const section = useAppSection()
-  const { preference, fontSizePreference, language, savePreferences, mode, error, ready, saving } = useThemePreference()
+  const { preference, fontSizePreference, language, savePreferences, mode, ready, saving } = useThemePreference()
   const themeConfig = useMemo(() => createThemeConfig(mode, fontSizePreference), [mode, fontSizePreference])
   const locale = useMemo(() => (language === 'en-US' ? { ...enUS, ...xEnUS } : { ...zhCN, ...xZhCN }), [language])
   const appearancePreferences = {
@@ -35,14 +35,14 @@ export default function App() {
     <LanguageContext.Provider value={language}>
       <XProvider locale={locale} componentSize={appearance.controlSize} modal={modalDefaults} tag={{ variant: 'solid' }} theme={themeConfig}>
         <AntApp message={{ styles: { root: { display: 'none' } } }}>
-          {ready || error ? (
+          {ready ? (
             <SidebarWidthProvider>
               <div style={{ display: section.agent ? 'none' : undefined }}>
-                <Workspace active={!section.agent} onOpenAgent={section.openAgent} {...appearancePreferences} themeSaving={saving} themeError={error} themeMode={mode} />
+                <Workspace active={!section.agent} onOpenAgent={section.openAgent} {...appearancePreferences} themeSaving={saving} themeMode={mode} />
               </div>
               {section.agent && (
                 <Suspense fallback={null}>
-                  <AgentPage onBack={section.openWorkspace} themeMode={mode} themeError={error} {...appearancePreferences} />
+                  <AgentPage onBack={section.openWorkspace} themeMode={mode} {...appearancePreferences} />
                 </Suspense>
               )}
             </SidebarWidthProvider>

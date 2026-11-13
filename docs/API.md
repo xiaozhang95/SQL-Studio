@@ -46,7 +46,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 
 JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言范围与 q 权重，未提供或无法匹配时默认简体中文。响应以 Content-Language 标明所选语言，并设置 Vary: Accept-Language。应用错误、导出流错误、Agent 系统状态、停止与继续确认提示按请求语言返回；读取历史时只转换响应中的系统事件。SQL、字段与行数据、用户命名、模型回答及未知的数据库/系统原始错误保留原文，状态码、字段名和持久化格式不随语言变化。
 
-`appearance` 分区的 data 为 `{theme, fontSize, language}`，theme 支持 system/light/dark，fontSize 支持 small/standard/large，language 支持 zh-CN/en-US。前端读取既有配置时，缺少 language 按 zh-CN 展示；主题、字号和语言通过同一次显式保存提交，成功后应用。状态接口保持原有版本化信封和修订冲突约定，存储说明见 [用户状态配置](USER_STATE.md)。
+`appearance` 分区的 data 为 `{theme, fontSize, language}`，theme 支持 system/light/dark，fontSize 支持 small/standard/large，language 支持 zh-CN/en-US。前端只应用包含三个有效值的当前格式；主题、字号和语言通过同一次显式保存提交。状态接口保持原有版本化信封和修订冲突约定，存储说明见 [用户状态配置](USER_STATE.md)。
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
