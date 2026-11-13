@@ -24,9 +24,10 @@ import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
-import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
+import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import { objectTreeLayout } from '../../constant/layout'
 import { useTreeViewport } from '../../hooks/useTreeViewport'
@@ -46,6 +47,8 @@ type Props = {
 
 /** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
 export default function DatabaseExplorer({ model }: Props) {
+  const { t } = useTranslation()
+
   const { connections, connectionGroups, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
   // Keep menu content mounted while closing; the trigger alone owns its visibility.
@@ -60,9 +63,10 @@ export default function DatabaseExplorer({ model }: Props) {
         search,
         Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
         connectionGroups.groups,
-        objects.closedDatabases
+        objects.closedDatabases,
+        (group) => connectionGroupLabel(group, t)
       ),
-    [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups]
+    [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups, t]
   )
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
@@ -72,9 +76,9 @@ export default function DatabaseExplorer({ model }: Props) {
     if (node.kind === 'group')
       return {
         items: [
-          { key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked },
-          { key: 'rename-group', label: '重命名分组', icon: <EditOutlined />, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup },
-          { key: 'delete-group', label: '删除分组', icon: <DeleteOutlined />, danger: true, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup }
+          { key: 'create-group', label: t('新建分组'), icon: <PlusOutlined />, disabled: running || connectionGroups.blocked },
+          { key: 'rename-group', label: t('重命名分组'), icon: <EditOutlined />, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup },
+          { key: 'delete-group', label: t('删除分组'), icon: <DeleteOutlined />, danger: true, disabled: running || connectionGroups.blocked || node.owner === defaultConnectionGroup }
         ],
         onClick: ({ key, domEvent }) => {
           domEvent.stopPropagation()
@@ -92,98 +96,98 @@ export default function DatabaseExplorer({ model }: Props) {
       const status = objects.snapshots[id]?.status
       const connected = status === 'connected'
       items = [
-        { key: 'create-database', label: '新建数据库', icon: <PlusOutlined />, disabled: !connected },
-        ...(!connected && status !== 'loading' ? [{ key: 'open', label: '打开连接', icon: <LinkOutlined /> }] : []),
-        ...(status ? [{ key: 'close', label: '关闭连接', icon: <CloseOutlined /> }] : []),
+        { key: 'create-database', label: t('新建数据库'), icon: <PlusOutlined />, disabled: !connected },
+        ...(!connected && status !== 'loading' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
+        ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
         { type: 'divider' },
-        { key: 'edit', label: '编辑连接', icon: <EditOutlined /> },
+        { key: 'edit', label: t('编辑连接'), icon: <EditOutlined /> },
         {
           key: 'move-group',
-          label: '移动到分组',
+          label: t('移动到分组'),
           icon: <FolderOutlined />,
           disabled: connectionGroups.blocked,
-          children: connectionGroups.groups.map((name) => ({ key: `move-group:${name}`, label: name, disabled: connectionGroupName(node.connection?.group) === name }))
+          children: connectionGroups.groups.map((name) => ({ key: `move-group:${name}`, label: connectionGroupLabel(name, t), disabled: connectionGroupName(node.connection?.group) === name }))
         },
-        { key: 'delete', label: '删除连接', icon: <DeleteOutlined />, danger: true },
-        { key: 'refresh', label: '刷新', icon: <ReloadOutlined />, disabled: !connected }
+        { key: 'delete', label: t('删除连接'), icon: <DeleteOutlined />, danger: true },
+        { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined />, disabled: !connected }
       ]
     } else if (node.kind === 'schema') {
       items = [
-        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
+        { key: 'new', label: t('新建查询'), icon: <CodeOutlined /> },
         ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema)
           ? [
-              { key: 'create-schema', label: '新建 Schema', icon: <PlusOutlined /> },
-              { key: 'rename-schema', label: '重命名 Schema', icon: <EditOutlined /> },
-              { key: 'delete-schema', label: '删除 Schema', icon: <DeleteOutlined />, danger: true }
+              { key: 'create-schema', label: t('新建 Schema'), icon: <PlusOutlined /> },
+              { key: 'rename-schema', label: t('重命名 Schema'), icon: <EditOutlined /> },
+              { key: 'delete-schema', label: t('删除 Schema'), icon: <DeleteOutlined />, danger: true }
             ]
           : []),
-        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
+        { key: 'create-table', label: t('新建表'), icon: <PlusOutlined /> },
+        { key: 'tables', label: t('查看表列表'), icon: <TableOutlined /> },
         {
           key: 'export',
-          label: '转储文件',
+          label: t('转储文件'),
           icon: <ExportOutlined />,
           disabled: exportDisabled,
           children: [
-            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
-            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
+            { key: 'dump', label: t('仅结构'), icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: t('结构和数据'), icon: <TableOutlined /> }
           ]
         },
-        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+        { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'database') {
       items = [
-        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-        exportDisabled ? { key: 'open', label: '打开数据库', icon: <LinkOutlined /> } : { key: 'close', label: '关闭数据库', icon: <CloseOutlined /> },
+        { key: 'new', label: t('新建查询'), icon: <CodeOutlined /> },
+        exportDisabled ? { key: 'open', label: t('打开数据库'), icon: <LinkOutlined /> } : { key: 'close', label: t('关闭数据库'), icon: <CloseOutlined /> },
         { type: 'divider' },
-        { key: 'edit', label: '编辑数据库', icon: <EditOutlined /> },
-        { key: 'create', label: '新建数据库', icon: <PlusOutlined /> },
-        { key: 'delete', label: '删除数据库', icon: <DeleteOutlined />, danger: true },
+        { key: 'edit', label: t('编辑数据库'), icon: <EditOutlined /> },
+        { key: 'create', label: t('新建数据库'), icon: <PlusOutlined /> },
+        { key: 'delete', label: t('删除数据库'), icon: <DeleteOutlined />, danger: true },
         { type: 'divider' },
-        ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema) ? [{ key: 'create-schema', label: '新建 Schema', icon: <PlusOutlined /> }] : []),
-        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-        { key: 'tables', label: engine.explorer ? '查看 Schema 列表' : '查看表列表', icon: <TableOutlined /> },
+        ...(engine.simpleObjects?.actions.includes(ObjectAction.CreateSchema) ? [{ key: 'create-schema', label: t('新建 Schema'), icon: <PlusOutlined /> }] : []),
+        { key: 'create-table', label: t('新建表'), icon: <PlusOutlined /> },
+        { key: 'tables', label: engine.explorer ? t('查看 Schema 列表') : t('查看表列表'), icon: <TableOutlined /> },
         {
           key: 'export',
-          label: '转储文件',
+          label: t('转储文件'),
           icon: <ExportOutlined />,
           disabled: exportDisabled,
           children: [
-            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
-            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined /> }
+            { key: 'dump', label: t('仅结构'), icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: t('结构和数据'), icon: <TableOutlined /> }
           ]
         },
-        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+        { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'tables') {
       items = [
-        { key: 'create-table', label: '新建表', icon: <PlusOutlined /> },
-        { key: 'tables', label: '查看表列表', icon: <TableOutlined /> },
-        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+        { key: 'create-table', label: t('新建表'), icon: <PlusOutlined /> },
+        { key: 'tables', label: t('查看表列表'), icon: <TableOutlined /> },
+        { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined /> }
       ]
     } else if (node.kind === 'table') {
       items = [
-        { key: 'new', label: '新建查询', icon: <CodeOutlined /> },
-        { key: 'data', label: '打开表', icon: <TableOutlined /> },
-        { key: 'design', label: '设计表', icon: <EditOutlined />, disabled: node.view },
-        { key: 'create', label: '新建表', icon: <PlusOutlined /> },
-        { key: 'structure', label: '查询结构', icon: <ProfileOutlined /> },
-        { key: 'ddl', label: '查看 DDL', icon: <FileTextOutlined /> },
+        { key: 'new', label: t('新建查询'), icon: <CodeOutlined /> },
+        { key: 'data', label: t('打开表'), icon: <TableOutlined /> },
+        { key: 'design', label: t('设计表'), icon: <EditOutlined />, disabled: node.view },
+        { key: 'create', label: t('新建表'), icon: <PlusOutlined /> },
+        { key: 'structure', label: t('查询结构'), icon: <ProfileOutlined /> },
+        { key: 'ddl', label: t('查看 DDL'), icon: <FileTextOutlined /> },
         { type: 'divider' },
-        { key: 'delete', label: node.view ? '删除视图' : '删除表', icon: <DeleteOutlined />, danger: true },
-        { key: 'truncate', label: '清空表', icon: <ClearOutlined />, danger: true, disabled: node.view },
-        { key: 'rename', label: '重命名', icon: <EditOutlined /> },
+        { key: 'delete', label: node.view ? t('删除视图') : t('删除表'), icon: <DeleteOutlined />, danger: true },
+        { key: 'truncate', label: t('清空表'), icon: <ClearOutlined />, danger: true, disabled: node.view },
+        { key: 'rename', label: t('重命名'), icon: <EditOutlined /> },
         {
           key: 'export',
-          label: '转储文件',
+          label: t('转储文件'),
           icon: <ExportOutlined />,
           disabled: exportDisabled,
           children: [
-            { key: 'dump', label: '仅结构', icon: <FileTextOutlined /> },
-            { key: 'dump-data', label: '结构和数据', icon: <TableOutlined />, disabled: node.view }
+            { key: 'dump', label: t('仅结构'), icon: <FileTextOutlined /> },
+            { key: 'dump-data', label: t('结构和数据'), icon: <TableOutlined />, disabled: node.view }
           ]
         },
-        { key: 'refresh', label: '刷新', icon: <ReloadOutlined /> }
+        { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined /> }
       ]
     } else return undefined
     if (!engine.objects) {
@@ -245,7 +249,9 @@ export default function DatabaseExplorer({ model }: Props) {
       case 'database':
         return (
           <DatabaseFilled
-            aria-label={node.databaseState === 'open' ? '数据库已打开' : node.databaseState === 'opening' ? '数据库正在打开' : node.databaseState === 'error' ? '数据库打开失败' : '数据库未打开'}
+            aria-label={
+              node.databaseState === 'open' ? t('数据库已打开') : node.databaseState === 'opening' ? t('数据库正在打开') : node.databaseState === 'error' ? t('数据库打开失败') : t('数据库未打开')
+            }
             style={{
               color:
                 node.databaseState === 'open'
@@ -280,20 +286,22 @@ export default function DatabaseExplorer({ model }: Props) {
     else if (node.retry === 'table') void objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
   }
   function renderTitle(node: ExplorerNode) {
+    const generated = ['tables', 'views', 'columns', 'indexes', 'empty-columns', 'empty-indexes', 'empty-tables', 'error', 'detail-error'].includes(node.kind)
+    const title = node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
     // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
     return (
       <span
         className={node.connection ? `connection-tree-label object-context-target ${node.status}` : 'object-context-target'}
-        title={node.tooltip}
+        title={node.kind === 'group' ? title : generated && node.tooltip ? t(node.tooltip) : node.tooltip}
         style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden', color: node.retry ? 'var(--ant-color-error-text)' : 'inherit' }}
       >
         <span className={node.connection ? `connection-tree-icon ${node.status}` : undefined} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
           {icon(node)}
         </span>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.title}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
         {node.retry && (
           <ToolbarButton
-            label="重试加载"
+            label={t('重试加载')}
             icon={<ReloadOutlined />}
             size="small"
             disabled={running}
@@ -316,9 +324,9 @@ export default function DatabaseExplorer({ model }: Props) {
         prefix={<SearchOutlined />}
         value={search}
         onChange={(event) => updateExplorer({ search: event.target.value })}
-        placeholder="搜索连接 / 库 / 表"
+        placeholder={t('搜索连接 / 库 / 表')}
         allowClear
-        aria-label="搜索数据库对象"
+        aria-label={t('搜索数据库对象')}
       />
       <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
         <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
@@ -327,7 +335,7 @@ export default function DatabaseExplorer({ model }: Props) {
             onContextMenuCapture={(event) => {
               if (!(event.target as HTMLElement).closest('.ant-tree-treenode'))
                 setContextMenu({
-                  items: [{ key: 'create-group', label: '新建分组', icon: <PlusOutlined />, disabled: running || connectionGroups.blocked }],
+                  items: [{ key: 'create-group', label: t('新建分组'), icon: <PlusOutlined />, disabled: running || connectionGroups.blocked }],
                   onClick: ({ domEvent }) => {
                     domEvent.stopPropagation()
                     setMenuOpen(false)
@@ -343,14 +351,14 @@ export default function DatabaseExplorer({ model }: Props) {
                     <DatabaseOutlined />
                   </EmptyStateIcon>
                 }
-                description="暂无连接"
+                description={t('暂无连接')}
               />
             ) : (
               <Tree<ExplorerNode>
                 disabled={running}
                 styles={{ root: { background: 'transparent' }, itemTitle: { display: 'block', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' } }}
                 ref={treeRef}
-                aria-label="数据库连接树"
+                aria-label={t('数据库连接树')}
                 showIcon={false}
                 blockNode
                 expandAction="doubleClick"

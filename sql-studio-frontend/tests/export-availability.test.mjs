@@ -4,6 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
 import { canExportDatabase } from '../src/pages/workspace/utils/exportAvailability/index.ts'
+import { translate } from '../src/utils/translate/index.ts'
 
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useDataExport/index.ts', import.meta.url), 'utf8')
 const implementation = stripTypeScriptTypes(source.slice(source.indexOf('export function useDataExport')).replace('export function', 'function'))
@@ -12,6 +13,7 @@ function harness(canExport) {
   const states = []
   let pickers = 0
   const dependencies = {
+    useTranslation: () => ({ language: 'zh-CN', t: (message, values) => translate(message, 'zh-CN', values) }),
     useState: () => [undefined, (value) => states.push(value)],
     useRef: () => ({ current: null }),
     useEffect() {},

@@ -4,35 +4,40 @@ import { Select, Typography } from 'antd'
 import type { RefSelectProps } from 'antd/es/select'
 import { useEffect, useMemo, useRef } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 import { sqlCompletionLayout } from '../../constant/layout'
 import type { SQLCompletionObjectKind } from '../../hooks/useSQLCompletion'
 import type { useSQLCompletionPopup } from '../../hooks/useSQLCompletionPopup'
 
 type Props = { completion: ReturnType<typeof useSQLCompletionPopup>; objectKinds: ReadonlyMap<string, SQLCompletionObjectKind> }
 
-function completionIcon(item: Completion, objectKinds: Props['objectKinds']) {
+function CompletionIcon({ item, objectKinds }: { item: Completion; objectKinds: Props['objectKinds'] }) {
+  const { t } = useTranslation()
   const types = item.type?.split(/\s+/) ?? []
-  if (types.includes('keyword')) return <KeyOutlined aria-label="关键字" title="关键字" />
-  if (types.includes('function')) return <FunctionOutlined aria-label="函数" title="函数" />
-  if (types.includes('property')) return <ProfileOutlined aria-label="字段" title="字段" />
-  if (types.includes('type') && item.boost === -1) return <FieldStringOutlined aria-label="数据类型" title="数据类型" />
+  if (types.includes('keyword')) return <KeyOutlined aria-label={t('关键字')} title={t('关键字')} />
+  if (types.includes('function')) return <FunctionOutlined aria-label={t('函数')} title={t('函数')} />
+  if (types.includes('property')) return <ProfileOutlined aria-label={t('字段')} title={t('字段')} />
+  if (types.includes('type') && item.boost === -1) return <FieldStringOutlined aria-label={t('数据类型')} title={t('数据类型')} />
   switch (objectKinds.get(item.label)) {
     case 'database':
-      return <DatabaseOutlined aria-label="数据库" title="数据库" />
+      return <DatabaseOutlined aria-label={t('数据库')} title={t('数据库')} />
     case 'schema':
       return <FolderOutlined aria-label="Schema" title="Schema" />
     case 'table':
-      return <TableOutlined aria-label="表" title="表" />
+      return <TableOutlined aria-label={t('表')} title={t('表')} />
     case 'view':
-      return <EyeOutlined aria-label="视图" title="视图" />
+      return <EyeOutlined aria-label={t('视图')} title={t('视图')} />
     case 'object':
-      return <DatabaseOutlined aria-label="数据库对象" title="数据库对象" />
+      return <DatabaseOutlined aria-label={t('数据库对象')} title={t('数据库对象')} />
     default:
-      return <CodeOutlined aria-label="其他候选" title="其他候选" />
+      return <CodeOutlined aria-label={t('其他候选')} title={t('其他候选')} />
   }
 }
 
 export default function SQLCompletionSelect({ completion, objectKinds }: Props) {
+  const { t } = useTranslation()
+
   const { popup, choose, close } = completion
   const select = useRef<RefSelectProps>(null)
   const options = useMemo(
@@ -42,7 +47,7 @@ export default function SQLCompletionSelect({ completion, objectKinds }: Props) 
         title: item.label,
         label: item.displayLabel || item.label,
         detail: item.detail,
-        icon: completionIcon(item, objectKinds)
+        icon: <CompletionIcon item={item} objectKinds={objectKinds} />
       })) ?? [],
     [popup?.items, objectKinds]
   )
@@ -53,7 +58,7 @@ export default function SQLCompletionSelect({ completion, objectKinds }: Props) 
   return (
     <Select
       ref={select}
-      aria-label="SQL 语法补全"
+      aria-label={t('SQL 语法补全')}
       open
       showSearch={false}
       value={popup.selected ?? undefined}

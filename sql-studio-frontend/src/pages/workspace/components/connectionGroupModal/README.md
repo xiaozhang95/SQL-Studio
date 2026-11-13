@@ -1,8 +1,12 @@
 # 连接分组弹窗
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 分组保存或删除失败使用共享 ErrorNotice 展示。
 
 `manager: ReturnType<typeof useConnectionGroups>` 提供表单、模式、错误和保存回调。新建/重命名共用 Ant Design Modal 和 horizontal Form，字段为“分组名称”，标签固定 88px。名称去除首尾空格并验证重名，保存中禁用输入和关闭；失败保留输入并展示错误。
+
+英文字段标签使用 Name，占位及必填提示使用 Enter a name，保持原标签列宽度。
 
 dialog.deleting 时显示删除分组确认：名称禁用，右侧帮助说明成员移入默认分组且窗口保留，红色删除按钮调用同一 save。保留横向表单，失败在当前弹窗显示并可重试。
 

@@ -1,5 +1,7 @@
 # Transcript
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 受控entries/busy/status/expanded/onExpanded；用户消息靠右，思考与执行共用带官方蓝鲸的ProcessCard，仅支持标题折叠，不提供隐藏和恢复按钮；旧隐藏键不再影响展示。查询结果位于各自执行步骤内部，收起执行过程会一起折叠结果。Typography继承Ant Design默认字号，文本保留换行并安全显示。useRoundTranscript管理轮次选择、手动切换和末尾跟随；最多挂载 5 轮 TurnContent，默认最新轮，RoundNavigation保留刻度预览与完整问题列表搜索。错误条目按提问归属，在各自回答末尾呈现。无网络请求。
 
 相邻的思考与执行步骤合并为一个折叠区，展开后按原顺序显示，未完成片段明确标识。展开键 `process-ID` 保存在 Go 布局的 expanded 中，旧的 `thinking-ID` 和 `tools-ID` 展开记录也可恢复。实时生成与历史恢复使用相同的展示分组。

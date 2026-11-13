@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
@@ -22,16 +23,18 @@ type Props = {
 const selectorStyle = { flex: '1 1 150px', minWidth: 130, maxWidth: appearance.selectWidth } satisfies CSSProperties
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
+  const { t } = useTranslation()
+
   const loaded = connections.filter((connection) => objects.snapshots[connection.id]?.status === 'connected')
   return (
     <>
       <Select
         className="connection-select"
         style={selectorStyle}
-        aria-label="选择连接"
+        aria-label={t('选择连接')}
         showSearch
         optionFilterProp="searchText"
-        placeholder={loaded.length ? '选择连接' : '请先展开连接'}
+        placeholder={loaded.length ? t('选择连接') : t('请先展开连接')}
         value={objects.connected ? scope.connectionId : undefined}
         disabled={disabled || !loaded.length}
         onChange={onConnection}
@@ -51,12 +54,12 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       <Select
         className="database-select"
         style={selectorStyle}
-        aria-label="选择数据库"
+        aria-label={t('选择数据库')}
         prefix={objects.connected && scope.database ? undefined : <DatabaseOutlined />}
         showSearch
         optionFilterProp="searchText"
         allowClear
-        placeholder="选择数据库"
+        placeholder={t('选择数据库')}
         value={objects.connected ? scope.database || undefined : undefined}
         disabled={disabled || !objects.connected}
         onChange={(value) => onSelect(value || '')}
@@ -76,8 +79,8 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       {getDatabaseAdapter(connections.find((connection) => connection.id === scope.connectionId)?.type).explorer && (
         <Select
           style={selectorStyle}
-          aria-label="选择 Schema"
-          placeholder="Schema（默认搜索路径）"
+          aria-label={t('选择 Schema')}
+          placeholder={t('Schema（默认搜索路径）')}
           allowClear
           showSearch
           disabled={disabled || !objects.connected || !scope.database}

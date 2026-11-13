@@ -33,9 +33,10 @@ func (h *agentHandler) stream(c *gin.Context) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Accel-Buffering", "no")
 	rc := http.NewResponseController(w)
+	language := languageFor(c)
 	emit := func(event model.Event) error {
 		_ = rc.SetWriteDeadline(time.Now().Add(20 * time.Second))
-		data, err := json.Marshal(event)
+		data, err := json.Marshal(localizedEvent(language, event))
 		if err != nil {
 			return err
 		}

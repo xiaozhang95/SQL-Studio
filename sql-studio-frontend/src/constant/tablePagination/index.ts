@@ -7,6 +7,5 @@ export const tablePaginationDefaults: PaginationProps = {
   size: appearance.controlSize,
   align: 'end',
   className: 'table-pagination',
-  showSizeChanger: false,
-  showTotal: (total) => `共 ${total} 条`
+  showSizeChanger: false
 }

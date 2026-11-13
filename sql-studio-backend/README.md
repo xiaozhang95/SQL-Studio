@@ -19,17 +19,17 @@ go run main.go
 
 开发时从后端根目录启动，网页目录为 `../sql-studio-frontend/dist`。连接、密钥和布局配置默认保存在 `~/.sql-studio/state/`，Windows 路径为 `%USERPROFILE%\.sql-studio\state`。没有保存连接时可在网页创建。数据库范围见 [数据库支持](../docs/DATABASES.md)，可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。
 
-## 含前端的独立可执行文件
+## 桌面打包与网页目录
 
-在仓库根目录执行 `./build.ps1`，脚本构建前端、同步到 `internal/webui/dist`，然后使用 `go build -tags embedded` 编译；完整命令和跨平台参数见 [一键打包](../README.md#一键打包)。不要跳过前端同步直接复用旧资源。
+在 [Electron 项目](../sql-studio-electron/README.md#调试与打包)执行 `pnpm build`，统一构建当前前端与 Go 后端，再生成桌面分发产物。前端网页放在随包的 runtime/web，桌面主进程通过 SQLDESK_WEB_DIR 指定该目录，并管理后端的端口与生命周期。
 
-产物位于仓库 `release/`，Windows x64 为 `sql-studio-windows-amd64.exe`。运行后从 `/` 访问工作台、`/swagger.html` 访问 Swagger；可执行文件可从独立目录运行，前端文件已内嵌。设置 `SQLDESK_WEB_DIR` 可显式覆盖为外部 dist。普通无标签构建仍使用磁盘 dist。
+Go 服务从磁盘目录提供 `/` 工作台、`/swagger.html` 文档和静态资源。独立开发运行时，网页目录默认相对于后端工作目录为 `../sql-studio-frontend/dist`；SQLDESK_WEB_DIR 可指定其他目录。开发调试通常直接使用 Vite 页面，无需提前构建 dist。
 
 监听地址默认 `127.0.0.1:18080`，可通过 `SQLDESK_ADDR` 指定其他地址（例如 `127.0.0.1:18081`）以避开已有服务；不会自动停止已有进程。
 
 显式配置的相对目录以启动工作目录为基准。日志和保存错误包含实际 PID 和程序路径。出现 Access is denied 或双击退出时见 [启动失败与配置保存提示](../README.md#启动失败与配置保存提示)。
 
-脚本生成资源后可执行 `go test -tags embedded -count=1 ./...`，包含从临时工作目录读取内嵌页面及真实构建 JS 的验证；默认 `go test ./...` 不要求生成 dist。包边界见 [webui](internal/webui/README.md)。
+静态网页的文件、目录与 HTTP 方法边界见 [webui](internal/webui/README.md)。Go 编译和普通测试不要求预先生成前端 dist。
 
 ## 检查
 

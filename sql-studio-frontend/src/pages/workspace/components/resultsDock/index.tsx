@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 import { resultPanelLayout } from '../../constant/layout'
 
 /** 面板只管理尺寸与交互，执行数据通过 children 注入。 */
@@ -12,6 +14,8 @@ type Props = {
 }
 const { minimumHeight, defaultHeight, editorReservedHeight, keyboardStep } = resultPanelLayout
 export default function ResultsDock({ children, resizable, height, onHeightChange }: Props) {
+  const { t } = useTranslation()
+
   const panel = useRef<HTMLElement | null>(null)
   const drag = useRef<{
     y: number
@@ -40,7 +44,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
     <section
       ref={panel}
       className={`results-panel${resizing ? ' is-resizing' : ''}${resizable ? '' : ' is-standalone'}`}
-      aria-label="查询结果面板"
+      aria-label={t('查询结果面板')}
       style={{
         position: 'relative',
         height: resizable ? visibleHeight : 'auto',
@@ -59,7 +63,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
         <div
           className="results-resizer"
           role="separator"
-          aria-label="调整结果面板高度"
+          aria-label={t('调整结果面板高度')}
           aria-orientation="horizontal"
           aria-valuemin={minimumHeight}
           aria-valuemax={maximumHeight}

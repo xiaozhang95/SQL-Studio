@@ -8,6 +8,7 @@ import { theme, Typography } from 'antd'
 import { useMemo } from 'react'
 
 import ContentCard from '@/components/contentCard'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 
@@ -42,6 +43,8 @@ function formatJsonText(text: string) {
 }
 
 export function CodeBlock({ text, language, title, formatJson = false }: { text: string; language: string; title?: string; formatJson?: boolean }) {
+  const { t } = useTranslation()
+
   const { token } = theme.useToken()
   const displayText = useMemo(() => (formatJson && language === 'json' ? formatJsonText(text) : text), [formatJson, language, text])
   const extensions = useMemo(() => {
@@ -66,9 +69,9 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
     ]
   }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight, token.paddingSM])
   return (
-    <ContentCard code title={title ?? (language || '代码')} extra={<Typography.Text copyable={{ text, tooltips: ['复制代码', '已复制'] }} />}>
+    <ContentCard code title={title ?? (language || t('代码'))} extra={<Typography.Text copyable={{ text, tooltips: [t('复制代码'), t('已复制')] }} />}>
       <CodeMirror
-        aria-label="代码内容"
+        aria-label={t('代码内容')}
         value={displayText}
         extensions={extensions}
         editable={false}

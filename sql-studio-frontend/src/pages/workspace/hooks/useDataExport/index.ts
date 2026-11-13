@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
 import type { DumpPlan } from '@/databases/typings'
+import { useTranslation } from '@/hooks/useTranslation'
 import { executeQuery, getColumns, getDDL, getSchemas, getTables } from '@/services/database'
 import { streamTableData } from '@/services/dataExport'
 import type { Connection } from '@/typings/database'
@@ -27,6 +28,7 @@ type ExportState = {
 
 /** Export owns its request and output file; no workspace page, query lock or persisted rows. */
 export function useDataExport(canExport: (connectionId: string, database: string) => boolean) {
+  const { t, language } = useTranslation()
   const [state, setState] = useState<ExportState>()
   const request = useRef<AbortController | null>(null)
   useEffect(() => () => request.current?.abort(), [])
@@ -45,7 +47,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
       connectionId: connection.id,
       connection: connection.name,
       database,
-      destination: '选择保存文件…',
+      destination: t('选择保存文件…'),
       withData,
       status: 'running',
       startedAt: Date.now(),
@@ -54,12 +56,12 @@ export function useDataExport(canExport: (connectionId: string, database: string
       total: 0,
       completed: 0,
       percent: 0,
-      logs: ['准备导出']
+      logs: [t('准备导出')]
     })
     let writer: Awaited<ReturnType<typeof createExportWriter>> | undefined
     try {
       // Must run before any network await so the native picker retains user activation.
-      writer = await createExportWriter(table ? getDatabaseAdapter(connection.type).tableLabel(table) : database + (schema ? '_' + schema : ''))
+      writer = await createExportWriter(table ? getDatabaseAdapter(connection.type).tableLabel(table) : database + (schema ? '_' + schema : ''), language)
       signal.throwIfAborted()
       const output = writer
       patch({ destination: output.destination })
@@ -71,7 +73,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
       const adapter = getDatabaseAdapter(connection.type)
       const all = await getTables(connection.id, database, signal)
       const tables = all.filter((item) => (!table || item.name === table) && (!schema || adapter.explorer?.tableIdentity(item.name).schema === schema))
-      if (table && !tables.length) throw new Error('目标表不存在或无权访问')
+      if (table && !tables.length) throw new Error(t('目标表不存在或无权访问'))
       const schemas = adapter.explorer ? (schema ? [schema] : await getSchemas(connection.id, database, signal)) : []
       patch({ total: tables.length })
       const metadata = adapter.dumpFile.metadataSQL ? await executeQuery(connection.id, { database, sql: adapter.dumpFile.metadataSQL(database) }, signal) : undefined
@@ -79,7 +81,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
       const plans: { name: string; view: boolean; ddl: string; plan: DumpPlan }[] = []
       // Emit all base structures before any records; views and foreign keys follow data.
       for (const [index, item] of tables.entries()) {
-        log(`读取结构：${adapter.tableLabel(item.name)}`)
+        log(t('读取结构：{name}', { name: adapter.tableLabel(item.name) }))
         const view = item.type.includes('VIEW')
         const [{ ddl }, columns] = await Promise.all([getDDL(connection.id, database, item.name, signal), getColumns(connection.id, database, item.name, signal)])
         const sequenceSQL = !view && adapter.dataDump?.metadataSQL?.(database, item.name)
@@ -92,7 +94,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
       let rows = 0
       for (const [index, item] of plans.entries()) {
         if (withData && !item.view) {
-          log(`传输记录：${adapter.tableLabel(item.name)}`)
+          log(t('传输记录：{name}', { name: adapter.tableLabel(item.name) }))
           await streamTableData(
             connection.id,
             database,
@@ -107,9 +109,9 @@ export function useDataExport(canExport: (connectionId: string, database: string
         }
         const latest = await getDDL(connection.id, database, item.name, signal)
         const sameDefinition = (adapter.objects ?? adapter.tableDesign)?.sameDefinition
-        if (sameDefinition ? !sameDefinition(latest.ddl, item.ddl) : latest.ddl !== item.ddl) throw new Error('导出期间表结构发生变化：' + adapter.tableLabel(item.name))
+        if (sameDefinition ? !sameDefinition(latest.ddl, item.ddl) : latest.ddl !== item.ddl) throw new Error(t('导出期间表结构发生变化：{name}', { name: adapter.tableLabel(item.name) }))
         if (!item.view) await write(item.plan.after)
-        log(`已完成：${adapter.tableLabel(item.name)}${item.view ? '（视图仅导出结构）' : ''}`)
+        log(t('已完成：{name}{detail}', { name: adapter.tableLabel(item.name), detail: item.view ? t('（视图仅导出结构）') : '' }))
         patch({ completed: index + 1, percent: Math.round(20 + (75 * (index + 1)) / plans.length) })
       }
       for (const item of plans) if (item.plan.constraints) await write(item.plan.constraints)
@@ -122,7 +124,7 @@ export function useDataExport(canExport: (connectionId: string, database: string
     } catch (error) {
       await writer?.abort()
       const cancelled = signal.aborted || (error instanceof DOMException && error.name === 'AbortError')
-      const detail = cancelled ? '导出已取消，未保存完整文件' : error instanceof Error ? error.message : '导出失败'
+      const detail = cancelled ? t('导出已取消，未保存完整文件') : error instanceof Error ? t(error.message) : t('导出失败')
       patch({ status: cancelled ? 'cancelled' : 'error', endedAt: Date.now(), error: cancelled ? undefined : detail })
       log(detail)
     } finally {

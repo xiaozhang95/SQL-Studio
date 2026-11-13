@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
 import { conversationRounds } from '../../../../utils/conversationRounds'
@@ -30,6 +31,8 @@ interface Props {
   confirmation?: ReactNode
 }
 export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
+  const { t } = useTranslation()
+
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
   const { viewport: viewportRef, start, end, paddingTop, paddingBottom, activeIndex, loading, atBottom, jump, onScroll, toLatest } = useRoundTranscript(rounds, Boolean(confirmation), busy)
@@ -39,7 +42,7 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
       <div
         ref={viewportRef}
         role="region"
-        aria-label="对话记录"
+        aria-label={t('对话记录')}
         aria-busy={loading}
         tabIndex={0}
         onScroll={onScroll}
@@ -79,14 +82,14 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
       </div>
       {loading && (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <ContentLoading label="正在加载附近对话…" />
+          <ContentLoading label={t('正在加载附近对话…')} />
         </div>
       )}
       {!atBottom && (
-        <Tooltip title="回到底部" trigger={['hover', 'focus']}>
+        <Tooltip title={t('回到底部')} trigger={['hover', 'focus']}>
           <Button
             {...CHAT.iconButton}
-            aria-label="回到底部"
+            aria-label={t('回到底部')}
             icon={<CaretDownFilled />}
             onClick={toLatest}
             style={{ position: 'absolute', insetInlineEnd: `max(${token.marginLG}px, calc((100% - ${CHAT.conversationMaxWidth}px) * 0.35))`, insetBlockEnd: token.marginSM, zIndex: 1 }}

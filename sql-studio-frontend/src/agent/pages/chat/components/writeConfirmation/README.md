@@ -1,5 +1,7 @@
 # 写入与继续确认卡片
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 确认提交失败通过卡片内的共享 ErrorNotice 展示。
 
 WriteConfirmation({value:ConfirmationRequest,submitting:boolean,error:string,onDecide:(allow:boolean)=>Promise<void>})在当前回复下方展示受控的 Ant Design 小号卡片。写入确认展示目标、对象和完整 SQL。继续确认展示输入、结果、上下文或读取失败提示，按类型提供继续、压缩后继续、返回编辑或停止本轮。提交期间禁用按钮，失败信息留在卡片内。

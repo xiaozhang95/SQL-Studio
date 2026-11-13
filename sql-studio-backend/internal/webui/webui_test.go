@@ -38,6 +38,8 @@ func TestStaticFilesAndBoundaries(t *testing.T) {
 	}{
 		{"GET", "/", 200, "text/html"},
 		{"HEAD", "/", 200, "text/html"},
+		{"GET", "/agent", 200, "text/html"},
+		{"HEAD", "/agent", 200, "text/html"},
 		{"GET", "/swagger.html", 200, "text/html"},
 		{"GET", "/assets/app-123.js", 200, "javascript"},
 		{"GET", "/assets/app-123.css", 200, "text/css"},
@@ -45,8 +47,10 @@ func TestStaticFilesAndBoundaries(t *testing.T) {
 		{"GET", "/assets/", 404, "text/plain"},
 		{"GET", "/assets/missing.js", 404, "text/plain"},
 		{"GET", "/missing-page", 404, "text/plain"},
+		{"GET", "/agent/missing.js", 404, "text/plain"},
 		{"GET", "/../master.key", 404, "text/plain"},
 		{"POST", "/", 405, ""},
+		{"POST", "/agent", 405, ""},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
@@ -85,6 +89,6 @@ func TestExplicitDirectoryOverride(t *testing.T) {
 	}
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
 	if recorder.Code != 404 {
-		t.Fatal("invalid explicit directory unexpectedly fell back to embedded assets")
+		t.Fatal("invalid explicit directory unexpectedly fell back to default assets")
 	}
 }

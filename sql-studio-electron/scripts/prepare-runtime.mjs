@@ -20,7 +20,7 @@ function run(command, args, cwd, env = process.env) {
 }
 
 writeAppIcons()
-// 只清理 Electron 自己的生成目录，不改 Go embed 资源或现有 release。
+// 只清理 Electron 自己的运行资源目录，保留现有 release。
 rmSync(runtime, { recursive: true, force: true })
 mkdirSync(runtime, { recursive: true })
 run('pnpm', ['build'], path.join(root, 'sql-studio-frontend'))

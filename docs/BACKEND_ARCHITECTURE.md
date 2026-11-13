@@ -23,11 +23,14 @@
 | statefile             | 版本、修订、同进程互斥与分区 JSON 原子替换                         |
 | deepseek              | 官方 HTTPS 模型调用，不执行 SQL                                    |
 | config                | 环境变量和目录解析                                                 |
-| webui                 | 构建版内嵌前端/开发版磁盘资源、Gin 静态路由；不依赖业务模块           |
+| webui                 | 磁盘网页目录与 Gin 静态路由；不依赖业务模块                         |
+| localization          | 请求语言选择、完整应用消息及动态错误模板，只依赖标准库，由 HTTP 层使用 |
 
 modules 各自只依赖 model 与最小消费接口，不导入兄弟模块、驱动、Gin 或存储实现。app 创建一次 query/ai 服务，全请求共享其预算。架构测试递归约束依赖与 README/doc.go。
 
 ## 请求和资源生命周期
+
+HTTP 层按 Accept-Language 为每次请求独立选择中英文，编码 JSON 错误和 SSE 系统提示时调用 localization；业务错误身份和状态码先按原有规则判定，再翻译展示文案。历史系统事件在返回副本中转换，不修改持久化原文、SQL、查询结果或模型回答，不设置进程级当前语言。
 
 HTTP context 传入模块和驱动，保留取消、超时、游标与连接释放。API 省略 allowWrite 时默认只读，SQL 窗口显式允许写入；请求保持单语句、1000 行（最多 5000）、约 8 MiB 内容；精确整数和 DECIMAL 保留文本。输入与状态码见 [接口列表](API.md)。
 
@@ -35,7 +38,7 @@ HTTP context 传入模块和驱动，保留取消、超时、游标与连接释�
 
 Go 服务默认仅监听 127.0.0.1:18080，提供构建网页及 API。退出给予在途请求 5 秒结束时间。目录、启动、环境变量和测试入口见 [后端 README](../sql-studio-backend/README.md)。
 
-仓库根目录 `build.ps1` 先构建 Vite dist，再同步到 internal/webui 的生成目录并用 embedded 标签编译。app 调用 webui.Register，以 Gin StaticFS/StaticFileFS 注册前端路由，API 命名空间优先；内嵌版不依赖运行目录的前端文件，显式 SQLDESK_WEB_DIR 可覆盖。开发构建使用磁盘 dist，不需要占位资源。
+Electron 项目的 `pnpm build` 构建 Vite dist 与 Go 后端，将网页复制到随包的 runtime/web，运行时通过 SQLDESK_WEB_DIR 指定目录。app 调用 webui.Register，以 Gin StaticFS/StaticFileFS 注册前端路由，API 命名空间优先；独立开发运行默认读取 `../sql-studio-frontend/dist`，Go 编译不要求生成网页资源。
 
 rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和 database/sql，不执行 SQL 或访问HTTP/存储；mysql/postgresql 的导出方法负责方言及只读事务，metadata 负责凭据/并发/期限，httpapi 仅编码 SSE。
 

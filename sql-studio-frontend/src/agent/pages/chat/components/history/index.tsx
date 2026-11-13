@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import type { ConversationInfo } from '../../../../typings/workspace'
 import { CHAT } from '../../constant/chat'
@@ -27,6 +28,8 @@ interface Props {
   onRename: (id: string, title: string) => Promise<void>
 }
 export function History(props: Props) {
+  const { t } = useTranslation()
+
   const { panel: panelRef, visibleWidth, minimumWidth, maximumWidth, resizer } = props.layout
   const { token } = theme.useToken()
   const { open, onClose, mobile } = props
@@ -36,8 +39,8 @@ export function History(props: Props) {
   const items = keyword ? props.items.filter(({ title }) => title.toLowerCase().includes(keyword)) : props.items
   const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show }
   const refreshAction = (
-    <Tooltip title="刷新历史">
-      <Button type="text" size="small" aria-label="刷新历史" icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
+    <Tooltip title={t('刷新历史')}>
+      <Button type="text" size="small" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
     </Tooltip>
   )
   return (
@@ -51,14 +54,14 @@ export function History(props: Props) {
           height: '100%',
           width: visibleWidth,
           background: token.colorBgContainer,
-          borderRight: '1px solid var(--layout-border)'
+          borderRight: '1px solid var(--border)'
         }}
       >
         <HistoryContents
           {...contentsProps}
           header={
             <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS }}>
-              <Typography.Text type="secondary">历史会话</Typography.Text>
+              <Typography.Text type="secondary">{t('历史会话')}</Typography.Text>
               {refreshAction}
             </Flex>
           }
@@ -66,7 +69,7 @@ export function History(props: Props) {
         <div
           className="sidebar-resizer"
           role="separator"
-          aria-label="调整历史会话栏宽度"
+          aria-label={t('调整历史会话栏宽度')}
           aria-orientation="vertical"
           aria-valuemin={minimumWidth}
           aria-valuemax={maximumWidth}
@@ -76,17 +79,17 @@ export function History(props: Props) {
           style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
         />
       </aside>
-      <Drawer title="历史会话" extra={refreshAction} placement="left" size={280} open={mobile && open} onClose={onClose} styles={{ body: { padding: 0 } }}>
+      <Drawer title={t('历史会话')} extra={refreshAction} placement="left" size={280} open={mobile && open} onClose={onClose} styles={{ body: { padding: 0 } }}>
         <HistoryContents {...contentsProps} />
       </Drawer>
       <Modal
-        title="重命名会话"
+        title={t('重命名会话')}
         open={Boolean(rename.selected)}
         onCancel={rename.close}
         onOk={() => rename.form.submit()}
         confirmLoading={rename.busy}
-        okText="保存"
-        cancelText="取消"
+        okText={t('保存')}
+        cancelText={t('取消')}
         closable={!rename.busy}
         mask={{ closable: !rename.busy }}
         keyboard={!rename.busy}
@@ -96,15 +99,15 @@ export function History(props: Props) {
         <Form form={rename.form} layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={rename.busy} onFinish={rename.save}>
           <Form.Item
             name="title"
-            label="会话名称"
+            label={t('会话名称')}
             rules={[
-              { required: true, whitespace: true, message: '请输入会话名称' },
-              { max: CHAT.maxTitleLength, message: `最多${CHAT.maxTitleLength}个字符` },
-              { pattern: /^\P{Cc}+$/u, message: '名称不能包含换行或控制字符' }
+              { required: true, whitespace: true, message: t('请输入会话名称') },
+              { max: CHAT.maxTitleLength, message: t('最多{value1}个字符', { value1: CHAT.maxTitleLength }) },
+              { pattern: /^\P{Cc}+$/u, message: t('名称不能包含换行或控制字符') }
             ]}
           >
             <Input
-              aria-label="会话名称"
+              aria-label={t('会话名称')}
               maxLength={CHAT.maxTitleLength}
               onPressEnter={(event) => {
                 event.preventDefault()
@@ -130,6 +133,8 @@ function HistoryContents({
   onSearchChange,
   header
 }: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
+  const { t } = useTranslation()
+
   const { token } = theme.useToken()
   return (
     <Flex
@@ -143,12 +148,12 @@ function HistoryContents({
         paddingTop: token.paddingSM
       }}
     >
-      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="搜索会话标题" aria-label="搜索会话标题" allowClear />
+      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={t('搜索会话标题')} aria-label={t('搜索会话标题')} allowClear />
       {header}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? '没有匹配的会话' : '还没有对话'} />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? t('没有匹配的会话') : t('还没有对话')} />
           ) : (
             <Conversations
               className="chat-history-list"
@@ -166,17 +171,17 @@ function HistoryContents({
                       {i.title}
                     </Typography.Text>
                     <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      <Button type="text" size="small" aria-label={'重命名会话 ' + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
+                      <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
                       <Popconfirm
                         okType="default"
-                        title="删除这条会话？"
-                        description="将删除本机保存的消息和查询结果。"
-                        okText="删除"
-                        cancelText="取消"
+                        title={t('删除这条会话？')}
+                        description={t('将删除本机保存的消息和查询结果。')}
+                        okText={t('删除')}
+                        cancelText={t('取消')}
                         onConfirm={() => onDelete(i.id)}
                         disabled={busy || selecting}
                       >
-                        <Button danger type="text" size="small" aria-label={'删除会话 ' + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
+                        <Button danger type="text" size="small" aria-label={t('删除会话 ') + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
                       </Popconfirm>
                     </span>
                   </Flex>

@@ -4,6 +4,7 @@ import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
 import { Fragment, useMemo } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
 import { chatErrors } from '../../../../utils/chatEvents'
@@ -43,13 +44,15 @@ function blocks(entries: Entry[]): Block[] {
   return out
 }
 function ProcessDetails({ entries }: { entries: Entry[] }) {
+  const { t, language } = useTranslation()
+
   const steps = useMemo(() => {
     let toolNumber = 0
     return entries.map((e) => {
       if (e.role === 'thinking')
         return (
           <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
-            <Typography.Text type="secondary">{e.streaming ? 'DeepSeek 正在思考…' : e.incomplete ? '思考过程（未完成）' : '思考过程'}</Typography.Text>
+            <Typography.Text type="secondary">{e.streaming ? t('DeepSeek 正在思考…') : e.incomplete ? t('思考过程（未完成）') : t('思考过程')}</Typography.Text>
             <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{e.text}</Typography.Paragraph>
           </Flex>
         )
@@ -57,18 +60,18 @@ function ProcessDetails({ entries }: { entries: Entry[] }) {
       return (
         <Flex key={e.id} vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
           <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-            <Typography.Text type="secondary">执行过程</Typography.Text>
+            <Typography.Text type="secondary">{t('执行过程')}</Typography.Text>
             <Typography.Text type="secondary">
-              {toolNumber}. {CHAT.tools[e.tool ?? ''] ?? '处理请求'} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? '未知工具'}</Typography.Text>
+              {toolNumber}. {t(CHAT.tools[e.tool ?? ''] ?? '处理请求')} · <Typography.Text copyable={{ text: e.tool ?? '' }}>{e.tool ?? t('未知工具')}</Typography.Text>
             </Typography.Text>
-            <Typography.Text type="secondary">通过 Go 业务模块在进程内调用</Typography.Text>
-            {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && <CodeBlock text={e.text} language="json" title="请求参数" formatJson />}
+            <Typography.Text type="secondary">{t('通过 Go 业务模块在进程内调用')}</Typography.Text>
+            {e.text.trim() && !/^\{\s*\}$/.test(e.text.trim()) && <CodeBlock text={e.text} language="json" title={t('请求参数')} formatJson />}
           </Flex>
-          {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={CHAT.resultTitles[e.tool ?? ''] ?? '执行结果'} tool={e.tool} showHeader={false} />}
+          {e.result !== undefined && <QueryResult value={e.result} sql={readSQL(e.text)} title={t(CHAT.resultTitles[e.tool ?? ''] ?? '执行结果')} tool={e.tool} showHeader={false} />}
         </Flex>
       )
     })
-  }, [entries])
+  }, [entries, t])
 
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ minWidth: 0 }}>
@@ -93,6 +96,8 @@ interface Props {
   onEdit: (text: string) => void
 }
 export function TurnContent({ entries, busy, waiting, locked, status, expanded, onExpanded, onEdit }: Props) {
+  const { t, language } = useTranslation()
+
   const { token } = theme.useToken()
   const sections = blocks(entries)
   return (
@@ -108,7 +113,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
               {block.entries
                 .filter((entry) => entry.stopped)
                 .map((entry) => (
-                  <Alert key={entry.id} type="info" showIcon title={entry.text} />
+                  <Alert key={entry.id} type="info" showIcon title={t(entry.text)} />
                 ))}
               <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />
             </Fragment>
@@ -117,10 +122,10 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
           const key = `process-${first.id}`
           const toolCount = block.entries.filter((entry) => entry.role === 'tool').length
           const hasThinking = toolCount < block.entries.length
-          let title = 'DeepSeek 思考过程'
-          if (toolCount) title = `${hasThinking ? '思考与执行' : '执行过程'} · ${toolCount} 项操作`
-          else if (block.entries.some((entry) => entry.streaming)) title = 'DeepSeek 正在思考…'
-          else if (block.entries.some((entry) => entry.incomplete)) title = '思考过程（未完成）'
+          let title = t('DeepSeek 思考过程')
+          if (toolCount) title = t('{value1} · {value2} 项操作', { value1: t(hasThinking ? '思考与执行' : '执行过程'), value2: toolCount })
+          else if (block.entries.some((entry) => entry.streaming)) title = t('DeepSeek 正在思考…')
+          else if (block.entries.some((entry) => entry.incomplete)) title = t('思考过程（未完成）')
           return (
             <ProcessCard
               key={key}
@@ -161,18 +166,18 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                       }}
                     >
                       {e.text}
-                      {e.incomplete && <Typography.Text type="secondary">（未完成）</Typography.Text>}
+                      {e.incomplete && <Typography.Text type="secondary">{t('（未完成）')}</Typography.Text>}
                     </Typography.Paragraph>
                   )
                 }
               />
               {user && (
                 <Flex justify="end" align="center" gap={CHAT.spacing.detail} wrap>
-                  {e.createdAt && <Typography.Text type="secondary">{new Date(e.createdAt).toLocaleString('zh-CN', { hour12: false })}</Typography.Text>}
-                  <Tooltip title="编辑问题">
-                    <Button type="text" size="small" aria-label="编辑问题" disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
+                  {e.createdAt && <Typography.Text type="secondary">{new Date(e.createdAt).toLocaleString(language, { hour12: false })}</Typography.Text>}
+                  <Tooltip title={t('编辑问题')}>
+                    <Button type="text" size="small" aria-label={t('编辑问题')} disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
                   </Tooltip>
-                  <Typography.Text copyable={{ text: e.text, tooltips: ['复制问题', '已复制'] }} />
+                  <Typography.Text copyable={{ text: e.text, tooltips: [t('复制问题'), t('已复制')] }} />
                 </Flex>
               )}
               {user && <Divider style={{ margin: 0 }} />}
@@ -183,7 +188,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
       {busy && !waiting && (
         <Flex align="center" gap={CHAT.spacing.detail}>
           <LoadingOutlined spin />
-          <Typography.Text type="secondary">{status || '正在思考…'}</Typography.Text>
+          <Typography.Text type="secondary">{t(status || '正在思考…')}</Typography.Text>
         </Flex>
       )}
     </Flex>

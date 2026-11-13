@@ -1,6 +1,7 @@
 import { Button, Modal, Space } from 'antd'
 
 import { ObjectAction } from '@/databases/typings/objectManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
@@ -8,13 +9,15 @@ import ObjectManagementForm from '../objectManagementForm'
 
 type Props = { manager: ReturnType<typeof useObjectManagement>; themeMode: ThemeMode }
 export default function ObjectManagementModal({ manager, themeMode }: Props) {
+  const { t } = useTranslation()
+
   const { dialog, loading, saving, ready } = manager
   const action = dialog?.action
   const tableForm = action === ObjectAction.CreateTable || action === ObjectAction.EditTable
   const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropSchema || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
   return (
     <Modal
-      title={manager.title}
+      title={t(manager.title)}
       open={Boolean(dialog) && !tableForm}
       width={640}
       loading={loading}
@@ -26,13 +29,13 @@ export default function ObjectManagementModal({ manager, themeMode }: Props) {
       footer={
         <Space>
           <Button disabled={saving} onClick={manager.close}>
-            取消
+            {t('取消')}
           </Button>
           <Button disabled={!ready || saving} onClick={manager.preview}>
-            预览
+            {t('预览')}
           </Button>
           <Button type="default" danger={destructive} disabled={!ready || loading} loading={saving} onClick={manager.save}>
-            {destructive ? manager.title : '保存'}
+            {destructive ? t(manager.title) : t('保存')}
           </Button>
         </Space>
       }

@@ -16,7 +16,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议，不包含 Oracle 兼容版。前�
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE；成功的 USE 更新发起查询页的库并显式传给后续请求。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
-PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [功能汇总](FEATURES.md#10-sql-文件与数据导出)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
+PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 
 真实 MySQL 和 MariaDB 回归使用随机临时库，PostgreSQL 回归使用随机 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 
@@ -39,3 +39,13 @@ MariaDB 为独立 mariadb 类型，前端 src/databases/mariadb、后端 interna
 转储范围为表/视图，不包含独立序列、系统版本历史、例程、触发器、事件和授权；系统版本表带数据转储明确提示使用 mariadb-dump。单表流式读取有界内存并支持取消，跨表不保证一致快照。
 
 Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.1，端口填 3307，账号使用授权账号；打开后可选择容器初始化的 testdb。产品默认端口仍为 3306，映射端口由连接配置决定。密码不进入源码、文档或工作区快照。
+
+## SQL 转储
+
+导出开始时固定连接、数据库、Schema 和对象范围，先按引擎收集结构，再通过专用 SSE 接口顺序读取表数据并写入文件。该读取不受普通查询的 1000/5000 行上限约束。视图只导出结构；关闭所属连接或数据库会取消导出，其他范围不受影响。
+
+每个对象完成后复核 DDL，结构变化或数据列不匹配时停止。后端独立限制为 2 路并发、30 分钟和单行 8 MiB，事件及错误约定见 [流式转储 API](API.md#流式转储)。原生文件流只在全部成功后提交，失败或取消中止写入；兼容下载模式缓存上限 256 MiB，超限不下载部分文件，触发下载也不代表已核验落盘。
+
+转储保留已适配的精确值、二进制、NULL、生成列、自增和自有序列定义，以及字符集、Schema 和延后外键等必要结构。它不提供跨表一致性快照，不包含完整的例程、触发器、事件、授权及外部依赖。完整备份应使用对应数据库的原生工具。
+
+实现见 [转储编排](../sql-studio-frontend/src/pages/workspace/hooks/useDataExport/README.md)与[文件写入](../sql-studio-frontend/src/utils/exportWriter/README.md)。

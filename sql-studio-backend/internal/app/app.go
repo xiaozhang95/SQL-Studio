@@ -83,7 +83,7 @@ func New(cfg config.Config) (*App, error) {
 	router.HandleMethodNotAllowed = true
 	router.NoRoute(func(c *gin.Context) {
 		if c.Request.URL.Path == "/api" || strings.HasPrefix(c.Request.URL.Path, "/api/") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
+			httpapi.NotFound(c)
 			return
 		}
 		c.String(http.StatusNotFound, "404 page not found")

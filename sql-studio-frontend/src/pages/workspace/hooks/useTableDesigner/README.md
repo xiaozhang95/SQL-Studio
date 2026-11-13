@@ -1,5 +1,7 @@
 # 表设计页生命周期
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [源码](index.ts) · [hooks 索引](../README.md)
 
 useTableDesigner 接收 TableDesignerOptions：不可变页面 ID/初始范围、连接、提交禁用状态、按 ID 的 onBusyChange/onDirtyChange、onCommitted 和异步 onChanged。组合 useObjectManagement 的 initial/keepOpen 模式，保留独立 Form、原字段、原 DDL、加载请求、错误及预览。

@@ -1,5 +1,7 @@
 # SQL 优化预览
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 建议生成失败通过共享 ErrorNotice 展示。
 
 SQLOptimization({model: ReturnType<typeof useAISQL>, themeMode}) 展示原 SQL、模型建议 SQL 和中文说明，复用只读 SQLPreview。请求中使用 ContentLoading 并允许取消，失败显示错误；有完整结果才允许应用。应用委托 hook 校验原文档并替换，不执行查询或索引建议。弹窗关闭后清空结果。

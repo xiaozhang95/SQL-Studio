@@ -25,7 +25,6 @@ html[data-theme='dark'] {
   // text Button 的悬停色带透明度，页签栏将它叠在与顶栏相同的容器底色上。
   --tab-bar-background: linear-gradient(var(--ant-control-item-bg-hover), var(--ant-control-item-bg-hover)) var(--surface);
   --border: var(--ant-color-border-secondary);
-  --layout-border: var(--ant-color-border);
   --inactive-icon: var(--ant-color-text-tertiary);
 
   ::selection {
@@ -335,11 +334,9 @@ body,
   outline-offset: 2px;
 }
 
-// 卡片页签保留 Ant Design 圆角，顶边和两侧使用主题分隔色。
+// 卡片页签保留 Ant Design 默认圆角和边框颜色。
 .workspace-tabs.ant-tabs-card.ant-tabs-top > .ant-tabs-nav {
   .ant-tabs-tab {
-    border-block-start-color: var(--layout-border);
-    border-inline-color: var(--layout-border);
     color: var(--text);
 
     .ant-tabs-tab-btn {

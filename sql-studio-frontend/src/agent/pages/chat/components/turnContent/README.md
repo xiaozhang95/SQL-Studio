@@ -1,5 +1,7 @@
 # TurnContent
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 每轮错误通过共享 ErrorNotice 在该轮消息末尾展示。
 
 助手回答将text与streaming传给AnswerContent，实时生成与历史恢复使用相同格式解析；未完成表格不会补造行或执行SQL。

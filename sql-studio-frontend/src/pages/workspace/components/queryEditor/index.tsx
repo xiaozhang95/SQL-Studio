@@ -6,6 +6,7 @@ import { Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
 import { useAISQL } from '../../hooks/useAISQL'
@@ -50,6 +51,8 @@ type Props = {
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
+  const { t } = useTranslation()
+
   const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
   const {
     beforeImport,
@@ -67,7 +70,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const completion = useSQLCompletionPopup()
   const { update: updateCompletion } = completion
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
-  const aiModelHint = ai.configured ? undefined : '请先在系统设置中保存默认模型'
+  const aiModelHint = ai.configured ? undefined : t('请先在系统设置中保存默认模型')
   const editorExtensions = useMemo(
     () => [sqlEditorAppearance, ...initialHistory, ...extensions, ...completion.extensions, ...ai.extensions],
     [initialHistory, extensions, completion.extensions, ai.extensions]
@@ -117,19 +120,23 @@ export default function QueryEditor({ model, themeMode }: Props) {
             onSelect={selectObject}
             onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}
           />
-          <ToolbarButton label="运行" icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
-          {activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
+          <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
+          {activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
           {ai.hasSavedModel && (
-            <div role="group" aria-label="SQL AI 工具" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}>
-              <Tooltip title={aiModelHint ?? 'AI 代码补全'}>
+            <div
+              role="group"
+              aria-label={t('SQL AI 工具')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}
+            >
+              <Tooltip title={aiModelHint ?? t('AI 代码补全')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CodeOutlined aria-hidden="true" />
-                  <span>代码补全</span>
+                  <span>{t('代码补全')}</span>
                   <Switch
                     size="small"
-                    aria-label="代码补全"
+                    aria-label={t('代码补全')}
                     checked={ai.configured && ai.enabled}
                     disabled={!ai.configured || running || ai.preferenceSaving}
                     loading={ai.preferenceSaving}
@@ -138,7 +145,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
                 </div>
               </Tooltip>
               <ToolbarButton
-                label="SQL 美化"
+                label={t('SQL 美化')}
                 hint={aiModelHint}
                 icon={<FormatPainterOutlined />}
                 disabled={!ai.configured || !hasSQL || running}
@@ -148,23 +155,23 @@ export default function QueryEditor({ model, themeMode }: Props) {
             </div>
           )}
           <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
-            <ToolbarButton label="导入 SQL" icon={<UploadOutlined />} loading={importing} disabled={running} />
+            <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={running} />
           </Upload>
-          <ToolbarButton label="导出 SQL" icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
-          <ToolbarButton label="执行历史" icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
+          <ToolbarButton label={t('导出 SQL')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
+          <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
         </div>
       </div>
-      <ErrorNotice title="AI 设置保存失败" error={ai.preferenceError} onClose={ai.clearPreferenceError} />
-      <ErrorNotice title="SQL 导入失败" error={importError} onClose={clearImportError} />
+      <ErrorNotice title={t('AI 设置保存失败')} error={ai.preferenceError} onClose={ai.clearPreferenceError} />
+      <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearImportError} />
       <SQLOptimization model={ai} themeMode={themeMode} />
-      <ErrorNotice title="连接加载失败" error={objects.error} />
-      <ErrorNotice title="表列表加载失败" error={objects.tableError} />
+      <ErrorNotice title={t('连接加载失败')} error={objects.error} />
+      <ErrorNotice title={t('表列表加载失败')} error={objects.tableError} />
       <Dropdown
         trigger={['contextMenu']}
         menu={{
           items: [
-            { key: 'run-selection', label: '运行', icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running },
-            ...(ai.configured && contextSQL.trim() ? [{ key: 'optimize-selection', label: '优化', icon: <BulbOutlined />, disabled: running }] : [])
+            { key: 'run-selection', label: t('运行'), icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running },
+            ...(ai.configured && contextSQL.trim() ? [{ key: 'optimize-selection', label: t('优化'), icon: <BulbOutlined />, disabled: running }] : [])
           ],
           onClick: ({ key }) => {
             if (key === 'run-selection') model.runSelectedSQL(contextSQL)
@@ -193,10 +200,10 @@ export default function QueryEditor({ model, themeMode }: Props) {
             }}
             onUpdate={onUpdate}
             basicSetup={editorSetup}
-            aria-label="SQL 编辑器"
+            aria-label={t('SQL 编辑器')}
           />
           {ai.enabled && ai.completionLoading && (
-            <LoadingOutlined spin aria-label="SQL补全中" role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />
+            <LoadingOutlined spin aria-label={t('SQL补全中')} role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />
           )}
         </div>
       </Dropdown>

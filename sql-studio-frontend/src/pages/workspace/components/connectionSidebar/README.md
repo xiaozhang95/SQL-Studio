@@ -1,5 +1,9 @@
 # 连接与对象侧栏
 
+侧栏右沿与顶栏、AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design 默认 colorBorderSecondary），随亮暗主题切换。
+
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 model 通过 Pick 消费连接列表及加载状态、连接树所需的范围与操作回调；连接列表错误和重试由工作区顶部横幅统一展示，侧栏不消费这两项。

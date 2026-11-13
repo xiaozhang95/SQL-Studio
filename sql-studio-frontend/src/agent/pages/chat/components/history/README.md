@@ -1,5 +1,7 @@
 # 会话列表
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 重命名失败在当前弹窗内使用共享 ErrorNotice 展示。
 
 History受控items/activeId/busy/loading/open及onSelect/onRefresh/onDelete/onRename。桌面侧栏宽度由共享 layout 提供，和手机Drawer共用Ant Design X Conversations，空列表初始化显示等待。长标题省略，编辑按钮打开横向名称表单，红色删除按钮需确认。操作按钮停止冒泡，防止同时切换会话。新建会话由页面顶栏处理。

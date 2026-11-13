@@ -2,6 +2,8 @@ import { UnorderedListOutlined } from '@ant-design/icons'
 import { Button, Flex, Popover, Select, theme, Typography } from 'antd'
 import { useState } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 import { roundMarkers } from '../../../../utils/conversationRounds'
 import type { ConversationRound } from '../../../../utils/conversationRounds'
 
@@ -11,6 +13,8 @@ interface Props {
   onJump: (index: number) => void
 }
 export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
+  const { t } = useTranslation()
+
   const { token } = theme.useToken()
   const [open, setOpen] = useState(false)
   return (
@@ -19,7 +23,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
       align="center"
       gap={token.marginXXS}
       role="navigation"
-      aria-label="提问导航"
+      aria-label={t('提问导航')}
       className="chat-round-navigation"
       style={{ position: 'absolute', insetInlineStart: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, maxHeight: '80%', width: 32 }}
     >
@@ -30,12 +34,12 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
         onOpenChange={setOpen}
         content={
           <div style={{ width: 'min(320px, 75vw)' }}>
-            <Typography.Paragraph>问题列表</Typography.Paragraph>
+            <Typography.Paragraph>{t('问题列表')}</Typography.Paragraph>
             <Select<number>
-              aria-label="搜索并跳转问题"
+              aria-label={t('搜索并跳转问题')}
               showSearch
               optionFilterProp="label"
-              placeholder="搜索问题"
+              placeholder={t('搜索问题')}
               style={{ width: '100%' }}
               value={undefined}
               options={rounds.map((round, index) => ({ value: index, label: `${index + 1}. ${round.question}` }))}
@@ -49,7 +53,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
                     {option.label}
                   </Typography.Text>
                   <Typography.Text type="secondary" ellipsis style={{ maxWidth: '100%', display: 'block' }}>
-                    {rounds[Number(option.value)].summary || '暂无回答摘要'}
+                    {rounds[Number(option.value)].summary || t('暂无回答摘要')}
                   </Typography.Text>
                 </div>
               )}
@@ -57,7 +61,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
           </div>
         }
       >
-        <Button type="text" size="small" aria-label="问题列表" icon={<UnorderedListOutlined />} />
+        <Button type="text" size="small" aria-label={t('问题列表')} icon={<UnorderedListOutlined />} />
       </Popover>
       {roundMarkers(rounds.length, activeIndex).map((index) => (
         <Popover
@@ -83,7 +87,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
                 {index + 1}. {rounds[index].question}
               </Typography.Paragraph>
               <Typography.Paragraph type="secondary" ellipsis={{ rows: 3 }} style={{ margin: 0 }}>
-                {rounds[index].summary || '暂无回答摘要'}
+                {rounds[index].summary || t('暂无回答摘要')}
               </Typography.Paragraph>
             </div>
           }
@@ -91,7 +95,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
           <button
             className="chat-round-marker"
             style={{ border: 0, background: 'transparent', cursor: 'pointer', width: 28, height: 10, padding: 0, display: 'grid', placeItems: 'center' }}
-            aria-label={`跳转问题 ${index + 1}`}
+            aria-label={t('跳转问题 {value1}', { value1: index + 1 })}
             aria-current={activeIndex === index ? 'step' : undefined}
             onClick={() => {
               onJump(index)

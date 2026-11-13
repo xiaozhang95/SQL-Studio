@@ -2,6 +2,7 @@ import { App } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
+import { useTranslation } from '@/hooks/useTranslation'
 import { executeObjectSQL, executeQuery, getColumns, getTables } from '@/services/database'
 import type { Column, Connection, QueryResult } from '@/typings/database'
 import type { WorkspaceTab } from '@/typings/workspace'
@@ -18,6 +19,8 @@ type Options = {
 type Cell = { row: number; column: number; type: string; value: string; isNull: boolean; nullable: boolean; columns: Column[] }
 /** 仅对象数据页显式保存；每次打开编辑重新检查主键与对象类型，写入后读取服务端真实值。 */
 export function useDataEditing({ tab, connection, result, blocked, onBusyChange, onDirtyChange, onResult }: Options) {
+  const { t } = useTranslation()
+
   const { message, modal } = App.useApp()
   const [cell, setCell] = useState<Cell>()
   const [drafts, setDrafts] = useState<Record<string, Cell>>({})
@@ -66,14 +69,14 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
       if (controller.signal.aborted) return
       const table = tables.find((item) => item.name === tab.table)
-      if (!table || table.type.includes('VIEW')) throw new Error('视图不支持直接编辑，请打开基础表')
+      if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接编辑，请打开基础表'))
       const draft = drafts[row + ':' + column]
       const added = newRows.find((item) => item.key === row)
       const original = added ? added.cells[column] : result.rows[row]?.[column]
       const adapter = getDatabaseAdapter(connection.type)
       if (added) {
         const field = columns.find((item) => item.name === result.columns[column].name)
-        if (!field || !adapter.canInsertColumn(field)) throw new Error('该字段由数据库生成或暂不支持编辑')
+        if (!field || !adapter.canInsertColumn(field)) throw new Error(t('该字段由数据库生成或暂不支持编辑'))
       } else adapter.updateCellSQL(tab.database, tab.table, columns, result, result.rows[row], column, original === null ? null : String(original))
       setCell({
         type: columns.find((item) => item.name === result.columns[column].name)?.type ?? '',
@@ -85,7 +88,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         columns
       })
     } catch (error) {
-      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : '无法编辑单元格' })
+      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : t('无法编辑单元格') })
     } finally {
       if (request.current === controller) {
         request.current = null
@@ -126,7 +129,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     let saved = 0
     try {
       const columns = await getColumns(tab.connectionId, tab.database, tab.table, controller.signal)
-      if ([...Object.values(pending), ...pendingNew].some((draft) => JSON.stringify(draft.columns) !== JSON.stringify(columns))) throw new Error('表结构已变化，请放弃修改并重新打开表')
+      if ([...Object.values(pending), ...pendingNew].some((draft) => JSON.stringify(draft.columns) !== JSON.stringify(columns))) throw new Error(t('表结构已变化，请放弃修改并重新打开表'))
       const adapter = getDatabaseAdapter(connection.type)
       // 主键修改最后执行；每次成功后使用最新主键定位同一行的后续修改。
       const entries = Object.entries(pending).sort(
@@ -136,7 +139,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         const value = draft.isNull ? null : draft.value
         const sql = adapter.updateCellSQL(tab.database, tab.table, columns, working, working.rows[draft.row], draft.column, value)
         const updated = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal, true)
-        if (updated.affectedRows !== 1) throw new Error('目标行或原值已变化，请重新打开表确认')
+        if (updated.affectedRows !== 1) throw new Error(t('目标行或原值已变化，请重新打开表确认'))
         working.rows[draft.row][draft.column] = value
         delete pending[key]
         saved++
@@ -145,7 +148,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       for (const row of [...pendingNew]) {
         const sql = adapter.insertRowSQL(tab.database, tab.table, columns, result, row.cells)
         const inserted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
-        if (inserted.affectedRows !== 1) throw new Error('新增行未成功，请核对数据')
+        if (inserted.affectedRows !== 1) throw new Error(t('新增行未成功，请核对数据'))
         pendingNew.splice(
           pendingNew.findIndex((item) => item.key === row.key),
           1
@@ -157,14 +160,16 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       const refreshed = await executeQuery(tab.connectionId, { database: tab.database, sql: adapter.tableDataSQL(tab.database, tab.table) }, controller.signal)
       if (!controller.signal.aborted) {
         onResult(tab.id, refreshed)
-        message.success('已保存 ' + saved + ' 处修改')
+        message.success(t('已保存 {count} 处修改', { count: saved }))
       }
     } catch (error) {
       if (!controller.signal.aborted) {
         if (saved) onResult(tab.id, working)
         setOperationError({
           page: tab.id,
-          detail: (saved ? '已有 ' + saved + ' 处保存成功，剩余 ' + (Object.keys(pending).length + pendingNew.length) + ' 处未保存。' : '') + (error instanceof Error ? error.message : '保存失败')
+          detail:
+            (saved ? t('已有 {saved} 处保存成功，剩余 {remaining} 处未保存。', { saved, remaining: Object.keys(pending).length + pendingNew.length }) : '') +
+            (error instanceof Error ? error.message : t('保存失败'))
         })
       }
     } finally {
@@ -185,11 +190,11 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
       if (controller.signal.aborted) return
       const table = tables.find((item) => item.name === tab.table)
-      if (!table || table.type.includes('VIEW')) throw new Error('视图不支持新增行')
+      if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持新增行'))
       setCell(undefined)
       setNewRows((previous) => [{ key: nextKey.current--, cells: result.columns.map(() => undefined), columns }, ...previous])
     } catch (error) {
-      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : '新增失败' })
+      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : t('新增失败') })
     } finally {
       if (request.current === controller) {
         request.current = null
@@ -202,10 +207,10 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     const selected = [...new Set(keys)].filter((key) => key >= 0 && result.rows[key])
     if (!selected.length) return
     modal.confirm({
-      title: `删除选中的 ${selected.length} 行数据？`,
-      content: '将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。',
-      okText: '删除',
-      cancelText: '取消',
+      title: t('删除选中的 {value1} 行数据？', { value1: selected.length }),
+      content: t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。'),
+      okText: t('删除'),
+      cancelText: t('取消'),
       okButtonProps: { danger: true },
       onOk: async () => {
         if (request.current) return
@@ -218,12 +223,12 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         try {
           const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
           const table = tables.find((item) => item.name === tab.table)
-          if (!table || table.type.includes('VIEW')) throw new Error('视图不支持直接删除数据，请打开基础表')
+          if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接删除数据，请打开基础表'))
           const adapter = getDatabaseAdapter(connection.type)
           const statements = selected.map((key) => ({ key, sql: adapter.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
           for (const { key, sql } of statements) {
             const deleted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
-            if (deleted.affectedRows !== 1) throw new Error('目标行已变化或不存在，请刷新后重试')
+            if (deleted.affectedRows !== 1) throw new Error(t('目标行已变化或不存在，请刷新后重试'))
             removed.add(key)
           }
           const refreshed = await executeQuery(tab.connectionId, { database: tab.database, sql: adapter.tableDataSQL(tab.database, tab.table) }, controller.signal)
@@ -231,7 +236,10 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         } catch (error) {
           if (!controller.signal.aborted) {
             if (removed.size) onResult(tab.id, { ...result, rows: result.rows.filter((_, index) => !removed.has(index)), rowCount: result.rows.length - removed.size })
-            setDeletionError({ page: tab.id, detail: `已删除 ${removed.size} 行。` + (error instanceof Error ? error.message : '删除失败') + '；若请求中断，请刷新核对实际数据后再重试。' })
+            setDeletionError({
+              page: tab.id,
+              detail: t('已删除 {value1} 行。', { value1: removed.size }) + (error instanceof Error ? error.message : t('删除失败')) + t('；若请求中断，请刷新核对实际数据后再重试。')
+            })
           }
         } finally {
           onDeleted()

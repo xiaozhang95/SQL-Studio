@@ -16,18 +16,21 @@ func localOnly(c *gin.Context) {
 		host = r.Host
 	}
 	if host != "localhost" && host != "127.0.0.1" && host != "::1" {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid Host"})
+		respond(c, http.StatusForbidden, gin.H{"error": "无效的 Host"})
+		c.Abort()
 		return
 	}
 	if origin := r.Header.Get("Origin"); origin != "" {
 		parsed, e := url.Parse(origin)
 		if e != nil || parsed.Host != r.Host || parsed.Scheme != "http" {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cross-origin request rejected"})
+			respond(c, http.StatusForbidden, gin.H{"error": "拒绝跨源请求"})
+			c.Abort()
 			return
 		}
 	}
 	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cross-site request rejected"})
+		respond(c, http.StatusForbidden, gin.H{"error": "拒绝跨站请求"})
+		c.Abort()
 		return
 	}
 	c.Header("X-Content-Type-Options", "nosniff")

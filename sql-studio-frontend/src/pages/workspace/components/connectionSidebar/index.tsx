@@ -1,5 +1,6 @@
 import ContentLoading from '@/components/contentLoading'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import DatabaseExplorer from '../databaseExplorer'
@@ -29,6 +30,8 @@ type Props = {
 }
 /** 侧栏承载完整连接树，范围选择与结构缓存由工作区管理。 */
 export default function ConnectionSidebar({ model, layout }: Props) {
+  const { t } = useTranslation()
+
   const { panel, visibleWidth, minimumWidth, maximumWidth, resizing, resizer } = layout
   return (
     <aside
@@ -42,20 +45,20 @@ export default function ConnectionSidebar({ model, layout }: Props) {
         minHeight: 0,
         overflow: 'hidden',
         background: 'var(--surface)',
-        borderRight: '1px solid var(--layout-border)',
+        borderRight: '1px solid var(--border)',
         width: visibleWidth
       }}
     >
-      {model.connectionLoading && !model.connections.length ? <ContentLoading label="正在加载连接…" /> : <DatabaseExplorer model={model} />}
+      {model.connectionLoading && !model.connections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} />}
       <div
         className="sidebar-resizer"
         role="separator"
-        aria-label="调整数据库对象栏宽度"
+        aria-label={t('调整数据库对象栏宽度')}
         aria-orientation="vertical"
         aria-valuemin={minimumWidth}
         aria-valuemax={maximumWidth}
         aria-valuenow={Math.round(visibleWidth)}
-        aria-valuetext={`${Math.round(visibleWidth)} 像素`}
+        aria-valuetext={t('{value1} 像素', { value1: Math.round(visibleWidth) })}
         tabIndex={0}
         {...resizer}
         style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}

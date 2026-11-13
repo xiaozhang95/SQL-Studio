@@ -12,6 +12,8 @@ pnpm dev
 
 开发地址 `http://127.0.0.1:15173`，/api 同源代理到 Go 18080。构建使用 `pnpm build`，Go 提供 dist 网页；`pnpm preview` 仅预览静态资源，没有 API 代理。
 
+前端使用历史路由，`/` 为 SQL 工作区，`/agent` 为 AI 助手。Vite 配置为 SPA 模式，支持直接访问和刷新；构建后的网页由 Go 显式提供这两个页面入口。页面内切换使用 History API，支持浏览器前进、后退。
+
 [源码索引](src/README.md) · [前端规范](../docs/FRONTEND_STANDARDS.md) · [项目框架](../docs/ARCHITECTURE.md) · [测试](tests/README.md)
 
 页面只组合组件，状态、请求与取消归所属 hook。MySQL、MariaDB 和 PostgreSQL 的 SQL、补全和对象操作经 databases 适配器调用，AI 服务商经 ai 适配器调用。查询与结果始终归属发起页面及连接，恢复本机配置不执行 SQL。

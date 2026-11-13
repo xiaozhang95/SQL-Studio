@@ -10,13 +10,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"sql-studio-backend/internal/localization"
 	"sql-studio-backend/internal/modules/query"
 )
 
 const maxRequestBytes = 1024 * 1024
 
+// NotFound keeps the application's fallback API route on the shared response path.
+func NotFound(c *gin.Context) {
+	respond(c, http.StatusNotFound, gin.H{"error": "接口不存在"})
+}
+
 func respond(c *gin.Context, status int, value any) {
 	c.Header("Cache-Control", "no-store")
+	if status >= http.StatusBadRequest {
+		if body, ok := value.(gin.H); ok {
+			if message, ok := body["error"].(string); ok {
+				localized := make(gin.H, len(body))
+				for key, field := range body {
+					localized[key] = field
+				}
+				localized["error"] = localization.Text(languageFor(c), message)
+				value = localized
+			}
+		}
+	}
 	c.JSON(status, value)
 }
 func fail(c *gin.Context, err error) {

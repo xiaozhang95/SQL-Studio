@@ -1,8 +1,8 @@
 # SQL Studio 接口列表
 
-Swagger UI：启动前后端后打开 `http://127.0.0.1:15173/swagger.html`；构建版由 Go 提供 `http://127.0.0.1:18080/swagger.html`。UI 资源随前端构建，不依赖 CDN。
+Swagger UI：开发时启动前后端后打开 `http://127.0.0.1:15173/swagger.html`；Go 从网页目录提供同源 `/swagger.html`。Electron 打包版由主进程分配本地服务端口。UI 资源随前端构建，不依赖 CDN。
 
-仓库根目录 `build.ps1` 将前端 dist 内嵌进 Go 可执行文件。打包版 Gin 在 `GET /` 提供工作台、`GET /swagger.html` 提供文档页面、`GET /assets/*` 提供构建静态资源（均支持 HEAD），不依赖外部 dist；`/api` 命名空间保留给下方接口，未知 API 返回 JSON 404。静态目录不列文件，丢失资源返回 404；SQLDESK_WEB_DIR 可显式覆盖内嵌网页。
+Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时通过 SQLDESK_WEB_DIR 指定随包网页目录。Gin 在 `GET /` 和 `GET /agent` 提供同一份页面入口，由前端历史路由分别展示工作区和 AI 助手；`GET /swagger.html` 提供文档页面、`GET /assets/*` 提供构建静态资源（均支持 HEAD）。`/api` 命名空间保留给下方接口，未知 API 返回 JSON 404。静态目录不列文件，丢失资源和未知页面路径返回 404。独立开发运行未指定 SQLDESK_WEB_DIR 时，从后端工作目录读取 `../sql-studio-frontend/dist`。
 
 [OpenAPI 3.0 契约](../sql-studio-backend/internal/httpapi/openapi.json) 是字段、请求、响应及状态码的完整说明，运行时从 `GET /api/openapi.json` 获取。修改接口同步契约和本文件；Go 测试校验三者路由一致。
 
@@ -42,6 +42,10 @@ Swagger UI：启动前后端后打开 `http://127.0.0.1:15173/swagger.html`；�
 | DELETE | `/ai/config`                  | 清除 AI 配置并关闭续写                      |
 
 ## 公共约定
+
+JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言范围与 q 权重，未提供或无法匹配时默认简体中文。响应以 Content-Language 标明所选语言，并设置 Vary: Accept-Language。应用错误、导出流错误、Agent 系统状态、停止与继续确认提示按请求语言返回；读取历史时只转换响应中的系统事件。SQL、字段与行数据、用户命名、模型回答及未知的数据库/系统原始错误保留原文，状态码、字段名和持久化格式不随语言变化。
+
+`appearance` 分区的 data 为 `{theme, fontSize, language}`，theme 支持 system/light/dark，fontSize 支持 small/standard/large，language 支持 zh-CN/en-US。前端读取既有配置时，缺少 language 按 zh-CN 展示；主题、字号和语言通过同一次显式保存提交，成功后应用。状态接口保持原有版本化信封和修订冲突约定，存储说明见 [用户状态配置](USER_STATE.md)。
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 

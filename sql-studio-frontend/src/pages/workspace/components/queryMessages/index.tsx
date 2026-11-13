@@ -3,8 +3,9 @@ import { Collapse, Empty, Pagination, Space, Typography } from 'antd'
 import { useState } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
-import { tablePaginationDefaults } from '@/constant/tablePagination'
 import type { DatabaseType } from '@/databases/typings'
+import { useTablePagination } from '@/hooks/useTablePagination'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState } from '@/typings/workspace'
 
@@ -14,6 +15,10 @@ import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
 export default function QueryMessages({ run, running, themeMode, databaseType }: Props) {
+  const tablePagination = useTablePagination()
+
+  const { t } = useTranslation()
+
   const statements = statementOutputs(run)
   const identity = run.startedAt ?? run.id
   const [selection, setSelection] = useState<{ identity: typeof identity; page: number }>()
@@ -41,21 +46,24 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
             key: String(index),
             label: (
               <Space wrap>
-                <Typography.Text>语句 {index + 1}</Typography.Text>
-                <Typography.Text type={item.error ? 'danger' : 'success'}>
-                  {item.error ? <CloseCircleOutlined /> : <CheckCircleOutlined />} {item.error ? '执行失败' : '执行成功'}
+                <Typography.Text>
+                  {t('语句 ')}
+                  {index + 1}
                 </Typography.Text>
-                <Typography.Text type="secondary">{statementDuration(item) === undefined ? '耗时未记录' : `${statementDuration(item)} ms`}</Typography.Text>
+                <Typography.Text type={item.error ? 'danger' : 'success'}>
+                  {item.error ? <CloseCircleOutlined /> : <CheckCircleOutlined />} {item.error ? t('执行失败') : t('执行成功')}
+                </Typography.Text>
+                <Typography.Text type="secondary">{statementDuration(item) === undefined ? t('耗时未记录') : `${statementDuration(item)} ms`}</Typography.Text>
               </Space>
             ),
             children: (
-              <section aria-label={`语句 ${index + 1} 执行消息`}>
-                {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>此结果未记录执行语句</div>}
+              <section aria-label={t('语句 {value1} 执行消息', { value1: index + 1 })}>
+                {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>{t('此结果未记录执行语句')}</div>}
                 {item.error ? (
                   <ErrorNotice error={item.error} style={{ marginTop: 8 }} />
                 ) : (
                   <Typography.Paragraph type="success" style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
-                    {item.result?.columns.length ? 'OK' : `OK，影响 ${item.result?.affectedRows ?? 0} 行`}
+                    {item.result?.columns.length ? 'OK' : t('OK，影响 {value1} 行', { value1: item.result?.affectedRows ?? 0 })}
                   </Typography.Paragraph>
                 )}
               </section>
@@ -65,7 +73,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
       />
       {statements.length > 50 && (
         <Pagination
-          {...tablePaginationDefaults}
+          {...tablePagination}
           current={page}
           pageSize={50}
           total={statements.length}
@@ -75,8 +83,8 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
           }}
         />
       )}
-      {running && <Typography.Text type="secondary">正在执行，消息随已完成语句更新…</Typography.Text>}
-      {!running && !statements.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无执行消息" />}
+      {running && <Typography.Text type="secondary">{t('正在执行，消息随已完成语句更新…')}</Typography.Text>}
+      {!running && !statements.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('暂无执行消息')} />}
     </div>
   )
 }

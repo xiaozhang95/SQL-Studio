@@ -1,5 +1,7 @@
 # 当前查询连接与数据库选择器
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 scope 为 QueryScope；connections 为已保存连接；objects 为 useDatabaseObjects 返回值；disabled；onConnection(id)、onSelect(database, table?)。

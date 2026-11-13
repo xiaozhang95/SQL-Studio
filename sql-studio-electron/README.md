@@ -75,6 +75,8 @@ electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-
 
 桌面调试使用手动启动的 Vite 和 Go 服务，关闭 Electron 后，开发服务继续运行。打包版自动选择 `127.0.0.1` 空闲端口，启动随包 Go 服务，等待 `/api/health` 就绪后加载同源网页。关闭最后一个窗口即退出，打包版会清理自己创建的 Go 子进程。macOS/Linux 最多等待 6 秒，Windows 使用系统进程终止语义。
 
+桌面页面使用 `/` 和 `/agent` 历史路由，页面内切换不整页加载。窗口的同源导航规则允许这两条路径；打包版刷新 `/agent` 时，由随包 Go 服务提供同一份页面入口。
+
 桌面调试、绿色版和安装版默认都使用当前用户主目录下的 `.sql-studio/`，Windows 路径为 `%USERPROFILE%\.sql-studio`，macOS 和 Linux 路径为 `~/.sql-studio/`。
 
 - `state/` 保存连接、密钥、工作区及 AI 配置，与独立运行的 Go 服务共用默认路径。

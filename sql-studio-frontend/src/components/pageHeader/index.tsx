@@ -71,7 +71,7 @@ export default function PageHeader({
           justifyContent: 'space-between',
           gap: token.marginXS,
           background: 'var(--surface)',
-          borderBottom: '1px solid var(--layout-border)',
+          borderBottom: '1px solid var(--border)',
           userSelect: 'none',
           position: 'relative'
         }}

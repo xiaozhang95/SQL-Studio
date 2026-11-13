@@ -5,6 +5,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  appType: 'spa',
   plugins: [react()],
   // Swagger 独立构建，工作台无需加载文档 UI；Go 可直接提供同一份静态页面。
   build: {

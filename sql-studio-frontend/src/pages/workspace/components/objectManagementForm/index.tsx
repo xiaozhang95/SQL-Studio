@@ -7,6 +7,7 @@ import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
 import type { useObjectManagement } from '../../hooks/useObjectManagement'
@@ -21,6 +22,8 @@ type FormManager = Pick<
 type Props = { manager: FormManager; themeMode: ThemeMode }
 type FormField = { name: number; key: number }
 export default function ObjectManagementForm({ manager, themeMode }: Props) {
+  const { t } = useTranslation()
+
   const { dialog, form, loading, saving, ready, error, collations, original, previewSQL } = manager
   const action = dialog?.action
   const postgresDesign = Boolean(dialog && getDatabaseAdapter(dialog.connection.type).tableDesign)
@@ -41,14 +44,14 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           style={{ marginBottom: 16 }}
           title={
             action === ObjectAction.TruncateTable
-              ? '清空表会删除所有数据，保留表结构。此操作不可撤销。'
+              ? t('清空表会删除所有数据，保留表结构。此操作不可撤销。')
               : action === ObjectAction.DropSchema
-                ? '仅允许删除空 Schema；包含对象时数据库会拒绝删除。'
+                ? t('仅允许删除空 Schema；包含对象时数据库会拒绝删除。')
                 : action === ObjectAction.DropDatabase
-                  ? '将删除整个数据库及其中的表和数据。此操作不可撤销。'
+                  ? t('将删除整个数据库及其中的表和数据。此操作不可撤销。')
                   : dialog?.target.view
-                    ? '将删除此视图定义，不会删除基础表数据。此操作不可撤销。'
-                    : '将删除此对象及其数据。此操作不可撤销。'
+                    ? t('将删除此视图定义，不会删除基础表数据。此操作不可撤销。')
+                    : t('将删除此对象及其数据。此操作不可撤销。')
           }
         />
       )}
@@ -59,8 +62,8 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           style={{ marginBottom: 12 }}
           title={
             postgresDesign
-              ? '保存会修改表结构；删除字段可能导致数据丢失。生成列暂不可编辑，依赖和类型转换由数据库校验。'
-              : '保存会直接修改数据库结构；删除字段可能丢失该字段的数据。其他已有索引保留，特殊字段只读。'
+              ? t('保存会修改表结构；删除字段可能导致数据丢失。生成列暂不可编辑，依赖和类型转换由数据库校验。')
+              : t('保存会直接修改数据库结构；删除字段可能丢失该字段的数据。其他已有索引保留，特殊字段只读。')
           }
         />
       )}
@@ -78,15 +81,15 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           <Form.Item
             name="confirmation"
             validateFirst
-            label="确认名称"
+            label={t('确认名称')}
             extra={
               <span style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                <span style={{ userSelect: 'none' }}>输入</span>
+                <span style={{ userSelect: 'none' }}>{t('输入')}</span>
                 <span style={{ userSelect: 'all', overflowWrap: 'anywhere', whiteSpace: 'break-spaces' }}>{targetName}</span>
-                <span style={{ userSelect: 'none' }}>确认</span>
+                <span style={{ userSelect: 'none' }}>{t('确认')}</span>
               </span>
             }
-            rules={[{ required: true, message: '请输入对象名称' }, { validator: (_, value) => (value === targetName ? Promise.resolve() : Promise.reject(new Error('对象名称不匹配'))) }]}
+            rules={[{ required: true, message: t('请输入对象名称') }, { validator: (_, value) => (value === targetName ? Promise.resolve() : Promise.reject(new Error(t('对象名称不匹配')))) }]}
           >
             <Input autoComplete="off" placeholder={targetName} />
           </Form.Item>
@@ -94,26 +97,26 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
           <Form.Item
             name="name"
             hidden={action === ObjectAction.EditTable}
-            label={schemaForm ? 'Schema 名称' : databaseForm ? '数据库名称' : '表名称'}
+            label={schemaForm ? t('Schema 名称') : databaseForm ? t('数据库名称') : t('表名称')}
             required={action === ObjectAction.EditDatabase ? false : undefined}
             rules={[
-              { required: true, whitespace: true, message: '请输入名称' },
-              { max: 64, message: '名称最多 64 个字符' }
+              { required: true, whitespace: true, message: t('请输入名称') },
+              { max: 64, message: t('名称最多 64 个字符') }
             ]}
           >
             <Input
               disabled={loading || saving || !ready || action === ObjectAction.EditDatabase || action === ObjectAction.EditTable}
               autoComplete="off"
-              placeholder={schemaForm ? '请输入 Schema 名称' : databaseForm ? '请输入数据库名称' : '请输入表名称'}
+              placeholder={schemaForm ? t('请输入 Schema 名称') : databaseForm ? t('请输入数据库名称') : t('请输入表名称')}
             />
           </Form.Item>
         )}
         {DatabasePropertiesForm && <DatabasePropertiesForm creating={action === ObjectAction.CreateDatabase} definition={manager.databaseDefinition} />}
         {databaseForm && dialog && getDatabaseAdapter(dialog.connection.type).objects && (
           <>
-            <Form.Item name="charset" label="字符集" rules={[{ required: true }]}>
+            <Form.Item name="charset" label={t('字符集')} rules={[{ required: true }]}>
               <Select
-                placeholder="请选择字符集"
+                placeholder={t('请选择字符集')}
                 showSearch
                 options={Array.from(new Set(collations.map((value) => value.charset))).map((value) => ({ value, label: value }))}
                 onChange={(value) => {
@@ -124,11 +127,11 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
             </Form.Item>
             <Form.Item
               name="collation"
-              label="排序规则"
+              label={t('排序规则')}
               rules={[{ required: true }]}
-              extra={action === ObjectAction.EditDatabase ? '修改库默认字符集和排序规则，不转换已有表的数据或字段。' : undefined}
+              extra={action === ObjectAction.EditDatabase ? t('修改库默认字符集和排序规则，不转换已有表的数据或字段。') : undefined}
             >
-              <Select placeholder="请选择排序规则" showSearch options={collations.filter((value) => value.charset === charset).map((value) => ({ value: value.name, label: value.name }))} />
+              <Select placeholder={t('请选择排序规则')} showSearch options={collations.filter((value) => value.charset === charset).map((value) => ({ value: value.name, label: value.name }))} />
             </Form.Item>
           </>
         )}
@@ -140,17 +143,17 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                 return loading || saving || !ready || Boolean(original.find((value) => value.originalName === key)?.locked)
               }
               const item = (row: FormField, key: string, child: ReactNode, required = false) => (
-                <Form.Item name={[row.name, key]} style={{ margin: 0 }} rules={required ? [{ required: true, whitespace: true, message: '必填' }] : undefined}>
+                <Form.Item name={[row.name, key]} style={{ margin: 0 }} rules={required ? [{ required: true, whitespace: true, message: t('必填') }] : undefined}>
                   {child}
                 </Form.Item>
               )
               const columns: TableColumnsType<FormField> = [
                 {
-                  title: '字段名',
+                  title: t('字段名'),
                   width: 160,
                   render: (_, row) => (
                     <>
-                      {item(row, 'name', <Input placeholder="请输入字段名" disabled={locked(row)} />, true)}
+                      {item(row, 'name', <Input placeholder={t('请输入字段名')} disabled={locked(row)} />, true)}
                       <Form.Item hidden name={[row.name, 'originalName']}>
                         <Input />
                       </Form.Item>
@@ -161,12 +164,12 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   )
                 },
                 {
-                  title: '类型',
+                  title: t('类型'),
                   width: 180,
-                  render: (_, row) => item(row, 'type', <AutoComplete placeholder="选择或输入字段类型" disabled={locked(row)} options={manager.fieldTypes.map((value) => ({ value }))} />, true)
+                  render: (_, row) => item(row, 'type', <AutoComplete placeholder={t('选择或输入字段类型')} disabled={locked(row)} options={manager.fieldTypes.map((value) => ({ value }))} />, true)
                 },
                 ...(['nullable', 'primary', 'autoIncrement'] as const).map((key) => ({
-                  title: { nullable: '允许 NULL', primary: '主键', autoIncrement: '自增' }[key],
+                  title: { nullable: t('允许 NULL'), primary: t('主键'), autoIncrement: t('自增') }[key],
                   width: 85,
                   render: (_: unknown, row: FormField) => (
                     <Form.Item name={[row.name, key]} valuePropName="checked" style={{ margin: 0 }}>
@@ -186,26 +189,26 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   )
                 })),
                 {
-                  title: '默认值类型',
+                  title: t('默认值类型'),
                   width: 120,
                   render: (_, row) =>
                     item(
                       row,
                       'defaultMode',
                       <Select
-                        placeholder="请选择默认值类型"
+                        placeholder={t('请选择默认值类型')}
                         disabled={locked(row)}
                         options={[
-                          { value: 'none', label: '无默认值' },
+                          { value: 'none', label: t('无默认值') },
                           { value: 'null', label: 'NULL' },
-                          { value: 'literal', label: '常量' },
-                          { value: 'expression', label: postgresDesign ? '表达式' : '时间表达式' }
+                          { value: 'literal', label: t('常量') },
+                          { value: 'expression', label: postgresDesign ? t('表达式') : t('时间表达式') }
                         ]}
                       />
                     )
                 },
                 {
-                  title: '默认值',
+                  title: t('默认值'),
                   width: 200,
                   render: (_, row) => (
                     <Form.Item noStyle shouldUpdate>
@@ -214,9 +217,9 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                           row,
                           'defaultValue',
                           <TemporalInput
-                            placeholder="请输入默认值"
+                            placeholder={t('请输入默认值')}
                             disabled={locked(row)}
-                            label="字段默认值"
+                            label={t('字段默认值')}
                             fieldType={form.getFieldValue(['fields', row.name, 'defaultMode']) === 'literal' ? form.getFieldValue(['fields', row.name, 'type']) : ''}
                           />
                         )
@@ -225,9 +228,9 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   )
                 },
                 {
-                  title: '注释',
+                  title: t('注释'),
                   width: 160,
-                  render: (_, row) => item(row, 'comment', <Input placeholder="请输入注释（可选）" disabled={locked(row)} />)
+                  render: (_, row) => item(row, 'comment', <Input placeholder={t('请输入注释（可选）')} disabled={locked(row)} />)
                 },
                 {
                   title: '',
@@ -235,11 +238,11 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   fixed: 'right',
                   render: (_, row) => (
                     <ToolbarButton
-                      label="删除字段"
+                      label={t('删除字段')}
                       danger
                       icon={<DeleteOutlined />}
                       disabled={locked(row)}
-                      hint={locked(row) ? '特殊字段暂不支持修改或删除' : '删除字段'}
+                      hint={locked(row) ? t('特殊字段暂不支持修改或删除') : t('删除字段')}
                       onClick={() => remove(row.name)}
                     />
                   )
@@ -248,7 +251,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
               return (
                 <>
                   <Table size={appearance.tableSize} rowKey="key" dataSource={fields} columns={columns} pagination={false} scroll={{ x: 1250 }} />
-                  <ToolbarButton label="添加字段" icon={<PlusOutlined />} style={{ marginTop: 12 }} onClick={() => add(manager.defaultField())} />
+                  <ToolbarButton label={t('添加字段')} icon={<PlusOutlined />} style={{ marginTop: 12 }} onClick={() => add(manager.defaultField())} />
                 </>
               )
             }}

@@ -1,5 +1,7 @@
 # 工作区业务编排
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [源码](index.tsx)
 
 useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段。主区域只有一层 query/data/structure/ddl 页面标签。SQL 页共用编辑器和最新一批结果，对象操作打开独立结果页；关闭最后一页保留空状态，不自动新建。

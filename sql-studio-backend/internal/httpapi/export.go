@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"sql-studio-backend/internal/localization"
 	"sql-studio-backend/internal/model"
 )
 
@@ -30,6 +31,7 @@ func (h *handler) exportData(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	c.Header("X-Accel-Buffering", "no")
 	control := http.NewResponseController(c.Writer)
+	language := languageFor(c)
 	write := func(data string) error {
 		// Extend only this streaming response; normal requests retain the server timeout.
 		_ = control.SetWriteDeadline(time.Now().Add(30 * time.Second))
@@ -74,9 +76,11 @@ func (h *handler) exportData(c *gin.Context) {
 			if !ok {
 				return
 			}
+			event.Error = localization.Text(language, event.Error)
 			data, err := json.Marshal(event)
 			if err != nil {
-				_ = write("data: {\"type\":\"error\",\"error\":\"导出数据编码失败\"}\n\n")
+				failure, _ := json.Marshal(exportEvent{Type: "error", Error: localization.Text(language, "导出数据编码失败")})
+				_ = write("data: " + string(failure) + "\n\n")
 				return
 			}
 			if write("data: "+string(data)+"\n\n") != nil {

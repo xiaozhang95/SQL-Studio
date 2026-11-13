@@ -7,6 +7,7 @@ import PageHeader from '@/components/pageHeader'
 import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
 import type { WorkspaceController } from '../../hooks/workspace'
@@ -33,6 +34,8 @@ export function ChatPage({
   onBack: () => void
   themeError?: string
 }) {
+  const { t } = useTranslation()
+
   const operation = useOperationMode(workspace)
   const chat = useChat(workspace, operation.mode)
   const ai = useAISettings()
@@ -40,7 +43,7 @@ export function ChatPage({
   const { token } = theme.useToken()
   const screens = Grid.useBreakpoint()
   const mobile = screens.md === false
-  const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? '新建会话'
+  const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? t('新建会话')
   return (
     <Flex
       style={{
@@ -58,16 +61,16 @@ export function ChatPage({
         errors={[workspace.error, chat.error, ai.error, themeError]}
         actions={
           <>
-            <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label="正在保存对话…" />
+            <SaveStatus saving={workspace.ready && workspace.saving} error={workspace.error} label={t('正在保存对话…')} />
             <SystemSettings {...appearancePreferences} />
           </>
         }
       >
         {' '}
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
-          新建会话
+          {t('新建会话')}
         </Button>
-        {mobile && <Button type="text" aria-label="历史会话" icon={<MenuOutlined />} onClick={chat.showHistory} />}
+        {mobile && <Button type="text" aria-label={t('历史会话')} icon={<MenuOutlined />} onClick={chat.showHistory} />}
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
       </PageHeader>
       <Flex style={{ flex: 1, minHeight: 0 }}>
@@ -101,9 +104,9 @@ export function ChatPage({
             >
               <div style={chat.loading || chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
                 {chat.loading ? (
-                  <ContentLoading label="正在加载会话…" />
+                  <ContentLoading label={t('正在加载会话…')} />
                 ) : chat.loadError ? (
-                  <ErrorNotice title="会话加载失败" error={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>重试</Button>} />
+                  <ErrorNotice title={t('会话加载失败')} error={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button>} />
                 ) : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (

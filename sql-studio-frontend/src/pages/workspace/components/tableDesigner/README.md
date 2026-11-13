@@ -1,5 +1,7 @@
 # 表设计页面
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [源码](index.tsx) · [组件索引](../README.md)
 
 TableDesigner 接收 page:WorkspaceTab、connections、blocked、available、themeMode，以及按页面 ID 回报忙碌/未保存状态、提交成功和对象变更的回调。每页通过 useTableDesigner 拥有独立状态；正文复用 objectManagementForm，不使用 Modal。

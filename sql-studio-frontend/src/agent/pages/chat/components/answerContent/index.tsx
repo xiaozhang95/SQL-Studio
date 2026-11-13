@@ -1,6 +1,8 @@
 import { Alert, Collapse, Flex, Typography } from 'antd'
 import { useMemo } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 import { answerTables } from '../../../../utils/answerTables'
 import { CHAT } from '../../constant/chat'
 import { AnswerMarkdown } from '../answerMarkdown'
@@ -8,6 +10,8 @@ import { CodeBlock } from '../codeBlock'
 import { QueryResult } from '../queryResult'
 
 export function AnswerContent({ text, streaming = false }: { text: string; streaming?: boolean }) {
+  const { t } = useTranslation()
+
   const parts = useMemo(() => answerTables(text), [text])
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
@@ -17,12 +21,12 @@ export function AnswerContent({ text, streaming = false }: { text: string; strea
         if (part.kind === 'pending-table')
           return streaming ? (
             <Typography.Text key={index} type="secondary">
-              正在整理查询结果…
+              {t('正在整理查询结果…')}
             </Typography.Text>
           ) : (
             <Flex key={index} vertical gap={CHAT.spacing.detail}>
-              <Alert type="warning" showIcon title="表格内容未完整生成，请在执行过程中查看已返回的查询结果。" />
-              <Collapse size="small" items={[{ key: 'original', label: '查看未完成的原始内容', children: <CodeBlock text={part.text} language="json" /> }]} />
+              <Alert type="warning" showIcon title={t('表格内容未完整生成，请在执行过程中查看已返回的查询结果。')} />
+              <Collapse size="small" items={[{ key: 'original', label: t('查看未完成的原始内容'), children: <CodeBlock text={part.text} language="json" /> }]} />
             </Flex>
           )
         const content = part.text.trim()

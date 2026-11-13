@@ -6,8 +6,9 @@ import ContentLoading from '@/components/contentLoading'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
-import { tablePaginationDefaults } from '@/constant/tablePagination'
 import { getDatabaseAdapter } from '@/databases'
+import { useTablePagination } from '@/hooks/useTablePagination'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import { exportCSV } from '@/utils/csv'
 
@@ -57,6 +58,10 @@ type Props = {
 }
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，分页独立于滚动内容。 */
 export default function QueryResults({ model, themeMode }: Props) {
+  const tablePagination = useTablePagination()
+
+  const { t } = useTranslation()
+
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
   const editingBlocked = model.running || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
   const editing = useDataEditing({
@@ -106,12 +111,12 @@ export default function QueryResults({ model, themeMode }: Props) {
         row: {
           key: number
         }
-      ) => (row.key < 0 ? <ToolbarButton label="移除新增行" size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
+      ) => (row.key < 0 ? <ToolbarButton label={t('移除新增行')} size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
     },
     ...(result?.columns || []).map((column, index) => ({
       title: (
         <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-          {column.name}
+          {run?.kind === 'structure' ? t(column.name) : column.name}
           {column.type && (
             <Typography.Text className="column-type" type="secondary">
               {column.type}
@@ -122,7 +127,7 @@ export default function QueryResults({ model, themeMode }: Props) {
       key: String(index),
       sorter: true,
       sortOrder: sort?.column === index ? sort.order : null,
-      showSorterTooltip: { title: '对当前已加载的结果排序' },
+      showSorterTooltip: { title: t('对当前已加载的结果排序') },
       onCell: (row: { key: number }) => ({
         className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
         onDoubleClick: () => {
@@ -165,10 +170,10 @@ export default function QueryResults({ model, themeMode }: Props) {
               (String(row.cells[result?.columns.findIndex((item) => item.name === '类型') ?? -1]).includes('VIEW') ? <EyeOutlined /> : <TableOutlined />)}
             <span
               className="cell-value"
-              title={row.cells[index] === undefined ? '使用默认值' : String(row.cells[index])}
+              title={row.cells[index] === undefined ? t('使用默认值') : String(row.cells[index])}
               style={{ display: 'block', maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             >
-              {row.cells[index] === undefined ? '(默认)' : String(row.cells[index])}
+              {row.cells[index] === undefined ? t('(默认)') : String(row.cells[index])}
             </span>
           </span>
         )
@@ -178,8 +183,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   if (!run) return null
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
-      {run.interrupted && <Alert type="warning" banner title="上次执行因页面刷新中断，已完成结果保留；未自动继续执行。" />}
-      <ErrorNotice onClose={editing.clearDeletionError} title="删除数据未完成" error={editing.deletionError} />
+      {run.interrupted && <Alert type="warning" banner title={t('上次执行因页面刷新中断，已完成结果保留；未自动继续执行。')} />}
+      <ErrorNotice onClose={editing.clearDeletionError} title={t('删除数据未完成')} error={editing.deletionError} />
       <ErrorNotice onClose={editing.clearOperationError} error={editing.operationError} />
       <ResultTabs
         run={run}
@@ -211,7 +216,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             {tab.kind === 'data' && (
               <>
                 <ToolbarButton
-                  label="新增行"
+                  label={t('新增行')}
                   icon={<PlusOutlined />}
                   disabled={editingBlocked}
                   onClick={() => {
@@ -221,15 +226,15 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                 />
                 <ToolbarButton
-                  label="删除行"
+                  label={t('删除行')}
                   icon={<DeleteOutlined />}
                   danger
                   disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length}
-                  hint={editing.dirty ? '请先保存或放弃修改' : '删除选中的数据行'}
+                  hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
                   onClick={() => editing.deleteRows(selectedRows, () => setSelection({ keys: [] }))}
                 />
                 <ToolbarButton
-                  label="保存"
+                  label={t('保存')}
                   icon={<SaveOutlined />}
                   loading={editing.saving}
                   disabled={editingBlocked || !editing.dirty}
@@ -238,7 +243,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                     void editing.save()
                   }}
                 />
-                <ToolbarButton label="放弃修改" icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
+                <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
               </>
             )}
           </div>
@@ -247,8 +252,8 @@ export default function QueryResults({ model, themeMode }: Props) {
               <Input
                 style={{ width: 180, flex: '0 1 180px', minWidth: 0 }}
                 prefix={<SearchOutlined />}
-                placeholder="筛选当前结果"
-                aria-label="筛选查询结果"
+                placeholder={t('筛选当前结果')}
+                aria-label={t('筛选查询结果')}
                 value={resultSearch}
                 onChange={(event) => {
                   setResultSearch(event.target.value)
@@ -258,23 +263,23 @@ export default function QueryResults({ model, themeMode }: Props) {
                 disabled={!result}
               />
             )}
-            <div role="group" aria-label="结果操作" style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <div role="group" aria-label={t('结果操作')} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <ToolbarButton
-                label={tab.kind === 'query' ? '重新执行' : '刷新'}
+                label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
                 icon={<ReloadOutlined />}
                 loading={activeRunning}
                 disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-                hint={editing.dirty ? '请先保存或放弃修改' : tab.kind === 'query' ? '重新执行当前结果对应的 SQL，写入语句也会再次执行' : '刷新当前结果'}
+                hint={editing.dirty ? t('请先保存或放弃修改') : tab.kind === 'query' ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行') : t('刷新当前结果')}
                 onClick={model.refreshResult}
               />
-              {tab.kind !== 'query' && activeRunning && <ToolbarButton label="取消执行" icon={<StopOutlined />} danger onClick={cancelQuery} />}
+              {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
               {showingResult && (
                 <Dropdown
                   trigger={['click']}
                   menu={{
                     items: [
-                      { key: 'all', label: '导出全部' },
-                      { key: 'selected', label: `导出选中（${selectedRows.length}）`, disabled: !selectedRows.length }
+                      { key: 'all', label: t('导出全部') },
+                      { key: 'selected', label: t('导出选中（{value1}）', { value1: selectedRows.length }), disabled: !selectedRows.length }
                     ],
                     onClick: ({ key }) =>
                       result &&
@@ -285,31 +290,31 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                   disabled={!result?.isQuery || deferredSearch !== resultSearch}
                 >
-                  <ToolbarButton label="导出 CSV" icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch} aria-haspopup="menu" />
+                  <ToolbarButton label={t('导出 CSV')} icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch} aria-haspopup="menu" />
                 </Dropdown>
               )}
             </div>
           </div>
         </div>
       )}
-      {showingResult && !activeRunning && result?.truncated && <Alert type="warning" title="结果已达行数或大小上限，请收窄查询范围。" banner />}
+      {showingResult && !activeRunning && result?.truncated && <Alert type="warning" title={t('结果已达行数或大小上限，请收窄查询范围。')} banner />}
       <div
         ref={viewport}
         className="result-scroll"
         tabIndex={0}
-        aria-label="结果数据滚动区域"
+        aria-label={t('结果数据滚动区域')}
         aria-busy={editing.saving}
         style={{ position: 'relative', flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}
       >
-        {editing.saving && <ContentLoading label="正在保存并刷新数据…" style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)' }} />}
+        {editing.saving && <ContentLoading label={t('正在保存并刷新数据…')} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)' }} />}
         {activeKey === 'messages' ? (
           <QueryMessages key={tab.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
           <QuerySummary key={run.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
-          <ContentLoading label="正在加载结果…" />
+          <ContentLoading label={t('正在加载结果…')} />
         ) : run?.error ? (
-          <ErrorNotice style={{ margin: 16 }} title="执行失败" error={run.error} />
+          <ErrorNotice style={{ margin: 16 }} title={t('执行失败')} error={run.error} />
         ) : result ? (
           <>
             <Table
@@ -336,7 +341,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               dataSource={rows}
               pagination={false}
               scroll={{ x: scrollWidth, y: bodyHeight || 24 }}
-              locale={{ emptyText: result.isQuery ? '查询成功，没有匹配的数据' : `语句执行成功，影响 ${result.affectedRows} 行` }}
+              locale={{ emptyText: result.isQuery ? t('查询成功，没有匹配的数据') : t('语句执行成功，影响 {value1} 行', { value1: result.affectedRows }) }}
             />
           </>
         ) : (
@@ -347,12 +352,12 @@ export default function QueryResults({ model, themeMode }: Props) {
                 <TableOutlined />
               </EmptyStateIcon>
             }
-            description="暂无结果"
+            description={t('暂无结果')}
             style={{ margin: '20px 0' }}
           />
         )}
       </div>
-      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePaginationDefaults} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />}
+      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePagination} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />}
     </ResultsDock>
   )
 }

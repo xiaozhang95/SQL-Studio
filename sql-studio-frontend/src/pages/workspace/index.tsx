@@ -9,6 +9,7 @@ import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { sidebarLayout } from '@/constant/sidebarLayout'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 
 import ConnectionGroupModal from './components/connectionGroupModal'
@@ -34,6 +35,8 @@ type Props = AppearancePreferences & {
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
 export default function Workspace({ active, onOpenAgent, themeMode, themeError, themeReady, themeSaving, ...appearancePreferences }: Props) {
+  const { t } = useTranslation()
+
   const model = useWorkspace(active)
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   const storageError = model.storageError || themeError
@@ -54,7 +57,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
         errorAction={
           !storageError && model.connectionError ? (
             <Button loading={model.connectionLoading} onClick={() => void model.loadConnections()}>
-              重试
+              {t('重试')}
             </Button>
           ) : undefined
         }
@@ -76,22 +79,22 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
               model.setConnectionModal(true)
             }}
           >
-            新建连接
+            {t('新建连接')}
           </Button>
           <Button type="text" icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
-            新建查询
+            {t('新建查询')}
           </Button>
         </div>
         {model.runningTabId && !model.activeRunning && (
           <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
-            取消执行
+            {t('取消执行')}
           </Button>
         )}
         <SectionNavigation destination="agent" onSwitch={onOpenAgent} />
       </PageHeader>
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
-          <ContentLoading label="正在恢复工作区…" />
+          <ContentLoading label={t('正在恢复工作区…')} />
         </div>
       ) : (
         <div className="workspace" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
@@ -119,10 +122,10 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
                   <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
                     {!model.pageReady ? (
                       model.pageLoadError ? (
-                        <ErrorNotice title="标签内容加载失败" error={model.pageLoadError} action={<Button onClick={model.retryPage}>重试</Button>} />
+                        <ErrorNotice title={t('标签内容加载失败')} error={model.pageLoadError} action={<Button onClick={model.retryPage}>{t('重试')}</Button>} />
                       ) : (
                         <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                          <ContentLoading label="正在加载当前标签…" />
+                          <ContentLoading label={t('正在加载当前标签…')} />
                         </div>
                       )
                     ) : (
@@ -135,7 +138,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeError, 
                 </WorkspaceTabs>
               ) : (
                 <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="点击顶部“新建查询”开始编写 SQL，双击左侧表查看数据；数据库结构列表可从右键菜单打开。" />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('点击顶部“新建查询”开始编写 SQL，双击左侧表查看数据；数据库结构列表可从右键菜单打开。')} />
                 </div>
               )}
             </div>

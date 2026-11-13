@@ -2,11 +2,12 @@ import type { EditorView } from '@codemirror/view'
 import { App as AntApp, Button } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
+import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
 import { useSidebarWidth } from '@/hooks/useSidebarWidth'
+import { useTranslation } from '@/hooks/useTranslation'
 import { deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
@@ -36,6 +37,8 @@ const emptyTab: WorkspaceTab = { ...emptyScope, id: '', title: '', kind: 'query'
 
 /** 每个主标签就是一个页面；SQL 和结果属于该页面，树操作始终携带独立目标。 */
 export const useWorkspace = (active = true) => {
+  const { t } = useTranslation()
+
   const { message, modal } = AntApp.useApp()
   const [refresh, setRefresh] = useState(0)
   const [connectionModal, setConnectionModal] = useState(false)
@@ -149,7 +152,7 @@ export const useWorkspace = (active = true) => {
   )
   const tableDesignerCommitted = useCallback(
     (id: string, change: ObjectChange) =>
-      setTabs((previous) => previous.map((page) => (page.id === id ? { ...page, kind: 'table-design', table: change.name, title: change.name + ' · 设计' } : page))),
+      setTabs((previous) => previous.map((page) => (page.id === id ? { ...page, kind: 'table-design', table: change.name, title: change.name + t(' · 设计') } : page))),
     [setTabs]
   )
   function isTableDesignerBlocked(page: WorkspaceTab) {
@@ -375,7 +378,7 @@ export const useWorkspace = (active = true) => {
     try {
       exportSQL(sql, tab.title)
     } catch {
-      setOperationError('SQL 导出失败，请重试')
+      setOperationError(t('SQL 导出失败，请重试'))
     }
   }
   function openHistory() {
@@ -401,7 +404,7 @@ export const useWorkspace = (active = true) => {
       return
     }
     if (id !== activeTab && tab.kind === 'data' && designerDirty[activeTab] && !discard) {
-      modal.confirm({ title: '放弃当前表的未保存修改？', okText: '放弃并切换', cancelText: '继续编辑', onOk: () => selectTab(id, true) })
+      modal.confirm({ title: t('放弃当前表的未保存修改？'), okText: t('放弃并切换'), cancelText: t('继续编辑'), onOk: () => selectTab(id, true) })
       return
     }
     const next = tabs.find((item) => item.id === id)
@@ -420,11 +423,13 @@ export const useWorkspace = (active = true) => {
   }
   function addTab(statement = '', scope?: QueryScope, title?: string) {
     if (running || request.current) return
-    return createPage('query', scope || emptyScope, title || `查询 ${tabs.filter((item) => item.kind === 'query').length + 1}`, statement)
+    return createPage('query', scope || emptyScope, title || t('查询 {value1}', { value1: tabs.filter((item) => item.kind === 'query').length + 1 }), statement)
   }
   function newQuery() {
     const layouts = Object.fromEntries(connections.map((item) => [item.id, getDatabaseAdapter(item.type).explorer]))
-    const tree = buildExplorerTree(connections, objects.snapshots, explorer.expanded, explorer.search, layouts)
+    const tree = buildExplorerTree(connections, objects.snapshots, explorer.expanded, explorer.search, layouts, connectionGroups.groups, objects.closedDatabases, (group) =>
+      connectionGroupLabel(group, t)
+    )
     const node = tree.byKey.get(explorer.selected[0])
     const scope = explorerQueryScope(node, Boolean(node && objects.snapshots[node.owner]?.status === 'connected'), node ? layouts[node.owner] : undefined)
     addTab('', scope)
@@ -437,7 +442,7 @@ export const useWorkspace = (active = true) => {
       return
     }
     const number = Math.max(0, ...tabs.filter((page) => page.kind === 'table-create').map((page) => Number(page.title.match(/^新建表 (\d+)/)?.[1]) || 0)) + 1
-    createPage(kind, scope, kind === 'table-create' ? '新建表 ' + number + ' · ' + scope.database : scope.table + ' · 设计')
+    createPage(kind, scope, kind === 'table-create' ? t('新建表 ') + number + ' · ' + scope.database : scope.table + t(' · 设计'))
   }
   function selectConnection(id: string) {
     if (running || objects.snapshots[id]?.status !== 'connected') return
@@ -468,7 +473,7 @@ export const useWorkspace = (active = true) => {
     const change = { action, target, name }
     if ([ObjectAction.CreateSchema, ObjectAction.RenameSchema, ObjectAction.DropSchema].some((value) => value === action)) {
       const engine = getDatabaseAdapter(connections.find((connection) => connection.id === target.connectionId)?.type).explorer
-      if (!engine) throw new Error('无法识别 Schema 所属引擎')
+      if (!engine) throw new Error(t('无法识别 Schema 所属引擎'))
       await objects.refreshTables(target.database, target.connectionId, true)
       setTabs((previous) => pagesAfterSchemaChange(previous, change, engine))
       setExplorer((previous) => explorerAfterChange(previous, change, engine))
@@ -490,7 +495,7 @@ export const useWorkspace = (active = true) => {
   async function closeScope(id: string, db?: string) {
     if (closingScope.current) return false
     if (objectBusy || objectManagement.dialog || Object.values(designerBusy).some(Boolean)) {
-      message.info('请等待当前对象操作完成后再关闭')
+      message.info(t('请等待当前对象操作完成后再关闭'))
       return false
     }
     closingScope.current = true
@@ -505,25 +510,31 @@ export const useWorkspace = (active = true) => {
         const proceed = await new Promise<boolean>((resolve) => {
           const dialog = modal.confirm({
             width: scopeCloseDialogLayout.width,
-            title: sql ? '关闭前是否保存查询？' : '关闭前请确认未保存的修改',
+            title: sql ? t('关闭前是否保存查询？') : t('关闭前请确认未保存的修改'),
             content: (
               <>
                 <p>
-                  {affected.map((page) => page.title).join('、')} 将随{db ? '数据库' : '连接'}一起关闭。
+                  {affected.map((page) => page.title).join('、')} {t(' 将随')}
+                  {db ? t('数据库') : t('连接')}
+                  {t('一起关闭。')}
                 </p>
-                {sql && <p>查询内容将保存为一个 .sql 文件。</p>}
-                {dirty.length > 0 && <p>{dirty.map((page) => page.title).join('、')} 的表结构或数据修改尚未提交，继续关闭将放弃这些修改；SQL 文件不包含这些修改。</p>}
+                {sql && <p>{t('查询内容将保存为一个 .sql 文件。')}</p>}
+                {dirty.length > 0 && (
+                  <p>
+                    {dirty.map((page) => page.title).join('、')} {t(' 的表结构或数据修改尚未提交，继续关闭将放弃这些修改；SQL 文件不包含这些修改。')}
+                  </p>
+                )}
               </>
             ),
-            okText: sql ? '保存并关闭' : '放弃并关闭',
-            cancelText: '取消',
+            okText: sql ? t('保存并关闭') : t('放弃并关闭'),
+            cancelText: t('取消'),
             onCancel: () => resolve(false),
             onOk: async () => {
               try {
-                if (sql) await saveSQL(sql, db || 'SQL Studio 查询')
+                if (sql) await saveSQL(sql, db || t('SQL Studio 查询'))
                 resolve(true)
               } catch (error) {
-                if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError('SQL 保存失败，窗口已保留')
+                if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError(t('SQL 保存失败，窗口已保留'))
                 throw error
               }
             },
@@ -537,7 +548,7 @@ export const useWorkspace = (active = true) => {
                       dialog.destroy()
                     }}
                   >
-                    不保存
+                    {t('不保存')}
                   </Button>
                 )}
                 <OkBtn />
@@ -575,7 +586,7 @@ export const useWorkspace = (active = true) => {
       }))
       return true
     } catch (error) {
-      setOperationError(error instanceof Error ? error.message : '关闭失败，窗口已保留')
+      setOperationError(error instanceof Error ? error.message : t('关闭失败，窗口已保留'))
       return false
     } finally {
       closingScope.current = false
@@ -609,7 +620,7 @@ export const useWorkspace = (active = true) => {
         await objects.loadTables(db, id)
         setExplorer((previous) => ({ ...previous, expanded: [...new Set([...previous.expanded, JSON.stringify(['database', id, db])])] }))
       } catch (error) {
-        setOperationError(error instanceof Error ? error.message : '打开数据库失败')
+        setOperationError(error instanceof Error ? error.message : t('打开数据库失败'))
       }
       return
     }
@@ -642,7 +653,7 @@ export const useWorkspace = (active = true) => {
         (objectAction === ObjectAction.RenameSchema || objectAction === ObjectAction.DropSchema) &&
         tabs.some((page) => page.connectionId === id && page.database === db && page.schema === schema && (page.kind === 'table-design' || page.kind === 'table-create' || designerDirty[page.id]))
       ) {
-        message.info('请先保存或关闭此 Schema 中的表设计及未保存的数据修改')
+        message.info(t('请先保存或关闭此 Schema 中的表设计及未保存的数据修改'))
         return
       }
       if (objectAction === ObjectAction.CreateTable) {
@@ -660,12 +671,12 @@ export const useWorkspace = (active = true) => {
       try {
         await refreshObjectTarget(id, db)
       } catch (reason) {
-        setOperationError(reason instanceof Error ? reason.message : '刷新失败')
+        setOperationError(reason instanceof Error ? reason.message : t('刷新失败'))
       }
       return
     }
     if (action !== 'tables') return
-    const title = `${db}${schema ? ' / ' + schema : ''} · 结构`
+    const title = t('{value1}{value2} · 结构', { value1: db, value2: schema ? ' / ' + schema : '' })
     const tabId = reuseTabId || createPage('structure', scope, title, '', discard)
     const source = `${connections.find((item) => item.id === id)?.name || ''} / ${db}${schema ? ' / ' + schema : ''}`
     const controller = startRun(tabId, { kind: 'structure', title, source })
@@ -673,7 +684,7 @@ export const useWorkspace = (active = true) => {
       const tables = await (refresh ? objects.refreshTables(db, id, true) : objects.loadTables(db, id))
       const adapter = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
       const listing = adapter.explorer && !schema ? adapter.explorer.schemaListResult(await objects.loadSchemas(db, id)) : adapter.tableListResult(tables, schema)
-      if (controller.signal.aborted) throw new Error('请求已取消')
+      if (controller.signal.aborted) throw new Error(t('请求已取消'))
       publishResult(tabId, {
         kind: 'structure',
         title,
@@ -689,7 +700,7 @@ export const useWorkspace = (active = true) => {
         }
       })
     } catch (error) {
-      publishResult(tabId, { kind: 'structure', title, source, error: error instanceof Error ? error.message : '数据库结构加载失败' })
+      publishResult(tabId, { kind: 'structure', title, source, error: error instanceof Error ? error.message : t('数据库结构加载失败') })
     } finally {
       finishRun(controller)
     }
@@ -705,7 +716,7 @@ export const useWorkspace = (active = true) => {
     const dirtyCurrent = tab.kind === 'data' && Boolean(designerDirty[activeTab])
     const dirtyTarget = existing?.kind === 'data' && Boolean(designerDirty[existing.id])
     if (dirtyCurrent || dirtyTarget) {
-      modal.confirm({ title: '放弃表格中未保存的修改？', content: '刷新或切换页面会放弃未保存的修改。', okText: '放弃并继续', cancelText: '继续编辑', onOk: open })
+      modal.confirm({ title: t('放弃表格中未保存的修改？'), content: t('刷新或切换页面会放弃未保存的修改。'), okText: t('放弃并继续'), cancelText: t('继续编辑'), onOk: open })
     } else open()
   }
   async function tableAction(action: string, targetConnectionId: string, db: string, table: string, reuseTabId?: string, discard = false) {
@@ -751,7 +762,7 @@ export const useWorkspace = (active = true) => {
       try {
         await refreshObjectTarget(targetConnectionId, db)
       } catch (reason) {
-        setOperationError(reason instanceof Error ? reason.message : '刷新失败')
+        setOperationError(reason instanceof Error ? reason.message : t('刷新失败'))
       }
       return
     }
@@ -761,7 +772,7 @@ export const useWorkspace = (active = true) => {
       return
     }
     if (action !== 'data' && action !== 'structure' && action !== 'ddl') return
-    const title = `${getDatabaseAdapter(target.type).tableLabel(table)} · ${action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构'}`
+    const title = `${getDatabaseAdapter(target.type).tableLabel(table)} · ${t(action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构')}`
     const tabId = reuseTabId || createPage(action, scope, title, '', discard)
     if (action === 'data') {
       void executeSQL(statement, scope, tabId, 'data')
@@ -771,7 +782,7 @@ export const useWorkspace = (active = true) => {
     const controller = startRun(tabId, { kind: action, title, source })
     try {
       const structure = await objects.loadStructure(db, table, targetConnectionId)
-      if (controller.signal.aborted) throw new Error('请求已取消')
+      if (controller.signal.aborted) throw new Error(t('请求已取消'))
       const rows = action === 'ddl' ? [[structure.ddl]] : structure.columns.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
       publishResult(tabId, {
         kind: action,
@@ -789,7 +800,7 @@ export const useWorkspace = (active = true) => {
         }
       })
     } catch (error) {
-      publishResult(tabId, { kind: action, title, source, error: controller.signal.aborted ? '请求已取消' : error instanceof Error ? error.message : '结构加载失败' })
+      publishResult(tabId, { kind: action, title, source, error: controller.signal.aborted ? t('请求已取消') : error instanceof Error ? error.message : t('结构加载失败') })
     } finally {
       finishRun(controller)
     }
@@ -826,7 +837,7 @@ export const useWorkspace = (active = true) => {
   function executeCurrentSQL(statement: string) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id || !storage.pageReady) return
     if (!connection || !objects.connected) {
-      message.info('请先展开连接并加载数据库结构')
+      message.info(t('请先展开连接并加载数据库结构'))
       return
     }
     if (running || request.current) return
@@ -851,8 +862,8 @@ export const useWorkspace = (active = true) => {
     const target = connections.find((item) => item.id === id)
     if (!target || running) return
     modal.confirm({
-      title: `删除连接「${target.name}」？`,
-      content: '删除本机保存的连接信息，数据库中的数据不受影响。',
+      title: t('删除连接「{value1}」？', { value1: target.name }),
+      content: t('删除本机保存的连接信息，数据库中的数据不受影响。'),
       okButtonProps: { danger: true },
       onOk: async () => {
         if (!(await closeScope(id))) return
@@ -886,10 +897,10 @@ export const useWorkspace = (active = true) => {
     const unsaved = tabs.filter((page) => !retained.has(page.id) && designerDirty[page.id])
     if (unsaved.length)
       modal.confirm({
-        title: '关闭有未保存修改的页面？',
-        content: unsaved.map((page) => page.title).join('、') + ' 的修改将被放弃。',
-        okText: '放弃并关闭',
-        cancelText: '继续编辑',
+        title: t('关闭有未保存修改的页面？'),
+        content: unsaved.map((page) => page.title).join('、') + t(' 的修改将被放弃。'),
+        okText: t('放弃并关闭'),
+        cancelText: t('继续编辑'),
         onOk: complete
       })
     else complete()
@@ -913,7 +924,7 @@ export const useWorkspace = (active = true) => {
           return type === 'group' || owner !== saved.id
         })
       }))
-      void objects.closeConnection(saved.id).catch((error) => setOperationError(error instanceof Error ? error.message : '关闭旧连接失败'))
+      void objects.closeConnection(saved.id).catch((error) => setOperationError(error instanceof Error ? error.message : t('关闭旧连接失败')))
       setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', schema: '', table: '' } : item)))
       if (connectionId === saved.id) resetStructure()
     }

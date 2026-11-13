@@ -1,5 +1,7 @@
 # 库表确认弹窗
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [源码](index.tsx) · [组件索引](../README.md)
 
 ObjectManagementModal 接收 manager（useObjectManagement 返回值）及 themeMode，只负责 Modal、确认按钮、加载状态和取消；正文由 objectManagementForm 复用。宽 640px，沿用 Ant Design 默认外观，正文限高滚动。

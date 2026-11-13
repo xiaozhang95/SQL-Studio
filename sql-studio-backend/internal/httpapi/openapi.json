@@ -3,7 +3,7 @@
   "info": {
     "title": "SQL Studio API",
     "version": "1.0.0",
-    "description": "本机单用户 API；仅允许本机 Host 与同源请求，无开放 CORS。成功直接返回 JSON；失败返回 {error:string}。所有 JSON 请求必须为单个对象，拒绝未知顶层字段。普通请求最多 1 MiB，配置写入例外。"
+    "description": "本机单用户 API；仅允许本机 Host 与同源请求，无开放 CORS。成功直接返回 JSON；失败返回 {error:string}。所有 JSON 请求必须为单个对象，拒绝未知顶层字段。普通请求最多 1 MiB，配置写入例外。 请求通过 Accept-Language 选择 zh-CN/en-US（缺省 zh-CN，支持语言范围和权重），响应 Content-Language 标明使用的语言。仅翻译应用提示与错误，数据库原始错误、SQL、用户数据及模型回答保持原文。"
   },
   "servers": [
     {
@@ -49,7 +49,12 @@
           "503": {
             "description": "服务未启用"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       },
       "put": {
         "operationId": "commitWorkspace",
@@ -106,7 +111,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/workspace/parts/{id}": {
@@ -139,6 +149,9 @@
               "type": "string",
               "pattern": "^[a-f0-9]{64}$"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ]
       }
@@ -171,7 +184,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/openapi.json": {
@@ -202,7 +220,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connection-groups": {
@@ -256,7 +279,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       },
       "post": {
         "operationId": "createConnectionGroup",
@@ -327,7 +355,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       },
       "delete": {
         "operationId": "deleteConnectionGroup",
@@ -414,7 +447,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connection-groups/rename": {
@@ -506,7 +544,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connections/{id}/group": {
@@ -585,6 +628,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ]
       }
@@ -620,7 +666,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       },
       "post": {
         "operationId": "saveConnection",
@@ -680,7 +731,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connections/{id}": {
@@ -698,6 +754,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -819,7 +878,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connections/{id}/databases": {
@@ -838,6 +902,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -910,6 +977,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -982,6 +1052,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1062,6 +1135,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1142,6 +1218,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1224,6 +1303,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1262,6 +1344,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "requestBody": {
@@ -1346,6 +1431,9 @@
               "pattern": "^[a-z][a-z0-9-]{0,47}$"
             },
             "description": "配置分区名称；connections 为保留名称，读取和写入均返回 400。"
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1408,6 +1496,9 @@
               "pattern": "^[a-z][a-z0-9-]{0,47}$"
             },
             "description": "配置分区名称；connections 为保留名称，读取和写入均返回 400。"
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "requestBody": {
@@ -1553,7 +1644,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/ai/models": {
@@ -1628,7 +1724,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/ai/config": {
@@ -1700,7 +1801,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/connections/{id}/indexes": {
@@ -1734,6 +1840,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1799,6 +1908,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -1884,7 +1996,11 @@
         ],
         "summary": "会话索引",
         "operationId": "agent_get__agent_sessions",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -1916,7 +2032,11 @@
         ],
         "summary": "创建会话；ensure=true时仅在空列表创建",
         "operationId": "agent_post__agent_sessions",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -1977,6 +2097,9 @@
               "type": "string",
               "pattern": "^[a-f0-9]{48}$"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -2019,6 +2142,9 @@
               "type": "string",
               "pattern": "^[a-f0-9]{48}$"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "responses": {
@@ -2061,6 +2187,9 @@
               "type": "string",
               "pattern": "^[a-f0-9]{48}$"
             }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
           }
         ],
         "requestBody": {
@@ -2137,7 +2266,11 @@
         "summary": "SSE思考、工具与回答",
         "operationId": "agent_post__agent_chat",
         "description": "输入最多 256 KiB UTF-8。超过 64 KiB 时先通过 continue_confirmation 事件等待确认，再发送给模型。",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2197,7 +2330,11 @@
         ],
         "summary": "恢复Agent布局",
         "operationId": "agent_get__agent_workspace",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2229,7 +2366,11 @@
         ],
         "summary": "CAS保存Agent布局",
         "operationId": "agent_put__agent_workspace",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2273,7 +2414,11 @@
         ],
         "summary": "读取共享DeepSeek脱敏配置",
         "operationId": "agent_get__agent_settings",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2305,7 +2450,11 @@
         ],
         "summary": "更新共享Key与模型",
         "operationId": "agent_put__agent_settings",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2347,7 +2496,11 @@
         ],
         "summary": "清除共享DeepSeek配置",
         "operationId": "agent_delete__agent_settings",
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -2420,7 +2573,12 @@
           "403": {
             "description": "本机同源校验失败"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     },
     "/agent/continue-confirmation": {
@@ -2469,7 +2627,12 @@
           "403": {
             "description": "本机同源校验失败"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ]
       }
     }
   },
@@ -3086,6 +3249,19 @@
             "description": "发现接口返回的模型显示名称，与实际 model ID 分开保存。"
           }
         }
+      }
+    },
+    "parameters": {
+      "AcceptLanguage": {
+        "name": "Accept-Language",
+        "in": "header",
+        "required": false,
+        "description": "应用提示语言，支持 zh-CN/en-US 及带权重的语言列表，未提供或无法匹配时默认简体中文。",
+        "schema": {
+          "type": "string",
+          "default": "zh-CN"
+        },
+        "example": "en-US"
       }
     }
   }

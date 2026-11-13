@@ -3,11 +3,14 @@ import { Button, Flex } from 'antd'
 import { useState } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import { excelData } from '../../../../utils/excelData'
 import { CHAT } from '../../constant/chat'
 
 export function ExportExcel({ value, title }: { value: unknown; title: string }) {
+  const { t } = useTranslation()
+
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const data = excelData(value)
@@ -19,7 +22,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
     try {
       const { Workbook } = await import('exceljs')
       const book = new Workbook()
-      const sheet = book.addWorksheet('查询结果')
+      const sheet = book.addWorksheet(t('查询结果'))
       sheet.addRow(data.headers)
       for (const row of data.rows)
         sheet.addRow(row.map((v) => (v === null || v === undefined ? null : typeof v === 'number' || typeof v === 'boolean' ? v : typeof v === 'string' ? v : JSON.stringify(v))))
@@ -36,7 +39,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
       link.remove()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Excel导出失败')
+      setError(e instanceof Error ? e.message : t('Excel导出失败'))
     } finally {
       setBusy(false)
     }
@@ -44,7 +47,8 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
   return (
     <Flex vertical align="start" gap={CHAT.spacing.detail}>
       <Button type="default" icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
-        导出 Excel{data.truncated ? '（当前截断结果）' : ''}
+        {t('导出 Excel')}
+        {data.truncated ? t('（当前截断结果）') : ''}
       </Button>
       <ErrorNotice error={error} />
     </Flex>

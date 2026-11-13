@@ -4,6 +4,8 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import { useState } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 type Props = {
   value?: string
   onChange?: (value: string) => void
@@ -16,7 +18,9 @@ type Props = {
 }
 
 /** One editable value; the suffix button opens an anchored calendar/time panel. */
-export default function TemporalInput({ value = '', onChange, fieldType = '', disabled, placeholder, label = '字段值', autoFocus, multiline }: Props) {
+export default function TemporalInput({ value = '', onChange, fieldType = '', disabled, placeholder, label, autoFocus, multiline }: Props) {
+  const { t } = useTranslation()
+
   const [open, setOpen] = useState(false)
   const type = fieldType
     .trim()
@@ -32,7 +36,14 @@ export default function TemporalInput({ value = '', onChange, fieldType = '', di
   const changed = (date: Dayjs | null) => {
     if (date) onChange?.(date.format(format))
   }
-  const common = { disabled, value, placeholder, autoFocus, 'aria-label': label, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange?.(event.target.value) }
+  const common = {
+    disabled,
+    value,
+    placeholder,
+    autoFocus,
+    'aria-label': label ?? t('字段值'),
+    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange?.(event.target.value)
+  }
   if (!kind) return multiline ? <Input.TextArea {...common} autoSize={{ minRows: 1, maxRows: 6 }} /> : <Input {...common} />
   const picker = {
     disabled,
@@ -56,7 +67,7 @@ export default function TemporalInput({ value = '', onChange, fieldType = '', di
             type="text"
             size="small"
             disabled={disabled}
-            aria-label={kind === 'time' ? '选择时间' : '选择日期和时间'}
+            aria-label={kind === 'time' ? t('选择时间') : t('选择日期和时间')}
             aria-expanded={open && !disabled}
             icon={kind === 'time' ? <ClockCircleOutlined /> : <CalendarOutlined />}
             onClick={() => setOpen(!open)}

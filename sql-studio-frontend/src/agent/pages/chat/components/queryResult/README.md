@@ -1,5 +1,7 @@
 # 查询结果表格
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 QueryResult({value:unknown,sql?:string,title?:string,tool?:string,showExport?:boolean,showHeader?:boolean})先通过readResult校验真实二维结果，展示Ant Design默认字体的小尺寸带边框Table：按列位置保留重复列名，固定行号、列类型提示、长文本省略/悬停、横向滚动、超过10行时限制预览高度、10/20/50/100行分页、空结果、NULL和空字符串。showHeader默认true，上方显示标题、行列数与耗时；false隐藏整个标题栏。truncated明确提示不能代表全量统计；SQL可展开并复制。原始值不转浮点。showExport默认true，执行工具结果和助手回复中的表格均提供Excel导出；助手回复仅将showHeader传false，隐藏标题栏但保留导出及必要的截断/分页提示。
 
 工具错误交由页面头部统一显示；连接、数据库、表与字段目录直接展示表格，连接列表不展示内部ID；执行过程通过showHeader=false隐藏结果标题、图标和数量，保留表格与导出，title仍用于导出文件名。设定目标显示Descriptions卡片；其他结构以卡片内纯文本显示，不作为HTML执行。无网络、缓存或数据库执行。

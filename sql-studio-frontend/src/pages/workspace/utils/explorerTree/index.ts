@@ -43,7 +43,8 @@ export function buildExplorerTree(
   search: string,
   layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {},
   groupNames: readonly string[] = [],
-  closedDatabases: Readonly<Record<string, readonly string[]>> = {}
+  closedDatabases: Readonly<Record<string, readonly string[]>> = {},
+  groupLabel: (group: string) => string = (group) => group
 ) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
@@ -79,14 +80,14 @@ export function buildExplorerTree(
     }
     return group
   }
-  for (const name of groupNames) if (matches(name)) ensureGroup(name)
+  for (const name of groupNames) if (matches(name) || matches(groupLabel(name))) ensureGroup(name)
   let ready = true
   for (const connection of connections) {
     const id = connection.id,
       state = snapshots[id],
       connected = state?.status === 'connected'
     const groupName = connectionGroupName(connection.group),
-      connectionMatch = matches(connection.name) || matches(groupName)
+      connectionMatch = matches(connection.name) || matches(groupName) || matches(groupLabel(groupName))
     const root = make('connection', connection.name, id)
     if (open.has(root.key) && (!state || state.status === 'loading')) ready = false
     root.connection = connection

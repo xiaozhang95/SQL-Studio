@@ -1,10 +1,16 @@
 # 连接弹窗
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 受控参数：open、connection?、groups、onClose、onSaved。connection 表示编辑，groups 为工作区共享分组选项（含空分组）；成功保存回传脱敏连接。useConnectionForm 管理常规/SSL 页签、校验、测试及保存。
 
 展示注册的 MySQL、MariaDB 和 PostgreSQL，名称/主机/用户名不预填，端口来自 profile；PostgreSQL 显示维护库（默认 postgres）。新建可切换引擎，编辑固定原引擎，分组默认“默认分组”。编辑不回显密码，留空保留旧值；保存或测试时禁止关闭。SSL 使用服务端证书校验，不提供跳过选项。
+
+英文名称、分组、维护库标签分别使用 Name、Group、Database；维护库说明使用简短英文，适配固定标签宽度。
+
+分组选项与输入框中的内置默认分组按当前语言展示，英文为 Default group。Form 的 group 值及 onSelect 使用原始名称，getValueProps 只转换显示，未编辑直接保存仍提交原始默认分组。自定义分组名称原样保留，清空后仍由保存逻辑归入默认分组；筛选支持原名称及显示标签。
 
 表单使用 Ant Design 默认控件，horizontal 布局，label 固定 96px，控件列使用零 flex basis 和 minWidth=0，让长帮助说明在右侧控件下换行，窄窗口不将整列挤到标签下方。类型侧栏 280px，内容高度 min(600px, 100dvh - 180px)，左右独立滚动；校验和反馈不推动底栏。海豚图标通过数据库 profile 获取。
 

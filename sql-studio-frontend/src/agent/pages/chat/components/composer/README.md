@@ -1,5 +1,7 @@
 # 聊天输入
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存最多256 KiB的UTF-8草稿到Go布局。超过上限时保留编辑框原文并提示分段，发送入口禁用。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留模式Dropdown、带蓝鲸模型Dropdown与发送按钮；模型菜单只列出已经添加的模型；添加/编辑统一从右上角系统设置进入。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
 
 输入区默认 4 行、最多 10 行（CHAT.composerRows），字体、背景及外层边框沿用 Sender 默认样式。内部文本区去掉重复边框、轮廓和阴影，焦点反馈由 Sender 外层提供。内容和底部操作区通过 Sender 的 styles 设置内边距。拖拽产生的动态高度通过 Sender 的语义 styles 传入。实心停止符号通过 style 和主题 token 设置外观，继承按钮颜色。

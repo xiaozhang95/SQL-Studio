@@ -25,7 +25,8 @@ test('标题栏仅接受十六进制主题颜色和明确的亮暗模式', () =>
 
 test('只允许工作台同源导航，拒绝外部页面和特殊协议', () => {
   const origin = 'http://127.0.0.1:12345'
-  assert.equal(isAppURL(`${origin}/#workspace`, origin), true)
+  assert.equal(isAppURL(`${origin}/`, origin), true)
+  assert.equal(isAppURL(`${origin}/agent`, origin), true)
   for (const url of ['https://example.com', 'javascript:alert(1)', 'file:///tmp/a', 'http://127.0.0.1:12346', 'http://user@127.0.0.1:12345', 'invalid']) {
     assert.equal(isAppURL(url, origin), false, url)
   }

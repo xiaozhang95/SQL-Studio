@@ -1,5 +1,7 @@
 # 输出标签导航
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 ResultTabs 接收 run:RunState、running:boolean、activeKey:string、onChange(key:string)，参数均必传。消息 key=messages，摘要 key=summary，结果 key 为语句索引字符串。由 queryResults 控制选中视图，工作区保存结果索引，无内部业务状态。

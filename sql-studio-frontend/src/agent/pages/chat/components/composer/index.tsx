@@ -4,6 +4,7 @@ import { Alert, Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
 
 import DropdownChevron from '@/components/dropdownChevron'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import type { TokenUsage } from '../../../../typings/chat'
 import type { AIStatus } from '../../../../typings/settings'
@@ -26,6 +27,8 @@ interface Props {
   usage: TokenUsage | null
 }
 export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatus, onSend, onStop, onModelChange, onDraftChange, usage }: Props) {
+  const { t } = useTranslation()
+
   const { token } = theme.useToken()
   const { container: containerRef, height, minimum, maximum, resizer } = useComposerResize()
   const question = Form.useWatch('question', form) ?? ''
@@ -39,7 +42,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
       <div
         className="composer-resizer"
         role="separator"
-        aria-label="调整聊天输入框高度"
+        aria-label={t('调整聊天输入框高度')}
         aria-orientation="horizontal"
         aria-valuemin={minimum}
         aria-valuemax={maximum}
@@ -69,7 +72,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
               input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
               footer: { paddingInline: token.padding, paddingBlockEnd: token.padding }
             }}
-            aria-label="消息"
+            aria-label={t('消息')}
             onSubmit={submit}
             onCancel={onStop}
             readOnly={busy}
@@ -85,7 +88,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
             }}
             suffix={false}
             autoSize={height === undefined ? CHAT.composerRows : false}
-            placeholder="向数据库提问…（Enter 发送，Shift+Enter 换行）"
+            placeholder={t('向数据库提问…（Enter 发送，Shift+Enter 换行）')}
             footer={
               <Flex align="center" justify="space-between" gap="small" wrap>
                 <Flex align="center" gap={token.marginXXS}>
@@ -100,7 +103,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                           icon: <LockOutlined />,
                           label: (
                             <Flex align="center" justify="space-between" gap="middle" style={{ minWidth: token.controlHeight * 4 }}>
-                              <span>只读模式</span>
+                              <span>{t('只读模式')}</span>
                               <span style={{ width: token.fontSize, display: 'inline-flex', justifyContent: 'center' }}>{mode === 'readonly' && <CheckOutlined />}</span>
                             </Flex>
                           )
@@ -110,7 +113,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                           icon: <EditOutlined />,
                           label: (
                             <Flex align="center" justify="space-between" gap="middle" style={{ minWidth: token.controlHeight * 4 }}>
-                              <span>完全访问模式</span>
+                              <span>{t('完全访问模式')}</span>
                               <span style={{ width: token.fontSize, display: 'inline-flex', justifyContent: 'center' }}>{mode === 'write' && <CheckOutlined />}</span>
                             </Flex>
                           )
@@ -123,19 +126,21 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   >
                     <Button
                       type="text"
-                      aria-label="操作模式"
+                      aria-label={t('操作模式')}
                       disabled={busy || settingsBusy}
                       icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
                       className={mode === 'write' ? 'chat-mode-write' : undefined}
                     >
-                      {mode === 'write' ? '完全访问模式' : '只读模式'}
+                      {mode === 'write' ? t('完全访问模式') : t('只读模式')}
                       <DropdownChevron disabled={busy || settingsBusy} />
                     </Button>
                   </Dropdown>
                   <Tooltip
-                    title={`只读模式仅查询；完全访问模式可修改数据及结构，执行前逐次确认，操作可能不可撤销。删除和清空始终禁止执行。${usage ? ` 1M上下文 · 输入 ${usage.promptTokens || '—'} token` : ''}`}
+                    title={t('只读模式仅查询；完全访问模式可修改数据及结构，执行前逐次确认，操作可能不可撤销。删除和清空始终禁止执行。{value1}', {
+                      value1: usage ? t(' 1M上下文 · 输入 {tokens} token', { tokens: usage.promptTokens || '—' }) : ''
+                    })}
                   >
-                    <Button type="text" size="small" aria-label="模式说明" icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
+                    <Button type="text" size="small" aria-label={t('模式说明')} icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
                   </Tooltip>
                 </Flex>
                 <Flex align="center" gap={token.marginXS}>
@@ -152,22 +157,22 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                   >
                     <Button
                       type="text"
-                      aria-label="当前模型"
+                      aria-label={t('当前模型')}
                       disabled={busy || settingsBusy || !aiStatus?.models.length}
-                      title={!aiStatus?.models.length ? '请在右上角系统设置中添加模型' : undefined}
+                      title={!aiStatus?.models.length ? t('请在右上角系统设置中添加模型') : undefined}
                       icon={selectedModel && <DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >
-                      {selectedModel?.name ?? '请选择模型'}
+                      {selectedModel?.name ?? t('请选择模型')}
                       <DropdownChevron disabled={busy || settingsBusy || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>
                   {busy ? (
-                    <Tooltip title="终止生成">
+                    <Tooltip title={t('终止生成')}>
                       <Button
                         {...CHAT.iconButton}
                         danger
-                        aria-label="停止生成"
+                        aria-label={t('停止生成')}
                         icon={
                           <span aria-hidden="true" style={{ display: 'block', width: token.fontSizeSM, height: token.fontSizeSM, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
                         }
@@ -178,7 +183,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                     <Button
                       {...CHAT.iconButton}
                       onClick={() => submit(question)}
-                      aria-label="发送消息"
+                      aria-label={t('发送消息')}
                       icon={
                         <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                           <path d="M11.1 2.6a1 1 0 0 1 1.8 0l8.3 17a1 1 0 0 1-1.2 1.4L13 18.5V9h-2v9.5L4 21a1 1 0 0 1-1.2-1.4z" />
@@ -193,7 +198,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
           />
         </Form.Item>
       </Form>
-      {tooLong && <Alert type="warning" showIcon title="消息超过 256 KiB，请缩短内容或分段发送。" style={{ marginTop: token.marginXS }} />}
+      {tooLong && <Alert type="warning" showIcon title={t('消息超过 256 KiB，请缩短内容或分段发送。')} style={{ marginTop: token.marginXS }} />}
     </div>
   )
 }

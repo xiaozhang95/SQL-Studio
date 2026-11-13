@@ -15,10 +15,11 @@ func TestInternalDependencyDirection(t *testing.T) {
 	allowed := map[string]map[string]bool{
 		"app":     {"agentstate": true, "deepseek/agent": true, "modules/agent": true, "modules/agentlayout": true, "model/agent": true, "webui": true, "mariadb": true, "modules/ai": true, "deepseek": true, "statefile": true, "modules/workspace": true, "modules/settings": true, "config": true, "connection": true, "httpapi": true, "mysql": true, "postgresql": true, "database": true, "model": true, "modules/connections": true, "modules/metadata": true, "modules/query": true},
 		"mariadb": {"mysql": true, "model": true}, "postgresql": {"model": true, "rowstream": true}, "database": {"model": true}, "config": {"model": true}, "connection": {"model": true}, "mysql": {"model": true, "rowstream": true}, "rowstream": {"model": true},
-		"httpapi":           {"modules/agent": true, "modules/agentlayout": true, "model/agent": true, "modules/ai": true, "modules/workspace": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
+		"httpapi":           {"localization": true, "modules/agent": true, "modules/agentlayout": true, "model/agent": true, "modules/ai": true, "modules/workspace": true, "modules/settings": true, "modules/connections": true, "modules/metadata": true, "modules/query": true, "model": true},
 		"modules/workspace": {"model": true}, "modules/ai": {"model": true}, "deepseek": {"model": true},
 		"statefile": {"model": true}, "modules/settings": {"model": true, "model/agent": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {}, "webui": {},
 	}
+	allowed["localization"] = map[string]bool{}
 	allowed["agentstate"] = map[string]bool{"model/agent": true}
 	allowed["deepseek/agent"] = map[string]bool{"model/agent": true}
 	allowed["modules/agent"] = map[string]bool{"model/agent": true}

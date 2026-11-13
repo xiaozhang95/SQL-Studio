@@ -1,5 +1,7 @@
 # SQL 只读预览
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [组件索引](../README.md) · [源码](index.tsx)
 
 SQLPreview 接收 sql:string、themeMode:ThemeMode、可选 databaseType、compact:boolean（默认 false）、panel:boolean（默认 false）、title:string（默认 SQL）。数据库适配器提供语言扩展，CodeMirror 只读且禁用补全，不修改草稿或执行 SQL。

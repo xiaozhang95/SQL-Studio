@@ -7,7 +7,7 @@
 | workspace-index.json | v2 页面、内容引用、查询范围与布局轻量索引 |
 | workspace-parts/<SHA256>.json | 按页保存的 SQL 草稿与结果 |
 | history.json | 各连接最近50条执行历史 |
-| appearance.json | 完整 theme/fontSize 外观偏好 |
+| appearance.json | theme/fontSize/language 界面偏好；旧配置未保存 language 时默认 zh-CN |
 | ai-models.json | 模型配置列表、使用处选择的记录和补全偏好 |
 | connections.json | connections/groups 对象，连接必须明确保存 type/group，密码为 AES-GCM 密文 |
 | master.key | 连接加密密钥，不能缺失后覆盖已有连接 |
@@ -16,7 +16,7 @@
 
 普通状态分区使用 {schemaVersion:1,revision,updatedAt,data,extensions?} 信封，业务内容只接受各自当前格式。GET/PUT /api/state/:section 以 revision 做 CAS，冲突409，不重试覆盖；连接、工作区与 Agent 使用各自专用接口。
 
-首次文件缺失初始化当前默认值：空 v2 工作区、空历史、system/standard 外观、空模型列表、只读 Agent 布局。工作区首次创建当前索引，不读取其他文件。现存格式错误、文件损坏或权限故障明确报错，不能静默重置或改写。新建连接的空分组输入使用当前默认分组；读取文件不补缺失字段。
+首次文件缺失初始化当前默认值：空 v2 工作区、空历史、system/standard/zh-CN 界面偏好、空模型列表、只读 Agent 布局。appearance 的 language 支持 zh-CN/en-US，既有配置缺失该字段时按简体中文读取，下次显式保存偏好时一并写入。主题与字号仍须完整。工作区首次创建当前索引，不读取其他文件。现存格式错误、文件损坏或权限故障明确报错，不能静默重置或改写。新建连接的空分组输入使用当前默认分组；其他配置不补缺失字段。
 
 每个分区最多32MiB内容，状态文件最多33MiB；0600临时文件 Sync 后同目录原子替换，目录0700。Windows权限取决于当前目录 ACL。connections.json 与 master.key 须一起备份；公开连接接口不返回密码，模型配置接口逐行清除 Key，`ai-models.json` 含本机保存的明文 Key。普通状态接口禁止访问连接文件与废弃密钥分区。
 

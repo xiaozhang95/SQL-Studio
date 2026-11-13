@@ -20,6 +20,13 @@ func agentResponse(c *gin.Context, v interface{}, err error) {
 		fail(c, err)
 		return
 	}
+	if view, ok := v.(model.ConversationView); ok {
+		view.Events = append([]model.Event{}, view.Events...)
+		for index, event := range view.Events {
+			view.Events[index] = localizedEvent(languageFor(c), event)
+		}
+		v = view
+	}
 	respond(c, 200, v)
 }
 func registerAgent(api *gin.RouterGroup, s Services) {

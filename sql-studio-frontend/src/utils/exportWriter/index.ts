@@ -1,24 +1,29 @@
+import type { Language } from '../../typings/theme/index.ts'
+import { getLanguage } from '../language/index.ts'
+import { translate } from '../translate/index.ts'
+
 type Writer = { write(data: Blob): Promise<void>; close(): Promise<void>; abort(): Promise<void> }
 type SavePicker = (options: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<{ createWritable(): Promise<Writer> }>
 
 /** Start from a user gesture. Native writes remain uncommitted until successful close. */
-export async function createExportWriter(title: string) {
+export async function createExportWriter(title: string, language: Language = getLanguage()) {
+  const t = (message: string) => translate(message, language)
   const filename = Array.from(title, (char) => (char.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(char) ? '_' : char)).join('') + '.sql'
   const target: Window & { showSaveFilePicker?: SavePicker } = window
-  const handle = target.showSaveFilePicker ? await target.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'SQL 文件', accept: { 'text/plain': ['.sql'] } }] }) : undefined
+  const handle = target.showSaveFilePicker ? await target.showSaveFilePicker({ suggestedName: filename, types: [{ description: t('SQL 文件'), accept: { 'text/plain': ['.sql'] } }] }) : undefined
   const writer = handle ? await handle.createWritable() : undefined
   let parts: Blob[] = [],
     bytes = 0
   return {
     filename,
-    completion: writer ? '导出成功，文件已保存' : '导出成功，已发起浏览器下载',
-    destination: writer ? filename + '（所选文件）' : filename + '（浏览器下载）',
+    completion: writer ? t('导出成功，文件已保存') : t('导出成功，已发起浏览器下载'),
+    destination: filename + (writer ? t('（所选文件）') : t('（浏览器下载）')),
     write: async (sql: string) => {
       const part = new Blob([sql], { type: 'text/plain;charset=utf-8' })
       bytes += part.size
       if (writer) await writer.write(part)
       else {
-        if (bytes > 256 * 1024 * 1024) throw new Error('当前浏览器下载缓存超过 256 MiB，请使用支持文件流写入的浏览器重试')
+        if (bytes > 256 * 1024 * 1024) throw new Error(t('当前浏览器下载缓存超过 256 MiB，请使用支持文件流写入的浏览器重试'))
         parts.push(part)
       }
       return bytes

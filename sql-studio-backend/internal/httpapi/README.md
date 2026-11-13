@@ -6,6 +6,10 @@
 
 注册路由、解析参数、限制 JSON、同源及本机保护，并统一错误响应。
 
+请求语言中间件在本机校验前解析 Accept-Language，支持 zh-CN/en-US 及权重，缺省简体中文；响应设置 Content-Language 和 Vary: Accept-Language。普通 JSON 错误通过 respond 统一翻译顶层 error，状态码与错误判定保持原有语义。导出 SSE 的 error、Agent 的 status/error/stopped、继续确认 detail 及工具系统告警也使用同一词典；会话历史读取在响应副本中转换系统事件，不改写磁盘记录或共享缓存。write_confirmation 的 ID、目标和 SQL 保持原值。未知的数据库/系统错误、查询数据、用户输入和模型回答原样返回。
+
+`NotFound(c *gin.Context)` 供 app 的 API 路由兜底使用，返回采用相同语言约定的 JSON 404；普通网页 404 保持静态路由行为。
+
 ## 约束与调用
 
 `New(services Services) *gin.Engine` 接收 app 装配的 Connections、Metadata、Queries、Settings、AI 模块，只调用公开方法，不直接开数据库或读文件，也不在每次请求时重建模块；路径/字段契约见 [API 列表](../../../docs/API.md) 和 [OpenAPI](openapi.json)。连接、结构、SQL 路由分别使用所属模块；`query.ErrBusy` 映射为 429。

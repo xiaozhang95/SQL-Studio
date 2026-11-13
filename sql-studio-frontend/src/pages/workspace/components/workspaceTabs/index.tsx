@@ -3,6 +3,7 @@ import { Dropdown, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { WorkspaceTab } from '@/typings/workspace'
 
 import { workspaceTabLayout } from '../../constant/layout'
@@ -16,6 +17,8 @@ type Props = {
 }
 /** 主区域只保留这一层页面标签；各页内容、执行状态和关闭目标独立。 */
 export default function WorkspaceTabs({ model, children, renderDesigner }: Props) {
+  const { t } = useTranslation()
+
   const { connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
   return (
     <Tabs
@@ -42,9 +45,9 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
                 disabled={running}
                 menu={{
                   items: [
-                    { key: 'current', label: '关闭当前', icon: <CloseOutlined /> },
-                    { key: 'others', label: '关闭其他', icon: <CloseCircleOutlined />, disabled: tabs.length < 2 },
-                    { key: 'right', label: '关闭右侧', icon: <RightOutlined />, disabled: index === tabs.length - 1 }
+                    { key: 'current', label: t('关闭当前'), icon: <CloseOutlined /> },
+                    { key: 'others', label: t('关闭其他'), icon: <CloseCircleOutlined />, disabled: tabs.length < 2 },
+                    { key: 'right', label: t('关闭右侧'), icon: <RightOutlined />, disabled: index === tabs.length - 1 }
                   ],
                   onClick: ({ key: action, domEvent }) => {
                     domEvent.stopPropagation()

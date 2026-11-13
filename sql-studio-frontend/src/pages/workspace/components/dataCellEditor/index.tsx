@@ -1,10 +1,14 @@
 import { Checkbox, Space } from 'antd'
 import { useEffect, useRef } from 'react'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 import type { useDataEditing } from '../../hooks/useDataEditing'
 import TemporalInput from '../temporalInput'
 
 export default function DataCellEditor({ editor, disabled }: { editor: ReturnType<typeof useDataEditing>; disabled: boolean }) {
+  const { t } = useTranslation()
+
   const { cell, saving, change, save, finish } = editor
   const container = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -25,10 +29,10 @@ export default function DataCellEditor({ editor, disabled }: { editor: ReturnTyp
     >
       <Space orientation="vertical" size={4} style={{ width: '100%' }} onDoubleClick={(event) => event.stopPropagation()}>
         <TemporalInput
-          label="单元格内容"
+          label={t('单元格内容')}
           fieldType={cell.type}
           multiline
-          placeholder={cell.isNull ? 'NULL' : '请输入内容（可留空）'}
+          placeholder={cell.isNull ? 'NULL' : t('请输入内容（可留空）')}
           autoFocus
           value={cell.value}
           disabled={disabled || cell.isNull}

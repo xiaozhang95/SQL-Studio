@@ -1,5 +1,7 @@
 # 主区域页面标签
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 [源码](index.tsx) · [组件索引](../README.md)
 
 model 提供 tabs/activeTab、runs、运行状态和切换/关闭回调，children 为当前页。只有这一层 Tabs；查询 SQL 和本批所有结果共用一个主页面。
@@ -12,7 +14,7 @@ model 提供 tabs/activeTab、runs、运行状态和切换/关闭回调，childr
 
 主页面的导航和内容高度覆盖仅作用于直属导航栏及内容容器，不影响结果区的嵌套 Tabs。
 
-主页面使用 Ant Design 卡片页签，常态、悬停和选中态均沿用左右对称的上圆角和卡片间距。导航栏顶部和两侧留出主题内边距，页签顶边和两侧使用主题分隔色。当前页使用内容区底色和主题指示线。原生样式覆盖限定在 app.scss 的直属导航范围。
+主页面使用 Ant Design 卡片页签，常态、悬停和选中态均沿用左右对称的上圆角和卡片间距。导航栏顶部和两侧留出主题内边距，页签边框颜色沿用 Ant Design 默认值。当前页使用内容区底色和主题指示线。原生样式覆盖限定在 app.scss 的直属导航范围。
 
 Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度，content 层的 100% 仅作用于直属主页面容器，避免编辑器和结果区塌缩。
 

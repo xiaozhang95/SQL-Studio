@@ -5,7 +5,8 @@ import type { ReactNode } from 'react'
 
 import ContentCard from '@/components/contentCard'
 import { appearance } from '@/constant/appearance'
-import { tablePaginationDefaults } from '@/constant/tablePagination'
+import { useTablePagination } from '@/hooks/useTablePagination'
+import { useTranslation } from '@/hooks/useTranslation'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 import { isObject } from '../../../../utils/json'
@@ -26,6 +27,7 @@ interface Props {
   showHeader?: boolean
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
+  const { t } = useTranslation()
   if (isObject(props.value) && typeof props.value.error === 'string') return null
   if (isObject(props.value) && typeof props.value.warning === 'string') {
     // Tool failures carry a recovery instruction for DeepSeek. Other warnings can describe a successful operation.
@@ -35,7 +37,7 @@ export function QueryResult({ showExport = true, ...props }: Props) {
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
       <ResultContent {...props} />
-      {showExport && <ExportExcel value={props.value} title={props.title ?? '查询结果'} />}
+      {showExport && <ExportExcel value={props.value} title={props.title ?? t('查询结果')} />}
     </Flex>
   )
 }
@@ -58,11 +60,15 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
 const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
 const resultTableStyles = { section: { boxShadow: 'var(--card-shadow)' } } satisfies TableProps['styles']
 
-function ResultContent({ value, sql, title = '查询结果', tool, showHeader = true }: Props) {
+function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
+  const tablePagination = useTablePagination()
+
+  const { t } = useTranslation()
+
   const cardTitle = showHeader ? (
     <Space size="small">
       <DatabaseOutlined style={{ color: 'var(--ant-color-primary)' }} />
-      <Typography.Text>{title}</Typography.Text>
+      <Typography.Text>{title ?? t('查询结果')}</Typography.Text>
     </Space>
   ) : undefined
   const result = readResult(value)
@@ -73,8 +79,8 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
           size="small"
           column={1}
           items={[
-            { key: 'affected', label: '影响行数', children: String(value.affectedRows ?? 0) },
-            { key: 'id', label: '新增ID', children: String(value.lastInsertId || '—') }
+            { key: 'affected', label: t('影响行数'), children: String(value.affectedRows ?? 0) },
+            { key: 'id', label: t('新增ID'), children: String(value.lastInsertId || '—') }
           ]}
         />
       </ContentCard>
@@ -93,7 +99,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
         render: (v: number) => <Typography.Text type="secondary">{v + 1}</Typography.Text>
       },
       ...result.columns.map((c, i) => ({
-        title: <Tooltip title={c.type}>{c.name || `列 ${i + 1}`}</Tooltip>,
+        title: <Tooltip title={c.type}>{c.name || t('列 {value1}', { value1: i + 1 })}</Tooltip>,
         dataIndex: String(i),
         key: String(i),
         // Let the last data column absorb extra space so the row number keeps its width.
@@ -120,36 +126,37 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
           showHeader && (
             <Space size="middle">
               <Typography.Text type="secondary">
-                {rows.length} 行 · {result.columns.length} 列
+                {rows.length} {t(' 行 · ')}
+                {result.columns.length} {t(' 列')}
               </Typography.Text>
               <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
             </Space>
           )
         }
       >
-        {result.truncated && <Alert type="warning" showIcon title="结果已截断，统计全量请使用聚合查询。" banner />}
+        {result.truncated && <Alert type="warning" showIcon title={t('结果已截断，统计全量请使用聚合查询。')} banner />}
         <Table<Row>
           classNames={resultTableClassNames}
           styles={resultTableStyles}
-          aria-label="查询结果"
+          aria-label={t('查询结果')}
           size={appearance.tableSize}
           bordered
           tableLayout="fixed"
           columns={columns}
           dataSource={rows}
           pagination={{
-            ...tablePaginationDefaults,
+            ...tablePagination,
             defaultPageSize: APPEARANCE.resultPageSize,
             pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: rows.length > 10,
             hideOnSinglePage: rows.length <= 10,
-            showTotal: (total) => `共 ${total} 行`
+            showTotal: (total) => t('共 {value1} 行', { value1: total })
           }}
           scroll={{
             x: scrollWidth,
             y: rows.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
           }}
-          locale={{ emptyText: '查询成功，没有匹配的数据' }}
+          locale={{ emptyText: t('查询成功，没有匹配的数据') }}
         />
         {sql && (
           <Collapse
@@ -158,7 +165,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             items={[
               {
                 key: 'sql',
-                label: '查看 SQL',
+                label: t('查看 SQL'),
                 children: (
                   <Typography.Paragraph
                     copyable={{ text: sql }}
@@ -187,10 +194,10 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
           items={[
             {
               key: 'database',
-              label: '数据库',
+              label: t('数据库'),
               children: cellText(value.target.database)
             },
-            { key: 'engine', label: '引擎', children: cellText(value.engine) }
+            { key: 'engine', label: t('引擎'), children: cellText(value.engine) }
           ]}
         />
       </ContentCard>
@@ -198,16 +205,16 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   }
   if (Array.isArray(value) && value.every((v) => typeof v === 'string'))
     return (
-      <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
+      <ResultTable title={cardTitle} extra={showHeader ? t('{value1} 项', { value1: value.length }) : undefined}>
         <Table
           classNames={resultTableClassNames}
           styles={resultTableStyles}
           size={appearance.tableSize}
           bordered
-          columns={[{ title: '名称', dataIndex: 'name', key: 'name' }]}
+          columns={[{ title: t('名称'), dataIndex: 'name', key: 'name' }]}
           dataSource={value.map((name, i) => ({ key: i, name }))}
           pagination={{
-            ...tablePaginationDefaults,
+            ...tablePagination,
             pageSize: APPEARANCE.resultPageSize,
             hideOnSinglePage: true
           }}
@@ -220,14 +227,14 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
   if (Array.isArray(value) && value.length > 0 && value.every(isObject)) {
     const keys = [...new Set(value.flatMap((v) => Object.keys(v)))].filter((k) => tool !== 'list_connections' || k !== 'id')
     const labels: Record<string, string> = {
-      name: tool === 'list_connections' ? '连接名称' : '名称',
-      type: '类型',
-      comment: '备注',
-      nullable: '允许为空',
-      key: '键',
-      default: '默认值',
-      extra: '附加信息',
-      id: '标识'
+      name: tool === 'list_connections' ? t('连接名称') : t('名称'),
+      type: t('类型'),
+      comment: t('备注'),
+      nullable: t('允许为空'),
+      key: t('键'),
+      default: t('默认值'),
+      extra: t('附加信息'),
+      id: t('标识')
     }
     const columns = keys.map((key, index) => ({
       title: labels[key] ?? key,
@@ -238,7 +245,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
       render: (v: unknown) => <Tooltip title={cellText(v)}>{cellText(v)}</Tooltip>
     }))
     return (
-      <ResultTable title={cardTitle} extra={showHeader ? `${value.length} 项` : undefined}>
+      <ResultTable title={cardTitle} extra={showHeader ? t('{value1} 项', { value1: value.length }) : undefined}>
         <Table
           classNames={resultTableClassNames}
           styles={resultTableStyles}
@@ -251,7 +258,7 @@ function ResultContent({ value, sql, title = '查询结果', tool, showHeader = 
             ...Object.fromEntries(keys.map((k, j) => [String(j), v[k]]))
           }))}
           pagination={{
-            ...tablePaginationDefaults,
+            ...tablePagination,
             pageSize: APPEARANCE.resultPageSize,
             hideOnSinglePage: true
           }}

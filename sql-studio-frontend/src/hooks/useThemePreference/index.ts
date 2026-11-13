@@ -1,7 +1,10 @@
+import dayjs from 'dayjs'
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 
+import 'dayjs/locale/zh-cn'
+
 import { readState, writeState } from '@/services/userState'
-import type { AppearanceSettings, FontSizePreference, ThemePreference } from '@/typings/theme'
+import type { AppearanceSettings, FontSizePreference, Language, ThemePreference } from '@/typings/theme'
 
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
 const subscribeTheme = (listener: () => void) => {
@@ -14,19 +17,23 @@ const getSystemTheme = () => systemTheme.matches
 export const useThemePreference = () => {
   const [preference, setPreference] = useState<ThemePreference>('system')
   const [fontSizePreference, setFontSizePreference] = useState<FontSizePreference>('standard')
+  const [language, setLanguage] = useState<Language>('zh-CN')
   const [ready, setReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const savePending = useRef(false)
   const [error, setError] = useState('')
   useEffect(() => {
     let stale = false
-    void readState<AppearanceSettings>('appearance', async () => ({ theme: 'system', fontSize: 'standard' }))
+    void readState<AppearanceSettings>('appearance', async () => ({ theme: 'system', fontSize: 'standard', language: 'zh-CN' }))
       .then((saved) => {
         if (!['light', 'dark', 'system'].includes(saved.theme)) throw new Error('外观配置格式不受支持')
         if (saved.fontSize !== 'small' && saved.fontSize !== 'standard' && saved.fontSize !== 'large') throw new Error('界面字号配置格式不受支持')
+        const savedLanguage = saved.language === undefined ? 'zh-CN' : saved.language
+        if (savedLanguage !== 'zh-CN' && savedLanguage !== 'en-US') throw new Error('语言配置格式不受支持')
         if (!stale) {
           setPreference(saved.theme)
           setFontSizePreference(saved.fontSize)
+          setLanguage(savedLanguage)
           setReady(true)
         }
       })
@@ -47,6 +54,7 @@ export const useThemePreference = () => {
       await writeState('appearance', settings)
       setPreference(settings.theme)
       setFontSizePreference(settings.fontSize)
+      setLanguage(settings.language)
     } catch (reason) {
       const cause = reason instanceof Error ? reason : new Error('外观配置保存失败')
       setError(cause.message)
@@ -61,10 +69,15 @@ export const useThemePreference = () => {
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = mode
   }, [mode, preference])
+  useLayoutEffect(() => {
+    document.documentElement.lang = language
+    dayjs.locale(language === 'zh-CN' ? 'zh-cn' : 'en')
+  }, [language])
 
   return {
     preference,
     fontSizePreference,
+    language,
     savePreferences,
     mode,
     error,

@@ -41,7 +41,7 @@ func New(services Services) *gin.Engine {
 	h := &handler{workspace: services.Workspace, ai: services.AI, connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)
-	router.Use(gin.Recovery(), localOnly)
+	router.Use(gin.Recovery(), responseLanguage, localOnly)
 	api := router.Group("/api")
 	registerAgent(api, services)
 	api.GET("/openapi.json", func(c *gin.Context) {

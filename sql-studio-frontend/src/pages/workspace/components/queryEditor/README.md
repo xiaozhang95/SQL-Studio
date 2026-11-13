@@ -1,5 +1,7 @@
 # SQL 页面编辑器
 
+界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+
 连接、表列表和 AI 偏好保存错误通过共享 ErrorNotice 展示。
 
 补全配置由 useSQLCompletion 按当前连接组织元数据，并调用数据库适配器 completion 构造；组件不导入具体 MySQL 方言。局部 contextSQL 只保留本区域右键菜单的选区快照。
