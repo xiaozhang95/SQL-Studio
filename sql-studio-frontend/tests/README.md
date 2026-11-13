@@ -75,6 +75,6 @@ page-title.test.mjs 验证查询页标题随所属数据库/Schema 变化、清�
 
 desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 document.title：切页/切库使用最新标题，空工作区回退，AI 页隐藏，后台工作台不覆盖，浏览器不改写。主题 token 和 effect 调度使用替身，不代表原生 Electron 窗口视觉检查。
 
-review-fixes.test.mjs 覆盖快捷键可见/目标/模态框/组合键边界、分页历史及恢复副本取消与写入失败；workspace-split 追加 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。以上均为替身/单元测试，不替代真实 CodeMirror、HTTP/数据库与下载验证。
+review-fixes.test.mjs 覆盖快捷键可见性、目标、模态框与组合键边界，以及历史分页。workspace-split.test.mjs 覆盖 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。这些检查使用测试替身，CodeMirror、HTTP、数据库与下载仍需分别验证。
 
 AI 配置回归：node --test tests/ai-settings.test.mjs。覆盖仅新配置格式、模型显示名称、行内连接测试、列表不提供启用选择、多模型去重、发现不自动选择，以及使用处选择和配置保存保留补全偏好。使用真实 hook 与替身请求，不访问 DeepSeek 或数据库；测试代码随行为同步不代表已执行。

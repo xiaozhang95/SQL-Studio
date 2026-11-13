@@ -48,6 +48,52 @@ func TestConversationRevisionsRestartAndIndex(t *testing.T) {
 		t.Fatal("orphan was published")
 	}
 }
+
+func TestListRecoversDefaultTitleOriginFromOlderIndex(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	store := New(dir)
+	expected := map[string]bool{strings.Repeat("a", 48): false, strings.Repeat("b", 48): true}
+	for id, custom := range expected {
+		_, err := store.Save(ctx, model.Conversation{
+			ID: id, Title: model.DefaultConversationTitle, CustomTitle: custom, Status: "idle",
+			Messages: []model.Message{{Role: "system", Content: "rules"}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	idx, err := store.loadIndex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range idx.Items {
+		idx.Items[i].CustomTitle = nil
+	}
+	if err := write(ctx, filepath.Join(dir, "conversations", "index.json"), idx); err != nil {
+		t.Fatal(err)
+	}
+	items, err := New(dir).List(ctx)
+	if err != nil || len(items) != len(expected) {
+		t.Fatal(items, err)
+	}
+	for _, item := range items {
+		custom, ok := expected[item.ID]
+		if !ok || item.Title != model.DefaultConversationTitle || item.CustomTitle == nil || *item.CustomTitle != custom {
+			t.Fatalf("incorrect title origin for %s: %+v", item.ID, item)
+		}
+	}
+	persisted, err := store.loadIndex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range persisted.Items {
+		if item.CustomTitle != nil {
+			t.Fatal("listing modified the old index")
+		}
+	}
+}
+
 func TestLayoutCASAndCorruptionPreserved(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()

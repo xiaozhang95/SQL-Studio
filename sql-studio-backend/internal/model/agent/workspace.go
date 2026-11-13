@@ -7,6 +7,8 @@ import (
 
 var ErrConflict = errors.New("记录已被其他请求更新，请重新加载")
 
+const DefaultConversationTitle = "新建会话"
+
 type TokenUsage struct {
 	Prompt     int `json:"promptTokens"`
 	Completion int `json:"completionTokens"`
@@ -35,11 +37,12 @@ type Conversation struct {
 	Summary     ContextSummary `json:"summary"`
 }
 type ConversationInfo struct {
-	ID        string    `json:"id"`
-	Revision  uint64    `json:"revision"`
-	Title     string    `json:"title"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Status    string    `json:"status"`
+	ID          string    `json:"id"`
+	Revision    uint64    `json:"revision"`
+	Title       string    `json:"title"`
+	CustomTitle *bool     `json:"customTitle,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Status      string    `json:"status"`
 }
 type ConversationView struct {
 	EventVersion uint64 `json:"eventVersion"`

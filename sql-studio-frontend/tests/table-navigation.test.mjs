@@ -27,6 +27,7 @@ function harness(type, view) {
   const dependencies = {
     ObjectAction,
     findExplorerPage,
+    t: (text) => text,
     connections: [{ id: 'target', name: 'fixture', type }],
     objects: {
       snapshots: { target: { status: 'connected', tables: { db: [{ name: table, type: view ? 'VIEW' : 'BASE TABLE' }] } } },

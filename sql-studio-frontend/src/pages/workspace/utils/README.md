@@ -16,8 +16,6 @@
 - [目标范围状态更新](workspaceTransitions/README.md)。
 - [纯数据对象树](explorerTree/README.md)。
 
-
-
 - [编辑内容同步缓冲](editorBuffer/README.md)：延迟全文读取、固定期限合并和切页同步。
 - [页面撤销历史](editorHistory/README.md)：会话内按页面保留撤销/重做变化，关闭时释放。
 - [结果分页映射](resultRows/README.md)：筛选下标缓存、可见页对象和完整CSV数据。

@@ -44,7 +44,7 @@ function blocks(entries: Entry[]): Block[] {
   return out
 }
 function ProcessDetails({ entries }: { entries: Entry[] }) {
-  const { t, language } = useTranslation()
+  const { t } = useTranslation()
 
   const steps = useMemo(() => {
     let toolNumber = 0

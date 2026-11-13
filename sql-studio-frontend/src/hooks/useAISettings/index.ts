@@ -16,11 +16,13 @@ export function useAISettings() {
   const [error, setError] = useState('')
   const [entries, setEntries] = useState<AISettingsEntry[]>([])
   const [activeId, setActiveId] = useState('')
+  const [baseline, setBaseline] = useState<{ signature: string; entries: ReadonlyMap<string, Pick<AIConfiguration, 'provider' | 'model'>> }>({
+    signature: '',
+    entries: new Map()
+  })
   const [connectionTests, setConnectionTests] = useState<Record<string, { loading: boolean; success?: boolean; message?: string }>>({})
   const testRequests = useRef(new Map<string, AbortController>())
   const revision = useRef(0)
-  const baseline = useRef('')
-  const savedEntries = useRef(new Map<string, AIConfiguration>())
   const generation = useRef(0)
   const pending = useRef(false)
   const readRequest = useRef<AbortController | null>(null)
@@ -84,8 +86,10 @@ export function useAISettings() {
     if (typeof selected !== 'string') throw new Error('模型配置格式无效')
     if (selected && !ids.has(selected)) throw new Error('当前模型配置无效')
     revision.current = doc.revision
-    savedEntries.current = new Map(values.map((entry) => [entry.id, { id: entry.id, provider: entry.provider, model: entry.model, modelName: entry.modelName, configured: true }]))
-    baseline.current = snapshot(values, selected)
+    setBaseline({
+      signature: snapshot(values, selected),
+      entries: new Map(values.map(({ id, provider, model }) => [id, { provider, model }]))
+    })
     setEntries(values)
     setConnectionTests({})
     setActiveId(selected || values[0]?.id || '')
@@ -165,7 +169,7 @@ export function useAISettings() {
       if (testRequests.current.get(id) === controller) testRequests.current.delete(id)
     }
   }
-  const changed = ready && (snapshot(entries, activeId) !== baseline.current || entries.some((entry) => Boolean(entry.apiKey.trim())))
+  const changed = ready && (snapshot(entries, activeId) !== baseline.signature || entries.some((entry) => Boolean(entry.apiKey.trim())))
   const pairs = new Set(entries.map((entry) => JSON.stringify([entry.provider, entry.model])))
   const canSave =
     ready &&
@@ -174,7 +178,7 @@ export function useAISettings() {
     pairs.size === entries.length &&
     (entries.length === 0 ? activeId === '' : entries.some((entry) => entry.id === activeId)) &&
     entries.every((entry) => {
-      const saved = savedEntries.current.get(entry.id)
+      const saved = baseline.entries.get(entry.id)
       const edited = !saved || Boolean(entry.apiKey.trim()) || saved.model !== entry.model || saved.provider !== entry.provider
       return Boolean(entry.model && entry.modelName) && (!edited || (!entry.modelsLoading && entry.models.some((item) => item.id === entry.model) && Boolean(entry.configured || entry.apiKey.trim())))
     })

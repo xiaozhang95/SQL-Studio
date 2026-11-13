@@ -4,14 +4,13 @@ import test from 'node:test'
 
 import ts from 'typescript'
 
+import * as chatApi from '../src/agent/services/chat/index.ts'
+import { getLanguage } from '../src/utils/language/index.ts'
+import { translate } from '../src/utils/translate/index.ts'
+
 async function moduleAt(relative) {
   let text = await fs.readFile(new URL('../src/agent/' + relative, import.meta.url), 'utf8')
-  if (text.includes('@/utils/request')) {
-    const requestSource = await fs.readFile(new URL('../src/utils/request/index.ts', import.meta.url), 'utf8')
-    const requestCode = ts.transpileModule(requestSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
-    const requestURL = 'data:text/javascript;base64,' + Buffer.from(requestCode).toString('base64')
-    text = text.replace(/(['"])@\/utils\/request\1/g, JSON.stringify(requestURL))
-  }
+  text = text.replace(/(['"])@\/utils\/request\1/g, JSON.stringify(new URL('../src/utils/request/index.ts', import.meta.url).href))
   text = text.replace(
     /import\s+\{\s*isObject\s*\}\s+from\s+["'][^"']+["'];?/,
     "function isObject(v: unknown): v is Record<string, unknown> { return v !== null && typeof v === 'object' && !Array.isArray(v); }"
@@ -94,15 +93,14 @@ test('旧后端拒绝ensure时提示重启，不自动重复创建', async () =>
     return new Response(JSON.stringify({ error: 'json: unknown field "ensure"' }), { status: 400 })
   }
   try {
-    const api = await moduleAt('services/chat/index.ts')
-    await assert.rejects(api.create(undefined, true), /go run main.go/)
+    await assert.rejects(chatApi.create(undefined, true), /go run main.go/)
     assert.equal(calls, 1)
   } finally {
     globalThis.fetch = original
   }
 })
 
-test('空会话列表先ensure创建，有历史时不重复创建；重命名正确传递中文与目标ID', async () => {
+test('空会话列表先 ensure 创建，索引区分默认标题和同名的手动标题', async () => {
   const original = globalThis.fetch
   const item = { id: 'a'.repeat(48), title: '新建会话', revision: 1, status: 'idle', updatedAt: '2026-11-03T00:00:00Z' }
   let existing = []
@@ -111,25 +109,26 @@ test('空会话列表先ensure创建，有历史时不重复创建；重命名�
     calls.push({ url, method: init.method ?? 'GET', body: init.body })
     if (init.method === 'POST') {
       assert.deepEqual(JSON.parse(init.body), { ensure: true })
-      existing = [item]
+      existing = [{ ...item, customTitle: false }]
       return Response.json({ id: item.id })
     }
     if (init.method === 'PATCH') {
       assert.equal(url, '/api/agent/sessions/' + item.id)
       const { title } = JSON.parse(init.body)
-      return Response.json({ ...item, title, revision: 2 })
+      return Response.json({ ...item, title, customTitle: true, revision: 2 })
     }
     return Response.json(existing)
   }
   try {
-    const api = await moduleAt('services/chat/index.ts')
-    assert.deepEqual(await api.ensureHistory(), [item])
+    assert.deepEqual(await chatApi.ensureHistory(), [{ ...item, customTitle: false }])
     assert.equal(calls.filter((c) => c.method === 'POST').length, 1)
-    await api.ensureHistory()
+    await chatApi.ensureHistory()
     assert.equal(calls.filter((c) => c.method === 'POST').length, 1)
-    const renamed = await api.rename(item.id, '订单统计')
-    assert.equal(renamed.title, '订单统计')
-    assert.equal(renamed.revision, 2)
+    const renamed = await chatApi.rename(item.id, '新建会话')
+    assert.deepEqual(renamed, { ...item, customTitle: true, revision: 2 })
+    assert.deepEqual(JSON.parse(calls.at(-1).body), { title: '新建会话' })
+    existing = [item]
+    assert.deepEqual(await chatApi.list(), [item])
   } finally {
     globalThis.fetch = original
   }
@@ -260,7 +259,7 @@ test('思考与回答分开增量、最终回答不重复、失败保留片段',
   assert.equal(JSON.stringify(entries), previous)
 })
 test('POST SSE解码支持UTF8分包，并拒绝没有done的断流', async () => {
-  const api = await moduleAt('services/chat/index.ts')
+  const { chat } = chatApi
   const original = globalThis.fetch
   const encoder = new TextEncoder()
   let raw = ': heartbeat\n\ndata: {"type":"reasoning_delta","text":"中文思考"}\n\ndata: {"type":"answer_delta","text":"回答"}\n\ndata: {"type":"answer","text":"回答"}\n\ndata: {"type":"done"}\n\n'
@@ -284,7 +283,7 @@ test('POST SSE解码支持UTF8分包，并拒绝没有done的断流', async () =
   }
   try {
     const events = []
-    await api.chat('id', '问题', new AbortController().signal, (e) => events.push(e))
+    await chat('id', '问题', new AbortController().signal, (e) => events.push(e))
     assert.deepEqual(
       events.map((e) => e.type),
       ['reasoning_delta', 'answer_delta', 'answer', 'done']
@@ -292,7 +291,7 @@ test('POST SSE解码支持UTF8分包，并拒绝没有done的断流', async () =
     assert.equal(events[0].text, '中文思考')
     raw = 'data: {"type":"answer_delta","text":"partial"}\n\n'
     await assert.rejects(
-      api.chat('id', '问题', new AbortController().signal, () => {}),
+      chat('id', '问题', new AbortController().signal, () => {}),
       /未完成/
     )
   } finally {
@@ -432,7 +431,11 @@ test('回答正文渲染加粗、行内代码、列表与链接，不执行HTML�
 async function confirmationHarness(fetch) {
   const transportSource = await fs.readFile(new URL('../src/utils/request/index.ts', import.meta.url), 'utf8')
   const transportCode = ts.transpileModule(transportSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
-  const transport = new Function('exports', 'fetch', transportCode + '; return exports')({}, fetch)
+  const dependencies = { '../language/index.ts': { getLanguage }, '../translate/index.ts': { translate } }
+  const transport = new Function('exports', 'fetch', 'require', transportCode + '; return exports')({}, fetch, (name) => {
+    assert.ok(dependencies[name], '未提供请求模块依赖: ' + name)
+    return dependencies[name]
+  })
   const source = (await fs.readFile(new URL('../src/agent/pages/chat/hooks/writeConfirmation/index.ts', import.meta.url), 'utf8')).replace(/^import .* from '[^']+'\r?\n/gm, '')
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
   const slots = []

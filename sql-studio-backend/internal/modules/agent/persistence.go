@@ -112,7 +112,8 @@ func (s *Service) List(ctx context.Context) ([]model.ConversationInfo, error) {
 	return out, nil
 }
 func info(id string, v *session) model.ConversationInfo {
-	return model.ConversationInfo{ID: id, Title: v.title, Revision: v.revision, Status: v.status, UpdatedAt: v.used}
+	customTitle := v.customTitle
+	return model.ConversationInfo{ID: id, Title: v.title, CustomTitle: &customTitle, Revision: v.revision, Status: v.status, UpdatedAt: v.used}
 }
 func (s *Service) View(ctx context.Context, id string) (model.ConversationView, error) {
 	s.mu.Lock()

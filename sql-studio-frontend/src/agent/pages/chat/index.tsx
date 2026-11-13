@@ -1,5 +1,6 @@
 import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Flex, Grid, theme } from 'antd'
+import { useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
@@ -22,6 +23,8 @@ import { useOperationMode } from './hooks/operationMode'
 import { useAISettings } from './hooks/settings'
 import { useAgentSidebar } from './hooks/sidebar'
 
+const defaultConversationTitle = '新建会话'
+
 export function ChatPage({
   dark,
   workspace,
@@ -43,7 +46,12 @@ export function ChatPage({
   const { token } = theme.useToken()
   const screens = Grid.useBreakpoint()
   const mobile = screens.md === false
-  const activeTitle = chat.history.find((i) => i.id === workspace.state.activeId)?.title ?? t('新建会话')
+  const localizedDefaultTitle = t(defaultConversationTitle)
+  const history = useMemo(
+    () => chat.history.map((item) => (item.status === 'idle' && item.customTitle === false && item.title === defaultConversationTitle ? { ...item, title: localizedDefaultTitle } : item)),
+    [chat.history, localizedDefaultTitle]
+  )
+  const activeTitle = history.find((i) => i.id === workspace.state.activeId)?.title ?? localizedDefaultTitle
   return (
     <Flex
       style={{
@@ -68,7 +76,7 @@ export function ChatPage({
       >
         {' '}
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
-          {t('新建会话')}
+          {localizedDefaultTitle}
         </Button>
         {mobile && <Button type="text" aria-label={t('历史会话')} icon={<MenuOutlined />} onClick={chat.showHistory} />}
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
@@ -78,7 +86,7 @@ export function ChatPage({
           mobile={mobile}
           layout={sidebar}
           open={chat.historyOpen}
-          items={chat.history}
+          items={history}
           activeId={workspace.state.activeId}
           busy={chat.historyBusy}
           selecting={chat.loading}

@@ -22,19 +22,19 @@
 - 结果分页、筛选、刷新和 CSV 导出。
 - 表数据新增与编辑，暂存修改后统一保存。
 - 查看建表语句，转储结构或结构和数据。
-- 亮色、暗色和跟随系统主题。
+- 亮色、暗色和跟随系统主题，支持简体中文与 English 界面。
 - 用户主目录下的 `~/.sql-studio/state/` 保存布局、页签、查询草稿、结果快照与历史。
 - DeepSeek SQL 续写、优化与可选模型配置，生成后由用户决定是否运行。
 
 ## 安装与启动
 
-需要 Node.js、pnpm、Go 和可访问的 MySQL、MariaDB 或 PostgreSQL 数据库。
+需要 Node.js 22.12 或更高版本、pnpm、Go 1.26 或更高版本。连接数据库时使用可访问的 MySQL、MariaDB 或 PostgreSQL 实例。
 
 安装依赖：
 
 ```sh
 cd sql-studio-frontend
-pnpm install
+pnpm install --frozen-lockfile
 cd ../sql-studio-backend
 go mod download
 ```
@@ -59,10 +59,12 @@ pnpm dev
 
 桌面项目位于 [sql-studio-electron](sql-studio-electron/README.md)。调试时先按上面的命令手动启动 Go 和 Vite，再到 Electron 目录执行 `pnpm start`。
 
-在仓库根目录进入桌面项目，安装依赖并打包：
+从仓库根目录分别安装前端和桌面项目依赖，再在桌面项目打包。
 
 ```sh
-cd sql-studio-electron
+cd sql-studio-frontend
+pnpm install --frozen-lockfile
+cd ../sql-studio-electron
 pnpm install --frozen-lockfile
 pnpm build
 ```

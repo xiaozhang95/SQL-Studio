@@ -1,6 +1,6 @@
-#界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+# SQL 工作区
 
- SQL 工作区
+界面固定文案通过共享 useTranslation 跟随已保存语言切换。SQL、用户输入和数据库返回内容按原文展示。
 
 [源码](index.tsx) · [组件](components/README.md) · [hooks](hooks/README.md) · [配置](constant/README.md)
 

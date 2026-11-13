@@ -49,7 +49,7 @@ sequenceDiagram
 
 ## 界面
 
-聊天界面使用 @ant-design/x 2.5.0 的 Conversations、Bubble、Sender 和 Think。空列表默认创建并选中一条「新建会话」，历史支持重命名和确认删除。删除最后一条后重新创建默认会话，手动名称会保留。右上角「系统设置」提供 DeepSeek 配置，输入框底部的模型菜单用于切换模型。工作区与助手共用 AI 配置，保存、移除配置和窗口回焦会刷新助手的配置状态。模式、模型与发送按钮位于输入区底部。Enter 发送，Shift+Enter 换行，中文输入法确认候选时保留在输入阶段。组件参考见[Ant Design X](https://github.com/ant-design/x)与[Sender 接口](https://ant-design-x.antgroup.com/components/sender)。
+聊天界面使用 @ant-design/x 2.5.0 的 Conversations、Bubble、Sender 和 Think。空列表及删除最后一条会话后会创建并选中默认会话。默认标题随界面语言显示「新建会话」或「New chat」。历史支持重命名和确认删除，手动名称始终按原文显示。右上角「系统设置」提供 DeepSeek 配置，输入框底部的模型菜单用于切换模型。工作区与助手共用 AI 配置，保存、移除配置和窗口回焦会刷新助手的配置状态。模式、模型与发送按钮位于输入区底部。Enter 发送，Shift+Enter 换行，中文输入法确认候选时保留在输入阶段。组件参考见[Ant Design X](https://github.com/ant-design/x)与[Sender 接口](https://ant-design-x.antgroup.com/components/sender)。
 
 相邻的思考与执行步骤放在同一个折叠区，展开后按原顺序显示。展开状态随会话布局保存。结果独立展示表格，保留重复列、精确数值文本、NULL、分页和SQL预览。亮暗/跟随系统复用SQL Studio全局主题。内容区可连续上下滚动，虚拟窗口最多挂载 5 轮。滚到窗口中段时提前挂载一轮并保留阅读位置，快速滚到未挂载区域时短暂显示加载提示。左侧刻度和问题搜索可直接定位，离开底部时在聊天区右下侧显示主题主色的「回到底部」箭头。新提问回到最新轮，浏览历史只使用已读取的会话。
 

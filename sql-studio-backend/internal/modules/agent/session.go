@@ -111,7 +111,7 @@ func (s *Service) createLocked(ctx context.Context) (string, error) {
 	}
 	id := hex.EncodeToString(token[:])
 	s.evictLocked()
-	s.sessions[id] = &session{state: toolState{databases: make(map[string][]string)}, messages: []model.Message{{Role: "system", Content: systemPrompt()}}, used: time.Now(), title: "新建会话", status: "idle"}
+	s.sessions[id] = &session{state: toolState{databases: make(map[string][]string)}, messages: []model.Message{{Role: "system", Content: systemPrompt()}}, used: time.Now(), title: model.DefaultConversationTitle, status: "idle"}
 	if err := s.saveLocked(ctx, id, s.sessions[id]); err != nil {
 		delete(s.sessions, id)
 		return "", err

@@ -47,7 +47,6 @@ export function useWorkspace() {
   }
   useEffect(() => {
     mounted.current = true
-    setError('')
     const c = new AbortController()
     workspace('GET', undefined, c.signal)
       .then((v) => {
@@ -86,7 +85,9 @@ export function useWorkspace() {
     timer.current = setTimeout(() => void flush(), 400)
   }
   const retry = () => {
-    if (!loaded.current) setLoadAttempt((value) => value + 1)
+    if (loaded.current) return
+    setError('')
+    setLoadAttempt((value) => value + 1)
   }
   return { state, ready, error, saving, update, retry }
 }

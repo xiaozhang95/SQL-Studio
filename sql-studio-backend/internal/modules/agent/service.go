@@ -51,7 +51,7 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 	state.allowWrite = mode == "write"
 	summary := v.summary
 	v.status = "running"
-	if !v.customTitle && v.title == "新建会话" {
+	if !v.customTitle && v.title == model.DefaultConversationTitle {
 		title := []rune(text)
 		if len(title) > 40 {
 			title = title[:40]

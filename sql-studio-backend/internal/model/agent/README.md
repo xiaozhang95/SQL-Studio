@@ -4,7 +4,7 @@
 
 workspace.go定义会话模型历史/事件/摘要、轻量索引和布局修订号；settings.go集中DeepSeek Flash/Pro支持列表。model仅描述契约，不执行存储/HTTP/模型调用。
 
-Conversation.CustomTitle记录显式重命名，用于阻止首条用户消息覆盖手动名称；不包含在轻量索引中。
+`DefaultConversationTitle` 是会话创建时保存的默认名称。`Conversation.CustomTitle` 记录显式重命名，优先于首条消息生成的标题。`ConversationInfo.CustomTitle` 为可选布尔值，轻量索引和详情用它标记标题来源，缺失表示来源未确认。
 
 Event.createdAt为可选RFC3339时间，user事件由服务端写入UTC发送时间并随会话保存。旧事件允许缺失。
 

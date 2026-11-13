@@ -173,20 +173,12 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                         {...CHAT.iconButton}
                         danger
                         aria-label={t('停止生成')}
-                        icon={
-                          <span aria-hidden="true" style={{ display: 'block', width: token.sizeXS, height: token.sizeXS, background: 'currentColor', borderRadius: token.borderRadiusXS }} />
-                        }
+                        icon={<span aria-hidden="true" style={{ display: 'block', width: token.sizeXS, height: token.sizeXS, background: 'currentColor', borderRadius: token.borderRadiusXS }} />}
                         onClick={onStop}
                       />
                     </Tooltip>
                   ) : (
-                    <Button
-                      {...CHAT.iconButton}
-                      onClick={() => submit(question)}
-                      aria-label={t('发送消息')}
-                      icon={<ArrowUpOutlined />}
-                      disabled={settingsBusy || !aiStatus?.configured || tooLong}
-                    />
+                    <Button {...CHAT.iconButton} onClick={() => submit(question)} aria-label={t('发送消息')} icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured || tooLong} />
                   )}
                 </Flex>
               </Flex>

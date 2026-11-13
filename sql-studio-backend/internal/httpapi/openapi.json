@@ -2007,7 +2007,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentConversationInfo"
+                  }
                 }
               }
             }
@@ -2108,7 +2111,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/AgentConversationView"
                 }
               }
             }
@@ -2220,25 +2223,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "title": {
-                      "type": "string"
-                    },
-                    "revision": {
-                      "type": "integer"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  }
+                  "$ref": "#/components/schemas/AgentConversationInfo"
                 }
               }
             }
@@ -2638,6 +2623,70 @@
   },
   "components": {
     "schemas": {
+      "AgentConversationInfo": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "revision",
+          "status",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "customTitle": {
+            "type": "boolean",
+            "description": "是否为手动命名。缺失表示名称来源未确认。"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AgentConversationView": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AgentConversationInfo"
+          },
+          {
+            "type": "object",
+            "required": [
+              "events",
+              "busy",
+              "eventVersion"
+            ],
+            "properties": {
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "busy": {
+                "type": "boolean"
+              },
+              "eventVersion": {
+                "type": "integer"
+              },
+              "nextOffset": {
+                "type": "integer"
+              }
+            }
+          }
+        ]
+      },
       "Error": {
         "type": "object",
         "properties": {

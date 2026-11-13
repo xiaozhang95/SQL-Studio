@@ -153,7 +153,7 @@ export const useWorkspace = (active = true) => {
   const tableDesignerCommitted = useCallback(
     (id: string, change: ObjectChange) =>
       setTabs((previous) => previous.map((page) => (page.id === id ? { ...page, kind: 'table-design', table: change.name, title: change.name + t(' · 设计') } : page))),
-    [setTabs]
+    [setTabs, t]
   )
   function isTableDesignerBlocked(page: WorkspaceTab) {
     return (

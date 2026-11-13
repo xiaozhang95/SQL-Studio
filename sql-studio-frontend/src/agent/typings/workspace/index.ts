@@ -12,6 +12,7 @@ export interface Workspace {
 export interface ConversationInfo {
   id: string
   title: string
+  customTitle?: boolean
   revision: number
   status: string
   updatedAt: string

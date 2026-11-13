@@ -39,7 +39,7 @@ func TestEnsureEmptyHistoryCreatesOneSessionAcrossConcurrentRequests(t *testing.
 		selected = id
 	}
 	items, err := store.List(ctx)
-	if err != nil || len(items) != 1 || items[0].Title != "新建会话" {
+	if err != nil || len(items) != 1 || items[0].Title != model.DefaultConversationTitle || items[0].CustomTitle == nil || *items[0].CustomTitle {
 		t.Fatal(items, err)
 	}
 	other, err := s.Create(ctx)
@@ -87,6 +87,10 @@ func TestRenamePersistsAndManualDefaultTitleSurvivesFirstMessage(t *testing.T) {
 	}
 	if _, err = s.Rename(ctx, id, "新建会话"); err != nil {
 		t.Fatal(err)
+	}
+	items, err := localstate.New(dir).List(ctx)
+	if err != nil || len(items) != 1 || items[0].Title != model.DefaultConversationTitle || items[0].CustomTitle == nil || !*items[0].CustomTitle {
+		t.Fatal("manual default title not marked in the index", items, err)
 	}
 	restarted := New(generator, &fakeDB{}, localstate.New(dir))
 	if err = restarted.Chat(ctx, id, "此问题不能覆盖手动名称", func(model.Event) error { return nil }); err != nil {

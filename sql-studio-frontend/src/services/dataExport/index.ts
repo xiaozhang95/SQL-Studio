@@ -1,5 +1,6 @@
 import type { QueryResult } from '@/typings/database'
-import { fetchResponse, readJSON } from '@/utils/request'
+
+import { fetchResponse, readJSON } from '../../utils/request/index.ts'
 
 function readEvent(text: string): { type: 'rows'; result: QueryResult } | { type: 'done' } | { type: 'error'; error: string } {
   const value: unknown = JSON.parse(text)

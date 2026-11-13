@@ -1,5 +1,4 @@
-import { fetchResponse, readJSON, request } from '@/utils/request'
-
+import { fetchResponse, readJSON, request } from '../../../utils/request/index.ts'
 import type { ChatEvent, TokenUsage } from '../../typings/chat'
 import type { ConversationInfo } from '../../typings/workspace'
 import { isObject } from '../../utils/json/index.ts'
@@ -26,9 +25,11 @@ export async function create(signal?: AbortSignal, ensure = false): Promise<stri
 function info(v: unknown): ConversationInfo {
   if (!isObject(v) || typeof v.id !== 'string' || typeof v.title !== 'string' || typeof v.revision !== 'number' || typeof v.updatedAt !== 'string' || typeof v.status !== 'string')
     throw new Error('会话索引无效')
+  if (v.customTitle !== undefined && typeof v.customTitle !== 'boolean') throw new Error('会话索引无效')
   return {
     id: v.id,
     title: v.title,
+    ...(v.customTitle !== undefined ? { customTitle: v.customTitle } : {}),
     revision: v.revision,
     status: v.status,
     updatedAt: v.updatedAt

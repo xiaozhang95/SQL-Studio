@@ -4,7 +4,6 @@ import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
 import { view } from '../src/agent/services/chat/index.ts'
-import { saveRecoveryFile } from '../src/utils/recoveryFile/index.ts'
 
 test('query sessions keep request and result ownership across switches and stale completion', () => {
   const source = readFileSync(new URL('../src/pages/workspace/hooks/useQuerySession/index.ts', import.meta.url), 'utf8')
@@ -127,38 +126,5 @@ test('history restoration follows bounded pages without mixing revisions', async
     await assert.rejects(view('example', new AbortController().signal), /分页响应无效/)
   } finally {
     globalThis.fetch = original
-  }
-})
-
-test('recovery export never reloads, and failed writes abort without claiming success', async () => {
-  const original = globalThis.window
-  const writes = []
-  let aborted = 0,
-    reloads = 0
-  globalThis.window = {
-    location: { reload: () => reloads++ },
-    showSaveFilePicker: async () => ({ createWritable: async () => ({ write: async (blob) => writes.push(JSON.parse(await blob.text())), close: async () => {}, abort: async () => aborted++ }) })
-  }
-  try {
-    assert.match(await saveRecoveryFile({ sql: 'SELECT 1', histories: [] }), /已保存/)
-    assert.equal(writes[0].sql, 'SELECT 1')
-    window.showSaveFilePicker = async () => {
-      throw new DOMException('已取消', 'AbortError')
-    }
-    await assert.rejects(saveRecoveryFile({}), { name: 'AbortError' })
-    window.showSaveFilePicker = async () => ({
-      createWritable: async () => ({
-        write: async () => {
-          throw new Error('disk full')
-        },
-        close: async () => assert.fail('must not close'),
-        abort: async () => aborted++
-      })
-    })
-    await assert.rejects(saveRecoveryFile({}), /disk full/)
-    assert.equal(aborted, 1)
-    assert.equal(reloads, 0)
-  } finally {
-    globalThis.window = original
   }
 })

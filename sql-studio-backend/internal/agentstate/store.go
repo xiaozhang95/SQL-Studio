@@ -120,8 +120,25 @@ func (s *Store) List(ctx context.Context) ([]model.ConversationInfo, error) {
 		return nil, err
 	}
 	v, err := s.loadIndex()
+	if err != nil {
+		return nil, err
+	}
+	for i := range v.Items {
+		item := &v.Items[i]
+		if item.CustomTitle != nil || item.Title != model.DefaultConversationTitle || item.Status != "idle" {
+			continue
+		}
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		// Older indexes omit title origin. Check the manifest without loading message or event parts.
+		var saved record
+		if read(s.path(item.ID, item.Revision), &saved) == nil && saved.SchemaVersion == 2 && saved.Data.ID == item.ID && saved.Data.Revision == item.Revision {
+			item.CustomTitle = &saved.Data.CustomTitle
+		}
+	}
 	sort.Slice(v.Items, func(i, j int) bool { return v.Items[i].UpdatedAt.After(v.Items[j].UpdatedAt) })
-	return v.Items, err
+	return v.Items, nil
 }
 func (s *Store) Load(ctx context.Context, id string) (model.Conversation, error) {
 	s.mu.Lock()
@@ -211,7 +228,7 @@ func (s *Store) Save(ctx context.Context, value model.Conversation) (model.Conve
 	if err = write(ctx, s.path(value.ID, value.Revision), current); err != nil {
 		return value, err
 	}
-	info := model.ConversationInfo{ID: value.ID, Revision: value.Revision, Title: value.Title, UpdatedAt: value.UpdatedAt, Status: value.Status}
+	info := model.ConversationInfo{ID: value.ID, Revision: value.Revision, Title: value.Title, CustomTitle: &value.CustomTitle, UpdatedAt: value.UpdatedAt, Status: value.Status}
 	if position < 0 {
 		idx.Items = append(idx.Items, info)
 	} else {

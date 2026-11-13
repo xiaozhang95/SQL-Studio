@@ -6,5 +6,4 @@ AIConfig 含 configurations、activeId、completionEnabled。AIConfigDocument �
 
 AIAdapter 含只读 profile、listModels(apiKey,signal,configId?)、assist；profile.defaultModel 元信息不用于自动选择。空 Key 必须提供对应 configId，未知 ID 不复用别条记录。
 
-
 aiModelsSection='ai-models' 是前端唯一模型存储分区常量，与后端 model.AIModelsSection 对齐。新分区不存在时从空列表开始，不受旧配置文件影响。

@@ -4,6 +4,7 @@ sql-studio-backend/*.test
 sql-studio-frontend/node_modules/
 sql-studio-frontend/dist/
 *.log
+.DS_Store
 .env
 .server.pid
 /.refactor-backup/

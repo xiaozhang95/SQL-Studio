@@ -12,7 +12,7 @@ context.go使用1M窗口和700000保守输入上界，JSON字节数加模板余�
 
 persistence.go保存完整文本、精简事件和成功模型历史。用户消息先保存、工具结果立即保存、连续流式片段先合并，约每秒检查点、结束最终保存。失败/取消保留事件和部分内容、标记未完成，不提交当轮模型历史/目标。重启读取到running标记interrupted，不重放SQL。最终保存失败返回错误而非done成功。
 
-Create立即建立并索引“新建会话”；Ensure在服务互斥锁内检查索引，为空时创建，否则返回已有ID，处理多窗口/StrictMode重复请求。Rename(ctx,id,title)限1–80字符、trim且拒绝控制字符，执行中拒绝；更新失败还原缓存，成功持久化CustomTitle，手动名即使与默认名相同也不被首条消息覆盖。
+Create 立即建立并索引默认会话。Ensure 在服务互斥锁内检查索引，为空时创建，否则返回已有 ID，以处理多窗口或 StrictMode 重复请求。Rename(ctx,id,title) 去除首尾空白，限 1–80 字符，拒绝控制字符和执行中的重命名。更新失败还原缓存，成功持久化 CustomTitle。会话索引及详情带上标题来源，供界面翻译默认名称。手动名称优先于首条消息生成的标题。
 
 Agent操作模式：POST /api/agent/chat 增加mode（readonly默认，write为完全访问模式，允许非删除数据及结构操作）。任何模式拒绝DELETE/DROP/TRUNCATE/REPLACE及删除性结构操作；删除仅提供命令及风险提示，不自动执行。刷新和往返工作台恢复上次确认的模式。支持单条INSERT/UPDATE/CREATE/ALTER/COMMENT及表达式和子查询；多语句、存储程序、动态SQL不执行，以防绕过删除限制；取消不保证回滚。查询回答提示生成真实二维JSON表格，前端校验后展示，支持导出当前已加载结果xlsx，截断明确提示。
 

@@ -65,6 +65,7 @@ function connectionMenu(status, running = false) {
   const actions = []
   const dependencies = {
     React: { createElement: () => null },
+    t: (text) => text,
     ...Object.fromEntries(['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])),
     connections: [{ id: 'offline' }],
     objects: { snapshots: status ? { offline: { status } } : {}, closedDatabases: {} },
