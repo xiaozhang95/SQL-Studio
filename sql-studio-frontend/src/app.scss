@@ -141,6 +141,17 @@ body,
 .ant-app.sql-studio-theme {
   height: 100%;
 }
+
+// 监控卡片按偶数列切换，四列时为每张卡片预留足够宽度。
+.database-monitor-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 1120px) {
+  .database-monitor-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .sidebar-resizer:is(:hover, :focus-visible),
 .sidebar.is-resizing .sidebar-resizer,
 .results-resizer:is(:hover, :focus-visible),

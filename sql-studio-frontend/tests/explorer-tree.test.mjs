@@ -109,7 +109,7 @@ test('foreign key nodes preserve column mapping and distinguish unsupported and 
     buildExplorerTree(connections, { a: { ...snapshot, details: { [detailKey]: { columns: [], indexes: [], foreignKeys, foreignKeyError } } } }, expanded, '').byKey
 
   assert.equal(render(undefined).has(groupKey), false)
-  assert.equal(render([]).get(groupKey).children[0].title, '暂无外键')
+  assert.deepEqual(render([]).get(groupKey).children, [])
   const failed = render(undefined, '外键加载失败')
   assert.equal(failed.get(groupKey).children[0].retry, 'table')
   assert.ok(failed.has(key('columns', 'a', 'big', table)))

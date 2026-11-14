@@ -32,8 +32,8 @@ export default function DatabasePage({ title, onBack, connectionError, retryConn
       >
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={backDisabled} separated={false} />
       </PageHeader>
-      <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)' }}>
-        <Flex vertical gap="middle" style={{ width: '100%', maxWidth: 1040, marginInline: 'auto', paddingBlock: token.paddingSM }}>
+      <main style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlock: token.paddingLG, paddingInline: `clamp(${token.padding}px, 3vw, ${token.paddingXL}px)` }}>
+        <Flex vertical gap="large" style={{ minWidth: 0 }}>
           <Typography.Title level={2} style={{ margin: 0 }}>
             {title}
           </Typography.Title>

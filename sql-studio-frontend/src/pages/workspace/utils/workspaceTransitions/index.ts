@@ -59,7 +59,7 @@ export function explorerAfterChange(layout: ExplorerLayout, { action, target, na
         if (['schema', 'tables', 'views', 'empty-tables'].includes(parts[0]) && parts[3] === target.schema) return []
         if (
           engine &&
-          ['table', 'columns', 'column', 'indexes', 'index', 'foreign-keys', 'foreign-key', 'empty-foreign-keys', 'foreign-keys-error', 'detail-error'].includes(parts[0]) &&
+          ['table', 'columns', 'column', 'indexes', 'index', 'foreign-keys', 'foreign-key', 'foreign-keys-error', 'detail-error'].includes(parts[0]) &&
           parts[3] &&
           engine.tableIdentity(parts[3]).schema === target.schema
         )

@@ -60,14 +60,8 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
             </Button>
           ) : undefined
         }
-        actions={
-          <>
-            <SaveStatus saving={model.workspaceReady && (model.saving || themeSaving)} />
-            <SystemSettings themeReady={themeReady} {...appearancePreferences} />
-          </>
-        }
+        actions={<SystemSettings themeReady={themeReady} {...appearancePreferences} />}
       >
-        {' '}
         <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
           <Button
             type="text"
@@ -84,18 +78,19 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
             {t('新建查询')}
           </Button>
         </div>
-        {model.runningTabId && !model.activeRunning && (
-          <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
-            {t('取消执行')}
-          </Button>
-        )}
-        <SectionNavigation destination="sync" onSwitch={() => onOpenDatabaseSection('sync')} separated={false} />
+        <SectionNavigation destination="sync" onSwitch={() => onOpenDatabaseSection('sync')} />
         <SectionNavigation
           destination="monitor"
           onSwitch={() => onOpenDatabaseSection('monitor', selectedConnectionScope(model.explorer.selected[0], model.connections) ?? model.tab)}
           separated={false}
         />
-        <SectionNavigation destination="agent" onSwitch={onOpenAgent} />
+        <SectionNavigation destination="agent" onSwitch={onOpenAgent} separated={false} />
+        {model.runningTabId && !model.activeRunning && (
+          <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+            {t('取消执行')}
+          </Button>
+        )}
+        <SaveStatus saving={model.workspaceReady && (model.saving || themeSaving)} />
       </PageHeader>
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>

@@ -4,13 +4,17 @@ import { DatabaseEngine } from '@/databases/typings'
 import { getDatabaseMonitor, getDatabases } from '@/services/database'
 import type { Connection, MonitorSnapshot } from '@/typings/database'
 
-const refreshInterval = 15_000
+export const refreshIntervals = [0, 5, 15, 30, 60, 300] as const
+type RefreshInterval = (typeof refreshIntervals)[number]
+
 export function useDatabaseMonitor(connections: readonly Connection[], initialConnection: Connection | undefined, initialDatabase: string) {
   const [connectionId, setConnectionId] = useState(initialConnection?.id ?? connections[0]?.id ?? '')
   const [database, setDatabase] = useState(initialConnection ? initialDatabase : '')
   const [databaseList, setDatabaseList] = useState<{ connectionId: string; names: string[] }>()
   const [result, setResult] = useState<{ snapshot?: MonitorSnapshot; error?: string }>()
-  const [refresh, setRefresh] = useState(0)
+  const [refreshCount, setRefreshCount] = useState(0)
+  const [refreshInterval, setRefreshInterval] = useState<RefreshInterval>(0)
+  const [loading, setLoading] = useState(false)
   const connection = connections.find((item) => item.id === connectionId)
   const databaseScoped = connection?.type === DatabaseEngine.PostgreSQL || connection?.type === DatabaseEngine.GreptimeDB
   const scopeDatabase = databaseScoped ? database : ''
@@ -39,7 +43,7 @@ export function useDatabaseMonitor(connections: readonly Connection[], initialCo
   useEffect(() => {
     if (!connection) return
     const controller = new AbortController()
-    let timer: number
+    setLoading(true)
     const load = async () => {
       try {
         const snapshot = await getDatabaseMonitor(connection.id, scopeDatabase, controller.signal)
@@ -47,21 +51,27 @@ export function useDatabaseMonitor(connections: readonly Connection[], initialCo
       } catch (error) {
         if (!controller.signal.aborted) setResult((previous) => ({ ...previous, error: error instanceof Error ? error.message : '未读取到数据库统计' }))
       } finally {
-        if (!controller.signal.aborted) timer = window.setTimeout(load, refreshInterval)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
     void load()
-    return () => {
-      controller.abort()
-      window.clearTimeout(timer)
-    }
-  }, [connection, scopeDatabase, refresh])
+    return () => controller.abort()
+  }, [connection, scopeDatabase, refreshCount])
+
+  useEffect(() => {
+    if (!connection || !result || loading || !refreshInterval) return
+    const timer = window.setTimeout(() => setRefreshCount((count) => count + 1), refreshInterval * 1000)
+    return () => window.clearTimeout(timer)
+  }, [connection, result, loading, refreshInterval])
 
   return {
     connection,
     databases,
     databaseScoped,
     database,
+    loading,
+    refreshInterval,
+    setRefreshInterval,
     selectConnection,
     selectDatabase: (name: string) => {
       if (name === database) return
@@ -69,6 +79,6 @@ export function useDatabaseMonitor(connections: readonly Connection[], initialCo
       setDatabase(name)
     },
     result: connection ? result : undefined,
-    refresh: () => setRefresh((value) => value + 1)
+    refresh: () => setRefreshCount((count) => count + 1)
   }
 }

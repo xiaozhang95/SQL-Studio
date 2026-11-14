@@ -172,7 +172,7 @@ export function buildExplorerTree(
                 const addDetails = <T extends { name: string }>(
                   kind: string,
                   title: string,
-                  empty: string,
+                  empty: string | undefined,
                   leaf: string,
                   entries: T[],
                   describe: (item: ExplorerNode, entry: T) => void,
@@ -194,7 +194,7 @@ export function buildExplorerTree(
                     describe(item, entry)
                     return item
                   })
-                  if (!group.children.length) group.children = [placeholder(`empty-${kind}`, empty, id, db, table.name)]
+                  if (!group.children.length && empty) group.children = [placeholder(`empty-${kind}`, empty, id, db, table.name)]
                 }
                 addDetails('columns', '字段', '暂无字段', 'column', details.columns, (item, column) => {
                   item.primary = column.key === 'PRI'
@@ -208,7 +208,7 @@ export function buildExplorerTree(
                   addDetails(
                     'foreign-keys',
                     '外键',
-                    '暂无外键',
+                    undefined,
                     'foreign-key',
                     details.foreignKeys ?? [],
                     (item, foreignKey) => {

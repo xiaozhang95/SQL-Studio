@@ -1,5 +1,5 @@
 import { ReloadOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, Flex, Form, Select, Statistic, Typography } from 'antd'
+import { Button, Card, Empty, Flex, Select, Statistic, theme, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
@@ -10,7 +10,7 @@ import { getDatabaseAdapter } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
-import { useDatabaseMonitor } from './hooks/useDatabaseMonitor'
+import { refreshIntervals, useDatabaseMonitor } from './hooks/useDatabaseMonitor'
 
 const metricLabels: Readonly<Record<string, string>> = {
   connections: '当前连接数',
@@ -59,6 +59,7 @@ type Props = DatabasePageProps & { connections: readonly Connection[]; initialCo
 
 export default function DatabaseMonitor({ connections, initialConnection, initialDatabase, ...pageProps }: Props) {
   const { t, language } = useTranslation()
+  const { token } = theme.useToken()
   const monitor = useDatabaseMonitor(connections, initialConnection, initialDatabase)
   const { connection, result } = monitor
   const snapshot = result?.snapshot
@@ -75,37 +76,39 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
       </Flex>
     )
   }))
+  const intervalOptions = refreshIntervals.map((value) => ({
+    value,
+    label: value === 0 ? t('已关闭') : value < 60 ? t('每 {count} 秒', { count: value }) : t('每 {count} 分钟', { count: value / 60 })
+  }))
   return (
     <DatabasePage title={t('监控指标')} {...pageProps}>
       {connections.length ? (
         <>
           <Card size="small">
-            <Form layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}>
-              <Form.Item label={t('连接')} htmlFor="monitor-connection" style={{ marginBottom: monitor.databaseScoped ? 12 : 0 }}>
-                <Select
-                  id="monitor-connection"
-                  value={connection?.id}
-                  options={options}
-                  showSearch={{ optionFilterProp: 'searchText' }}
-                  placeholder={t('选择连接')}
-                  onChange={(id) => monitor.selectConnection(id)}
-                />
-              </Form.Item>
+            <Flex gap="small" wrap>
+              <Select
+                aria-label={t('选择连接')}
+                style={{ flex: '1 1 260px', minWidth: 0 }}
+                value={connection?.id}
+                options={options}
+                showSearch={{ optionFilterProp: 'searchText' }}
+                placeholder={t('选择连接')}
+                onChange={monitor.selectConnection}
+              />
               {connection && monitor.databaseScoped && (
-                <Form.Item label={t('数据库')} htmlFor="monitor-database" style={{ marginBottom: 0 }}>
-                  <Select
-                    id="monitor-database"
-                    value={monitor.database}
-                    showSearch={{ optionFilterProp: 'label' }}
-                    options={[
-                      { value: '', label: defaultDatabase ? t('默认数据库（{name}）', { name: defaultDatabase }) : t('默认数据库') },
-                      ...[...new Set([...monitor.databases, ...(monitor.database ? [monitor.database] : [])])].map((name) => ({ value: name, label: name }))
-                    ]}
-                    onChange={monitor.selectDatabase}
-                  />
-                </Form.Item>
+                <Select
+                  aria-label={t('数据库')}
+                  style={{ flex: '1 1 240px', minWidth: 0 }}
+                  value={monitor.database}
+                  showSearch={{ optionFilterProp: 'label' }}
+                  options={[
+                    { value: '', label: defaultDatabase ? t('默认数据库（{name}）', { name: defaultDatabase }) : t('默认数据库') },
+                    ...[...new Set([...monitor.databases, ...(monitor.database ? [monitor.database] : [])])].map((name) => ({ value: name, label: name }))
+                  ]}
+                  onChange={monitor.selectDatabase}
+                />
               )}
-            </Form>
+            </Flex>
           </Card>
           {connection && (
             <Flex align="center" justify="space-between" gap="small" wrap>
@@ -113,17 +116,26 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
                 {snapshot?.database || (monitor.databaseScoped ? '' : t('实例统计'))}
                 {snapshot && ` · ${t('采样于 {time}', { time: new Date(snapshot.sampledAt).toLocaleTimeString(language) })}`}
               </Typography.Text>
-              <Button icon={<ReloadOutlined />} onClick={monitor.refresh}>
-                {t('刷新')}
-              </Button>
+              <Flex align="center" gap="small" wrap style={{ marginInlineStart: 'auto' }}>
+                <Select aria-label={t('自动刷新')} value={monitor.refreshInterval} options={intervalOptions} prefix={t('自动刷新')} style={{ minWidth: 164 }} onChange={monitor.setRefreshInterval} />
+                <Button icon={<ReloadOutlined />} loading={monitor.loading} onClick={monitor.refresh}>
+                  {t('刷新')}
+                </Button>
+              </Flex>
             </Flex>
           )}
           <ErrorNotice error={result?.error} />
           {snapshot ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))', gap: 12 }}>
+            <div className="database-monitor-metrics" style={{ display: 'grid', gap: token.marginMD }}>
               {snapshot.metrics.map(({ key, value }) => (
-                <Card key={key} size="small">
-                  <Statistic title={t(metricLabels[key] ?? key)} value={value} formatter={() => formatMetric(key, value, language)} />
+                <Card key={key} styles={{ body: { minHeight: 144, display: 'flex', alignItems: 'center' } }}>
+                  <Statistic
+                    title={t(metricLabels[key] ?? key)}
+                    value={value}
+                    formatter={() => formatMetric(key, value, language)}
+                    style={{ minWidth: 0, overflowWrap: 'anywhere' }}
+                    styles={{ content: { fontSize: token.fontSizeHeading2 } }}
+                  />
                 </Card>
               ))}
             </div>

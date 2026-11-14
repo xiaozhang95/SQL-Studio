@@ -298,20 +298,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     else if (node.retry === 'table') void objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
   }
   function renderTitle(node: ExplorerNode) {
-    const generated = [
-      'tables',
-      'views',
-      'columns',
-      'indexes',
-      'foreign-keys',
-      'empty-columns',
-      'empty-indexes',
-      'empty-foreign-keys',
-      'empty-tables',
-      'error',
-      'detail-error',
-      'foreign-keys-error'
-    ].includes(node.kind)
+    const generated = ['tables', 'views', 'columns', 'indexes', 'foreign-keys', 'empty-columns', 'empty-indexes', 'empty-tables', 'error', 'detail-error', 'foreign-keys-error'].includes(node.kind)
     const title = node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
     // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
     return (
