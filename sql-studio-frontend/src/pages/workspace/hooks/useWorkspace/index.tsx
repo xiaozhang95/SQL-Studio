@@ -125,7 +125,8 @@ export const useWorkspace = (active = true) => {
     [setTabs]
   )
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
-  const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections)
+  const foreignKeyConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).foreignKeys).map((connection) => connection.id), [connections])
+  const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections, foreignKeyConnections)
   const dataExport = useDataExport((id, db) => canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db))
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
   const setTableDesignerBusy = useCallback(

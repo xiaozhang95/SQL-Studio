@@ -5,18 +5,41 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
-	"sql-studio-backend/internal/model"
 	"strings"
 	"testing"
+
+	"sql-studio-backend/internal/model"
 )
+
+func configureExportFixture(t *testing.T, data *queryFixture, ref model.TableRef, expectedQuery string) {
+	t.Helper()
+	catalog := &queryFixture{columns: []string{"COLUMN_NAME"}, types: []string{"VARCHAR"}}
+	for _, name := range data.columns {
+		catalog.rows = append(catalog.rows, []driver.Value{name})
+	}
+	data.queryRows = func(query string, args []driver.NamedValue) (driver.Rows, error) {
+		if strings.Contains(query, "information_schema.COLUMNS") {
+			if len(args) != 2 || args[0].Value != ref.Database || args[1].Value != ref.Name || !strings.HasSuffix(query, "ORDER BY ORDINAL_POSITION") {
+				t.Errorf("wrong export column scope or order: %s %v", query, args)
+			}
+			return &fixtureRows{fixture: catalog}, nil
+		}
+		if query != expectedQuery || !catalog.rowsClosed {
+			t.Errorf("wrong column projection or catalog cursor still open: %s", query)
+		}
+		return &fixtureRows{fixture: data}, nil
+	}
+}
 
 func TestStreamTableDataBeyondQueryLimitAndCancellation(t *testing.T) {
 	for _, stop := range []bool{false, true} {
-		fixture := &queryFixture{columns: []string{"id", "text", "binary"}, types: []string{"BIGINT", "TEXT", "BLOB"}}
+		ref := model.TableRef{Database: "same-db", Name: "same-table"}
+		fixture := &queryFixture{columns: []string{"id", "hidden`text", "binary"}, types: []string{"BIGINT", "TEXT", "BLOB"}}
 		for i := 0; i < 6001; i++ {
 			fixture.rows = append(fixture.rows, []driver.Value{int64(9007199254740993), "中文\ntext", []byte{0, 255}})
 		}
 		client := NewClient()
+		configureExportFixture(t, fixture, ref, "SELECT `id`,`hidden``text`,`binary` FROM `same-db`.`same-table`")
 		client.open = func(connection model.Connection, database string) (*sql.DB, error) {
 			if connection.ID != "owner" || database != "same-db" {
 				t.Error("wrong export scope")
@@ -25,7 +48,7 @@ func TestStreamTableDataBeyondQueryLimitAndCancellation(t *testing.T) {
 		}
 		count, batches := 0, 0
 		sentinel := errors.New("file write failed")
-		err := client.StreamTableData(context.Background(), model.Connection{ID: "owner"}, model.TableRef{Database: "same-db", Name: "same-table"}, func(result model.QueryResult) error {
+		err := client.StreamTableData(context.Background(), model.Connection{ID: "owner"}, ref, func(result model.QueryResult) error {
 			batches++
 			if stop {
 				return sentinel
@@ -54,10 +77,12 @@ func TestStreamTableDataBeyondQueryLimitAndCancellation(t *testing.T) {
 }
 
 func TestStreamTableDataRejectsOversizedRow(t *testing.T) {
+	ref := model.TableRef{Database: "db", Name: "table"}
 	fixture := &queryFixture{columns: []string{"text"}, types: []string{"TEXT"}, rows: [][]driver.Value{{strings.Repeat("x", 8*1024*1024+1)}}}
+	configureExportFixture(t, fixture, ref, "SELECT `text` FROM `db`.`table`")
 	client := NewClient()
 	client.open = func(model.Connection, string) (*sql.DB, error) { return sql.OpenDB(fixtureConnector{fixture}), nil }
-	err := client.StreamTableData(context.Background(), model.Connection{ID: "owner"}, model.TableRef{Database: "same-db", Name: "table"}, func(model.QueryResult) error { t.Error("oversized record emitted"); return nil })
+	err := client.StreamTableData(context.Background(), model.Connection{ID: "owner"}, ref, func(model.QueryResult) error { t.Error("oversized record emitted"); return nil })
 	if err == nil || !strings.Contains(err.Error(), "8 MiB") || !fixture.rowsClosed {
 		t.Fatal(err)
 	}

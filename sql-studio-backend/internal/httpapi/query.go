@@ -11,7 +11,7 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
-const maxQueryBatchRequestBytes = 2 * maxRequestBytes
+const maxQueryBatchRequestBytes = 32 * maxRequestBytes
 
 func (h *handler) query(c *gin.Context) {
 	var input model.QueryRequest

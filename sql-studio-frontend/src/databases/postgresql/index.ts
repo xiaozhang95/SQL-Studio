@@ -13,6 +13,7 @@ import { tableDesign } from './tableDesign'
 
 const postgresql = {
   profile: postgresqlProfile,
+  foreignKeys: true,
   dumpFile: {
     header: (database, schemas) =>
       `-- PostgreSQL database: ${database.replace(/[\r\n]/g, ' ')}\n-- 表/视图结构与数据；库/Schema 转储不包含扩展管理的对象，相关扩展、外部类型、函数、授权需预先存在；跨表不保证同一快照\n` +

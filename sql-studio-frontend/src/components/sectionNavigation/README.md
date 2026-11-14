@@ -1,7 +1,5 @@
 # 页面切换
 
-界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+[源码](index.tsx)
 
-SectionNavigation({destination,onSwitch,switchDisabled?}) 在顶栏左侧操作后用竖线隔开一个入口按钮。destination 为目标页面，取 workspace 或 agent，点击按钮调用 onSwitch。switchDisabled 默认 false，AI 助手在会话执行、管理或初始化期间用它禁用离开。
-
-入口使用 Ant Design text Button，默认无边框，保留悬停、键盘焦点与禁用反馈；分隔线前后间距分别使用 token.marginXXS 和 token.paddingXS，保持紧凑布局。
+`SectionNavigation({destination,onSwitch,switchDisabled?,separated?})` 提供工作区、AI 助手、监控及同步的图标与翻译文案。destination 为 workspace、agent、monitor 或 sync，点击调用 `onSwitch`。可用 `switchDisabled` 禁用，默认启用；`separated` 默认提供前置分隔线，可按顶栏分组关闭。

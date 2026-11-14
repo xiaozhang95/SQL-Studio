@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
+import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance, ComponentSize } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
@@ -15,7 +16,6 @@ import type { HistoryItem } from '@/typings/workspace'
 
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import EngineIcon from '../engineIcon'
 import SQLPreview from '../sqlPreview'
 import ToolbarButton from '../toolbarButton'
 

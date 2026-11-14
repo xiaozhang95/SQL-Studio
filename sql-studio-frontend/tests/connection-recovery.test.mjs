@@ -66,7 +66,9 @@ function connectionMenu(status, running = false) {
   const dependencies = {
     React: { createElement: () => null },
     t: (text) => text,
-    ...Object.fromEntries(['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])),
+    ...Object.fromEntries(
+      ['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'DashboardOutlined', 'SwapOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])
+    ),
     connections: [{ id: 'offline' }],
     objects: { snapshots: status ? { offline: { status } } : {}, closedDatabases: {} },
     getDatabaseAdapter: () => ({ objects: {} }),
@@ -74,6 +76,7 @@ function connectionMenu(status, running = false) {
     connectionGroups: { groups: [], blocked: false },
     running,
     setMenuOpen() {},
+    onOpenDatabaseSection: (...args) => actions.push(args),
     model: { connectionAction: (...args) => actions.push(args) }
   }
   const menuFor = new Function(...Object.keys(dependencies), implementation + ';return menuFor')(...Object.values(dependencies))
@@ -159,6 +162,18 @@ test('closed, loading and connected nodes retain their existing open or close ac
       expected
     )
   }
+})
+
+test('connection shortcuts use the right-clicked connection even when it is closed', () => {
+  const { menu, actions } = connectionMenu()
+  for (const key of ['monitor', 'sync']) {
+    assert.ok(menu.items.some((item) => item.key === key && !item.disabled))
+    menu.onClick({ key, domEvent: { stopPropagation() {} } })
+  }
+  assert.deepEqual(actions, [
+    ['monitor', { connectionId: 'offline' }],
+    ['sync', { connectionId: 'offline' }]
+  ])
 })
 
 test('expanded failure nodes finish Tree loading and retain an explicit retry without becoming connected', async () => {

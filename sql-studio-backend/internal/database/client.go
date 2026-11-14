@@ -78,6 +78,19 @@ func (c *Client) Indexes(ctx context.Context, v model.Connection, ref model.Tabl
 	}
 	return e.Indexes(ctx, v, ref)
 }
+func (c *Client) ForeignKeys(ctx context.Context, v model.Connection, ref model.TableRef) ([]model.ForeignKey, error) {
+	engine, err := c.engine(v)
+	if err != nil {
+		return nil, err
+	}
+	reader, ok := engine.(interface {
+		ForeignKeys(context.Context, model.Connection, model.TableRef) ([]model.ForeignKey, error)
+	})
+	if !ok {
+		return []model.ForeignKey{}, nil
+	}
+	return reader.ForeignKeys(ctx, v, ref)
+}
 func (c *Client) DDL(ctx context.Context, v model.Connection, ref model.TableRef) (string, error) {
 	e, err := c.engine(v)
 	if err != nil {
@@ -131,4 +144,18 @@ func (c *Client) StreamTableData(ctx context.Context, connection model.Connectio
 		return errors.New("该引擎不支持流式导出")
 	}
 	return exporter.StreamTableData(ctx, connection, ref, emit)
+}
+
+func (c *Client) Monitor(ctx context.Context, connection model.Connection, database string) (model.MonitorSnapshot, error) {
+	engine, err := c.engine(connection)
+	if err != nil {
+		return model.MonitorSnapshot{}, err
+	}
+	reader, ok := engine.(interface {
+		Monitor(context.Context, model.Connection, string) (model.MonitorSnapshot, error)
+	})
+	if !ok {
+		return model.MonitorSnapshot{}, errors.New("该数据库类型暂不支持监控")
+	}
+	return reader.Monitor(ctx, connection, database)
 }

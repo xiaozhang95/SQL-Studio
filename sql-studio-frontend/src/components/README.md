@@ -1,7 +1,9 @@
 # 公共组件
 
 - [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景。
-- [pageHeader](pageHeader/README.md)：工作区和 AI 助手共用顶栏布局。
+- [pageHeader](pageHeader/README.md)：工作区及各功能页共用顶栏布局。
+- [databasePage](databasePage/README.md)：监控与同步的工作区返回入口、顶栏和正文布局。
+- [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
 - [errorNotice](errorNotice/README.md)：页面、弹窗和执行结果共用的错误提示。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
@@ -12,7 +14,7 @@
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。
 
 - [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型配置、外观设置、语言设置和关于软件，版本号共用，检查更新仅在桌面端显示。
-- [sectionNavigation](sectionNavigation/README.md)：顶栏左侧的工作区和 AI 助手切换入口。
+- [sectionNavigation](sectionNavigation/README.md)：顶栏左侧的各功能页与工作区的切换入口。
 
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
 

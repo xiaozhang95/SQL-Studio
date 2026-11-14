@@ -44,6 +44,15 @@ func (h *handler) indexes(c *gin.Context) {
 	respond(c, 200, data)
 }
 
+func (h *handler) foreignKeys(c *gin.Context) {
+	data, err := h.metadata.ForeignKeys(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("table"))
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, data)
+}
+
 func (h *handler) schemas(c *gin.Context) {
 	data, err := h.metadata.Schemas(c.Request.Context(), c.Param("id"), c.Query("database"))
 	if err != nil {
@@ -51,4 +60,13 @@ func (h *handler) schemas(c *gin.Context) {
 		return
 	}
 	respond(c, 200, data)
+}
+
+func (h *handler) monitor(c *gin.Context) {
+	snapshot, err := h.metadata.Monitor(c.Request.Context(), c.Param("id"), c.Query("database"))
+	if err != nil {
+		fail(c, err)
+		return
+	}
+	respond(c, 200, snapshot)
 }

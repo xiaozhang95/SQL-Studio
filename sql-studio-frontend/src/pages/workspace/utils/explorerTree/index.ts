@@ -8,7 +8,7 @@ import { connectionGroupName } from '../../../../constant/connectionGroup/index.
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
 import { databaseOpenState } from '../exportAvailability/index.ts'
 import type { DatabaseOpenState } from '../exportAvailability/index.ts'
-import { indexDescription, objectNodeKey as key } from '../objectTree/index.ts'
+import { foreignKeyDescription, indexDescription, objectNodeKey as key } from '../objectTree/index.ts'
 
 export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   key: string
@@ -28,11 +28,24 @@ export type ExplorerNode = Omit<DataNode, 'key' | 'title' | 'children'> & {
   children?: ExplorerNode[]
 }
 type Snapshots = ReturnType<typeof useDatabaseObjects>['snapshots']
+
+export function selectedConnectionScope(node: string | undefined, connections: readonly Connection[]) {
+  if (!node) return
+  try {
+    const parts: unknown = JSON.parse(node)
+    if (!Array.isArray(parts) || parts[0] === 'group' || typeof parts[1] !== 'string') return
+    const connectionId = parts[1]
+    if (connections.some((connection) => connection.id === connectionId)) return { connectionId, database: typeof parts[2] === 'string' ? parts[2] : '' }
+  } catch {
+    return undefined
+  }
+}
+
 /** 仅从当前可见且已连接的树节点取连接和库范围。 */
 export function explorerQueryScope(node: ExplorerNode | undefined, connected: boolean, layout?: DatabaseExplorerAdapter): QueryScope | undefined {
   if (!node || !connected || !node.owner) return undefined
   if (node.kind === 'connection') return { connectionId: node.owner, database: '', table: '' }
-  if (!node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index'].includes(node.kind)) return undefined
+  if (!node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index', 'foreign-keys', 'foreign-key'].includes(node.kind)) return undefined
   const schema = node.schema || (node.table && layout ? layout.tableIdentity(node.table).schema : undefined)
   return { connectionId: node.owner, database: node.database, ...(schema ? { schema } : {}), table: '' }
 }
@@ -156,28 +169,53 @@ export function buildExplorerTree(
                 }
                 if (!details) return node
                 node.children = []
-                for (const kind of ['columns', 'indexes'] as const) {
-                  const group = make(kind, kind === 'columns' ? '字段' : '索引', id, db, table.name)
+                const addDetails = <T extends { name: string }>(
+                  kind: string,
+                  title: string,
+                  empty: string,
+                  leaf: string,
+                  entries: T[],
+                  describe: (item: ExplorerNode, entry: T) => void,
+                  error?: string
+                ) => {
+                  const group = make(kind, title, id, db, table.name)
                   group.isLeaf = false
                   loadedKeys.push(group.key)
-                  node.children.push(group)
-                  if (!open.has(group.key)) continue
-                  group.children =
-                    kind === 'columns'
-                      ? details.columns.map((column) => {
-                          const item = make('column', column.name, id, db, table.name, column.name)
-                          item.primary = column.key === 'PRI'
-                          item.tooltip = `${column.name} · ${column.type}${item.primary ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`
-                          return item
-                        })
-                      : details.indexes.map((index) => {
-                          const item = make('index', index.name, id, db, table.name, index.name)
-                          item.primary = index.primary || index.name === 'PRIMARY'
-                          item.tooltip = `${index.name}\n${indexDescription(index)}`
-                          return item
-                        })
-                  if (!group.children.length) group.children = [placeholder(`empty-${kind}`, kind === 'columns' ? '暂无字段' : '暂无索引', id, db, table.name)]
+                  node.children!.push(group)
+                  if (!open.has(group.key)) return
+                  if (error) {
+                    const failed = placeholder('foreign-keys-error', error, id, db, table.name)
+                    failed.retry = 'table'
+                    group.children = [failed]
+                    return
+                  }
+                  group.children = entries.map((entry) => {
+                    const item = make(leaf, entry.name, id, db, table.name, entry.name)
+                    describe(item, entry)
+                    return item
+                  })
+                  if (!group.children.length) group.children = [placeholder(`empty-${kind}`, empty, id, db, table.name)]
                 }
+                addDetails('columns', '字段', '暂无字段', 'column', details.columns, (item, column) => {
+                  item.primary = column.key === 'PRI'
+                  item.tooltip = `${column.name} · ${column.type}${item.primary ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`
+                })
+                addDetails('indexes', '索引', '暂无索引', 'index', details.indexes, (item, index) => {
+                  item.primary = index.primary || index.name === 'PRIMARY'
+                  item.tooltip = `${index.name}\n${indexDescription(index)}`
+                })
+                if (details.foreignKeys || details.foreignKeyError)
+                  addDetails(
+                    'foreign-keys',
+                    '外键',
+                    '暂无外键',
+                    'foreign-key',
+                    details.foreignKeys ?? [],
+                    (item, foreignKey) => {
+                      item.tooltip = `${foreignKey.name}\n${foreignKeyDescription(foreignKey)}`
+                    },
+                    details.foreignKeyError
+                  )
                 return node
               })
               if (!category.children.length) {

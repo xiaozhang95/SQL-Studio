@@ -1,5 +1,5 @@
-# 功能入口
+# 页面路由
 
-`useAppSection()` 使用浏览器 History API 管理页面，返回 agent、openAgent() 和 openWorkspace()。`/` 为 SQL 工作区，`/agent` 为 AI 助手；读取 pathname 判断页面，接受助手路径末尾的斜杠。切换使用 pushState，保留查询参数并清除片段，重复点击当前路径不新增历史记录。内部导航事件通知 React，浏览器前进、后退通过 popstate 更新；卸载移除订阅，不整页刷新或额外保存路由状态。
+`useAppSection()` 使用 History API 管理 `section`。工作区、AI 助手、监控指标和同步数据库分别对应 `/`、`/agent`、`/monitor` 和 `/sync`。`openAgent()`、`openWorkspace()` 和 `openDatabaseSection(section, scope?)` 使用 pushState 切换，浏览器前进、后退通过 popstate 同步。
 
-工作区保持挂载以保留未保存草稿，Agent 离开时沿用自身取消流和保存布局的流程。Vite 使用 SPA 模式提供开发入口；Go 为 `/agent` 显式提供同一个 index.html，刷新和直接访问由服务端入口支持。Electron 使用同源 HTTP 页面，沿用这两条路径。
+可选范围将已保存连接 ID 和监控数据库名写入 `connection`、`database` 查询参数，供前进、后退及刷新恢复入口预选值。其他查询参数保留，离开时清除这两个范围参数。工作区保持挂载以保留草稿；Go 显式将这些页面映射到同一入口，Electron 沿用同源路由。

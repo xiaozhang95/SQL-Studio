@@ -46,6 +46,7 @@ export interface DumpPlan {
 
 export interface DatabaseAdapter {
   readonly sessionBatch?: boolean
+  readonly foreignKeys?: boolean
   readonly dumpFile?: {
     metadataSQL?: (database: string) => string
     header: (database: string, schemas: string[], metadata?: QueryResult) => string

@@ -5,6 +5,7 @@ import (
 	"sql-studio-backend/internal/greptimedb"
 	"sql-studio-backend/internal/mariadb"
 	"sql-studio-backend/internal/model"
+	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/mysql"
 	"sql-studio-backend/internal/postgresql"
 )
@@ -18,4 +19,13 @@ func newDatabaseClient() *database.Client {
 		model.TypePostgreSQL: postgresql.NewClient(),
 		model.TypeGreptimeDB: greptimedb.NewClient(),
 	})
+}
+
+func syncDatabaseEngines() map[string]databasesync.Engine {
+	return map[string]databasesync.Engine{
+		model.TypeMySQL:      mysql.NewClient(),
+		model.TypeMariaDB:    mariadb.NewClient(),
+		model.TypePostgreSQL: postgresql.NewClient(),
+		model.TypeGreptimeDB: greptimedb.NewClient(),
+	}
 }

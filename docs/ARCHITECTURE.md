@@ -63,7 +63,7 @@ flowchart LR
 
 图中依赖由 app 注入，各业务模块不直接导入兄弟模块或具体实现。页面只组合组件，异步状态归属所属 hook。引擎专属 SQL 和类型在各自引擎目录内，通用 UI 通过适配器调用。
 
-页面采用历史路由：`/` 是 SQL 工作区，`/agent` 是 AI 助手。useAppSection 以 pushState 和 popstate 同步 React 页面与浏览器历史，工作区保持挂载以保留未保存内容。Vite SPA 模式处理开发入口，Go 显式将两条路径映射到 index.html，Electron 加载同源网页，因此刷新与直接访问使用相同入口。
+页面采用历史路由：`/` 是 SQL 工作区，`/agent` 是 AI 助手，`/monitor` 是监控指标，`/sync` 是数据库同步。useAppSection 以 pushState 和 popstate 同步 React 页面与浏览器历史，工作区保持挂载以保留未保存内容。Vite SPA 模式处理开发入口，Go 显式将这些路径映射到 index.html，Electron 加载同源网页，因此刷新与直接访问使用相同入口。
 
 每次查询绑定发起页面和连接。前端拆分多语句，MySQL 和 MariaDB 批次在一个独立连接内逐条执行，其他查询仍通过单语句接口。两种路径共享并发预算并传递取消。旧请求不得覆盖新范围。SQL 窗口显式允许查询和写入，元数据及表数据预览沿用默认读取请求。取消不会回滚已经完成的写入。
 

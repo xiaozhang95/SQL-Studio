@@ -40,11 +40,11 @@ MySQL 和 MariaDB 对象树按“数据库 → 表 → 表名 → 字段/索引�
 - [数据库Agent](agent/README.md)：Ant Design X 聊天、工具调用及逐次写入确认。
 - [公共组件](components/README.md)：工作区和Agent共用的展示能力。
 
-公共 PageHeader 统一工作区和 AI 助手的顶栏布局。两页都在顶栏左侧操作按钮后放置页面切换入口，中间以竖线分隔。
+公共 PageHeader 统一工作区、AI 助手、监控和同步的顶栏布局。各功能页提供返回工作区的入口。
 
 顶栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design 默认 colorBorderSecondary（`--border`），不单独加深布局边框；页签保留组件默认边框颜色。
 
-页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`。pushState 切换不刷新整页，popstate 同步前进、后退；工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这两条页面路径，资源缺失及未知 API 仍返回各自的 404。
+页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`，监控指标使用 `/monitor`，同步数据库使用 `/sync`。pushState 切换不刷新整页，popstate 同步前进、后退，工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这四条页面路径，资源缺失及未知 API 仍返回各自的 404。
 
 系统设置弹框采用左侧图文导航，包含「模型配置」「外观设置」「语言设置」「关于软件」。右侧模型配置展示已添加模型列表及默认模型单选项。添加/编辑子弹框依次选择供应商、输入 Key 自动加载、手动选择模型。同供应商可添加不同模型，相同供应商与模型不得重复。外观页在同一菜单下展示主题和字号卡片；语言页展示简体中文与 English 卡片。关于页显示当前版本，检查更新仅在 Electron 中显示。设置草稿由底部统一保存，取消或关闭放弃未提交修改。偏好保存成功后才应用全局主题、字号和语言。App 使用 LanguageContext 与 XProvider 同步业务文案、Ant Design 和 Ant Design X 控件语言，日期语言同步 dayjs；SQL、数据库内容和模型回答保留原文。英文案集中在 constant/translations，组件与 hooks 经 useTranslation 订阅已应用语言，未知错误原因保留原文。
 

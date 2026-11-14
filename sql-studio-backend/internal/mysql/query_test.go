@@ -16,6 +16,7 @@ type queryFixture struct {
 	columns, types   []string
 	rows             [][]driver.Value
 	queryError       error
+	queryRows        func(string, []driver.NamedValue) (driver.Rows, error)
 	rowError         error
 	mu               sync.Mutex
 	readOnly         bool
@@ -56,12 +57,15 @@ func (c fixtureConn) BeginTx(_ context.Context, options driver.TxOptions) (drive
 	c.fixture.mu.Unlock()
 	return fixtureTx{c.fixture}, nil
 }
-func (c fixtureConn) QueryContext(ctx context.Context, _ string, _ []driver.NamedValue) (driver.Rows, error) {
+func (c fixtureConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	if c.fixture.queryError != nil {
 		return nil, c.fixture.queryError
+	}
+	if c.fixture.queryRows != nil {
+		return c.fixture.queryRows(query, args)
 	}
 	return &fixtureRows{fixture: c.fixture}, nil
 }

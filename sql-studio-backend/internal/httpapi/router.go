@@ -10,6 +10,7 @@ import (
 	agentlayout "sql-studio-backend/internal/modules/agentlayout"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
+	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/modules/settings"
@@ -18,27 +19,29 @@ import (
 
 // Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
 type Services struct {
-	Agent       *agent.Service
-	AgentLayout *agentlayout.Service
-	Workspace   *workspace.Service
-	AI          *ai.Service
-	Connections *connections.Service
-	Metadata    *metadata.Service
-	Queries     *query.Service
-	Settings    *settings.Service
+	DatabaseSync *databasesync.Service
+	Agent        *agent.Service
+	AgentLayout  *agentlayout.Service
+	Workspace    *workspace.Service
+	AI           *ai.Service
+	Connections  *connections.Service
+	Metadata     *metadata.Service
+	Queries      *query.Service
+	Settings     *settings.Service
 }
 
 type handler struct {
-	workspace   *workspace.Service
-	ai          *ai.Service
-	connections *connections.Service
-	metadata    *metadata.Service
-	queries     *query.Service
-	settings    *settings.Service
+	databaseSync *databasesync.Service
+	workspace    *workspace.Service
+	ai           *ai.Service
+	connections  *connections.Service
+	metadata     *metadata.Service
+	queries      *query.Service
+	settings     *settings.Service
 }
 
 func New(services Services) *gin.Engine {
-	h := &handler{workspace: services.Workspace, ai: services.AI, connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
+	h := &handler{databaseSync: services.DatabaseSync, workspace: services.Workspace, ai: services.AI, connections: services.Connections, metadata: services.Metadata, queries: services.Queries, settings: services.Settings}
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)
 	router.Use(gin.Recovery(), responseLanguage, localOnly)
@@ -69,11 +72,16 @@ func New(services Services) *gin.Engine {
 	api.DELETE("/connections/:id", h.deleteConnection)
 	api.POST("/connections/:id/session", h.setSession)
 	api.POST("/connections/test", h.testConnection)
+	api.POST("/database-sync/databases", h.listSyncDatabases)
+	api.POST("/database-sync/check", h.checkDatabaseSync)
+	api.POST("/database-sync/run", h.runDatabaseSync)
 	api.GET("/connections/:id/databases", h.databases)
+	api.GET("/connections/:id/monitor", h.monitor)
 	api.GET("/connections/:id/schemas", h.schemas)
 	api.GET("/connections/:id/tables", h.tables)
 	api.GET("/connections/:id/columns", h.columns)
 	api.GET("/connections/:id/indexes", h.indexes)
+	api.GET("/connections/:id/foreign-keys", h.foreignKeys)
 	api.GET("/connections/:id/ddl", h.ddl)
 	api.GET("/connections/:id/export-data", h.exportData)
 	api.POST("/connections/:id/query", h.query)

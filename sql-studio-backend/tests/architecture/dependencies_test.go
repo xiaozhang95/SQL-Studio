@@ -19,6 +19,9 @@ func TestInternalDependencyDirection(t *testing.T) {
 		"modules/workspace": {"model": true}, "modules/ai": {"model": true}, "deepseek": {"model": true},
 		"statefile": {"model": true}, "modules/settings": {"model": true, "model/agent": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {}, "webui": {},
 	}
+	allowed["app"]["modules/databasesync"] = true
+	allowed["httpapi"]["modules/databasesync"] = true
+	allowed["modules/databasesync"] = map[string]bool{"model": true}
 	allowed["localization"] = map[string]bool{}
 	allowed["app"]["greptimedb"] = true
 	allowed["greptimedb"] = map[string]bool{"mysql": true, "model": true}
@@ -66,7 +69,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if dependency == "net/http" && layer != "httpapi" && layer != "app" && layer != "deepseek" && layer != "deepseek/agent" && layer != "webui" {
 				t.Errorf("%s 不得依赖 HTTP 传输层", relative)
 			}
-			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "rowstream" {
+			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "greptimedb" && layer != "rowstream" {
 				t.Errorf("%s 不得直接依赖 SQL 驱动", relative)
 			}
 			if (dependency == "os" || strings.HasPrefix(dependency, "os/")) && (strings.HasPrefix(layer, "modules/") || layer == "httpapi") {

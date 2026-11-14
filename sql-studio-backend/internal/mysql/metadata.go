@@ -9,11 +9,25 @@ import (
 )
 
 func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
-	ctx, db, release, err := c.openRequest(ctx, connection, "")
+	return c.listDatabases(ctx, connection, false)
+}
+
+// SyncDatabases makes a transient probe using the same lifecycle as a sync job.
+func (c *Client) SyncDatabases(ctx context.Context, connection model.Connection) ([]string, error) {
+	return c.listDatabases(ctx, connection, true)
+}
+
+func (c *Client) listDatabases(ctx context.Context, connection model.Connection, probe bool) ([]string, error) {
+	ctx, db, release, err := c.openScopedRequest(ctx, connection, "", probe)
 	if err != nil {
 		return nil, err
 	}
 	defer release()
+	if probe {
+		if err := CheckSyncServerType(ctx, db, connection.Type); err != nil {
+			return nil, err
+		}
+	}
 	rows, err := db.QueryContext(ctx, "SHOW DATABASES")
 	if err != nil {
 		return nil, err
@@ -114,6 +128,12 @@ func (c *Client) DDL(ctx context.Context, connection model.Connection, ref model
 		return "", err
 	}
 	defer release()
+	return tableDDL(ctx, db, schema, table)
+}
+
+func tableDDL(ctx context.Context, db interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}, schema, table string) (string, error) {
 	// 库名/表名不能使用参数占位符，因此统一转义反引号。
 	rows, err := db.QueryContext(ctx, "SHOW CREATE TABLE "+quoteIdentifier(schema)+"."+quoteIdentifier(table))
 	if err != nil {

@@ -2,6 +2,7 @@ import { DatabaseOutlined } from '@ant-design/icons'
 import { Select } from 'antd'
 import type { CSSProperties } from 'react'
 
+import EngineIcon from '@/components/engineIcon'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -9,7 +10,6 @@ import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
-import EngineIcon from '../engineIcon'
 
 type Props = {
   scope: QueryScope

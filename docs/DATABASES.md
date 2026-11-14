@@ -23,7 +23,7 @@ PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览�
 
 连接方式参考 [阿里云 PolarDB PostgreSQL 官方说明](https://www.alibabacloud.com/help/en/polardb/polardb-for-postgresql/connect-to-polardb/)。当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
 
-PostgreSQL 对象树按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。
+PostgreSQL 对象树按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。MySQL、MariaDB 和 PostgreSQL 的表可展开外键分类，悬停查看引用库或 Schema、表、复合字段映射和更新、删除规则。
 
 PostgreSQL 数据库结构页展示 schema 列表，schema 结构页展示该 schema 内的表和视图。MySQL 和 MariaDB 数据库结构页展示表列表。
 

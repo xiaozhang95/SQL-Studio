@@ -41,6 +41,7 @@ const mysql = {
   exportDDL: mysqlObjects.dump,
   dataEditing: { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL },
   profile: mysqlProfile,
+  foreignKeys: true,
   splitStatements: splitSQLStatements,
   useDatabase: useDatabaseSQL,
   cleanHistory: stripHistoryMarkers,

@@ -100,6 +100,37 @@ test('cached columns and indexes are constructed only when their own group is ex
   )
 })
 
+test('foreign key nodes preserve column mapping and distinguish unsupported and empty metadata', () => {
+  const table = 't_00000'
+  const groupKey = key('foreign-keys', 'a', 'big', table)
+  const detailKey = key('big', table)
+  const expanded = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big'), key('tables', 'a', 'big'), key('table', 'a', 'big', table), groupKey]
+  const render = (foreignKeys, foreignKeyError) =>
+    buildExplorerTree(connections, { a: { ...snapshot, details: { [detailKey]: { columns: [], indexes: [], foreignKeys, foreignKeyError } } } }, expanded, '').byKey
+
+  assert.equal(render(undefined).has(groupKey), false)
+  assert.equal(render([]).get(groupKey).children[0].title, '暂无外键')
+  const failed = render(undefined, '外键加载失败')
+  assert.equal(failed.get(groupKey).children[0].retry, 'table')
+  assert.ok(failed.has(key('columns', 'a', 'big', table)))
+  const nodes = render([
+    {
+      name: 'fk_order',
+      referencedSchema: 'qa_parent',
+      referencedTable: 'source_keys',
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      columns: [
+        { name: 'z', referencedName: 'beta' },
+        { name: 'a', referencedName: 'alpha' }
+      ]
+    }
+  ])
+  const leaf = nodes.get(key('foreign-key', 'a', 'big', table, 'fk_order'))
+  assert.equal(leaf.tooltip, 'fk_order\n(z, a) → qa_parent.source_keys (beta, alpha)\nON UPDATE CASCADE\nON DELETE SET NULL')
+  assert.deepEqual(explorerQueryScope(leaf, true), { connectionId: 'a', database: 'big', table: '' })
+})
+
 test('scroll restoration waits for expanded connection and database lists to finish loading', () => {
   const expanded = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big')]
   assert.equal(buildExplorerTree(connections, {}, expanded, '').ready, false)

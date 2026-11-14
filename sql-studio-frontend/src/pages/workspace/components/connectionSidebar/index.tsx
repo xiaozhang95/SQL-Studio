@@ -1,4 +1,5 @@
 import ContentLoading from '@/components/contentLoading'
+import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -7,6 +8,7 @@ import DatabaseExplorer from '../databaseExplorer'
 
 type Props = {
   layout: ReturnType<typeof useSidebarResize>
+  onOpenDatabaseSection: (section: DatabaseSection, scope: DatabaseSectionScope) => void
   model: Pick<
     WorkspaceModel,
     | 'connections'
@@ -29,7 +31,7 @@ type Props = {
   >
 }
 /** 侧栏承载完整连接树，范围选择与结构缓存由工作区管理。 */
-export default function ConnectionSidebar({ model, layout }: Props) {
+export default function ConnectionSidebar({ model, layout, onOpenDatabaseSection }: Props) {
   const { t } = useTranslation()
 
   const { panel, visibleWidth, minimumWidth, maximumWidth, resizing, resizer } = layout
@@ -49,7 +51,7 @@ export default function ConnectionSidebar({ model, layout }: Props) {
         width: visibleWidth
       }}
     >
-      {model.connectionLoading && !model.connections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} />}
+      {model.connectionLoading && !model.connections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} onOpenDatabaseSection={onOpenDatabaseSection} />}
       <div
         className="sidebar-resizer"
         role="separator"

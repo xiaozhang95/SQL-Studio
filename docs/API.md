@@ -28,12 +28,17 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | POST   | `/connections/{id}/session`   | 打开/关闭连接或数据库，关闭等待底层连接释放 |
 | POST   | `/connections/test`           | 测试表单连接，返回版本                      |
 | GET    | `/connections/{id}/databases` | 数据库名称列表                              |
+| GET | `/connections/{id}/monitor` | 通过已保存连接读取实例或数据库统计 |
 | GET    | `/connections/{id}/schemas` | 数据库内可访问的 schema（含空 schema） |
 | GET    | `/connections/{id}/tables`    | 表和视图列表，PostgreSQL 视图附可选依赖       |
 | GET    | `/connections/{id}/columns`   | 字段列表，MySQL 协议文本列附可选字符集和排序规则 |
 | GET    | `/connections/{id}/indexes`   | 索引列表，含唯一性、类型及按顺序排列的字段  |
+| GET    | `/connections/{id}/foreign-keys` | 外键列表，含引用对象、字段映射和更新、删除规则 |
 | GET    | `/connections/{id}/ddl`       | 对象建表语句                                |
 | GET | `/connections/{id}/export-data` | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
+| POST | `/database-sync/databases` | 读取同步用 MySQL 连接的可见用户库 |
+| POST | `/database-sync/check` | 同引擎同步的只读检查 |
+| POST | `/database-sync/run` | 创建目标库，流式返回同步进度 |
 | POST   | `/connections/{id}/query`     | 执行一条 SQL                                |
 | POST   | `/connections/{id}/query-batch` | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执 |
 | GET    | `/state/{section}`            | 读取配置分区                                |
@@ -50,7 +55,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
-请求必须为单个 JSON 对象，拒绝 null、未知顶层字段、多个 JSON 和超过 1 MiB 的普通请求。MySQL／MariaDB 批次的 JSON 上限为 2 MiB。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
+请求必须为单个 JSON 对象，拒绝 null、未知顶层字段、多个 JSON 和超过 1 MiB 的普通请求。MySQL／MariaDB 批次的 JSON 上限为 32 MiB。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
 
 ## 请求与行为边界
 
@@ -58,6 +63,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 - **分组**：名称去首尾空白，拒绝空名称、控制字符、重名；默认分组为固定回退项，不可重命名。空分组独立保存，连接表单输入新分组后保存也会登记。重命名更新全部成员。删除接收 `{name}`，将成员移回默认分组并返回 `{groups,connections}`。删除默认分组返回 400，写入失败保留原状态。移动只修改归属，不打开/关闭数据库会话、不修改凭据；不存在连接/原分组返回 404，不存在移动目标返回 400。
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**返回 `name`、`unique`、`type`、可选的 `primary` 及 `columns`。列项为 `{name,position,prefixLength,order}`，位置从 1 开始，顺序为 `A`、`D` 或空字符串。MySQL 和 MariaDB 的主键索引名为 `PRIMARY`，表达式字段的 `name` 为空。PostgreSQL 保留实际索引名，以 `primary` 标记主键，`name` 保存索引列定义（含表达式），`prefixLength` 为 `null`。无索引返回空数组。
+- **外键**按显式 `database`、`table` 读取，返回 `name`、`referencedSchema`、`referencedTable`、`onUpdate`、`onDelete` 和按定义顺序排列的 `columns`（`{name,referencedName}`）。MySQL、MariaDB 和 PostgreSQL／PolarDB 支持外键读取；无外键及 GreptimeDB 返回空数组。
 - **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
 - **AI 配置**：ai-models 分区使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}`，最多 64 条。model 是实际调用 ID，modelName 为显示名称。相同供应商与模型 ID 不得重复。编辑空 Key 保留该行原值，完整列表一次 CAS 保存，空数组清空。仅支持列表格式。activeId 是 SQL 工具栏与 AI 助手共享的默认记录 ID，可从系统设置模型列表或 AI 助手切换。列表非空且 activeId 为空时，读取和调用使用首条可用记录，保存时写入该 ID。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
@@ -71,7 +77,7 @@ PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参�
 
 MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL 和 MariaDB 多语句走同一会话批次，其余引擎逐条独立请求。
 
-MySQL／MariaDB 批次接收 `{database, statements, allowWrite: true, limit?}`，JSON 上限 2 MiB，最多 10000 条；共享 4 个查询槽，每条 30 秒、整批 30 分钟。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，保存 SQL 模式、用户变量、外键检查和显式事务；断开后释放连接，已提交写入保留。
+MySQL／MariaDB 批次接收 `{database, statements, allowWrite: true, limit?}`，JSON 上限 32 MiB，最多 10000 条；共享 4 个查询槽，每条 30 秒、整批 30 分钟。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，保存 SQL 模式、用户变量、外键检查和显式事务；断开后释放连接，已提交写入保留。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
@@ -80,6 +86,18 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 流式 SQL 转储适用于 MySQL、MariaDB 和 PostgreSQL。
 
 `GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功；约每10秒发送注释心跳。断开取消、后端独立2并发/30分钟限制、单行8MiB限制，不改变普通查询1000/5000行限制。客户端分批写入文件，失败/取消不提交文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
+
+## 数据库监控
+
+`GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。
+
+## 数据库同步
+
+同步支持 MySQL、MariaDB、PostgreSQL／PolarDB 和 GreptimeDB。源和目标必须是同一类型。`databases` 接收 `{connectionId}` 或 `{external}`。check 和 run 接收 `sourceDatabase`、`targetDatabase`、`structure`、`data` 和 `createDatabase`，两端各自从已保存连接 ID 和外部连接二选一。外部连接接受 `{type?,host,port,username?,password?,tls?,database?}`，省略 type 为 MySQL。只有 GreptimeDB 允许空用户名。PostgreSQL 和 GreptimeDB 可指定维护库，默认分别为 postgres 和 public。凭据仅用于当前请求，TLS 沿用连接的证书验证。
+
+目标库必须不存在，structure 和 createDatabase 必须为 true。check 返回 `{tables,skippedViews}`，不写入。run 重新检查后排他创建目标库。各引擎复制可访问的普通表，视图计入跳过数量。MySQL/MariaDB 支持 InnoDB，包含不可见列。PostgreSQL 支持普通表、自有序列、标识列、生成列、索引及延后创建的外键。GreptimeDB 支持普通 Mito 表和数据，逐表读取，无全库一致性快照。复杂对象和不支持的依赖见各引擎说明。
+
+run 按 NDJSON 返回 heartbeat、progress、done 或 error。progress 中的 phase 为 checking、created、structure、data 或 table_done，并提供可选 table、created、completed、tables、skippedViews 和 rows。只有 done 表示成功。断开或取消会停止后续传输，已经写入的目标库、结构和批次保留。最后一个在途批次可能已经落库，界面计数表示已收到回执的记录数。单进程同时执行一个任务，最长 30 分钟。
 
 ## 工作区
 

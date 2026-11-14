@@ -10,7 +10,15 @@ import (
 )
 
 func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
-	ctx, db, release, err := c.openRequest(ctx, connection, "")
+	return c.listDatabases(ctx, connection, false)
+}
+
+func (c *Client) SyncDatabases(ctx context.Context, connection model.Connection) ([]string, error) {
+	return c.listDatabases(ctx, connection, true)
+}
+
+func (c *Client) listDatabases(ctx context.Context, connection model.Connection, probe bool) ([]string, error) {
+	ctx, db, release, err := c.openScopedRequest(ctx, connection, "", probe)
 	if err != nil {
 		return nil, err
 	}
@@ -164,10 +172,19 @@ func (c *Client) DDL(ctx context.Context, connection model.Connection, ref model
 	if _, err = conn.ExecContext(ctx, "SET search_path TO pg_catalog"); err != nil {
 		return "", err
 	}
+	return tableDefinition(ctx, conn, schema, table, true)
+}
+
+type definitionReader interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func tableDefinition(ctx context.Context, conn definitionReader, schema, table string, includeForeignKeys bool) (string, error) {
 	var kind string
 	var oid int64
 	var partition bool
-	err = conn.QueryRowContext(ctx, `SELECT c.oid::bigint,c.relkind::text,c.relispartition FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2`, schema, table).Scan(&oid, &kind, &partition)
+	err := conn.QueryRowContext(ctx, `SELECT c.oid::bigint,c.relkind::text,c.relispartition FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2`, schema, table).Scan(&oid, &kind, &partition)
 	if err != nil {
 		return "", err
 	}
@@ -204,7 +221,7 @@ func (c *Client) DDL(ctx context.Context, connection model.Connection, ref model
 	if err != nil {
 		return "", err
 	}
-	rows, err = conn.QueryContext(ctx, `SELECT 'CONSTRAINT '||quote_ident(conname)||' '||pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid=$1::oid AND contype IN ('p','u','f','c','x') ORDER BY conname`, oid)
+	rows, err = conn.QueryContext(ctx, `SELECT 'CONSTRAINT '||quote_ident(conname)||' '||pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid=$1::oid AND contype IN ('p','u','f','c','x') AND (contype <> 'f' OR $2) ORDER BY conname`, oid, includeForeignKeys)
 	if err != nil {
 		return "", err
 	}

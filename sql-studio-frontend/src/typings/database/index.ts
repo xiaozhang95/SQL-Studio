@@ -37,7 +37,15 @@ export type DBIndex = {
   type: string
   columns: { name: string; position: number; prefixLength: number | null; order: string }[]
 }
-export type TableDetails = { columns: Column[]; indexes: DBIndex[] }
+export type DBForeignKey = {
+  name: string
+  referencedSchema: string
+  referencedTable: string
+  onUpdate: string
+  onDelete: string
+  columns: { name: string; referencedName: string }[]
+}
+export type TableDetails = { columns: Column[]; indexes: DBIndex[]; foreignKeys?: DBForeignKey[]; foreignKeyError?: string }
 export type QueryResult = {
   columns: { name: string; type: string }[]
   rows: unknown[][]
@@ -49,3 +57,9 @@ export type QueryResult = {
   isQuery: boolean
 }
 export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number }
+
+export type MonitorSnapshot = {
+  database: string
+  sampledAt: string
+  metrics: { key: string; value: string }[]
+}

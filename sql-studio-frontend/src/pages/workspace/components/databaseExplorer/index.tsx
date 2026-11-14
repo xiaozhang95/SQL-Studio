@@ -2,6 +2,7 @@ import {
   ClearOutlined,
   CloseOutlined,
   CodeOutlined,
+  DashboardOutlined,
   DatabaseFilled,
   DatabaseOutlined,
   DeleteOutlined,
@@ -17,6 +18,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
   SortAscendingOutlined,
+  SwapOutlined,
   TableOutlined
 } from '@ant-design/icons'
 import { Dropdown, Empty, Input, Tree } from 'antd'
@@ -24,9 +26,11 @@ import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
+import EngineIcon from '@/components/engineIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
+import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import { objectTreeLayout } from '../../constant/layout'
@@ -35,10 +39,10 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { buildExplorerTree } from '../../utils/explorerTree'
 import type { ExplorerNode } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
-import EngineIcon from '../engineIcon'
 import ToolbarButton from '../toolbarButton'
 
 type Props = {
+  onOpenDatabaseSection: (section: DatabaseSection, scope: DatabaseSectionScope) => void
   model: Pick<
     WorkspaceModel,
     'connections' | 'connectionGroups' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'
@@ -46,7 +50,7 @@ type Props = {
 }
 
 /** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
-export default function DatabaseExplorer({ model }: Props) {
+export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props) {
   const { t } = useTranslation()
 
   const { connections, connectionGroups, objects, running, explorer, updateExplorer } = model
@@ -99,6 +103,9 @@ export default function DatabaseExplorer({ model }: Props) {
         { key: 'create-database', label: t('新建数据库'), icon: <PlusOutlined />, disabled: !connected },
         ...(!connected && status !== 'loading' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
         ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
+        { type: 'divider' },
+        { key: 'monitor', label: t('监控指标'), icon: <DashboardOutlined /> },
+        { key: 'sync', label: t('同步数据库'), icon: <SwapOutlined /> },
         { type: 'divider' },
         { key: 'edit', label: t('编辑连接'), icon: <EditOutlined /> },
         {
@@ -224,7 +231,7 @@ export default function DatabaseExplorer({ model }: Props) {
             : item
         )
     }
-    if (!engine.dumpFile) items = items.filter((item) => item && 'key' in item && item.key !== 'export')
+    if (!engine.dumpFile) items = items.filter((item) => item && (!('key' in item) || item.key !== 'export'))
     if (running) items = items.filter((item) => item && 'key' in item && item.key === 'close')
     if (!items.length) return undefined
     return {
@@ -233,6 +240,7 @@ export default function DatabaseExplorer({ model }: Props) {
         domEvent.stopPropagation()
         setMenuOpen(false)
         if (node.kind === 'connection' && key.startsWith('move-group:') && node.connection) void connectionGroups.move(node.connection, key.slice('move-group:'.length))
+        else if (node.kind === 'connection' && (key === 'monitor' || key === 'sync')) onOpenDatabaseSection(key, { connectionId: id })
         else if (node.kind === 'connection') model.connectionAction(key, id)
         else if (node.kind === 'table') void model.tableAction(key, id, db, table)
         else void model.databaseAction(key, id, db, undefined, node.schema)
@@ -277,6 +285,9 @@ export default function DatabaseExplorer({ model }: Props) {
       case 'indexes':
       case 'index':
         return <SortAscendingOutlined />
+      case 'foreign-keys':
+      case 'foreign-key':
+        return <LinkOutlined />
       default:
         return null
     }
@@ -287,7 +298,20 @@ export default function DatabaseExplorer({ model }: Props) {
     else if (node.retry === 'table') void objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
   }
   function renderTitle(node: ExplorerNode) {
-    const generated = ['tables', 'views', 'columns', 'indexes', 'empty-columns', 'empty-indexes', 'empty-tables', 'error', 'detail-error'].includes(node.kind)
+    const generated = [
+      'tables',
+      'views',
+      'columns',
+      'indexes',
+      'foreign-keys',
+      'empty-columns',
+      'empty-indexes',
+      'empty-foreign-keys',
+      'empty-tables',
+      'error',
+      'detail-error',
+      'foreign-keys-error'
+    ].includes(node.kind)
     const title = node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
     // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
     return (

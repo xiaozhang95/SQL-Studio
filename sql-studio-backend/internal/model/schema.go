@@ -40,3 +40,17 @@ type IndexColumn struct {
 	PrefixLength *int   `json:"prefixLength"`
 	Order        string `json:"order"`
 }
+
+type ForeignKey struct {
+	Name             string             `json:"name"`
+	ReferencedSchema string             `json:"referencedSchema"`
+	ReferencedTable  string             `json:"referencedTable"`
+	OnUpdate         string             `json:"onUpdate"`
+	OnDelete         string             `json:"onDelete"`
+	Columns          []ForeignKeyColumn `json:"columns"`
+}
+
+type ForeignKeyColumn struct {
+	Name           string `json:"name"`
+	ReferencedName string `json:"referencedName"`
+}

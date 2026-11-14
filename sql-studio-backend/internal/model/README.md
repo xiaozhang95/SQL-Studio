@@ -22,7 +22,7 @@ AIConfig 定义 configurations/activeId/completionEnabled 列表格式。AIConfi
 
 AIRequest.document/table携带注释草稿与选中表，AIConnectionContext仅包含Name/Type安全字段，由AI模块按ConnectionID填充。
 
-Index/IndexColumn 为索引只读契约，保存名称、唯一性、类型以及按 position 排列的组成字段（name、可空 prefixLength、order）；PRIMARY 表示主键，表达式字段名为空。
+Index/IndexColumn 为索引只读契约，保存名称、唯一性、类型以及按 position 排列的组成字段（name、可空 prefixLength、order）；PRIMARY 表示主键，表达式字段名为空。ForeignKey/ForeignKeyColumn 保存约束名、引用库或 Schema、引用表、更新与删除规则，以及按约束定义顺序排列的本地列、引用列映射。
 
 TypePostgreSQL=postgresql，SupportedDatabaseType 接受 MySQL/PostgreSQL；Connection.Database 是可选维护库，PostgreSQL 缺省 postgres。PostgreSQL Table.Name 为双引号 schema/table 对，TableRef 原样传递；schema 不混入物理数据库。
 
@@ -37,3 +37,7 @@ TypeMariaDB=mariadb，TypeGreptimeDB=greptimedb，各自保留独立连接身份
 - [agent](agent/README.md)：Agent工具、模型流与会话契约；独立子包避免与SQL结果/配置同名类型冲突。
 
 QueryRequest.MatchRows（JSON matchRows）默认为false；只供显式单元格UPDATE请求MySQL/MariaDB匹配行计数，不改变普通SQL语义或权限限制。
+
+database_sync.go 定义 同引擎同步的连接范围、选项、检查摘要和进度计数。
+
+monitor.go 定义数据库监控采样和指标契约，数值使用十进制字符串。

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { dumpData } from '../src/databases/mysql/dataDump/index.ts'
+import { splitSQLStatements } from '../src/databases/mysql/statements/index.ts'
 
 const result = {
   columns: [
@@ -23,6 +24,16 @@ test('dump preserves large numbers, encodes text and binary and skips generated 
   assert.ok(sql.startsWith('INSERT INTO `a```.`b`'))
 })
 test('truncated results never produce a partial dump', () => assert.throws(() => dumpData('a', 'b', { ...result, truncated: true }, columns), /限制/))
+test('dump batches rows into bounded, individually executable INSERT statements', () => {
+  const value = '中'.repeat(1024)
+  const rows = Array.from({ length: 256 }, () => [value])
+  const sql = dumpData('db', 't', { columns: [{ name: 'text', type: 'TEXT' }], rows, truncated: false }, [])
+  const statements = splitSQLStatements(sql)
+  assert.ok(statements.length > 1 && statements.length < rows.length)
+  assert.ok(statements.every((statement) => statement.startsWith('INSERT INTO `db`.`t`') && statement.length <= 256 * 1024))
+  assert.equal(statements.flatMap((statement) => [...statement.matchAll(/CONVERT\(X'/g)]).length, rows.length)
+  assert.equal(dumpData('db', 't', { ...result, rows: [] }, columns), '')
+})
 test('NULL and empty text remain distinct', () => {
   const sql = dumpData(
     'a',

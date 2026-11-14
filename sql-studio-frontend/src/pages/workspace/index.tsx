@@ -7,6 +7,7 @@ import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { sidebarLayout } from '@/constant/sidebarLayout'
+import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
@@ -21,21 +22,22 @@ import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { useWorkspace } from './hooks/useWorkspace'
+import type { WorkspaceModel } from './hooks/useWorkspace'
+import { selectedConnectionScope } from './utils/explorerTree'
 import { workspacePageTitle } from './utils/pageTitle'
 
 type Props = AppearancePreferences & {
+  model: WorkspaceModel
   active: boolean
   onOpenAgent: () => void
-  themeReady: boolean
+  onOpenDatabaseSection: (section: DatabaseSection, scope?: DatabaseSectionScope) => void
   themeSaving: boolean
   themeMode: ThemeMode
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ active, onOpenAgent, themeMode, themeReady, themeSaving, ...appearancePreferences }: Props) {
+export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSection, themeMode, themeReady, themeSaving, ...appearancePreferences }: Props) {
   const { t } = useTranslation()
 
-  const model = useWorkspace(active)
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   return (
     <div
@@ -87,6 +89,12 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeReady, 
             {t('取消执行')}
           </Button>
         )}
+        <SectionNavigation destination="sync" onSwitch={() => onOpenDatabaseSection('sync')} separated={false} />
+        <SectionNavigation
+          destination="monitor"
+          onSwitch={() => onOpenDatabaseSection('monitor', selectedConnectionScope(model.explorer.selected[0], model.connections) ?? model.tab)}
+          separated={false}
+        />
         <SectionNavigation destination="agent" onSwitch={onOpenAgent} />
       </PageHeader>
       {!model.workspaceReady ? (
@@ -95,7 +103,7 @@ export default function Workspace({ active, onOpenAgent, themeMode, themeReady, 
         </div>
       ) : (
         <div className="workspace" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <ConnectionSidebar model={model} layout={sidebar} />
+          <ConnectionSidebar model={model} layout={sidebar} onOpenDatabaseSection={onOpenDatabaseSection} />
           <main className="main-area" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
             <div className="query-workspace" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {model.tabs.length > 0 ? (

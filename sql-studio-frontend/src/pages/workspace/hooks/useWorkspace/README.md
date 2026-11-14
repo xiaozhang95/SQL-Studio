@@ -74,7 +74,7 @@ refreshResult 固定已执行查询 scope 和当前选中 SQL，不使用后来�
 
 创建/设计等可视化对象入口除菜单外还检查目标引擎 objects 能力。历史记录携带 databaseType，成功 USE 仍只由目标引擎识别，PostgreSQL 不继承 MySQL USE。
 
-schemaConnections 由连接及引擎 explorer 能力 memo 化提供给对象缓存，不依赖当前查询选择器。
+schemaConnections 和 foreignKeyConnections 按各连接所属引擎的 explorer、foreignKeys 能力提供给对象缓存，不依赖当前查询选择器。
 
 数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。只展示当前对象页和结构结果，恢复不转换旧格式或重跑 SQL。
 

@@ -36,7 +36,7 @@ JSON 解码统一使用 decodeLimit：普通请求 1 MiB，配置写入 32 MiB +
 
 配置 PUT 与 AI 移除必须显式提供非 null 的 revision，首次写入可为 0；缺失字段不能以零值替代并触发写入。
 
-GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表，继承元数据的范围、超时及取消；Swagger 和本地 API 列表同步维护。
+GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表。GET /api/connections/:id/foreign-keys 使用同样的范围参数，返回外键的引用对象、规则和有序列映射。两者沿用元数据超时及取消；Swagger 和本地 API 列表同步维护。
 
 POST /api/connections/:id/session 要求显式非 null 的 open 布尔值；database 省略为整个连接，显式 null、空字符串和非字符串均拒绝。关闭成功响应表示目标驱动资源已释放。session_test.go 检查输入、原始范围、超时与失败响应；Swagger 及本地列表同步维护。
 
@@ -54,3 +54,5 @@ POST /agent/sessions支持可选ensure=true，仅在空列表创建默认会话�
 
 
 写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。确认独立等待最多5分钟，等待期间暂停本轮执行计时；恢复历史只展示原记录。继续确认通过 `continue_confirmation` 和 `POST /api/agent/continue-confirmation` 处理，拒绝产生 `stopped` 事件。模式提示不替代逐次确认。
+
+数据库同步由 database_sync.go 提供检查和执行入口，进度以 NDJSON 传输，定时心跳续期，客户端断开后停止任务。见 [数据库同步契约](../../../docs/API.md#数据库同步)。

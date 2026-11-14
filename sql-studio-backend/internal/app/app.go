@@ -26,6 +26,7 @@ import (
 	"sql-studio-backend/internal/httpapi"
 	"sql-studio-backend/internal/modules/ai"
 	"sql-studio-backend/internal/modules/connections"
+	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/webui"
@@ -68,14 +69,15 @@ func New(cfg config.Config) (*App, error) {
 		queries:     queryService.WithExecutor(agentClient),
 	}, agentStore)
 	router := httpapi.New(httpapi.Services{
-		Agent:       agentService,
-		AgentLayout: agentlayout.New(agentStore),
-		Workspace:   workspace.New(stateStore),
-		Connections: connectionService,
-		AI:          ai.New(stateStore, repository, deepseek.New()),
-		Settings:    prefs,
-		Metadata:    metadataService,
-		Queries:     queryService,
+		DatabaseSync: databasesync.New(repository, syncDatabaseEngines()),
+		Agent:        agentService,
+		AgentLayout:  agentlayout.New(agentStore),
+		Workspace:    workspace.New(stateStore),
+		Connections:  connectionService,
+		AI:           ai.New(stateStore, repository, deepseek.New()),
+		Settings:     prefs,
+		Metadata:     metadataService,
+		Queries:      queryService,
 	})
 	if err := webui.Register(router, cfg.WebDir); err != nil {
 		return nil, err

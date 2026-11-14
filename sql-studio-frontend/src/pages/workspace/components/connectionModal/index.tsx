@@ -1,6 +1,7 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
 
+import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { connectionGroupLabel, connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
@@ -8,7 +9,6 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
 import { useConnectionForm } from '../../hooks/useConnectionForm'
-import EngineIcon from '../engineIcon'
 
 type Props = {
   open: boolean

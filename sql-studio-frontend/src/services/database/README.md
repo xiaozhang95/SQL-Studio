@@ -12,7 +12,7 @@ executeObjectSQL(id, database, sql, signal?) 仅供对象管理确认提交，�
 
 executeObjectSQL 也供表数据单元格点击保存使用，传递显式连接、库和限定目标的单行更新；普通 executeQuery 默认只读。
 
-getIndexes(id, database, table, signal?) 返回 Promise<DBIndex[]>；显式携带原始连接、库、表范围，支持取消。无索引返回空数组，失败由调用方展示和重试，不以 DDL 文本推测索引。
+getIndexes(id, database, table, signal?) 返回 Promise<DBIndex[]>；显式携带原始连接、库、表范围，支持取消。无索引返回空数组，失败由调用方展示和重试，不以 DDL 文本推测索引。getForeignKeys(id, database, table, signal?) 返回 Promise<DBForeignKey[]>，同样继承显式范围和取消信号，无外键返回空数组。
 
 setConnectionSession(id, open, database?, signal?) 返回 Promise<{open:boolean}>；省略库为整个连接，指定库仅控制该库。等待后端释放驱动连接后关闭才成功，失败保留前端窗口；打开验证真实连通性。
 
@@ -21,3 +21,5 @@ getSchemas(id,database,signal?) 调用 /connections/{id}/schemas，返回可访�
 deleteConnectionGroup(name) DELETE /connection-groups，返回 groups 与脱敏 connections；删除组内连接移入默认分组，不删除连接。
 
 executeObjectSQL(id,database,sql,signal?,matchRows=false) 的 matchRows 仅由单元格 UPDATE 显式开启；普通 SQL 和其他对象操作保持默认影响行数语义。
+
+getDatabaseMonitor(id,database,signal?) 读取已保存连接的监控采样，支持取消。

@@ -23,3 +23,9 @@ QueryRequest.Schema 非空时先在请求独占 sql.Conn 验证 schema 存在和
 DDL 在本次独占物理连接将 search_path 固定为 pg_catalog，再进行全部目录反解析，确保 SERIAL 默认值、类型/函数和索引的跨 schema 引用明确限定，避免导出文件依赖源会话搜索路径。设置和读取使用同一 sql.Conn，请求结束释放，其他查询不继承。
 
 export.go 的 StreamTableData(ctx,connection,ref,emit) 解析显式 schema/table，在只读 REPEATABLE READ 事务使用游标分批回调，保留文本精度与 BYTEA。继承库/连接关闭、取消及超时；单表快照不等于全库一致性备份。
+
+数据库同步在源端用同一个只读快照及表锁，目标新库使用源编码和 libc 区域设置。复制普通表、主键、索引、外键、生成列以及表自有 SERIAL/IDENTITY 序列，COPY 文本流保留数据类型。跳过视图和扩展拥有的对象。分区、继承表、外部表、触发器、行级安全、用户自定义类型及外部序列暂不支持。空 Schema、角色和权限不属于表同步。
+
+`ForeignKeys(ctx, connection, ref)` 从 pg_catalog 读取指定 schema/table 的外键列映射、引用关系和更新、删除规则。
+
+监控读取所选库的连接数、提交及回滚事务、数据库大小、缓冲命中率、死锁、临时文件写入及变更行数。

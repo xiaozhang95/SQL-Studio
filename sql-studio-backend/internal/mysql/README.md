@@ -32,8 +32,14 @@ readRows 按返回结果列数量设置 IsQuery：无列成功是执行回执，
 
 QueryRequest.Schema 非空明确拒绝，避免把 PostgreSQL 范围静默用于 MySQL；省略/空值保持兼容。
 
-export.go 的 StreamTableData(ctx,connection,ref,emit) 在指定库表创建只读 REPEATABLE READ 事务，通过 rowstream 分批回调，无总行数限制；继承连接/库关闭租约、请求取消及超时。单表数据快照不等于整个数据库一致性备份，DDL/其他表由其他请求读取。
+export.go 的 StreamTableData(ctx,connection,ref,emit) 在指定库表创建只读 REPEATABLE READ 事务，按字段顺序显式读取可访问列（含不可见列），通过 rowstream 分批回调，无总行数限制；继承连接/库关闭租约、请求取消及超时。单表数据快照不等于整个数据库一致性备份，DDL/其他表由其他请求读取。
 
 MariaDB 独立引擎组合本包共享协议实现；driverConfig 明确接受 mariadb 类型并保留原类型。默认读取同时拒绝 /*! 和 /*M! 可执行注释；显式写入的顶层 INSERT/DELETE/REPLACE RETURNING 走结果读取，不丢失返回列/行。分类忽略字符串、标识符、注释和嵌套表达式中的 RETURNING 文本。
 
 单元格更新可显式传QueryRequest.MatchRows=true；该次独立连接启用CLIENT_FOUND_ROWS，affectedRows表示匹配行，等价赋值不误报并发冲突；0行仍失败。普通查询/SQL写入连接默认不启用。请求仍走同一租约、关闭/取消及独立物理连接生命周期。
+
+`CheckDatabaseSync` 和 `SyncDatabase` 使用独立物理会话检查目标、执行原子排他建库、复制 InnoDB 建表定义并可选用参数化批次传输数据。数据模式在同一个只读事务中检查表结构并读取一致性快照，源表的元数据锁在事务结束后释放。目标会话显式启用自动提交，逐批回报已确认记录。取消不删除已创建对象，断开时最后一个在途批次可能已提交。
+
+`ForeignKeys(ctx, connection, ref)` 按库表读取 information_schema 中的外键，保留跨库引用、更新与删除规则和复合约束的列映射顺序。
+
+监控通过 SHOW GLOBAL STATUS 读取连接、运行线程、客户端语句、慢查询、连接失败、收发流量及运行时间。

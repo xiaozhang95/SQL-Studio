@@ -20,17 +20,19 @@ func Register(router *gin.Engine, directory string) error {
 }
 
 func registerFiles(router *gin.Engine, files fs.FS) error {
+	pages := map[string]struct{}{"/": {}, "/agent": {}, "/monitor": {}, "/sync": {}}
 	web := router.Group("")
 	web.Use(func(c *gin.Context) {
-		if c.Request.URL.Path == "/" || c.Request.URL.Path == "/agent" || strings.HasSuffix(c.Request.URL.Path, ".html") {
+		if _, page := pages[c.Request.URL.Path]; page || strings.HasSuffix(c.Request.URL.Path, ".html") {
 			c.Header("Cache-Control", "no-cache")
 		}
 		c.Next()
 	})
 	root := onlyFiles{http.FS(files)}
 	// Serving the directory lets Gin resolve index.html without an index redirect loop.
-	web.StaticFileFS("/", "/", root)
-	web.StaticFileFS("/agent", "/", root)
+	for page := range pages {
+		web.StaticFileFS(page, "/", root)
+	}
 	web.StaticFileFS("/index.html", "/index.html", root)
 	web.StaticFileFS("/swagger.html", "/swagger.html", root)
 	web.StaticFileFS("/studio.svg", "/studio.svg", root)
@@ -48,7 +50,7 @@ func registerFiles(router *gin.Engine, files fs.FS) error {
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if name == "api" || name == "agent" || name == "assets" || name == "index.html" || name == "swagger.html" || name == "studio.svg" {
+		if _, page := pages["/"+name]; page || name == "api" || name == "assets" || name == "index.html" || name == "swagger.html" || name == "studio.svg" {
 			continue
 		}
 		if entry.IsDir() {

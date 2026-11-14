@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getColumns, getDatabases, getDDL, getIndexes, getSchemas, getTables, setConnectionSession } from '@/services/database'
+import { getColumns, getDatabases, getDDL, getForeignKeys, getIndexes, getSchemas, getTables, setConnectionSession } from '@/services/database'
 import type { Column, DBTable, TableDetails } from '@/typings/database'
 
 import { DatabaseLifecycle } from '../../utils/databaseLifecycle'
@@ -35,7 +35,13 @@ type Session = {
 }
 
 /** 各连接分别维护结构缓存；关闭或刷新时取消旧代请求，避免迟到响应重新点亮节点。 */
-export function useDatabaseObjects(connectionId: string, database: string, onDatabasesLoaded: (id: string, databases: string[]) => void, schemaConnections: readonly string[]) {
+export function useDatabaseObjects(
+  connectionId: string,
+  database: string,
+  onDatabasesLoaded: (id: string, databases: string[]) => void,
+  schemaConnections: readonly string[],
+  foreignKeyConnections: readonly string[]
+) {
   const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({})
   const sessions = useRef(new Map<string, Session>())
   const current = snapshots[connectionId]
@@ -245,19 +251,23 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       if (!session?.databases || session.controller.signal.aborted) return Promise.reject(new Error('请先打开连接'))
       const scope = session.lifecycle.scope(database)
       const key = JSON.stringify([database, table])
-      if (session.details[key]) return Promise.resolve(session.details[key])
+      const cached = session.details[key]
+      if (cached && !cached.foreignKeyError) return Promise.resolve(cached)
       const pending = session.pendingDetails.get(key)
       if (pending) return pending
       const valid = () => sessions.current.get(id) === session && scope.valid()
       setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], detailErrors: { ...previous[id].detailErrors, [key]: '' } } }))
-      // 树展开只读元数据，不执行表数据 SQL，也不让索引权限错误影响原有 DDL/补全流程。
-      const task = Promise.all([
-        session.structures[key] ? Promise.resolve(session.structures[key].columns) : getColumns(id, database, table, scope.signal),
-        getIndexes(id, database, table, scope.signal)
-      ])
-        .then(([columns, indexes]) => {
+      const columnsRequest = cached?.columns ?? session.structures[key]?.columns ?? getColumns(id, database, table, scope.signal)
+      const indexesRequest = cached?.indexes ?? getIndexes(id, database, table, scope.signal)
+      const foreignKeysRequest = foreignKeyConnections.includes(id)
+        ? getForeignKeys(id, database, table, scope.signal)
+            .then((foreignKeys) => ({ foreignKeys }))
+            .catch((error) => ({ foreignKeyError: error instanceof Error && error.message ? error.message : '外键加载失败' }))
+        : undefined
+      const task = Promise.all([columnsRequest, indexesRequest, foreignKeysRequest])
+        .then(([columns, indexes, foreignKeyDetails]) => {
           if (!valid()) throw new Error('连接已关闭')
-          const details = { columns, indexes }
+          const details = { columns, indexes, ...foreignKeyDetails }
           session.details[key] = details
           setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], details: { ...previous[id].details, [key]: details } } }))
           return details
@@ -273,7 +283,7 @@ export function useDatabaseObjects(connectionId: string, database: string, onDat
       session.pendingDetails.set(key, task)
       return task
     },
-    [connectionId]
+    [connectionId, foreignKeyConnections]
   )
 
   const refreshDatabases = useCallback(

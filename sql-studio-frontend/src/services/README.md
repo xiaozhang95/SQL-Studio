@@ -12,3 +12,5 @@
 - [queryBatch](queryBatch/README.md)：MySQL 同会话批次与逐条结果流。
 
 - [workspace](workspace/README.md)：轻量索引、分片草稿/结果与页面常驻基线。
+
+- [databaseSync](databaseSync/README.md)：同引擎同步检查和 NDJSON 进度。

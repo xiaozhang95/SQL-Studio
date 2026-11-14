@@ -8,6 +8,6 @@ MySQL、MariaDB、PostgreSQL 和 GreptimeDB 已连接时使用绿色圆角底板
 
 text-tertiary 是半透明色，灰色底板及兼容品牌模式的灰色状态圆点通过同色渐变叠在 --surface 上，先合成当前主题下的灰色，防止选中行的主题背景透入。只调整自有图标底板，不覆盖 Ant Design 默认样式或改变字体。
 
-profile.iconPresentation=brand 用于需要保留原色的图标，连接状态通过独立圆点展示。可选的 iconBackground 为品牌图形提供固定衬底。图标为装饰，名称由相邻文字提供。资源来源见 [资产说明](../../../../assets/databases/README.md)。
+profile.iconPresentation=brand 用于需要保留原色的图标，连接状态通过独立圆点展示。可选的 iconBackground 为品牌图形提供固定衬底。图标为装饰，名称由相邻文字提供。资源来源见 [资产说明](../../assets/databases/README.md)。
 
 对象树、Select 与连接弹窗共用灰色选中底衬托引擎图标，图标尺寸和状态底板保持一致。

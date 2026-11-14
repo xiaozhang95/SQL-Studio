@@ -16,7 +16,7 @@ Connection.database? 对应后端维护数据库字段，仅 PostgreSQL 使用�
 
 DBTable.viewDependencies? 提供 PostgreSQL 视图的直接视图依赖，使用同样的完整身份。DBTable.extension? 记录 PostgreSQL 扩展成员所属扩展。Column.charset? 和 Column.collation? 是 MySQL 协议字符字段的可选元数据，供占位视图保留字符集与排序规则。
 
-DBIndex.primary? 为可选主键标志，用于 PostgreSQL 真实索引名，旧 MySQL PRIMARY 名称仍兼容。
+DBIndex.primary? 为可选主键标志，用于 PostgreSQL 真实索引名，旧 MySQL PRIMARY 名称仍兼容。DBForeignKey 保存约束名、引用库或 Schema 和表、更新与删除规则，以及按约束顺序排列的本地列与引用列。TableDetails.foreignKeys 在引擎支持时提供。
 
 QueryRequest.schema? 为 PostgreSQL 当前 schema，后端在本次请求独占的连接上验证 USAGE 并设置 search_path 后再执行。省略不改变旧行为；MySQL 拒绝非空独立 schema。
 

@@ -1,4 +1,4 @@
-import type { DBIndex } from '@/typings/database'
+import type { DBForeignKey, DBIndex } from '@/typings/database'
 
 /** JSON 元组保留名称中的分隔符，避免同名库表及特殊字符发生碰撞。 */
 export const objectNodeKey = (...parts: string[]) => JSON.stringify(parts)
@@ -9,4 +9,10 @@ export function indexDescription(index: DBIndex): string {
     .sort((left, right) => left.position - right.position)
     .map((column) => `${column.name || '(表达式)'}${column.prefixLength === null ? '' : `(${column.prefixLength})`}${column.order === 'D' ? ' DESC' : ''}`)
   return `${kind} · ${index.type}\n${columns.join(', ')}`
+}
+
+export function foreignKeyDescription(key: DBForeignKey): string {
+  const local = key.columns.map((column) => column.name).join(', ')
+  const referenced = key.columns.map((column) => column.referencedName).join(', ')
+  return `(${local}) → ${key.referencedSchema}.${key.referencedTable} (${referenced})\nON UPDATE ${key.onUpdate}\nON DELETE ${key.onDelete}`
 }

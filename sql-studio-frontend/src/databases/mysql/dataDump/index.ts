@@ -43,18 +43,22 @@ export function dumpData(database: string, table: string, result: QueryResult, c
     .map((column, index) => ({ column, index }))
     .filter(({ column }) => !/(?:VIRTUAL|STORED) GENERATED/i.test(columns.find((field) => field.name === column.name)?.extra ?? ''))
   const target = identifier(database) + '.' + identifier(table)
-  return (
-    result.rows
-      .map(
-        (row) =>
-          'INSERT INTO ' +
-          target +
-          ' (' +
-          fields.map(({ column }) => identifier(column.name)).join(', ') +
-          ') VALUES (' +
-          fields.map(({ column, index }) => literal(row[index], column.type)).join(', ') +
-          ');'
-      )
-      .join('\n') + '\n'
-  )
+  const prefix = 'INSERT INTO ' + target + ' (' + fields.map(({ column }) => identifier(column.name)).join(', ') + ') VALUES '
+  const maxInsertLength = 256 * 1024
+  const inserts: string[] = []
+  let values: string[] = []
+  let length = prefix.length
+  const flush = () => {
+    inserts.push(prefix + values.join(',\n') + ';\n')
+    values = []
+    length = prefix.length
+  }
+  for (const row of result.rows) {
+    const tuple = '(' + fields.map(({ column, index }) => literal(row[index], column.type)).join(', ') + ')'
+    if (values.length && length + tuple.length + 3 > maxInsertLength) flush()
+    values.push(tuple)
+    length += tuple.length + 2
+  }
+  if (values.length) flush()
+  return inserts.join('')
 }

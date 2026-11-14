@@ -28,6 +28,8 @@ DatabaseProfile.iconPresentation? 可为 brand，指定原始品牌图标使用�
 
 DatabaseAdapter.explorer? 提供 schema 引擎的 tableIdentity(table):{schema,name}，纯数据树接收该布局契约；省略则沿用 MySQL 数据库直下表/视图层级。
 
+DatabaseAdapter.foreignKeys? 表示引擎支持读取外键元数据。启用的连接会在展开表时读取并展示外键。
+
 tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(tables,schema?) 提供引擎所属结构列表列/行，PostgreSQL 拆开 Schema 和表名列。SQLCompletionContext.namespace? 表示当前 schema，schema 字段仍是元数据 map。DatabaseExplorerAdapter.referencedTables? 根据所属方言识别 AI 上下文引用。
 
 MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于绿色或灰色圆角底板上。

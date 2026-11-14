@@ -16,3 +16,5 @@
 
 - [agent](agent/README.md)：纯聊天工具编排。
 - [agentlayout](agentlayout/README.md)：Agent本地布局，恢复不执行工具。
+
+- [databasesync](databasesync/README.md)：同引擎同步的检查和执行。
