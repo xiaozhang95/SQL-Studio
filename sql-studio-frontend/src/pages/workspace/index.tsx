@@ -20,6 +20,7 @@ import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
+import RedisQuery from './components/redisQuery'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
 import type { WorkspaceModel } from './hooks/useWorkspace'
@@ -81,7 +82,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
         <SectionNavigation destination="sync" onSwitch={() => onOpenDatabaseSection('sync')} />
         <SectionNavigation
           destination="monitor"
-          onSwitch={() => onOpenDatabaseSection('monitor', selectedConnectionScope(model.explorer.selected[0], model.connections) ?? model.tab)}
+          onSwitch={() => onOpenDatabaseSection('monitor', selectedConnectionScope(model.explorer.selected[0], model.savedConnections) ?? model.tab)}
           separated={false}
         />
         <SectionNavigation destination="agent" onSwitch={onOpenAgent} separated={false} />
@@ -104,6 +105,9 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
               {model.tabs.length > 0 ? (
                 <WorkspaceTabs
                   model={model}
+                  renderRedis={(page, connection) => (
+                    <RedisQuery key={connection.id} model={{ ...model, tab: page }} connection={connection} active={active && page.id === model.activeTab && model.pageReady} themeMode={themeMode} />
+                  )}
                   renderDesigner={(page) => (
                     <TableDesigner
                       key={page.id}

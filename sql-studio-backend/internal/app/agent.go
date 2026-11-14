@@ -27,7 +27,7 @@ func (d agentDatabase) Connections(ctx context.Context) ([]agentmodel.Connection
 	}
 	out := []agentmodel.Connection{}
 	for _, c := range d.connections.ListConnections() {
-		if c.Type == model.TypeGreptimeDB {
+		if c.Type == model.TypeGreptimeDB || c.Type == model.TypeRedis {
 			continue
 		}
 		out = append(out, agentmodel.Connection{ID: c.ID, Name: c.Name, Type: c.Type})
@@ -142,7 +142,7 @@ func (d agentDatabase) agentTargetEngine(id string) (string, error) {
 		return "", nil
 	}
 	for _, c := range d.connections.ListConnections() {
-		if c.ID == id && c.Type != model.TypeGreptimeDB {
+		if c.ID == id && c.Type != model.TypeGreptimeDB && c.Type != model.TypeRedis {
 			return c.Type, nil
 		}
 	}

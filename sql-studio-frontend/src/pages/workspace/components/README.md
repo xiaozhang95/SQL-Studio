@@ -7,7 +7,9 @@
 - [连接与对象侧栏](connectionSidebar/README.md)
 - [数据库对象树](databaseExplorer/README.md)
 - [当前查询连接与数据库选择器](scopeSelects/README.md)
-- [查询编辑与执行工具栏](queryEditor/README.md)
+- [查询工具栏](queryToolbar/README.md)
+- [SQL 编辑与执行](queryEditor/README.md)
+- [Redis 查询工具](redisQuery/README.md)
 - [工具栏图标按钮](toolbarButton/README.md)：查询、结果、表设计、历史和 SQL 预览等操作共用，仅图标并保留悬停说明和可访问名称。
 - [主区域页面标签](workspaceTabs/README.md)统一切换查询、对象和设计页。
 - [结果、字段与 DDL](queryResults/README.md)

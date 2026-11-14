@@ -5,6 +5,7 @@ import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { connectionGroupLabel, connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
@@ -158,7 +159,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                         <Form.Item name="port" label={t('端口')} rules={[{ required: true, message: t('请输入端口') }]}>
                           <InputNumber placeholder={t('端口')} min={1} max={65535} style={{ width: '100%' }} />
                         </Form.Item>
-                        {engine.database !== undefined && (
+                        {engine.database !== undefined && engine.value !== DatabaseEngine.Redis && (
                           <Form.Item
                             name="database"
                             label={t('维护数据库')}
@@ -169,7 +170,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                           </Form.Item>
                         )}
                         <Form.Item name="username" label={t('用户名')} rules={engine.optionalUsername ? [] : [{ required: true, whitespace: true, message: t('请输入用户名') }]}>
-                          <Input autoComplete="username" placeholder={t('请输入数据库用户名')} />
+                          <Input autoComplete="username" placeholder={t(engine.value === DatabaseEngine.Redis ? '可留空，使用 default 用户' : '请输入数据库用户名')} />
                         </Form.Item>
                         <Form.Item name="password" label={t('密码')} extra={connection?.hasPassword ? t('留空保留原密码') : undefined}>
                           <Input.Password autoComplete="new-password" placeholder={connection?.hasPassword ? t('已保存，留空不修改') : t('数据库密码')} />

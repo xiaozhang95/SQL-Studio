@@ -29,6 +29,8 @@ import (
 	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
+	"sql-studio-backend/internal/modules/redistools"
+	"sql-studio-backend/internal/redis"
 	"sql-studio-backend/internal/webui"
 )
 
@@ -48,7 +50,9 @@ func New(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	client := newDatabaseClient()
-	connectionService := connections.New(repository, client)
+	redisClient := redis.NewClient()
+	workspaceClient := workspaceDatabase{Client: client, redis: redisClient}
+	connectionService := connections.New(repository, workspaceClient)
 	// 首次初始化走同一业务校验，已有连接保持不变。
 	if len(connectionService.ListConnections()) == 0 && cfg.InitialConnection != nil {
 		if _, err = connectionService.SaveConnection(*cfg.InitialConnection); err != nil {
@@ -58,7 +62,7 @@ func New(cfg config.Config) (*App, error) {
 	prefs := settings.New(stateStore)
 	agentDir := filepath.Join(stateDir, "agent")
 	agentStore := localstate.New(agentDir)
-	metadataService := metadata.New(repository, client)
+	metadataService := metadata.New(repository, workspaceClient)
 	queryService := query.New(repository, client)
 	// Agent owns separate lifecycle state; each engine releases its physical
 	// connection before a database operation returns, including errors/cancellation.
@@ -70,6 +74,7 @@ func New(cfg config.Config) (*App, error) {
 	}, agentStore)
 	router := httpapi.New(httpapi.Services{
 		DatabaseSync: databasesync.New(repository, syncDatabaseEngines()),
+		Redis:        redistools.New(repository, redisClient),
 		Agent:        agentService,
 		AgentLayout:  agentlayout.New(agentStore),
 		Workspace:    workspace.New(stateStore),

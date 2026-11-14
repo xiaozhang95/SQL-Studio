@@ -15,3 +15,5 @@ engineIcon 将半透明灰色先合成到主题容器底色 --surface 上，避�
 [mariadb.svg](mariadb.svg) 使用 [Simple Icons MariaDB 图标](https://github.com/simple-icons/simple-icons/blob/develop/icons/mariadb.svg)（Simple Icons，CC0），从 jsDelivr simple-icons v15 发布包取得，保留原始 24×24 路径。调用者为 mariadb/profile，经 engineIcon 用于类型选择、表单、对象树及连接选择；沿用现有绿色底板与白色图形。
 
 [greptimedb.svg](greptimedb.svg) 原样取自 [GreptimeDB 官方文档仓库的 logo-routine.svg](https://github.com/GreptimeTeam/docs/blob/2e5e230f129fea81801907b7c4944a37c966a60b/static/img/logo-routine.svg)。由 GreptimeDB profile 用于连接表单、对象树和连接选择器。显示时使用共享白色滤镜和圆角底板。
+
+[redis.svg](redis.svg) 是项目自制的堆叠图形，用于 Redis 连接，与其他引擎共享状态底板。

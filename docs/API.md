@@ -27,8 +27,14 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | DELETE | `/connections/{id}`           | 删除本地连接                                |
 | POST   | `/connections/{id}/session`   | 打开/关闭连接或数据库，关闭等待底层连接释放 |
 | POST   | `/connections/test`           | 测试表单连接，返回版本                      |
-| GET    | `/connections/{id}/databases` | 数据库名称列表                              |
+| GET    | `/connections/{id}/databases` | 数据库名称列表，Redis 返回逻辑库编号（含空库） |
 | GET | `/connections/{id}/monitor` | 通过已保存连接读取实例或数据库统计 |
+| GET | `/connections/{id}/redis/keys` | 用 SCAN 按模式浏览键 |
+| POST | `/connections/{id}/redis/key` | 读取键类型、TTL、大小及预览 |
+| POST | `/connections/{id}/redis/key/change` | 修改 Redis 键值、TTL、键名，复制或删除键 |
+| POST | `/connections/{id}/redis/command` | 执行单条 Redis 命令 |
+| GET | `/connections/{id}/redis/channels` | 读取活跃频道、订阅者数及模式订阅数 |
+| POST | `/connections/{id}/redis/subscribe` | 以 NDJSON 查看实时频道或模式订阅 |
 | GET    | `/connections/{id}/schemas` | 数据库内可访问的 schema（含空 schema） |
 | GET    | `/connections/{id}/tables`    | 表和视图列表，PostgreSQL 视图附可选依赖       |
 | GET    | `/connections/{id}/columns`   | 字段列表，MySQL 协议文本列附可选字符集和排序规则 |
@@ -59,7 +65,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 ## 请求与行为边界
 
-- **连接**支持 `mysql`、`mariadb`、`postgresql` 和 `greptimedb`。`name`、`host`、`port`（1–65535）必填，GreptimeDB 未启用鉴权时 `username` 和密码可留空，其他引擎需要用户名。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 和 GreptimeDB 的维护库分别默认 `postgres` 和 `public`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
+- **连接**支持 `mysql`、`mariadb`、`postgresql`、`greptimedb` 和 `redis`。`name`、`host`、`port`（1–65535）必填，GreptimeDB 未启用鉴权时 `username` 和密码可留空，Redis 用户名可留空以使用 default 用户，初始逻辑库为空时为 0。其他引擎需要用户名。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 和 GreptimeDB 的维护库分别默认 `postgres` 和 `public`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
 - **分组**：名称去首尾空白，拒绝空名称、控制字符、重名；默认分组为固定回退项，不可重命名。空分组独立保存，连接表单输入新分组后保存也会登记。重命名更新全部成员。删除接收 `{name}`，将成员移回默认分组并返回 `{groups,connections}`。删除默认分组返回 400，写入失败保留原状态。移动只修改归属，不打开/关闭数据库会话、不修改凭据；不存在连接/原分组返回 404，不存在移动目标返回 400。
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**返回 `name`、`unique`、`type`、可选的 `primary` 及 `columns`。列项为 `{name,position,prefixLength,order}`，位置从 1 开始，顺序为 `A`、`D` 或空字符串。MySQL 和 MariaDB 的主键索引名为 `PRIMARY`，表达式字段的 `name` 为空。PostgreSQL 保留实际索引名，以 `primary` 标记主键，`name` 保存索引列定义（含表达式），`prefixLength` 为 `null`。无索引返回空数组。
@@ -90,6 +96,16 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 ## 数据库监控
 
 `GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。
+
+## Redis 查询
+
+所有 Redis 路由使用已保存的 Redis 连接。键和命令接口接受十进制字符串 `database`，省略时使用保存的初始编号。频道、订阅与监控使用实例范围。
+
+- 键列表接受 `cursor` 和 `pattern`，初始游标为 `0`。服务器返回 `{keys:[{name,ref}],cursor}`。游标回到 `0` 表示扫描结束。每一页可能为空，也可能返回重复的键。二进制键使用 Base64 显示，`ref` 为可逆的 URL 安全 Base64。预览请求为 `{database,ref}`，返回 `type`、毫秒 `ttlMillis`（`-1` 表示永久）、字节或元素 `size`（`-1` 表示未提供）、`preview` 、`truncated` 和 `editable`。
+- 键修改接受 `{database,ref,action}`。操作为 `value`（短 UTF-8 字符串，保留原 TTL，`before` 可匹配读取时的旧值）、`ttl`（整数秒，0 表示永久）、`rename`、`copy` 或 `delete`。复制及重命名需要 `target`，现有目标键会保留。
+- 命令请求为 `{database,command}`。支持引号、转义和 `SELECT`，以 `{database,output,truncated}` 返回逻辑库和文本输出。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
+- 频道列表接受可选 `pattern`，显示最多 200 个活跃频道及其直接订阅者数量，并返回实例模式订阅数。订阅请求为 `{channel,pattern}`，`pattern` 为布尔值。NDJSON 事件按 `ready`、`message`、`heartbeat` 和 `error` 识别，消息包含 `channel`、`payload` 和可选 `truncated`，断开请求释放订阅。
+- 监控沿用 `/connections/{id}/monitor`，从 Redis `INFO` 读取客户端数、每秒命令数、内存、运行时长、累计命令、过期键、淘汰键和命中率。
 
 ## 数据库同步
 

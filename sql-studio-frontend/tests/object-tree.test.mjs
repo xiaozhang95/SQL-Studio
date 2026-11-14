@@ -4,6 +4,8 @@ import test from 'node:test'
 
 import ts from 'typescript'
 
+import { DatabaseEngine } from '../src/databases/typings/index.ts'
+import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
 import { indexDescription, objectNodeKey } from '../src/pages/workspace/utils/objectTree/index.ts'
 
 const explorerSource = ts.createSourceFile(
@@ -16,6 +18,7 @@ const explorerSource = ts.createSourceFile(
 
 // 执行组件实际传给 Tree 的回调，页面操作和布局更新分别记录。
 function treeHandler(name, dependencies) {
+  dependencies = { DatabaseEngine, ...dependencies }
   let expression
   const visit = (node) => {
     if (ts.isJsxAttribute(node) && node.name.getText(explorerSource) === name && node.initializer && ts.isJsxExpression(node.initializer)) expression = node.initializer.expression
@@ -74,6 +77,21 @@ test('tree keys preserve explicit scope and names containing separators', () => 
   const key = objectNodeKey('index', 'connection-a', 'shared.db', 'a/b', 'idx_"value')
   assert.deepEqual(JSON.parse(key), ['index', 'connection-a', 'shared.db', 'a/b', 'idx_"value'])
   assert.notEqual(key, objectNodeKey('index', 'connection-b', 'shared.db', 'a/b', 'idx_"value'))
+})
+
+test('Redis database nodes are selectable leaves and respect tree search', () => {
+  const redis = { id: 'redis', type: DatabaseEngine.Redis, name: 'Redis fixture', host: 'localhost', port: 6379 }
+  const sql = { id: 'sql', type: DatabaseEngine.MySQL, name: 'MySQL fixture', host: 'localhost', port: 3306 }
+  const snapshots = { redis: { status: 'connected', databases: ['0', '1', '22'], tables: {} } }
+  const expanded = [objectNodeKey('connection', redis.id)]
+  const filtered = buildExplorerTree([redis, sql], snapshots, expanded, 'MySQL fixture')
+  assert.equal(filtered.byKey.has(expanded[0]), false)
+  const found = buildExplorerTree([redis, sql], snapshots, expanded, '22')
+  const databases = found.byKey.get(expanded[0]).children
+  assert.deepEqual(
+    databases.map((node) => [node.kind, node.database, node.isLeaf]),
+    [['redis-database', '22', true]]
+  )
 })
 
 test('index description retains composite order, prefix, direction and unknown expression', () => {

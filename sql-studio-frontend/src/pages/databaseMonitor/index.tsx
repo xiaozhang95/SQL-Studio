@@ -6,7 +6,7 @@ import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
-import { getDatabaseAdapter } from '@/databases'
+import { getDatabaseProfile } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
@@ -33,7 +33,12 @@ const metricLabels: Readonly<Record<string, string>> = {
   approximate_rows: '估算行数',
   region_disk_bytes: '分片磁盘占用',
   region_memtable_bytes: '分片写入缓冲占用',
-  region_sst_files: '分片 SST 文件数'
+  region_sst_files: '分片 SST 文件数',
+  redis_ops: '每秒处理命令',
+  redis_memory_bytes: '内存占用',
+  redis_commands: '累计执行命令',
+  redis_expired: '累计过期键',
+  redis_evicted: '累计淘汰键'
 }
 
 function formatMetric(key: string, value: string, locale: string) {
@@ -63,7 +68,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
   const monitor = useDatabaseMonitor(connections, initialConnection, initialDatabase)
   const { connection, result } = monitor
   const snapshot = result?.snapshot
-  const defaultDatabase = connection?.database || getDatabaseAdapter(connection?.type).profile.database
+  const defaultDatabase = connection?.database || getDatabaseProfile(connection?.type).database
   const options = connections.map((item) => ({
     value: item.id,
     searchText: item.name,

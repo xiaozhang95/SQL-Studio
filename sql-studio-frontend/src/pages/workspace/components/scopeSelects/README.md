@@ -15,3 +15,5 @@ scope 为 QueryScope；connections 为已保存连接；objects 为 useDatabaseO
 连接状态图标为 20px，保持原生默认选择器 32px 高度；标准宽度上限为 220px，与结果选择器一致，窄屏继续按工具栏可用空间收缩。
 
 PostgreSQL 显示第三个 Schema 选择器，选项来自当前连接/数据库已加载的 schemas。onSchema(schema) 独立回调；选择/清空 schema 清空表范围，切库/连接清空 schema；未选择使用默认搜索路径。MySQL 仍仅连接/数据库两项。
+
+Redis 复用连接和数据库下拉框。Redis 查询页只可选择已保存的 Redis，首次选择时加载该实例。逻辑库选项来自对应连接已加载的列表，配置的默认库可用时优先使用。

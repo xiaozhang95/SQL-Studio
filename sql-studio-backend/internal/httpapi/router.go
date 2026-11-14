@@ -13,6 +13,7 @@ import (
 	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
+	"sql-studio-backend/internal/modules/redistools"
 	"sql-studio-backend/internal/modules/settings"
 	"sql-studio-backend/internal/modules/workspace"
 )
@@ -20,6 +21,7 @@ import (
 // Services 是单体 HTTP 入口消费的业务模块，由 app 统一装配并复用。
 type Services struct {
 	DatabaseSync *databasesync.Service
+	Redis        *redistools.Service
 	Agent        *agent.Service
 	AgentLayout  *agentlayout.Service
 	Workspace    *workspace.Service
@@ -47,6 +49,7 @@ func New(services Services) *gin.Engine {
 	router.Use(gin.Recovery(), responseLanguage, localOnly)
 	api := router.Group("/api")
 	registerAgent(api, services)
+	registerRedis(api, services.Redis)
 	api.GET("/openapi.json", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Data(http.StatusOK, "application/json; charset=utf-8", openAPISpec)

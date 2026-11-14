@@ -51,6 +51,7 @@ func TestStaticFilesAndBoundaries(t *testing.T) {
 		{"GET", "/assets/", 404, "text/plain"},
 		{"GET", "/assets/missing.js", 404, "text/plain"},
 		{"GET", "/missing-page", 404, "text/plain"},
+		{"GET", "/redis", 404, "text/plain"},
 		{"GET", "/agent/missing.js", 404, "text/plain"},
 		{"GET", "/monitor/missing.js", 404, "text/plain"},
 		{"GET", "/sync/missing.js", 404, "text/plain"},

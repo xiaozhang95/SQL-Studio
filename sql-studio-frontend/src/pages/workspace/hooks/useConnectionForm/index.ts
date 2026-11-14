@@ -2,7 +2,8 @@ import { App, Form } from 'antd'
 import { useEffect, useState } from 'react'
 
 import { connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
-import { getDatabaseAdapter } from '@/databases'
+import { getDatabaseProfile } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseType } from '@/databases/typings'
 import { saveConnection, testConnection } from '@/services/database'
 import type { Connection, ConnectionInput } from '@/typings/database'
@@ -17,11 +18,11 @@ export const useConnectionForm = ({ open, connection, groups, onSaved }: Props) 
   const [testing, setTesting] = useState(false)
   const [status, setStatus] = useState<TestStatus>()
   const [section, setSection] = useState('general')
-  const engine = getDatabaseAdapter(Form.useWatch('type', form) || connection?.type).profile
+  const engine = getDatabaseProfile(Form.useWatch('type', form) || connection?.type)
   const busy = saving || testing
   useEffect(() => {
     if (open) {
-      const initialEngine = getDatabaseAdapter(connection?.type).profile
+      const initialEngine = getDatabaseProfile(connection?.type)
       form.resetFields()
       form.setFieldsValue(
         connection
@@ -39,14 +40,19 @@ export const useConnectionForm = ({ open, connection, groups, onSaved }: Props) 
   }, [open, connection, form])
   function selectEngine(type: DatabaseType) {
     if (busy || connection) return
-    const profile = getDatabaseAdapter(type).profile
+    const profile = getDatabaseProfile(type)
     form.setFieldsValue({ type, port: profile.port, database: profile.database })
     setStatus(undefined)
   }
   async function values() {
     try {
       const value = await form.validateFields()
-      return { ...value, group: connectionGroupName(value.group), id: connection?.id }
+      return {
+        ...value,
+        ...(value.type === DatabaseEngine.Redis ? { database: connection?.database || engine.database } : {}),
+        group: connectionGroupName(value.group),
+        id: connection?.id
+      }
     } catch (error) {
       setSection('general')
       throw error

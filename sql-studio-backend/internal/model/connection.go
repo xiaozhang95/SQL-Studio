@@ -22,6 +22,7 @@ const TypeMySQL = "mysql"
 const TypeMariaDB = "mariadb"
 const TypePostgreSQL = "postgresql"
 const TypeGreptimeDB = "greptimedb"
+const TypeRedis = "redis"
 const DefaultConnectionGroup = "默认分组"
 
 // NormalizeConnectionGroup 为新建连接的空分组输入选择当前默认分组。
@@ -40,7 +41,7 @@ func NormalizeDatabaseType(value string) string {
 	return value
 }
 func SupportedDatabaseType(value string) bool {
-	return IsMySQLProtocol(value) || NormalizeDatabaseType(value) == TypePostgreSQL
+	return IsMySQLProtocol(value) || value == TypePostgreSQL || value == TypeRedis
 }
 
 func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }

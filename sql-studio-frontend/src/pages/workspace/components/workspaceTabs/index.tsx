@@ -3,7 +3,9 @@ import { Dropdown, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
+import type { Connection } from '@/typings/database'
 import type { WorkspaceTab } from '@/typings/workspace'
 
 import { workspaceTabLayout } from '../../constant/layout'
@@ -11,15 +13,16 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'connections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
+  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
+  renderRedis: (page: WorkspaceTab, connection: Connection) => ReactNode
 }
 /** 主区域只保留这一层页面标签；各页内容、执行状态和关闭目标独立。 */
-export default function WorkspaceTabs({ model, children, renderDesigner }: Props) {
+export default function WorkspaceTabs({ model, children, renderDesigner, renderRedis }: Props) {
   const { t } = useTranslation()
 
-  const { connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
+  const { savedConnections: connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
   return (
     <Tabs
       className="workspace-tabs"
@@ -61,49 +64,54 @@ export default function WorkspaceTabs({ model, children, renderDesigner }: Props
           }}
         </DefaultTabBar>
       )}
-      items={tabs.map((item) => ({
-        key: item.id,
-        icon:
-          runningTabId === item.id ? (
-            <LoadingOutlined spin />
-          ) : item.kind === 'table-create' || item.kind === 'table-design' ? (
-            <EditOutlined />
-          ) : item.kind === 'query' ? (
-            <CodeOutlined />
-          ) : item.kind === 'data' ? (
-            <TableOutlined />
-          ) : item.kind === 'ddl' ? (
-            <FileTextOutlined />
-          ) : (
-            <ProfileOutlined />
-          ),
-        label: (
-          <span
-            style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
-            title={
-              item.kind === 'table-create' || item.kind === 'table-design'
-                ? `${item.title}\n${connections.find((value) => value.id === item.connectionId)?.name || ''} / ${item.database}${item.table ? ' / ' + item.table : ''}`
-                : runs[item.id]?.source || item.resultSource
-                  ? `${workspacePageTitle(item)}\n${runs[item.id]?.source || item.resultSource}`
-                  : workspacePageTitle(item)
-            }
-          >
-            {queryPageContext(item) ? (
-              <>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{queryPageContext(item)}</span>
-                <span style={{ flexShrink: 0, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}> · {item.title}</span>
-              </>
+      items={tabs.map((item) => {
+        const connection = connections.find((value) => value.id === item.connectionId)
+        const redis = item.kind === 'query' && connection?.type === DatabaseEngine.Redis
+        const designer = item.kind === 'table-create' || item.kind === 'table-design'
+        return {
+          key: item.id,
+          icon:
+            runningTabId === item.id ? (
+              <LoadingOutlined spin />
+            ) : item.kind === 'table-create' || item.kind === 'table-design' ? (
+              <EditOutlined />
+            ) : item.kind === 'query' ? (
+              <CodeOutlined />
+            ) : item.kind === 'data' ? (
+              <TableOutlined />
+            ) : item.kind === 'ddl' ? (
+              <FileTextOutlined />
             ) : (
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
-            )}
-            {designerDirty[item.id] && <span style={{ flex: 'none' }}> *</span>}
-          </span>
-        ),
-        closable: true,
-        closeIcon: <CloseOutlined aria-disabled={running} style={{ opacity: running ? 0.35 : 1 }} />,
-        destroyOnHidden: item.kind === 'table-create' || item.kind === 'table-design' ? false : true,
-        children: item.kind === 'table-create' || item.kind === 'table-design' ? renderDesigner(item) : item.id === activeTab ? children : undefined
-      }))}
+              <ProfileOutlined />
+            ),
+          label: (
+            <span
+              style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
+              title={
+                item.kind === 'table-create' || item.kind === 'table-design'
+                  ? `${item.title}\n${connection?.name || ''} / ${item.database}${item.table ? ' / ' + item.table : ''}`
+                  : runs[item.id]?.source || item.resultSource
+                    ? `${workspacePageTitle(item)}\n${runs[item.id]?.source || item.resultSource}`
+                    : workspacePageTitle(item)
+              }
+            >
+              {queryPageContext(item) ? (
+                <>
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{queryPageContext(item)}</span>
+                  <span style={{ flexShrink: 0, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}> · {item.title}</span>
+                </>
+              ) : (
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+              )}
+              {designerDirty[item.id] && <span style={{ flex: 'none' }}> *</span>}
+            </span>
+          ),
+          closable: true,
+          closeIcon: <CloseOutlined aria-disabled={running} style={{ opacity: running ? 0.35 : 1 }} />,
+          destroyOnHidden: !designer && !redis,
+          children: designer ? renderDesigner(item) : redis ? renderRedis(item, connection) : item.id === activeTab ? children : undefined
+        }
+      })}
       style={{ flex: 1, minHeight: 0, userSelect: 'none' }}
     />
   )

@@ -27,3 +27,5 @@ model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设
 顶部主标签通过 Tabs.styles.item 统一固定为 workspaceTabLayout.width（200px），不随标题长度或选中状态改变。标题在图标与关闭按钮之间占满剩余空间，超长省略，原 title 保留完整名称和执行来源；关闭按钮始终靠右对齐。超过可用宽度继续使用原生溢出菜单，不影响嵌套结果导航。
 
 非活动结果释放后，标签仍可从轻量索引显示来源摘要。tabBusy 只锁定实际执行或对象操作，当前页内容加载失败时仍允许切换和关闭标签。
+
+Redis 查询标签通过 renderRedis 渲染，切换页签时保留终端和已启动的订阅，关闭标签时卸载。

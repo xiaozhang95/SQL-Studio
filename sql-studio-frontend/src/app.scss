@@ -294,8 +294,8 @@ body,
   background: var(--ant-control-item-bg-active);
 }
 
-// 连接类型与设置分类的文本按钮共用选中填充。
-.sql-studio-theme .ant-btn:is(.engine-choice, .settings-section-choice)[aria-pressed='true'] {
+// 连接类型、设置分类与 Redis 键行共用文本按钮选中填充。
+.sql-studio-theme .ant-btn:is(.engine-choice, .settings-section-choice, .redis-key-choice)[aria-pressed='true'] {
   &:not(:disabled) {
     background-color: var(--ant-control-item-bg-active);
   }

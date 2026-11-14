@@ -15,7 +15,7 @@ import { useSQLCompletionPopup } from '../../hooks/useSQLCompletionPopup'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../utils/editorAppearance'
-import ScopeSelects from '../scopeSelects'
+import QueryToolbar from '../queryToolbar'
 import SQLCompletionSelect from '../sqlCompletionSelect'
 import SQLOptimization from '../sqlOptimization'
 import ToolbarButton from '../toolbarButton'
@@ -38,6 +38,7 @@ type Props = {
     | 'objects'
     | 'selectObject'
     | 'connections'
+    | 'savedConnections'
     | 'selectConnection'
     | 'onEditorReady'
     | 'onEditorUpdate'
@@ -53,7 +54,7 @@ const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactC
 export default function QueryEditor({ model, themeMode }: Props) {
   const { t } = useTranslation()
 
-  const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, selectObject, connections, selectConnection, onEditorReady, columns } = model
+  const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, connections, onEditorReady, columns } = model
   const {
     beforeImport,
     importing,
@@ -96,71 +97,52 @@ export default function QueryEditor({ model, themeMode }: Props) {
   )
   return (
     <section className="editor-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--surface)', overflow: 'hidden' }}>
-      <div
-        className="editor-toolbar"
-        style={{
-          flex: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          padding: 'var(--workspace-inset)',
-          borderBottom: '1px solid var(--border)',
-          userSelect: 'none'
-        }}
+      <QueryToolbar
+        model={model}
+        disabled={running}
+        runActions={
+          <>
+            <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
+            {activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
+          </>
+        }
       >
-        <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 500px', minWidth: 0, flexWrap: 'wrap' }}>
-          <ScopeSelects
-            scope={tab}
-            connections={connections}
-            objects={objects}
-            disabled={running}
-            onConnection={selectConnection}
-            onSelect={selectObject}
-            onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}
-          />
-          <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
-          {activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
-          {ai.hasSavedModel && (
-            <div
-              role="group"
-              aria-label={t('SQL AI 工具')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}
-            >
-              <Tooltip title={aiModelHint ?? t('AI 代码补全')}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CodeOutlined aria-hidden="true" />
-                  <span>{t('代码补全')}</span>
-                  <Switch
-                    size="small"
-                    aria-label={t('代码补全')}
-                    checked={ai.configured && ai.enabled}
-                    disabled={!ai.configured || running || ai.preferenceSaving}
-                    loading={ai.preferenceSaving}
-                    onChange={(value) => void ai.changeCompletion(value)}
-                  />
-                </div>
-              </Tooltip>
-              <ToolbarButton
-                label={t('SQL 美化')}
-                hint={aiModelHint}
-                icon={<FormatPainterOutlined />}
-                disabled={!ai.configured || !hasSQL || running}
-                loading={ai.loading}
-                onClick={() => void ai.optimize()}
-              />
-            </div>
-          )}
-          <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
-            <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={running} />
-          </Upload>
-          <ToolbarButton label={t('导出 SQL')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
-          <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
-        </div>
-      </div>
+        {ai.hasSavedModel && (
+          <div
+            role="group"
+            aria-label={t('SQL AI 工具')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}
+          >
+            <Tooltip title={aiModelHint ?? t('AI 代码补全')}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CodeOutlined aria-hidden="true" />
+                <span>{t('代码补全')}</span>
+                <Switch
+                  size="small"
+                  aria-label={t('代码补全')}
+                  checked={ai.configured && ai.enabled}
+                  disabled={!ai.configured || running || ai.preferenceSaving}
+                  loading={ai.preferenceSaving}
+                  onChange={(value) => void ai.changeCompletion(value)}
+                />
+              </div>
+            </Tooltip>
+            <ToolbarButton
+              label={t('SQL 美化')}
+              hint={aiModelHint}
+              icon={<FormatPainterOutlined />}
+              disabled={!ai.configured || !hasSQL || running}
+              loading={ai.loading}
+              onClick={() => void ai.optimize()}
+            />
+          </div>
+        )}
+        <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
+          <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={running} />
+        </Upload>
+        <ToolbarButton label={t('导出 SQL')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
+        <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
+      </QueryToolbar>
       <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearImportError} />
       <SQLOptimization model={ai} themeMode={themeMode} />
       <ErrorNotice title={t('连接加载失败')} error={objects.error} />

@@ -5,6 +5,7 @@ import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
 import { connectionGroupName } from '../../../../constant/connectionGroup/index.ts'
+import { DatabaseEngine } from '../../../../databases/typings/index.ts'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
 import { databaseOpenState } from '../exportAvailability/index.ts'
 import type { DatabaseOpenState } from '../exportAvailability/index.ts'
@@ -45,7 +46,8 @@ export function selectedConnectionScope(node: string | undefined, connections: r
 export function explorerQueryScope(node: ExplorerNode | undefined, connected: boolean, layout?: DatabaseExplorerAdapter): QueryScope | undefined {
   if (!node || !connected || !node.owner) return undefined
   if (node.kind === 'connection') return { connectionId: node.owner, database: '', table: '' }
-  if (!node.database || !['database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index', 'foreign-keys', 'foreign-key'].includes(node.kind)) return undefined
+  if (!node.database || !['database', 'redis-database', 'schema', 'tables', 'views', 'table', 'columns', 'column', 'indexes', 'index', 'foreign-keys', 'foreign-key'].includes(node.kind))
+    return undefined
   const schema = node.schema || (node.table && layout ? layout.tableIdentity(node.table).schema : undefined)
   return { connectionId: node.owner, database: node.database, ...(schema ? { schema } : {}), table: '' }
 }
@@ -110,12 +112,15 @@ export function buildExplorerTree(
     root.tooltip = `${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`
     if (connected) {
       loadedKeys.push(root.key)
-      const databases = state.databases.filter(
-        (db) => connectionMatch || matches(db) || !state.tables[db] || state.tables[db].some((table) => matches(table.name)) || state.schemas?.[db]?.some(matches)
-      )
+      const databases = state.databases.filter((db) => {
+        if (connectionMatch || matches(db)) return true
+        if (connection.type === DatabaseEngine.Redis) return false
+        return !state.tables[db] || state.tables[db].some((table) => matches(table.name)) || state.schemas?.[db]?.some(matches)
+      })
       // 折叠分支保留原始元数据，不创建后代节点、React 元素或右键菜单。
       if ((open.has(key('group', groupName)) || term) && (open.has(root.key) || term))
         root.children = databases.map((db) => {
+          if (connection.type === DatabaseEngine.Redis) return make('redis-database', db, id, db)
           const databaseNode = make('database', db, id, db)
           databaseNode.isLeaf = false
           databaseNode.databaseState = databaseOpenState(state, closedDatabases[id], db)

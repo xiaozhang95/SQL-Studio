@@ -20,6 +20,11 @@ func TestInternalDependencyDirection(t *testing.T) {
 		"statefile": {"model": true}, "modules/settings": {"model": true, "model/agent": true}, "modules/connections": {"model": true}, "modules/metadata": {"model": true}, "modules/query": {"model": true}, "model": {}, "webui": {},
 	}
 	allowed["app"]["modules/databasesync"] = true
+	allowed["app"]["modules/redistools"] = true
+	allowed["app"]["redis"] = true
+	allowed["httpapi"]["modules/redistools"] = true
+	allowed["modules/redistools"] = map[string]bool{"model": true}
+	allowed["redis"] = map[string]bool{"model": true}
 	allowed["httpapi"]["modules/databasesync"] = true
 	allowed["modules/databasesync"] = map[string]bool{"model": true}
 	allowed["localization"] = map[string]bool{}

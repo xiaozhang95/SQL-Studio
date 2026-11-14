@@ -5,6 +5,7 @@ import test from 'node:test'
 
 import ts from 'typescript'
 
+import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { DatabaseLifecycle } from '../src/pages/workspace/utils/databaseLifecycle/index.ts'
 import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
 
@@ -65,6 +66,7 @@ function connectionMenu(status, running = false) {
   const actions = []
   const dependencies = {
     React: { createElement: () => null },
+    DatabaseEngine,
     t: (text) => text,
     ...Object.fromEntries(
       ['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'DashboardOutlined', 'SwapOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])

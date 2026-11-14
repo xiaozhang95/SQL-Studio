@@ -927,6 +927,571 @@
         ]
       }
     },
+    "/connections/{id}/redis/keys": {
+      "get": {
+        "operationId": "scanRedisKeys",
+        "summary": "使用 SCAN 浏览 Redis 键",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "description": "逻辑库编号，省略时使用保存的编号",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "无符号十进制游标，初次为 0",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "Redis 通配符匹配模式",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "keys",
+                    "cursor"
+                  ],
+                  "properties": {
+                    "keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "ref"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "ref": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        }
+      }
+    },
+    "/connections/{id}/redis/key": {
+      "post": {
+        "operationId": "readRedisKey",
+        "summary": "读取 Redis 键详情与有限预览",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "ttlMillis",
+                    "size",
+                    "preview",
+                    "truncated",
+                    "editable"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "editable": {
+                      "type": "boolean"
+                    },
+                    "ttlMillis": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "size": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "preview": {
+                      "type": "string"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ref"
+                ],
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/redis/key/change": {
+      "post": {
+        "operationId": "redisChangeKey",
+        "summary": "修改 Redis 键",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ref",
+                  "action"
+                ],
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "value",
+                      "ttl",
+                      "rename",
+                      "copy",
+                      "delete"
+                    ]
+                  },
+                  "value": {
+                    "type": "string"
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "before": {
+                    "type": "string",
+                    "description": "读取时的旧字符串值，提供时检查是否有其他写入。"
+                  },
+                  "ttl": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 315360000,
+                    "description": "秒。0 表示永久有效。"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "description": "在所选逻辑库编辑字符串、设置 TTL、重命名、复制或删除键。复制和重命名不会覆盖已有目标键。"
+      }
+    },
+    "/connections/{id}/redis/command": {
+      "post": {
+        "operationId": "runRedisCommand",
+        "summary": "执行一条 Redis 命令",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "database",
+                    "output",
+                    "truncated"
+                  ],
+                  "properties": {
+                    "database": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "output": {
+                      "type": "string"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "command"
+                ],
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/redis/channels": {
+      "get": {
+        "operationId": "listRedisChannels",
+        "summary": "读取活跃频道和订阅者数",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "description": "Redis 通配符匹配模式",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "channels",
+                    "patterns",
+                    "truncated"
+                  ],
+                  "properties": {
+                    "channels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "ref",
+                          "subscribers"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "subscribers": {
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        }
+                      }
+                    },
+                    "patterns": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        }
+      }
+    },
+    "/connections/{id}/redis/subscribe": {
+      "post": {
+        "operationId": "subscribeRedisMessages",
+        "summary": "实时订阅 Redis 频道或模式",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "description": "NDJSON 流的事件类型为 ready、message、heartbeat 或 error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "channel"
+                ],
+                "properties": {
+                  "channel": {
+                    "type": "string"
+                  },
+                  "pattern": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/connections/{id}/monitor": {
       "get": {
         "operationId": "getDatabaseMonitor",
@@ -957,7 +1522,7 @@
         "tags": [
           "元数据"
         ],
-        "description": "最长 10 秒，继承请求取消。",
+        "description": "Redis 返回实例的逻辑库编号（含空库）。最长 10 秒，继承请求取消。",
         "parameters": [
           {
             "name": "id",
@@ -2971,6 +3536,7 @@
               "mariadb",
               "postgresql",
               "greptimedb",
+              "redis",
               ""
             ],
             "default": "mysql",
@@ -2978,7 +3544,7 @@
           },
           "database": {
             "type": "string",
-            "description": "PostgreSQL 与 GreptimeDB 的维护库，缺省分别为 postgres 和 public。"
+            "description": "PostgreSQL 与 GreptimeDB 的维护库，缺省分别为 postgres 和 public。Redis 填写逻辑库编号，默认 0。"
           },
           "tls": {
             "type": "boolean",

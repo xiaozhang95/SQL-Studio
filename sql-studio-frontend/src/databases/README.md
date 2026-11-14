@@ -14,3 +14,5 @@ databaseProfiles 导出已实现引擎 profile 列表。objects 可为 undefined
 
 - [MariaDB](mariadb/README.md)：独立类型、MariaSQL 补全、默认值及排序规则适配，显式复用 MySQL 协议通用能力。
 - [GreptimeDB](greptimedb/README.md)：独立连接配置、语句切分与库表浏览。
+
+Redis 连接资料通过 [redis](redis/README.md) 提供，操作位于[工作区查询标签](../pages/workspace/components/redisQuery/README.md)。

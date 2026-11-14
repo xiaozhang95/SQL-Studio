@@ -18,3 +18,5 @@
 - [agentlayout](agentlayout/README.md)：Agent本地布局，恢复不执行工具。
 
 - [databasesync](databasesync/README.md)：同引擎同步的检查和执行。
+
+- [Redis 查询工具](redistools/README.md)提供基于已保存连接的键、命令和发布订阅。

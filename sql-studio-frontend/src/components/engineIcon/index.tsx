@@ -1,4 +1,4 @@
-import { getDatabaseAdapter } from '@/databases'
+import { getDatabaseProfile } from '@/databases'
 import type { DatabaseType } from '@/databases/typings'
 
 /** 图形及展示方式由引擎 profile 提供，状态与尺寸由此统一渲染。 */
@@ -13,7 +13,7 @@ export default function EngineIcon({
   connected?: boolean
   size?: number
 }) {
-  const engine = getDatabaseAdapter(type).profile
+  const engine = getDatabaseProfile(type)
   const originalBrand = engine.iconPresentation === 'brand'
   // text-tertiary 带透明度，先叠在主题容器底色上，避免选中行蓝色透入灰色状态底板。
   const statusBackground = connected ? 'var(--ant-color-success)' : 'linear-gradient(var(--inactive-icon), var(--inactive-icon)), var(--surface)'

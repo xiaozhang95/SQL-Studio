@@ -5,6 +5,8 @@ import type { CSSProperties } from 'react'
 import EngineIcon from '@/components/engineIcon'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
+import { selectedRedisDatabase } from '@/databases/redis'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
@@ -25,7 +27,13 @@ const selectorStyle = { flex: '1 1 150px', minWidth: 130, maxWidth: appearance.s
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
   const { t } = useTranslation()
 
-  const loaded = connections.filter((connection) => objects.snapshots[connection.id]?.status === 'connected')
+  const current = connections.find((connection) => connection.id === scope.connectionId)
+  const redis = current?.type === DatabaseEngine.Redis
+  const snapshot = objects.snapshots[scope.connectionId]
+  const connected = snapshot?.status === 'connected'
+  const loaded = connections.filter((connection) => (redis ? connection.type === DatabaseEngine.Redis : objects.snapshots[connection.id]?.status === 'connected'))
+  const databases = snapshot?.databases ?? []
+  const database = redis ? selectedRedisDatabase(databases, scope.database, current.database) : connected ? scope.database || undefined : undefined
   return (
     <>
       <Select
@@ -35,11 +43,12 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         showSearch
         optionFilterProp="searchText"
         placeholder={loaded.length ? t('选择连接') : t('请先展开连接')}
-        value={objects.connected ? scope.connectionId : undefined}
+        value={connected || redis ? scope.connectionId : undefined}
         disabled={disabled || !loaded.length}
         onChange={onConnection}
         options={loaded.map((connection) => ({
           value: connection.id,
+          title: connection.name,
           searchText: connection.name,
           label: (
             <span className="connection-option" style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
@@ -55,15 +64,16 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         className="database-select"
         style={selectorStyle}
         aria-label={t('选择数据库')}
-        prefix={objects.connected && scope.database ? undefined : <DatabaseOutlined />}
+        prefix={database ? undefined : <DatabaseOutlined />}
         showSearch
         optionFilterProp="searchText"
-        allowClear
+        allowClear={!redis}
+        loading={redis && snapshot?.status === 'loading'}
         placeholder={t('选择数据库')}
-        value={objects.connected ? scope.database || undefined : undefined}
-        disabled={disabled || !objects.connected}
+        value={database}
+        disabled={disabled || !connected}
         onChange={(value) => onSelect(value || '')}
-        options={objects.databases.map((name) => ({
+        options={databases.map((name) => ({
           value: name,
           searchText: name,
           label: (
@@ -76,14 +86,14 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           )
         }))}
       />
-      {getDatabaseAdapter(connections.find((connection) => connection.id === scope.connectionId)?.type).explorer && (
+      {!redis && getDatabaseAdapter(current?.type).explorer && (
         <Select
           style={selectorStyle}
           aria-label={t('选择 Schema')}
           placeholder={t('Schema（默认搜索路径）')}
           allowClear
           showSearch
-          disabled={disabled || !objects.connected || !scope.database}
+          disabled={disabled || !connected || !scope.database}
           value={scope.schema || undefined}
           options={(objects.snapshots[scope.connectionId]?.schemas?.[scope.database] || []).map((schema) => ({ value: schema, label: schema }))}
           onChange={(value) => onSchema(value || '')}

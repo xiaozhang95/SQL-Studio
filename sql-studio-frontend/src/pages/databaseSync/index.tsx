@@ -5,7 +5,7 @@ import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
-import { databaseProfiles } from '@/databases'
+import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
@@ -59,7 +59,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   <Select
                     id="sync-engine"
                     value={model.profile.value}
-                    options={databaseProfiles.map(({ value, label }) => ({
+                    options={sqlDatabaseProfiles.map(({ value, label }) => ({
                       value,
                       label: (
                         <Flex align="center" gap="small">

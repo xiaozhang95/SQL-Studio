@@ -12,6 +12,7 @@ import SidebarWidthProvider from '@/components/sidebarWidthProvider'
 import { appearance, modalDefaults } from '@/constant/appearance'
 import { createThemeConfig } from '@/constant/theme'
 import { LanguageContext } from '@/contexts/language'
+import { DatabaseEngine } from '@/databases/typings'
 import { useAppSection } from '@/hooks/useAppSection'
 import { useThemePreference } from '@/hooks/useThemePreference'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -36,7 +37,7 @@ function Studio({ themeMode, themeSaving, ...appearance }: AppearancePreferences
     connectionError: model.connectionError,
     retryConnections: () => void model.loadConnections()
   }
-  const initialConnection = model.connections.find((item) => item.id === connectionId)
+  const initialConnection = model.savedConnections.find((item) => item.id === connectionId)
   const databasePage = section === 'monitor' || section === 'sync'
   const databasePageTitle = t(section === 'monitor' ? '监控指标' : '同步数据库')
   const loadingPage = (
@@ -64,15 +65,15 @@ function Studio({ themeMode, themeSaving, ...appearance }: AppearancePreferences
       )}
       {databasePage && (
         <Suspense fallback={loadingPage}>
-          {model.connectionLoading && !model.connections.length ? (
+          {model.connectionLoading && !model.savedConnections.length ? (
             loadingPage
           ) : section === 'monitor' ? (
-            <MonitorPage key={JSON.stringify([connectionId, database])} connections={model.connections} initialConnection={initialConnection} initialDatabase={database} {...databasePageProps} />
+            <MonitorPage key={JSON.stringify([connectionId, database])} connections={model.savedConnections} initialConnection={initialConnection} initialDatabase={database} {...databasePageProps} />
           ) : (
             <SyncPage
               key={connectionId}
               connections={model.connections}
-              initialConnection={initialConnection}
+              initialConnection={initialConnection?.type === DatabaseEngine.Redis ? undefined : initialConnection}
               onCreated={(id) => void model.objects.refreshDatabases(id).catch(() => {})}
               {...databasePageProps}
             />

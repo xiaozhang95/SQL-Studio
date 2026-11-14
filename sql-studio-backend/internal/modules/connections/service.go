@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 
 	"sql-studio-backend/internal/model"
@@ -66,7 +67,7 @@ func validateConnection(c model.Connection) error {
 	if !model.SupportedDatabaseType(c.Type) {
 		return errors.New("不支持的数据库类型")
 	}
-	if c.Type == model.TypeGreptimeDB {
+	if c.Type == model.TypeGreptimeDB || c.Type == model.TypeRedis {
 		if strings.TrimSpace(c.Name) == "" || strings.TrimSpace(c.Host) == "" {
 			return errors.New("请填写连接名称和主机")
 		}
@@ -75,6 +76,11 @@ func validateConnection(c model.Connection) error {
 	}
 	if c.Port < 1 || c.Port > 65535 {
 		return errors.New("端口必须在 1–65535 之间")
+	}
+	if c.Type == model.TypeRedis && c.Database != "" {
+		if _, err := strconv.ParseUint(c.Database, 10, 31); err != nil {
+			return errors.New("Redis 逻辑库编号无效")
+		}
 	}
 	return nil
 }

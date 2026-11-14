@@ -11,12 +11,13 @@ type Props = {
   onOpenDatabaseSection: (section: DatabaseSection, scope: DatabaseSectionScope) => void
   model: Pick<
     WorkspaceModel,
-    | 'connections'
+    | 'savedConnections'
     | 'connectionGroups'
     | 'connectionId'
     | 'connectionLoading'
     | 'connectionAction'
     | 'openConnection'
+    | 'openRedisQuery'
     | 'databaseAction'
     | 'tableAction'
     | 'openExplorerPage'
@@ -51,7 +52,7 @@ export default function ConnectionSidebar({ model, layout, onOpenDatabaseSection
         width: visibleWidth
       }}
     >
-      {model.connectionLoading && !model.connections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} onOpenDatabaseSection={onOpenDatabaseSection} />}
+      {model.connectionLoading && !model.savedConnections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} onOpenDatabaseSection={onOpenDatabaseSection} />}
       <div
         className="sidebar-resizer"
         role="separator"

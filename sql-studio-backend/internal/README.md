@@ -4,6 +4,7 @@
 - [运行配置](config/README.md)
 - [本地连接仓库](connection/README.md)
 - [Gin HTTP 接口](httpapi/README.md)
+- [Redis 引擎](redis/README.md)与[工作区服务](modules/redistools/README.md)提供连接、键、命令、发布订阅与监控。
 - [前端静态资源](webui/README.md)：从磁盘目录读取网页，Electron 指定随包资源目录。
 - [应用消息语言](localization/README.md)：请求语言选择与系统消息翻译，只由 HTTP 层使用。
 - [跨层业务契约](model/README.md)

@@ -29,6 +29,7 @@ import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -45,7 +46,18 @@ type Props = {
   onOpenDatabaseSection: (section: DatabaseSection, scope: DatabaseSectionScope) => void
   model: Pick<
     WorkspaceModel,
-    'connections' | 'connectionGroups' | 'connectionAction' | 'openConnection' | 'databaseAction' | 'tableAction' | 'openExplorerPage' | 'objects' | 'running' | 'explorer' | 'updateExplorer'
+    | 'savedConnections'
+    | 'connectionGroups'
+    | 'connectionAction'
+    | 'openConnection'
+    | 'openRedisQuery'
+    | 'databaseAction'
+    | 'tableAction'
+    | 'openExplorerPage'
+    | 'objects'
+    | 'running'
+    | 'explorer'
+    | 'updateExplorer'
   >
 }
 
@@ -53,7 +65,7 @@ type Props = {
 export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props) {
   const { t } = useTranslation()
 
-  const { connections, connectionGroups, objects, running, explorer, updateExplorer } = model
+  const { savedConnections: connections, connectionGroups, objects, running, explorer, updateExplorer } = model
   const { expanded, selected, search } = explorer
   // Keep menu content mounted while closing; the trigger alone owns its visibility.
   const [contextMenu, setContextMenu] = useState<MenuProps>({ items: [] })
@@ -65,7 +77,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         objects.snapshots,
         expanded,
         search,
-        Object.fromEntries(connections.map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
+        Object.fromEntries(connections.filter((connection) => connection.type !== DatabaseEngine.Redis).map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
         connectionGroups.groups,
         objects.closedDatabases,
         (group) => connectionGroupLabel(group, t)
@@ -92,6 +104,47 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         }
       }
     const { owner: id, database: db, table } = node
+    if (node.kind === 'redis-database') {
+      return {
+        items: [{ key: 'new', label: t('打开查询'), icon: <CodeOutlined />, disabled: running }],
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation()
+          setMenuOpen(false)
+          model.openRedisQuery(id, db)
+        }
+      }
+    }
+    if (node.connection?.type === DatabaseEngine.Redis) {
+      if (running) return
+      const status = objects.snapshots[id]?.status
+      return {
+        items: [
+          { key: 'query', label: t('打开查询'), icon: <CodeOutlined /> },
+          ...(!status || status === 'error' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
+          ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
+          { key: 'monitor', label: t('监控指标'), icon: <DashboardOutlined /> },
+          { type: 'divider' },
+          { key: 'edit', label: t('编辑连接'), icon: <EditOutlined /> },
+          {
+            key: 'move-group',
+            label: t('移动到分组'),
+            icon: <FolderOutlined />,
+            disabled: connectionGroups.blocked,
+            children: connectionGroups.groups.map((name) => ({ key: `move-group:${name}`, label: connectionGroupLabel(name, t), disabled: connectionGroupName(node.connection?.group) === name }))
+          },
+          { key: 'delete', label: t('删除连接'), icon: <DeleteOutlined />, danger: true },
+          { key: 'refresh', label: t('刷新'), icon: <ReloadOutlined />, disabled: status !== 'connected' }
+        ],
+        onClick: ({ key, domEvent }) => {
+          domEvent.stopPropagation()
+          setMenuOpen(false)
+          if (key === 'query') model.openRedisQuery(id)
+          else if (key === 'monitor') onOpenDatabaseSection(key, { connectionId: id })
+          else if (key.startsWith('move-group:') && node.connection) void connectionGroups.move(node.connection, key.slice('move-group:'.length))
+          else model.connectionAction(key, id)
+        }
+      }
+    }
     const engine = getDatabaseAdapter(connections.find((connection) => connection.id === id)?.type)
     const exportDisabled = !canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db)
 
@@ -255,6 +308,8 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         return <FolderOutlined />
       case 'schema':
         return <FolderOutlined />
+      case 'redis-database':
+        return <DatabaseFilled style={{ color: 'var(--inactive-icon)' }} />
       case 'database':
         return (
           <DatabaseFilled
@@ -405,6 +460,10 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
                 onDoubleClick={(event, value) => {
                   if (running) return
                   const node = data.byKey.get(String(value.key))
+                  if (node?.kind === 'redis-database' || (node?.connection?.type === DatabaseEngine.Redis && !value.expanded)) {
+                    model.openRedisQuery(node.owner, node.database || undefined)
+                    return
+                  }
                   // 数据库和分类节点只处理展开/折叠，不进入页面操作。
                   if (!node || !['schema', 'table'].includes(node.kind)) return
                   // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。

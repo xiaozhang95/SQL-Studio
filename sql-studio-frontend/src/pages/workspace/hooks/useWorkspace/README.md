@@ -97,3 +97,5 @@ getEditorHistory(id) 提供会话内该页撤销/重做的初始化扩展；切�
 连接列表、批次执行、快捷键分别归属 useWorkspaceConnections/useQueryExecution/useQueryShortcut，组合根负责页面范围和跨模块协调。queryRunning 与 uiBlocked 区分执行及界面占用，树显示禁用状态和原因。执行中切页后顶栏保留取消入口。工作区配置冲突后自动采用服务端最新快照，重新加载活动标签。
 
 查询页 tabs/runs/resultViews/editorLayouts、运行请求及取消边界集中到 useQuerySession；useWorkspace 继续负责范围关闭、对象操作与上述模块的组合协调，不再直接拥有这些底层状态。
+
+Redis 查询沿用查询标签的连接与数据库范围保存，通过共享元数据缓存打开实例并加载逻辑库。终端成功执行 SELECT 时仅修改发起标签的库；普通 SQL 的执行和对象树加载继续使用各自的引擎能力。

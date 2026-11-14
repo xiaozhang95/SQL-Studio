@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { getDatabaseAdapter } from '@/databases'
+import { selectedRedisDatabase } from '@/databases/redis'
+import { DatabaseEngine } from '@/databases/typings'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange } from '@/databases/typings/objectManagement'
 import { useSidebarWidth } from '@/hooks/useSidebarWidth'
@@ -14,6 +16,7 @@ import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, WorkspacePa
 import { exportSQL } from '@/utils/sqlExport'
 import { saveSQL } from '@/utils/sqlSave'
 
+import { discardTerminal } from '../../components/redisQuery/utils/terminalSession'
 import { resultPanelLayout, scopeCloseDialogLayout } from '../../constant/layout'
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
@@ -68,11 +71,12 @@ export const useWorkspace = (active = true) => {
   } = useQuerySession()
   const onConnectionsLoaded = useCallback(
     (data: Connection[]) => {
-      setTabs((previous) => previous.map((item) => (item.kind !== 'query' || data.some((value) => value.id === item.connectionId) ? item : { ...item, ...emptyScope })))
+      setTabs((previous) => previous.map((item) => (!item.connectionId || item.kind !== 'query' || data.some((value) => value.id === item.connectionId) ? item : { ...item, ...emptyScope })))
     },
     [setTabs]
   )
-  const { connections, setConnections, setSavedGroups, groups, connectionLoading, connectionError, loadConnections } = useWorkspaceConnections(onConnectionsLoaded)
+  const { connections: savedConnections, setConnections, setSavedGroups, groups, connectionLoading, connectionError, loadConnections } = useWorkspaceConnections(onConnectionsLoaded)
+  const connections = useMemo(() => savedConnections.filter((item) => item.type !== DatabaseEngine.Redis), [savedConnections])
   const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
   const [resultHeight, setResultHeight] = useState<number>(resultPanelLayout.defaultHeight)
   const { width: sidebarWidth, setWidth: setSidebarWidth, restoreWidth: restoreSidebarWidth } = useSidebarWidth()
@@ -107,6 +111,7 @@ export const useWorkspace = (active = true) => {
   const tab = tabs.find((item) => item.id === activeTab) || emptyTab
   const { connectionId, database, schema: selectedSchema = '', table: selectedTable } = tab
   const connection = connections.find((item) => item.id === connectionId)
+  const redisConnection = savedConnections.find((item) => item.id === connectionId && item.type === DatabaseEngine.Redis)
   const adapter = getDatabaseAdapter(connection?.type)
   const engine = adapter.profile
   const historyStore = useQueryHistory(tab.kind === 'query' ? connectionId : '')
@@ -169,8 +174,8 @@ export const useWorkspace = (active = true) => {
   }
   const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
   useEffect(() => {
-    if (tab.kind === 'query' && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
-  }, [tab.kind, objects.connected, database, connectionId, loadTables])
+    if (tab.kind === 'query' && !redisConnection && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
+  }, [tab.kind, redisConnection, objects.connected, database, connectionId, loadTables])
   const resultIndex = resultViews[activeTab]?.resultIndex || 0
   const batch = runs[activeTab]
   const statementRun = batch?.statements?.[resultIndex]
@@ -294,13 +299,14 @@ export const useWorkspace = (active = true) => {
   useEffect(() => {
     if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
-    const ids = restoringConnections.filter((id) => connections.some((connection) => connection.id === id))
+    const restored = savedConnections.filter((item) => restoringConnections.includes(item.id))
     void Promise.resolve().then(() => {
       if (stale) return
       setRestoringConnections(null)
-      for (const id of ids) {
+      for (const { id, type } of restored) {
         void openObjectsConnection(id)
           .then(async () => {
+            if (type === DatabaseEngine.Redis) return
             const expandedNodes = explorer.expanded.map((key) => JSON.parse(key) as string[])
             const databases = expandedNodes.filter(([type, owner]) => type === 'database' && owner === id)
             await Promise.allSettled(databases.map(([, , db]) => loadTables(db, id)))
@@ -310,12 +316,30 @@ export const useWorkspace = (active = true) => {
           })
           .catch(() => {})
       }
-      setTabs((previous) => previous.map((item) => (item.kind === 'query' && !connections.some((connection) => connection.id === item.connectionId) ? { ...item, ...emptyScope } : item)))
+      setTabs((previous) =>
+        previous.map((item) => (item.kind === 'query' && item.connectionId && !savedConnections.some((connection) => connection.id === item.connectionId) ? { ...item, ...emptyScope } : item))
+      )
     })
     return () => {
       stale = true
     }
-  }, [storage.ready, connectionLoading, connectionError, restoringConnections, connections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
+  }, [storage.ready, connectionLoading, connectionError, restoringConnections, savedConnections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
+
+  const redisConnectionStatus = redisConnection ? objects.snapshots[redisConnection.id]?.status : undefined
+  const redisDatabase = redisConnection ? selectedRedisDatabase(objects.databases, database, redisConnection.database) : undefined
+  const selectRedisDatabase = useCallback(
+    (pageId: string, id: string, database: string) => {
+      if (closedPages.current.has(pageId)) return
+      setTabs((previous) => previous.map((page) => (page.id === pageId && page.kind === 'query' && page.connectionId === id && page.database !== database ? { ...page, database } : page)))
+    },
+    [closedPages, setTabs]
+  )
+  useEffect(() => {
+    if (active && storage.ready && storage.pageReady && redisConnection && !redisConnectionStatus) void openObjectsConnection(redisConnection.id).catch(() => {})
+  }, [active, storage.ready, storage.pageReady, redisConnection, redisConnectionStatus, openObjectsConnection])
+  useEffect(() => {
+    if (storage.pageReady && !database && redisDatabase !== undefined) selectRedisDatabase(tab.id, connectionId, redisDatabase)
+  }, [storage.pageReady, database, redisDatabase, selectRedisDatabase, tab.id, connectionId])
 
   const reconciledTabs = useMemo(
     () =>
@@ -352,7 +376,7 @@ export const useWorkspace = (active = true) => {
       stale = true
     }
   }, [activeTab, tab.kind, connectionId, database, selectedTable, refresh, objects.connected, objects.databases, loadStructure])
-  useQueryShortcut({ enabled: active && !running && storage.pageReady && !connectionModal && !historyOpen && tab.kind === 'query', editor, run: runSQL })
+  useQueryShortcut({ enabled: active && !running && storage.pageReady && !connectionModal && !historyOpen && tab.kind === 'query' && !redisConnection, editor, run: runSQL })
 
   function resetStructure(loading = false) {
     setColumns([])
@@ -435,12 +459,25 @@ export const useWorkspace = (active = true) => {
   }
   function newQuery() {
     const layouts = Object.fromEntries(connections.map((item) => [item.id, getDatabaseAdapter(item.type).explorer]))
-    const tree = buildExplorerTree(connections, objects.snapshots, explorer.expanded, explorer.search, layouts, connectionGroups.groups, objects.closedDatabases, (group) =>
+    const tree = buildExplorerTree(savedConnections, objects.snapshots, explorer.expanded, explorer.search, layouts, connectionGroups.groups, objects.closedDatabases, (group) =>
       connectionGroupLabel(group, t)
     )
     const node = tree.byKey.get(explorer.selected[0])
-    const scope = explorerQueryScope(node, Boolean(node && objects.snapshots[node.owner]?.status === 'connected'), node ? layouts[node.owner] : undefined)
+    const scope = explorerQueryScope(
+      node,
+      Boolean(node && (node.connection?.type === DatabaseEngine.Redis || objects.snapshots[node.owner]?.status === 'connected')),
+      node ? layouts[node.owner] : undefined
+    )
     addTab('', scope)
+  }
+  function openRedisQuery(id: string, db?: string) {
+    if (running || request.current) return
+    const target = savedConnections.find((item) => item.id === id && item.type === DatabaseEngine.Redis)
+    if (!target) return
+    const database = db ?? target.database ?? ''
+    const existing = tabs.find((page) => page.kind === 'query' && page.connectionId === id && (db === undefined || page.database === db))
+    if (existing) selectTab(existing.id)
+    else addTab('', { connectionId: id, database, table: '' })
   }
   function openTableDesigner(kind: 'table-create' | 'table-design', scope: QueryScope) {
     const existing =
@@ -453,8 +490,13 @@ export const useWorkspace = (active = true) => {
     createPage(kind, scope, kind === 'table-create' ? t('新建表 ') + number + ' · ' + scope.database : scope.table + t(' · 设计'))
   }
   function selectConnection(id: string) {
-    if (running || objects.snapshots[id]?.status !== 'connected') return
-    updateTab({ connectionId: id, database: '', schema: '', table: '' })
+    const target = savedConnections.find((item) => item.id === id)
+    if (running || !target || (redisConnection && target.type !== DatabaseEngine.Redis)) return
+    const snapshot = objects.snapshots[id]
+    if (target.type !== DatabaseEngine.Redis && snapshot?.status !== 'connected') return
+    const db = target.type === DatabaseEngine.Redis ? (selectedRedisDatabase(snapshot?.databases ?? [], undefined, target.database) ?? '') : ''
+    editorSession.flush()
+    updateTab({ connectionId: id, database: db, schema: '', table: '' })
     resetStructure()
   }
   function selectObject(db: string, table?: string, id = connectionId, schema = '') {
@@ -573,7 +615,10 @@ export const useWorkspace = (active = true) => {
       if (db === undefined) await objects.closeConnection(id)
       else await objects.closeDatabase(id, db)
       const removed = new Set(affected.map((page) => page.id))
-      removed.forEach((page) => closedPages.current.add(page))
+      removed.forEach((page) => {
+        closedPages.current.add(page)
+        discardTerminal(page)
+      })
       editorSession.discard(removed)
       const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([key]) => !removed.has(key)))
       const remaining = tabs.filter((page) => !removed.has(page.id))
@@ -607,7 +652,7 @@ export const useWorkspace = (active = true) => {
       return
     }
     if (running) return
-    const target = connections.find((item) => item.id === id)
+    const target = savedConnections.find((item) => item.id === id)
     if (!target) return
     if (action === 'create-database') void objectManagement.open(ObjectAction.CreateDatabase, { connectionId: id, database: '', table: '' })
     else if (action === 'open') void openConnection(id).catch(() => {})
@@ -867,7 +912,7 @@ export const useWorkspace = (active = true) => {
     executeCurrentSQL(sql ?? draft)
   }
   function deleteConnection(id: string) {
-    const target = connections.find((item) => item.id === id)
+    const target = savedConnections.find((item) => item.id === id)
     if (!target || running) return
     modal.confirm({
       title: t('删除连接「{value1}」？', { value1: target.name }),
@@ -891,7 +936,10 @@ export const useWorkspace = (active = true) => {
       const retained = new Set(remaining.map((item) => item.id))
       const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
       const removed = new Set(tabs.filter((page) => !retained.has(page.id)).map((page) => page.id))
-      removed.forEach((id) => closedPages.current.add(id))
+      removed.forEach((id) => {
+        closedPages.current.add(id)
+        discardTerminal(id)
+      })
       editorSession.discard(removed)
       setTabs((previous) => previous.filter((page) => retained.has(page.id)))
       setRuns(keep)
@@ -983,9 +1031,12 @@ export const useWorkspace = (active = true) => {
     databaseAction,
     openExplorerPage,
     newQuery,
+    openRedisQuery,
+    selectRedisDatabase,
     connectionAction,
     openConnection,
     connections,
+    savedConnections,
     connectionId,
     connectionLoading,
     connectionError,
