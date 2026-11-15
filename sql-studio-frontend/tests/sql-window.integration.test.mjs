@@ -6,6 +6,7 @@ import test from 'node:test'
 
 import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/statements/index.ts'
 import { splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
+import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { executeQueryBatch } from '../src/services/queryBatch/index.ts'
 import { step } from './integration-steps.mjs'
 
@@ -41,6 +42,7 @@ function windowRunner(connection, scope) {
     let timer,
       finished = false
     const dependencies = {
+      DatabaseEngine,
       connections: [connection],
       objects: { snapshots: { [connection.id]: { status: 'connected' } } },
       running: false,

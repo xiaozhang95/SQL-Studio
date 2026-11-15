@@ -31,7 +31,8 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | GET | `/connections/{id}/monitor` | 通过已保存连接读取实例或数据库统计 |
 | GET | `/connections/{id}/redis/keys` | 用 SCAN 按模式浏览键 |
 | POST | `/connections/{id}/redis/key` | 读取键类型、TTL、大小及预览 |
-| POST | `/connections/{id}/redis/key/change` | 修改 Redis 键值、TTL、键名，复制或删除键 |
+| POST | `/connections/{id}/redis/key/ttl` | 使用 `ref` 读取剩余毫秒数，-1 为永久，-2 为已不存在 |
+| POST | `/connections/{id}/redis/key/change` | 新增 Redis 字符串键，修改键名、值和 TTL，或复制、删除键 |
 | POST | `/connections/{id}/redis/command` | 执行单条 Redis 命令 |
 | GET | `/connections/{id}/redis/channels` | 读取活跃频道、订阅者数及模式订阅数 |
 | POST | `/connections/{id}/redis/subscribe` | 以 NDJSON 查看实时频道或模式订阅 |
@@ -103,7 +104,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 - 键列表接受 `cursor` 和 `pattern`，初始游标为 `0`。服务器返回 `{keys:[{name,ref}],cursor}`。游标回到 `0` 表示扫描结束。每一页可能为空，也可能返回重复的键。二进制键使用 Base64 显示，`ref` 为可逆的 URL 安全 Base64。预览请求为 `{database,ref}`，返回 `type`、毫秒 `ttlMillis`（`-1` 表示永久）、字节或元素 `size`（`-1` 表示未提供）、`preview` 、`truncated` 和 `editable`。
 - 键修改接受 `{database,ref,action}`。操作为 `value`（短 UTF-8 字符串，保留原 TTL，`before` 可匹配读取时的旧值）、`ttl`（整数秒，0 表示永久）、`rename`、`copy` 或 `delete`。复制及重命名需要 `target`，现有目标键会保留。
-- 命令请求为 `{database,command}`。支持引号、转义和 `SELECT`，以 `{database,output,truncated}` 返回逻辑库和文本输出。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
+- 命令请求为 `{database,command}`。支持引号、转义和 `SELECT`，以 `{database,output,truncated,result}` 返回逻辑库、终端文本和查询结果表。结果表最多 1000 行，受输出大小限制，空值以 JSON null 表示，整数使用十进制字符串。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
 - 频道列表接受可选 `pattern`，显示最多 200 个活跃频道及其直接订阅者数量，并返回实例模式订阅数。订阅请求为 `{channel,pattern}`，`pattern` 为布尔值。NDJSON 事件按 `ready`、`message`、`heartbeat` 和 `error` 识别，消息包含 `channel`、`payload` 和可选 `truncated`，断开请求释放订阅。
 - 监控沿用 `/connections/{id}/monitor`，从 Redis `INFO` 读取客户端数、每秒命令数、内存、运行时长、累计命令、过期键、淘汰键和命中率。
 

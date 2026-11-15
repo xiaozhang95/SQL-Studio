@@ -305,6 +305,30 @@ body,
   }
 }
 
+.editor-toolbar .query-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-end: 4px;
+  padding-inline-end: 8px;
+  border-inline-end: 1px solid var(--border);
+}
+
+.redis-query-panel {
+  container-type: inline-size;
+}
+
+@container (max-width: 900px) {
+  .redis-assist-label {
+    display: none;
+  }
+
+  .redis-query-panel .editor-toolbar .query-toolbar-group {
+    margin-inline-end: 0;
+    padding-inline-end: 4px;
+  }
+}
+
 // Dropdown 默认把选中文字设为主色，灰色底上统一使用正文色。
 .sql-studio-theme .ant-dropdown-menu .ant-dropdown-menu-item-selected:not(.ant-dropdown-menu-item-disabled) {
   color: var(--text);

@@ -7,6 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { getChannels, subscribe } from '@/services/redis'
 import type { RedisChannel, RedisChannels } from '@/services/redis'
 
+import ToolbarButton from '../../../toolbarButton'
+
 type Message = { id: number; channel: string; payload: string; truncated?: boolean }
 
 export default function PubSub({ id }: { id: string }) {
@@ -97,9 +99,7 @@ export default function PubSub({ id }: { id: string }) {
               onChange={(event) => setFilter(event.target.value)}
               onPressEnter={() => setRequest({ pattern: filter })}
             />
-            <Button icon={<ReloadOutlined />} loading={loading} onClick={() => setRequest({ pattern: filter })}>
-              {t('刷新')}
-            </Button>
+            <ToolbarButton label={t('刷新')} icon={<ReloadOutlined />} loading={loading} onClick={() => setRequest({ pattern: filter })} />
           </Flex>
           <ErrorNotice error={channelError ? t(channelError) : undefined} />
           {channels && (
@@ -124,7 +124,14 @@ export default function PubSub({ id }: { id: string }) {
         <Flex vertical gap="small">
           <Form layout="horizontal" labelCol={{ flex: '112px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}>
             <Form.Item label={t('频道或模式')} htmlFor="redis-channel" style={{ marginBottom: token.marginSM }}>
-              <Input id="redis-channel" value={channel} maxLength={256} disabled={status !== 'idle'} onChange={(event) => setChannel(event.target.value)} />
+              <Input
+                id="redis-channel"
+                placeholder={t(pattern ? '输入频道模式，例如 news:*' : '输入频道名称，例如 news:updates')}
+                value={channel}
+                maxLength={256}
+                disabled={status !== 'idle'}
+                onChange={(event) => setChannel(event.target.value)}
+              />
             </Form.Item>
             <Form.Item label={t('订阅方式')} style={{ marginBottom: 0 }}>
               <Checkbox checked={pattern} disabled={status !== 'idle'} onChange={(event) => setPattern(event.target.checked)}>

@@ -9,6 +9,7 @@ import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance, ComponentSize } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
@@ -23,16 +24,21 @@ type Props = {
   themeMode: ThemeMode
   model: Pick<
     WorkspaceModel,
-    'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'connections' | 'connectionId' | 'connection' | 'loadHistory' | 'objects'
+    'history' | 'clearHistory' | 'historyOpen' | 'setHistoryOpen' | 'historySearch' | 'setHistorySearch' | 'running' | 'savedConnections' | 'connectionId' | 'loadHistory' | 'objects'
   >
+  terminal?: boolean
+  onLoad?: (item: HistoryItem) => void
+  onClosed?: () => void
 }
 /** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
-export default function QueryHistory({ model, themeMode }: Props) {
+export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onClosed }: Props) {
   const tablePagination = useTablePagination()
 
   const { t, language } = useTranslation()
 
-  const { history, clearHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, connections, connectionId, connection, loadHistory } = model
+  const { history, clearHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, savedConnections: connections, connectionId, loadHistory } = model
+  const connection = connections.find((item) => item.id === connectionId)
+  const redis = connection?.type === DatabaseEngine.Redis
   // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
   const connectionHistory = history
   const { modal } = AntApp.useApp()
@@ -64,11 +70,11 @@ export default function QueryHistory({ model, themeMode }: Props) {
     },
     { title: t('连接'), dataIndex: 'connectionName', width: 140, ellipsis: true },
     { title: t('数据库'), dataIndex: 'database', width: 140, ellipsis: true, render: (database: string) => database || t('未选择数据库') },
-    ...(connections.some((connection) => connection.id === model.connectionId && getDatabaseAdapter(connection.type).explorer)
+    ...(!redis && connection && getDatabaseAdapter(connection.type).explorer
       ? [{ title: 'Schema', dataIndex: 'schema', width: 140, ellipsis: true, render: (schema: string) => schema || t('默认搜索路径') }]
       : []),
     {
-      title: 'SQL',
+      title: redis ? t('Redis 命令') : 'SQL',
       dataIndex: 'sql',
       width: 280,
       render: (sql: string, item) => <SQLPreview compact sql={sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} />
@@ -83,12 +89,12 @@ export default function QueryHistory({ model, themeMode }: Props) {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
         return (
           <ToolbarButton
-            label={t('载入编辑器')}
+            label={t(terminal ? '载入命令行' : '载入编辑器')}
             hint={missing ? t('原连接已删除') : undefined}
             icon={<ImportOutlined />}
             size={ComponentSize.Small}
             disabled={running || missing}
-            onClick={() => loadHistory(item)}
+            onClick={() => (onLoad ?? loadHistory)(item)}
           />
         )
       }
@@ -113,7 +119,11 @@ export default function QueryHistory({ model, themeMode }: Props) {
       }
       open={historyOpen}
       onClose={() => setHistoryOpen(false)}
-      afterOpenChange={setDrawerReady}
+      focusable={terminal ? { focusTriggerAfterClose: false } : undefined}
+      afterOpenChange={(open) => {
+        setDrawerReady(open)
+        if (!open) onClosed?.()
+      }}
       size="min(1080px, 100vw)"
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
@@ -137,7 +147,7 @@ export default function QueryHistory({ model, themeMode }: Props) {
       <Input
         style={{ flexShrink: 0 }}
         prefix={<SearchOutlined />}
-        placeholder={t('搜索 SQL / 数据库')}
+        placeholder={t(redis ? '搜索命令 / 数据库' : '搜索 SQL / 数据库')}
         aria-label={t('搜索执行历史')}
         value={historySearch}
         onChange={(event) => {

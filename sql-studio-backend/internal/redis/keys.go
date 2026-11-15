@@ -69,9 +69,12 @@ func (*Client) Key(ctx context.Context, connection model.Connection, db int, nam
 		return model.RedisKeyDetail{}, err
 	}
 	if kind == "none" || ttl == -2 {
-		return model.RedisKeyDetail{}, errors.New("Redis 键已不存在")
+		return model.RedisKeyDetail{}, missingKey
 	}
 	detail := model.RedisKeyDetail{Type: kind, TTLMillis: ttl, Size: -1}
+	if len(name) <= previewBytes && utf8.ValidString(name) {
+		detail.Name = &name
+	}
 	var nested any
 	switch kind {
 	case "string":
@@ -141,6 +144,13 @@ func (*Client) Key(ctx context.Context, connection model.Connection, db int, nam
 	body, truncated := clip(detail.Preview, previewBytes)
 	detail.Preview, detail.Truncated = body, detail.Truncated || truncated
 	return detail, nil
+}
+
+func (*Client) KeyTTL(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyTTL, error) {
+	client := open(connection, db)
+	defer client.Close()
+	ttl, err := client.Do(ctx, "PTTL", name).Int64()
+	return model.RedisKeyTTL{TTLMillis: ttl}, err
 }
 
 func preview(value any, limit int) (string, bool) {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import { readState, writeState } from '@/services/userState'
 import type { HistoryItem } from '@/typings/workspace'
 
@@ -67,7 +68,10 @@ export function useQueryHistory(connectionId: string) {
     if (!item.connectionId) return
     setHistories((previous) => ({
       ...previous,
-      [item.connectionId]: [{ ...item, sql: getDatabaseAdapter(item.databaseType).cleanHistory(item.sql) }, ...(previous[item.connectionId] || [])].slice(0, historyLimit)
+      [item.connectionId]: [
+        { ...item, sql: item.databaseType === DatabaseEngine.Redis ? item.sql : getDatabaseAdapter(item.databaseType).cleanHistory(item.sql) },
+        ...(previous[item.connectionId] || [])
+      ].slice(0, historyLimit)
     }))
   }, [])
   const clearHistory = useCallback((id: string) => {

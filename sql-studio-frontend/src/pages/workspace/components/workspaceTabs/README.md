@@ -28,4 +28,4 @@ model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设
 
 非活动结果释放后，标签仍可从轻量索引显示来源摘要。tabBusy 只锁定实际执行或对象操作，当前页内容加载失败时仍允许切换和关闭标签。
 
-Redis 查询标签通过 renderRedis 渲染，切换页签时保留终端和已启动的订阅，关闭标签时卸载。
+Redis 与普通查询标签共享填满可用高度的容器。Redis 查询标签通过 renderRedis 渲染，切换页签时保留终端和已启动的订阅，关闭标签时卸载。

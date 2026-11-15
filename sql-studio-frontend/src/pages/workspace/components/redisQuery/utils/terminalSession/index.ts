@@ -1,5 +1,5 @@
 export const terminalHistoryLimit = 50
-export const terminalCommandLimit = 16384
+export const terminalCommandLimit = 64 * 1024
 
 type Entry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; truncated?: boolean }
 type Session = { command: string; history: string[]; entries: Entry[] }

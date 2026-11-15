@@ -11,12 +11,22 @@ type RedisKeyPage struct {
 }
 
 type RedisKeyDetail struct {
-	Type      string `json:"type"`
-	TTLMillis int64  `json:"ttlMillis"`
-	Size      int64  `json:"size"`
-	Preview   string `json:"preview"`
-	Truncated bool   `json:"truncated"`
-	Editable  bool   `json:"editable"`
+	Name      *string `json:"name,omitempty"`
+	Type      string  `json:"type"`
+	TTLMillis int64   `json:"ttlMillis"`
+	Size      int64   `json:"size"`
+	Preview   string  `json:"preview"`
+	Truncated bool    `json:"truncated"`
+	Editable  bool    `json:"editable"`
+}
+
+type RedisKeyTTL struct {
+	TTLMillis int64 `json:"ttlMillis"`
+}
+
+type RedisKeyChangeResult struct {
+	OK  bool      `json:"ok"`
+	Key *RedisKey `json:"key,omitempty"`
 }
 
 type RedisKeyChange struct {
@@ -28,9 +38,10 @@ type RedisKeyChange struct {
 }
 
 type RedisReply struct {
-	Database  int    `json:"database"`
-	Output    string `json:"output"`
-	Truncated bool   `json:"truncated"`
+	Database  int          `json:"database"`
+	Output    string       `json:"output"`
+	Truncated bool         `json:"truncated"`
+	Result    *QueryResult `json:"result,omitempty"`
 }
 
 type RedisChannel struct {

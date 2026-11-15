@@ -1,7 +1,7 @@
 import type { CompletionContext } from '@codemirror/autocomplete'
 
 // Common redis-cli commands with their arguments. Keep variants on the wire as typed.
-const commandUsage = [
+const redisCommandSignatures = [
   'APPEND key value',
   'COPY source destination [DB db]',
   'DBSIZE',
@@ -83,10 +83,31 @@ const commandUsage = [
   'ZSCAN key cursor [MATCH pattern] [COUNT count]',
   'ZSCORE key member'
 ]
-const commands = commandUsage.map((usage) => {
+const commands = redisCommandSignatures.map((usage) => {
   const [label, ...args] = usage.split(' ')
   return { label, detail: args.join(' '), type: 'keyword' }
 })
+
+export function redisCommandHints(input: string): string[] {
+  const match = /^[\t ]*([\w.-]+)([\t ;]|$)/.exec(input)
+  if (!match) return []
+  const name = match[1].toUpperCase()
+  const exact = commands.find((command) => command.label === name)
+  if (exact) return [exact.detail ? `${exact.label} ${exact.detail}` : exact.label]
+  return match[2]
+    ? []
+    : commands
+        .filter((command) => command.label.startsWith(name))
+        .slice(0, 5)
+        .map((command) => command.label)
+}
+
+export function formatRedisCommands(text: string) {
+  return text
+    .split('\n')
+    .map((line) => line.replace(/^([\t ]*)([A-Za-z][\w.-]*)(?=[\t ;\r]|$)([\t ]*)/, (_, indent: string, command: string, gap: string) => indent + command.toUpperCase() + (gap ? ' ' : '')))
+    .join('\n')
+}
 
 export function redisCompletion(context: CompletionContext) {
   const prefix = context.matchBefore(/^[\t ]*[a-zA-Z][a-zA-Z0-9_.-]*$/)
@@ -101,4 +122,19 @@ export function splitRedisLines(value: string) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
+    .map(withoutStatementTerminator)
+    .filter(Boolean)
+}
+
+function withoutStatementTerminator(line: string) {
+  if (!line.endsWith(';')) return line
+  let quote = ''
+  for (let index = 0; index < line.length - 1; index++) {
+    const character = line[index]
+    if (quote) {
+      if (character === quote) quote = ''
+      else if (character === '\\' && (quote === '"' || line[index + 1] === "'")) index++
+    } else if (character === '"' || character === "'") quote = character
+  }
+  return quote ? line : line.slice(0, -1).trimEnd()
 }

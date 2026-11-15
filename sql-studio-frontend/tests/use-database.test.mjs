@@ -4,6 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
 import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/statements/index.ts'
+import { DatabaseEngine } from '../src/databases/typings/index.ts'
 
 // 执行真实工作区编排函数，替换请求与 React 状态；不连接业务数据库。
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
@@ -19,6 +20,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
     { id: 'other', kind: 'query', connectionId: 'a', database: 'kept', table: 't' }
   ]
   const dependencies = {
+    DatabaseEngine,
     connections: [{ id: 'a', name: 'fixture', type: schema ? 'postgresql' : 'mysql' }],
     objects: { snapshots: { a: { status: 'connected' } } },
     running: false,

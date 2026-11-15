@@ -8,6 +8,7 @@ import { memo, useMemo, useState } from 'react'
 import ContentCard from '@/components/contentCard'
 import ErrorNotice from '@/components/errorNotice'
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseType } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
@@ -39,12 +40,16 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
       setCopyError(t('复制失败，请选中文本后手动复制'))
     }
   }
-  const extensions = useMemo(() => [sqlPreviewAppearance, getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} }), EditorView.lineWrapping], [databaseType])
-  const copyButton = <ToolbarButton size="small" icon={<CopyOutlined />} onClick={copySQL} label={t('复制 SQL')} style={{ flex: 'none' }} />
+  const redis = databaseType === DatabaseEngine.Redis
+  const extensions = useMemo(() => {
+    const base = [sqlPreviewAppearance, EditorView.lineWrapping]
+    return redis ? base : [...base, getDatabaseAdapter(databaseType).completion({ database: '', table: '', schema: {} })]
+  }, [databaseType, redis])
+  const copyButton = <ToolbarButton size="small" icon={<CopyOutlined />} onClick={copySQL} label={t(redis ? '复制命令' : '复制 SQL')} style={{ flex: 'none' }} />
   const editor = (
     <div style={{ flex: 1, minWidth: 0 }}>
       <ErrorNotice error={copyError} onClose={() => setCopyError('')} />
-      <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly basicSetup={previewSetup} aria-label={t('SQL 文本')} />
+      <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly basicSetup={previewSetup} aria-label={t(redis ? 'Redis 命令' : 'SQL 文本')} />
     </div>
   )
   if (panel)

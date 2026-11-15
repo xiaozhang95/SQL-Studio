@@ -18,6 +18,7 @@ type Repository interface {
 type Engine interface {
 	Keys(context.Context, model.Connection, int, uint64, string) (model.RedisKeyPage, error)
 	Key(context.Context, model.Connection, int, string) (model.RedisKeyDetail, error)
+	KeyTTL(context.Context, model.Connection, int, string) (model.RedisKeyTTL, error)
 	ChangeKey(context.Context, model.Connection, int, string, model.RedisKeyChange) error
 	Run(context.Context, model.Connection, int, []string) (model.RedisReply, error)
 	Channels(context.Context, model.Connection, string) (model.RedisChannels, error)
@@ -96,6 +97,24 @@ func (s *Service) Key(ctx context.Context, id, database, ref string) (model.Redi
 	return s.engine.Key(ctx, c, db, name)
 }
 
+func (s *Service) KeyTTL(ctx context.Context, id, database, ref string) (model.RedisKeyTTL, error) {
+	c, err := s.connection(id)
+	if err != nil {
+		return model.RedisKeyTTL{}, err
+	}
+	db, err := databaseIndex(c, database)
+	if err != nil {
+		return model.RedisKeyTTL{}, err
+	}
+	name, err := keyName(ref)
+	if err != nil {
+		return model.RedisKeyTTL{}, err
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return s.engine.KeyTTL(ctx, c, db, name)
+}
+
 func keyName(ref string) (string, error) {
 	name, err := base64.RawURLEncoding.Strict().DecodeString(ref)
 	if err != nil || len(name) > 384*1024 {
@@ -104,39 +123,55 @@ func keyName(ref string) (string, error) {
 	return string(name), nil
 }
 
-func (s *Service) ChangeKey(ctx context.Context, id, database, ref string, change model.RedisKeyChange) error {
+func (s *Service) ChangeKey(ctx context.Context, id, database string, ref *string, change model.RedisKeyChange) (model.RedisKeyChangeResult, error) {
+	var result model.RedisKeyChangeResult
 	c, err := s.connection(id)
 	if err != nil {
-		return err
+		return result, err
 	}
 	db, err := databaseIndex(c, database)
 	if err != nil {
-		return err
+		return result, err
 	}
-	name, err := keyName(ref)
-	if err != nil {
-		return err
+	var name string
+	if change.Action != "create" {
+		if ref == nil {
+			return result, errors.New("Redis 键引用无效")
+		}
+		name, err = keyName(*ref)
+		if err != nil {
+			return result, err
+		}
+	}
+	if (change.TTL == nil && (change.Action == "create" || change.Action == "ttl")) || (change.TTL != nil && (*change.TTL < 0 || *change.TTL > 315360000)) {
+		return result, errors.New("Redis TTL 秒数无效")
 	}
 	switch change.Action {
-	case "delete":
+	case "delete", "ttl":
 	case "rename", "copy":
 		if change.Target == nil || len(*change.Target) > 16*1024 || *change.Target == name {
-			return errors.New("请输入不同的目标键名")
+			return result, errors.New("请输入不同的目标键名")
 		}
-	case "value":
+	case "create", "value":
 		if change.Value == nil || len(*change.Value) > 16*1024 || (change.Before != nil && len(*change.Before) > 16*1024) {
-			return errors.New("Redis 字符串值超过编辑上限或未提供")
+			return result, errors.New("Redis 字符串值超过编辑上限或未提供")
 		}
-	case "ttl":
-		if change.TTL == nil || *change.TTL < 0 || *change.TTL > 315360000 {
-			return errors.New("Redis TTL 秒数无效")
+		if (change.Action == "create" && (change.Target == nil || *change.Target == "")) || (change.Target != nil && len(*change.Target) > 16*1024) {
+			return result, errors.New("Redis 键名无效")
 		}
 	default:
-		return errors.New("不支持的 Redis 键操作")
+		return result, errors.New("不支持的 Redis 键操作")
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	return s.engine.ChangeKey(ctx, c, db, name, change)
+	if err := s.engine.ChangeKey(ctx, c, db, name, change); err != nil {
+		return result, err
+	}
+	result.OK = true
+	if change.Target != nil && (change.Action == "create" || change.Action == "rename" || change.Action == "copy" || change.Action == "value") {
+		result.Key = &model.RedisKey{Name: *change.Target, Ref: base64.RawURLEncoding.EncodeToString([]byte(*change.Target))}
+	}
+	return result, nil
 }
 
 func (s *Service) Run(ctx context.Context, id, database, command string) (model.RedisReply, error) {

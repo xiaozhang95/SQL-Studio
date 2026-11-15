@@ -11,6 +11,7 @@ var messages = map[string]string{
 	"请输入不同的目标键名":           "Enter a different destination key",
 	"Redis 字符串值超过编辑上限或未提供": "The value is missing or exceeds the Redis editing limit",
 	"Redis TTL 秒数无效":       "Invalid Redis TTL in seconds",
+	"Redis 键名无效":           "Invalid Redis key name",
 	"不支持的 Redis 键操作":       "Unsupported Redis key operation",
 	"Redis 目标键已存在":         "The destination Redis key already exists",
 	"Redis 源键已不存在或目标键已存在":  "The source Redis key is missing or the destination already exists",

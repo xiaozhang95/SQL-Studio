@@ -7,6 +7,7 @@ import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
@@ -41,6 +42,7 @@ type Props = {
     | 'replaceTableResult'
     | 'objects'
     | 'connections'
+    | 'savedConnections'
     | 'result'
     | 'run'
     | 'activeRunning'
@@ -87,8 +89,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
   const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
-  const databaseType = model.connections.find((connection) => connection.id === tab.connectionId)?.type
-  const adapter = getDatabaseAdapter(databaseType)
+  const databaseType = model.savedConnections.find((connection) => connection.id === tab.connectionId)?.type
+  const adapter = databaseType === DatabaseEngine.Redis ? undefined : getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
   const table = useResultTableScroll({ result, runId: run?.id, view, page: tablePage, search: resultSearch, sortKey: sort ? `${sort.column}:${sort.order}` : '', added: editing.newRows.length })
   const deferredSearch = useDeferredValue(resultSearch)
@@ -131,10 +133,10 @@ export default function QueryResults({ model, themeMode }: Props) {
       onCell: (row: { key: number }) => ({
         className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
         onDoubleClick: () => {
-          if (tab.kind === 'data' && adapter.dataEditing && row.key >= 0) void editing.begin(row.key, index)
+          if (tab.kind === 'data' && adapter?.dataEditing && row.key >= 0) void editing.begin(row.key, index)
         }
       }),
-      width: run?.kind === 'ddl' ? undefined : adapter.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : resultTableLayout.columnWidth,
+      width: run?.kind === 'ddl' ? undefined : adapter?.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : resultTableLayout.columnWidth,
       render: (
         _: unknown,
         row: {
@@ -152,7 +154,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           />
         ) : editing.cell?.row === row.key && editing.cell.column === index ? (
           <DataCellEditor editor={editing} disabled={editingBlocked} />
-        ) : adapter.isSQLColumn(column.name) && typeof row.cells[index] === 'string' && String(row.cells[index]).trim() ? (
+        ) : adapter?.isSQLColumn(column.name) && typeof row.cells[index] === 'string' && String(row.cells[index]).trim() ? (
           <div style={{ minWidth: 0, width: run?.kind === 'ddl' ? undefined : resultSQLLayout.columnWidth, maxWidth: '100%' }}>
             <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} />
           </div>
@@ -213,7 +215,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           }}
         >
           <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
-            {tab.kind === 'data' && adapter.dataEditing && (
+            {tab.kind === 'data' && adapter?.dataEditing && (
               <>
                 <ToolbarButton
                   label={t('新增行')}

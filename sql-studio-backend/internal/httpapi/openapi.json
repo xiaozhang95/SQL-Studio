@@ -36,13 +36,42 @@
       "post": {
         "operationId": "listSyncDatabases",
         "summary": "列出已保存或临时连接的可见用户库",
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DatabaseSyncConnection"}}}},
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatabaseSyncConnection"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {"description": "数据库名称列表", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "string"}}}}},
-          "400": {"description": "连接信息无效或连接失败"},
-          "403": {"description": "拒绝非本机请求"},
-          "404": {"description": "连接不存在"},
-          "503": {"description": "同步模块未装配"}
+          "200": {
+            "description": "数据库名称列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "连接信息无效或连接失败"
+          },
+          "403": {
+            "description": "拒绝非本机请求"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "同步模块未装配"
+          }
         }
       }
     },
@@ -50,13 +79,51 @@
       "post": {
         "operationId": "checkDatabaseSync",
         "summary": "只读检查同引擎源库、目标库和同步范围",
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DatabaseSyncRequest"}}}},
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatabaseSyncRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {"description": "可同步表数和跳过视图数", "content": {"application/json": {"schema": {"type": "object", "required": ["tables", "skippedViews"], "properties": {"tables": {"type": "integer"}, "skippedViews": {"type": "integer"}}}}}},
-          "400": {"description": "目标已存在、未允许建库或源结构不受支持"},
-          "403": {"description": "拒绝非本机请求"},
-          "404": {"description": "连接不存在"},
-          "503": {"description": "同步模块未装配"}
+          "200": {
+            "description": "可同步表数和跳过视图数",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "tables",
+                    "skippedViews"
+                  ],
+                  "properties": {
+                    "tables": {
+                      "type": "integer"
+                    },
+                    "skippedViews": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "目标已存在、未允许建库或源结构不受支持"
+          },
+          "403": {
+            "description": "拒绝非本机请求"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "同步模块未装配"
+          }
         }
       }
     },
@@ -64,12 +131,36 @@
       "post": {
         "operationId": "runDatabaseSync",
         "summary": "重新检查、排他创建目标库并流式同步",
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DatabaseSyncRequest"}}}},
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatabaseSyncRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {"description": "NDJSON heartbeat、progress、done 或 error 事件。只有 done 表示成功", "content": {"application/x-ndjson": {"schema": {"type": "string"}}}},
-          "400": {"description": "请求格式错误"},
-          "403": {"description": "拒绝非本机请求"},
-          "503": {"description": "同步模块未装配"}
+          "200": {
+            "description": "NDJSON heartbeat、progress、done 或 error 事件。只有 done 表示成功",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式错误"
+          },
+          "403": {
+            "description": "拒绝非本机请求"
+          },
+          "503": {
+            "description": "同步模块未装配"
+          }
         }
       }
     },
@@ -1080,6 +1171,92 @@
                     },
                     "truncated": {
                       "type": "boolean"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "完整的 UTF-8 键名，适合表单编辑时返回。"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求无效或 Redis 错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "503": {
+            "description": "Redis 查询工具不可用"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ref"
+                ],
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/{id}/redis/key/ttl": {
+      "post": {
+        "operationId": "readRedisKeyTTL",
+        "summary": "只读取 Redis 键剩余过期时间",
+        "tags": [
+          "Redis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ttlMillis"
+                  ],
+                  "properties": {
+                    "ttlMillis": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "剩余毫秒数，-1 表示永久有效，-2 表示键已不存在。"
                     }
                   }
                 }
@@ -1133,7 +1310,7 @@
     "/connections/{id}/redis/key/change": {
       "post": {
         "operationId": "redisChangeKey",
-        "summary": "修改 Redis 键",
+        "summary": "新增或修改 Redis 键",
         "tags": [
           "Redis"
         ],
@@ -1157,6 +1334,22 @@
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "key": {
+                      "type": "object",
+                      "description": "新增、重命名、复制或修改键名后的目标键。",
+                      "required": [
+                        "name",
+                        "ref"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "ref": {
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1190,7 +1383,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "ref",
                   "action"
                 ],
                 "properties": {
@@ -1198,11 +1390,13 @@
                     "type": "string"
                   },
                   "ref": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "现有键的 Base64URL 引用，create 可省略。"
                   },
                   "action": {
                     "type": "string",
                     "enum": [
+                      "create",
                       "value",
                       "ttl",
                       "rename",
@@ -1214,7 +1408,8 @@
                     "type": "string"
                   },
                   "target": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "新增、重命名、复制的目标键名，也可随 value 一起变更键名。"
                   },
                   "before": {
                     "type": "string",
@@ -1224,7 +1419,7 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 315360000,
-                    "description": "秒。0 表示永久有效。"
+                    "description": "过期秒数，0 表示永久有效。create 与 ttl 必填，value 省略时保留过期时间。"
                   }
                 },
                 "additionalProperties": false
@@ -1271,6 +1466,9 @@
                     },
                     "output": {
                       "type": "string"
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/QueryResult"
                     },
                     "truncated": {
                       "type": "boolean"
@@ -1497,21 +1695,75 @@
         "operationId": "getDatabaseMonitor",
         "summary": "读取已保存连接的数据库统计",
         "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
-          {"name": "database", "in": "query", "schema": {"type": "string"}, "description": "PostgreSQL 和 GreptimeDB 的可选数据库，省略时使用连接默认库"}
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "database",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "PostgreSQL 和 GreptimeDB 的可选数据库，省略时使用连接默认库"
+          }
         ],
         "responses": {
-          "200": {"description": "当前采样", "content": {"application/json": {"schema": {
-            "type": "object", "required": ["database", "sampledAt", "metrics"],
-            "properties": {
-              "database": {"type": "string"},
-              "sampledAt": {"type": "string", "format": "date-time"},
-              "metrics": {"type": "array", "items": {"type": "object", "required": ["key", "value"], "properties": {"key": {"type": "string"}, "value": {"type": "string"}}}}
+          "200": {
+            "description": "当前采样",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "database",
+                    "sampledAt",
+                    "metrics"
+                  ],
+                  "properties": {
+                    "database": {
+                      "type": "string"
+                    },
+                    "sampledAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "key",
+                          "value"
+                        ],
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
-          }}}},
-          "400": {"description": "统计读取失败"},
-          "403": {"description": "非本机 Host 或跨站请求被拒绝"},
-          "404": {"description": "连接不存在"}
+          },
+          "400": {
+            "description": "统计读取失败"
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          }
         }
       }
     },
@@ -2046,11 +2298,22 @@
       "post": {
         "operationId": "queryBatch",
         "summary": "在同一 MySQL 或 MariaDB 会话内逐条执行 SQL",
-        "tags": ["查询"],
+        "tags": [
+          "查询"
+        ],
         "description": "仅 MySQL 和 MariaDB 工作台。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，成功 USE 时附 database；随后发送 done。流开始后的会话错误发送 error 事件。取消不能撤销已提交写入。",
         "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
-          {"$ref": "#/components/parameters/AcceptLanguage"}
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -2059,12 +2322,32 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["statements", "allowWrite"],
+                "required": [
+                  "statements",
+                  "allowWrite"
+                ],
                 "properties": {
-                  "database": {"type": "string"},
-                  "allowWrite": {"type": "boolean", "enum": [true]},
-                  "limit": {"type": "integer", "default": 1000},
-                  "statements": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"type": "string"}}
+                  "database": {
+                    "type": "string"
+                  },
+                  "allowWrite": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "default": 1000
+                  },
+                  "statements": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
@@ -2073,12 +2356,26 @@
         "responses": {
           "200": {
             "description": "逐行返回语句回执",
-            "content": {"application/x-ndjson": {"schema": {"type": "string"}}}
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
-          "400": {"description": "输入、引擎或会话错误"},
-          "403": {"description": "非本机 Host 或跨站请求被拒绝"},
-          "404": {"description": "连接不存在"},
-          "429": {"description": "进程共享并发预算已满"}
+          "400": {
+            "description": "输入、引擎或会话错误"
+          },
+          "403": {
+            "description": "非本机 Host 或跨站请求被拒绝"
+          },
+          "404": {
+            "description": "连接不存在"
+          },
+          "429": {
+            "description": "进程共享并发预算已满"
+          }
         }
       }
     },
@@ -3379,44 +3676,145 @@
       "DatabaseSyncExternal": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["host", "port"],
+        "required": [
+          "host",
+          "port"
+        ],
         "properties": {
-          "type": {"type": "string", "enum": ["mysql", "mariadb", "postgresql", "greptimedb"], "default": "mysql"},
-          "database": {"type": "string", "description": "仅 PostgreSQL 和 GreptimeDB 可指定维护库"},
-          "host": {"type": "string", "maxLength": 255},
-          "port": {"type": "integer", "minimum": 1, "maximum": 65535},
-          "username": {"type": "string"},
-          "password": {"type": "string", "format": "password", "writeOnly": true},
-          "tls": {"type": "boolean", "default": false}
+          "type": {
+            "type": "string",
+            "enum": [
+              "mysql",
+              "mariadb",
+              "postgresql",
+              "greptimedb"
+            ],
+            "default": "mysql"
+          },
+          "database": {
+            "type": "string",
+            "description": "仅 PostgreSQL 和 GreptimeDB 可指定维护库"
+          },
+          "host": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true
+          },
+          "tls": {
+            "type": "boolean",
+            "default": false
+          }
         }
       },
       "DatabaseSyncConnection": {
         "type": "object",
         "additionalProperties": false,
-        "oneOf": [{"required": ["connectionId"]}, {"required": ["external"]}],
+        "oneOf": [
+          {
+            "required": [
+              "connectionId"
+            ]
+          },
+          {
+            "required": [
+              "external"
+            ]
+          }
+        ],
         "properties": {
-          "connectionId": {"type": "string"},
-          "external": {"$ref": "#/components/schemas/DatabaseSyncExternal"}
+          "connectionId": {
+            "type": "string"
+          },
+          "external": {
+            "$ref": "#/components/schemas/DatabaseSyncExternal"
+          }
         }
       },
       "DatabaseSyncRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["sourceDatabase", "targetDatabase", "structure"],
+        "required": [
+          "sourceDatabase",
+          "targetDatabase",
+          "structure"
+        ],
         "allOf": [
-          {"oneOf": [{"required": ["sourceConnectionId"]}, {"required": ["sourceExternal"]}]},
-          {"oneOf": [{"required": ["targetConnectionId"]}, {"required": ["targetExternal"]}]}
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "sourceConnectionId"
+                ]
+              },
+              {
+                "required": [
+                  "sourceExternal"
+                ]
+              }
+            ]
+          },
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "targetConnectionId"
+                ]
+              },
+              {
+                "required": [
+                  "targetExternal"
+                ]
+              }
+            ]
+          }
         ],
         "properties": {
-          "sourceConnectionId": {"type": "string"},
-          "sourceExternal": {"$ref": "#/components/schemas/DatabaseSyncExternal"},
-          "sourceDatabase": {"type": "string", "maxLength": 64},
-          "targetConnectionId": {"type": "string"},
-          "targetExternal": {"$ref": "#/components/schemas/DatabaseSyncExternal"},
-          "targetDatabase": {"type": "string", "maxLength": 64},
-          "structure": {"type": "boolean", "enum": [true]},
-          "data": {"type": "boolean", "default": false},
-          "createDatabase": {"type": "boolean", "default": false}
+          "sourceConnectionId": {
+            "type": "string"
+          },
+          "sourceExternal": {
+            "$ref": "#/components/schemas/DatabaseSyncExternal"
+          },
+          "sourceDatabase": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "targetConnectionId": {
+            "type": "string"
+          },
+          "targetExternal": {
+            "$ref": "#/components/schemas/DatabaseSyncExternal"
+          },
+          "targetDatabase": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "structure": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "boolean",
+            "default": false
+          },
+          "createDatabase": {
+            "type": "boolean",
+            "default": false
+          }
         }
       },
       "AgentConversationInfo": {

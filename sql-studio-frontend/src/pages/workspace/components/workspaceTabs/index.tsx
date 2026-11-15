@@ -109,7 +109,13 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           closable: true,
           closeIcon: <CloseOutlined aria-disabled={running} style={{ opacity: running ? 0.35 : 1 }} />,
           destroyOnHidden: !designer && !redis,
-          children: designer ? renderDesigner(item) : redis ? renderRedis(item, connection) : item.id === activeTab ? children : undefined
+          children: designer ? (
+            renderDesigner(item)
+          ) : (
+            <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              {redis ? renderRedis(item, connection) : item.id === activeTab ? children : undefined}
+            </div>
+          )
         }
       })}
       style={{ flex: 1, minHeight: 0, userSelect: 'none' }}

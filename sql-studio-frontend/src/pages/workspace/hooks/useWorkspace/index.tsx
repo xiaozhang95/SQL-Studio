@@ -118,8 +118,8 @@ export const useWorkspace = (active = true) => {
   const { history, appendHistory, clearHistory, pruneHistory } = historyStore
   useEffect(() => {
     // 列表失败/尚未恢复时不能把暂时的空列表当成所有连接已删除。
-    if (historyStore.ready && !connectionLoading && !connectionError) pruneHistory(connections.map((item) => item.id))
-  }, [historyStore.ready, connectionLoading, connectionError, connections, pruneHistory])
+    if (historyStore.ready && !connectionLoading && !connectionError) pruneHistory(savedConnections.map((item) => item.id))
+  }, [historyStore.ready, connectionLoading, connectionError, savedConnections, pruneHistory])
   const validateDatabases = useCallback(
     (id: string, databases: string[]) => {
       setExplorer((previous) => explorerAfterDatabasesLoaded(previous, id, databases))
@@ -394,7 +394,7 @@ export const useWorkspace = (active = true) => {
     if (activeRunning || !batch?.statements?.[index]) return
     setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', page: 1, resultIndex: index } }))
   }
-  function updateTab(patch: Partial<QueryScope> & { sql?: string }) {
+  function updateTab(patch: Partial<WorkspaceTab>) {
     if (!tab.id || tab.kind !== 'query' || !storage.pageReady) return
     setTabs((previous) => previous.map((item) => (item.id === activeTab ? { ...item, ...patch } : item)))
   }
@@ -414,7 +414,7 @@ export const useWorkspace = (active = true) => {
     }
   }
   function openHistory() {
-    if (tab.kind !== 'query' || !connection) return
+    if (tab.kind !== 'query' || (!connection && !redisConnection)) return
     setHistorySearch('')
     setHistoryOpen(true)
   }
@@ -423,7 +423,9 @@ export const useWorkspace = (active = true) => {
     const view = editor.current
     const current = view?.state.doc.toString() ?? tab.sql
     // 仅追加到当前 SQL 页，不替换草稿、不改变库范围，也不自动执行历史语句。
-    const insert = `${current.trim() ? (current.endsWith('\n') ? '\n' : '\n\n') : ''}-- 历史记录\n${adapter.cleanHistory(item.sql)}`
+    const prefix = current.trim() ? (current.endsWith('\n') ? '\n' : '\n\n') : ''
+    const redisCommand = item.sql.endsWith(';') ? item.sql + ' ;' : item.sql
+    const insert = prefix + (redisConnection ? `# 历史记录\n${redisCommand}` : `-- 历史记录\n${adapter.cleanHistory(item.sql)}`)
     if (view) {
       view.dispatch({ changes: { from: current.length, insert }, selection: { anchor: current.length + insert.length }, scrollIntoView: true })
       requestAnimationFrame(() => view.focus())
@@ -491,13 +493,22 @@ export const useWorkspace = (active = true) => {
   }
   function selectConnection(id: string) {
     const target = savedConnections.find((item) => item.id === id)
-    if (running || !target || (redisConnection && target.type !== DatabaseEngine.Redis)) return
+    if (running || !storage.pageReady || !target || id === connectionId) return
     const snapshot = objects.snapshots[id]
-    if (target.type !== DatabaseEngine.Redis && snapshot?.status !== 'connected') return
     const db = target.type === DatabaseEngine.Redis ? (selectedRedisDatabase(snapshot?.databases ?? [], undefined, target.database) ?? '') : ''
     editorSession.flush()
-    updateTab({ connectionId: id, database: db, schema: '', table: '' })
+    updateTab({ connectionId: id, database: db, schema: '', table: '', resultStatus: undefined, resultSource: undefined })
+    const withoutActiveResult = <T,>(records: Record<string, T>) => {
+      if (!(activeTab in records)) return records
+      const next = { ...records }
+      delete next[activeTab]
+      return next
+    }
+    setRuns(withoutActiveResult)
+    setResultViews(withoutActiveResult)
+    setHistoryOpen(false)
     resetStructure()
+    if (snapshot?.status !== 'connected') void openObjectsConnection(id).catch(() => {})
   }
   function selectObject(db: string, table?: string, id = connectionId, schema = '') {
     if (running || objects.snapshots[id]?.status !== 'connected') return
@@ -859,7 +870,7 @@ export const useWorkspace = (active = true) => {
     }
   }
   const executeSQL = useQueryExecution({
-    connections,
+    connections: savedConnections,
     objects,
     running,
     request,
@@ -889,12 +900,12 @@ export const useWorkspace = (active = true) => {
   }
   function executeCurrentSQL(statement: string) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id || !storage.pageReady) return
-    if (!connection || !objects.connected) {
+    if ((!connection && !redisConnection) || !objects.connected) {
       message.info(t('请先展开连接并加载数据库结构'))
       return
     }
     if (running || request.current) return
-    void executeSQL(statement, { connectionId, database, schema: selectedSchema, table: selectedTable }, tab.id)
+    void executeSQL(statement, { connectionId, database: redisDatabase ?? database, schema: selectedSchema, table: selectedTable }, tab.id)
   }
   function getSelectedSQL() {
     const state = editor.current?.state
@@ -1072,6 +1083,7 @@ export const useWorkspace = (active = true) => {
     tablePage,
     setTablePage,
     history,
+    appendHistory,
     clearHistory,
     openHistory,
     loadHistory,

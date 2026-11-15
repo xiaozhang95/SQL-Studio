@@ -22,22 +22,29 @@ func registerRedis(api *gin.RouterGroup, service *redistools.Service) {
 		page, err := service.Keys(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("cursor"), c.Query("pattern"))
 		redisResponse(c, page, err)
 	})
-	group.POST("/key", func(c *gin.Context) {
-		var input struct {
-			Database string  `json:"database"`
-			Ref      *string `json:"ref"`
-		}
-		if err := decode(c, &input); err != nil {
-			fail(c, err)
-			return
-		}
-		if input.Ref == nil {
-			respond(c, http.StatusBadRequest, gin.H{"error": "Redis 键引用无效"})
-			return
-		}
-		detail, err := service.Key(c.Request.Context(), c.Param("id"), input.Database, *input.Ref)
-		redisResponse(c, detail, err)
-	})
+	for _, route := range []string{"/key", "/key/ttl"} {
+		group.POST(route, func(c *gin.Context) {
+			var input struct {
+				Database string  `json:"database"`
+				Ref      *string `json:"ref"`
+			}
+			if err := decode(c, &input); err != nil {
+				fail(c, err)
+				return
+			}
+			if input.Ref == nil {
+				respond(c, http.StatusBadRequest, gin.H{"error": "Redis 键引用无效"})
+				return
+			}
+			if route == "/key/ttl" {
+				ttl, err := service.KeyTTL(c.Request.Context(), c.Param("id"), input.Database, *input.Ref)
+				redisResponse(c, ttl, err)
+				return
+			}
+			detail, err := service.Key(c.Request.Context(), c.Param("id"), input.Database, *input.Ref)
+			redisResponse(c, detail, err)
+		})
+	}
 	group.POST("/command", func(c *gin.Context) {
 		var input struct {
 			Database string `json:"database"`
@@ -60,12 +67,8 @@ func registerRedis(api *gin.RouterGroup, service *redistools.Service) {
 			fail(c, err)
 			return
 		}
-		if input.Ref == nil {
-			respond(c, http.StatusBadRequest, gin.H{"error": "Redis 键引用无效"})
-			return
-		}
-		err := service.ChangeKey(c.Request.Context(), c.Param("id"), input.Database, *input.Ref, input.RedisKeyChange)
-		redisResponse(c, gin.H{"ok": true}, err)
+		result, err := service.ChangeKey(c.Request.Context(), c.Param("id"), input.Database, input.Ref, input.RedisKeyChange)
+		redisResponse(c, result, err)
 	})
 	group.GET("/channels", func(c *gin.Context) {
 		result, err := service.Channels(c.Request.Context(), c.Param("id"), c.Query("pattern"))

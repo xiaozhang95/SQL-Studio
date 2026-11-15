@@ -31,7 +31,6 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
   const redis = current?.type === DatabaseEngine.Redis
   const snapshot = objects.snapshots[scope.connectionId]
   const connected = snapshot?.status === 'connected'
-  const loaded = connections.filter((connection) => (redis ? connection.type === DatabaseEngine.Redis : objects.snapshots[connection.id]?.status === 'connected'))
   const databases = snapshot?.databases ?? []
   const database = redis ? selectedRedisDatabase(databases, scope.database, current.database) : connected ? scope.database || undefined : undefined
   return (
@@ -42,11 +41,11 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         aria-label={t('选择连接')}
         showSearch
         optionFilterProp="searchText"
-        placeholder={loaded.length ? t('选择连接') : t('请先展开连接')}
-        value={connected || redis ? scope.connectionId : undefined}
-        disabled={disabled || !loaded.length}
+        placeholder={t('选择连接')}
+        value={current?.id}
+        disabled={disabled || !connections.length}
         onChange={onConnection}
-        options={loaded.map((connection) => ({
+        options={connections.map((connection) => ({
           value: connection.id,
           title: connection.name,
           searchText: connection.name,
@@ -68,7 +67,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         showSearch
         optionFilterProp="searchText"
         allowClear={!redis}
-        loading={redis && snapshot?.status === 'loading'}
+        loading={snapshot?.status === 'loading'}
         placeholder={t('选择数据库')}
         value={database}
         disabled={disabled || !connected}

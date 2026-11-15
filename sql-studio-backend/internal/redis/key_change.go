@@ -12,15 +12,22 @@ import (
 
 var missingKey = errors.New("Redis 键已不存在")
 var keyChanged = errors.New("Redis 键已变更，请刷新后重试")
+var targetExists = errors.New("Redis 目标键已存在")
 
 func (*Client) ChangeKey(ctx context.Context, connection model.Connection, db int, name string, change model.RedisKeyChange) error {
 	client := open(connection, db)
 	defer client.Close()
 	switch change.Action {
+	case "create":
+		err := client.SetArgs(ctx, *change.Target, *change.Value, driver.SetArgs{Mode: "NX", TTL: time.Duration(*change.TTL) * time.Second}).Err()
+		if errors.Is(err, driver.Nil) {
+			return targetExists
+		}
+		return err
 	case "rename":
 		changed, err := client.RenameNX(ctx, name, *change.Target).Result()
 		if err == nil && !changed {
-			return errors.New("Redis 目标键已存在")
+			return targetExists
 		}
 		return err
 	case "copy":
@@ -53,29 +60,62 @@ func (*Client) ChangeKey(ctx context.Context, connection model.Connection, db in
 		}
 		return err
 	case "value":
-		err := client.Watch(ctx, func(tx *driver.Tx) error {
-			current, err := tx.GetRange(ctx, name, 0, previewBytes).Result()
-			if err != nil {
-				return err
-			}
-			if len(current) > previewBytes || !utf8.ValidString(current) || (change.Before != nil && current != *change.Before) {
-				return keyChanged
-			}
-			var write *driver.StatusCmd
-			_, err = tx.TxPipelined(ctx, func(pipe driver.Pipeliner) error {
-				write = pipe.SetArgs(ctx, name, *change.Value, driver.SetArgs{Mode: "XX", KeepTTL: true})
-				return nil
-			})
-			if errors.Is(err, driver.Nil) || (err == nil && errors.Is(write.Err(), driver.Nil)) {
-				return missingKey
-			}
-			return err
-		}, name)
-		if errors.Is(err, driver.TxFailedErr) {
-			return keyChanged
-		}
-		return err
+		return editStringKey(ctx, client, name, change)
 	default:
 		return errors.New("不支持的 Redis 键操作")
 	}
+}
+
+func editStringKey(ctx context.Context, client *driver.Client, name string, change model.RedisKeyChange) error {
+	watched := []string{name}
+	if change.Target != nil && *change.Target != name {
+		watched = append(watched, *change.Target)
+	}
+	args := driver.SetArgs{Mode: "XX", KeepTTL: change.TTL == nil}
+	if change.TTL != nil {
+		args.TTL = time.Duration(*change.TTL) * time.Second
+	}
+	err := client.Watch(ctx, func(tx *driver.Tx) error {
+		kind, err := tx.Type(ctx, name).Result()
+		if err != nil {
+			return err
+		}
+		if kind == "none" {
+			return missingKey
+		}
+		if kind != "string" {
+			return keyChanged
+		}
+		current, err := tx.GetRange(ctx, name, 0, previewBytes).Result()
+		if err != nil {
+			return err
+		}
+		if len(current) > previewBytes || !utf8.ValidString(current) || (change.Before != nil && current != *change.Before) {
+			return keyChanged
+		}
+		if len(watched) == 2 {
+			exists, err := tx.Exists(ctx, watched[1]).Result()
+			if err != nil {
+				return err
+			}
+			if exists != 0 {
+				return targetExists
+			}
+		}
+		_, err = tx.TxPipelined(ctx, func(pipe driver.Pipeliner) error {
+			pipe.SetArgs(ctx, name, *change.Value, args)
+			if len(watched) == 2 {
+				pipe.RenameNX(ctx, name, watched[1])
+			}
+			return nil
+		})
+		return err
+	}, watched...)
+	if errors.Is(err, driver.Nil) {
+		return missingKey
+	}
+	if errors.Is(err, driver.TxFailedErr) {
+		return keyChanged
+	}
+	return err
 }

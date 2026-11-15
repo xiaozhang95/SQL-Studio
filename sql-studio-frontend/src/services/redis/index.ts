@@ -1,10 +1,16 @@
+import type { QueryResult } from '@/typings/database'
 import { fetchResponse, post, readJSON, request } from '@/utils/request'
 
 export type RedisKey = { name: string; ref: string }
 export type RedisKeyPage = { keys: RedisKey[]; cursor: string }
-export type RedisKeyDetail = { type: string; ttlMillis: number; size: number; preview: string; truncated: boolean; editable: boolean }
-export type RedisKeyChange = { action: 'delete' } | { action: 'copy' | 'rename'; target: string } | { action: 'value'; value: string; before: string } | { action: 'ttl'; ttl: number }
-export type RedisReply = { database: number; output: string; truncated: boolean }
+export type RedisKeyDetail = { name?: string; type: string; ttlMillis: number; size: number; preview: string; truncated: boolean; editable: boolean }
+export type RedisKeyChange =
+  | { action: 'delete' }
+  | { action: 'copy' | 'rename'; target: string }
+  | { action: 'value'; target?: string; value: string; before: string; ttl?: number }
+  | { action: 'create'; target: string; value: string; ttl: number }
+  | { action: 'ttl'; ttl: number }
+export type RedisReply = { database: number; output: string; truncated: boolean; result?: QueryResult }
 export type RedisChannel = { name: string; ref: string; subscribers: number }
 export type RedisChannels = { channels: RedisChannel[]; patterns: number; truncated: boolean }
 export type RedisEvent = { type: 'ready' } | { type: 'message'; channel: string; payload: string; truncated?: boolean }
@@ -16,8 +22,11 @@ export const scanKeys = (id: string, database: number, pattern: string, cursor: 
 
 export const getKey = (id: string, database: number, ref: string, signal: AbortSignal) => request<RedisKeyDetail>(`${path(id)}/key`, { ...post({ database: String(database), ref }), signal })
 
-export const changeKey = (id: string, database: number, ref: string, change: RedisKeyChange, signal: AbortSignal) =>
-  request<{ ok: boolean }>(`${path(id)}/key/change`, { ...post({ database: String(database), ref, ...change }), signal })
+export const getKeyTTL = (id: string, database: number, ref: string, signal: AbortSignal) =>
+  request<{ ttlMillis: number }>(`${path(id)}/key/ttl`, { ...post({ database: String(database), ref }), signal })
+
+export const changeKey = (id: string, database: number, ref: string | undefined, change: RedisKeyChange, signal: AbortSignal) =>
+  request<{ ok: boolean; key?: RedisKey }>(`${path(id)}/key/change`, { ...post({ database: String(database), ref, ...change }), signal })
 
 export const runCommand = (id: string, database: number, command: string, signal: AbortSignal) =>
   request<RedisReply>(`${path(id)}/command`, { ...post({ database: String(database), command }), signal })

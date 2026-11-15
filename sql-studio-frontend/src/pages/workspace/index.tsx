@@ -7,6 +7,7 @@ import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { sidebarLayout } from '@/constant/sidebarLayout'
+import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -123,7 +124,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
                     />
                   )}
                 >
-                  <div className="workspace-page" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+                  <>
                     {!model.pageReady ? (
                       model.pageLoadFailed ? (
                         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('标签内容暂不可用')}>
@@ -140,7 +141,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
                         <QueryResults model={model} themeMode={themeMode} />
                       </>
                     )}
-                  </div>
+                  </>
                 </WorkspaceTabs>
               ) : (
                 <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
@@ -161,7 +162,9 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
         onClose={() => model.setConnectionModal(false)}
         onSaved={model.onConnectionSaved}
       />
-      <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
+      {!model.savedConnections.some((connection) => connection.id === model.connectionId && connection.type === DatabaseEngine.Redis) && (
+        <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
+      )}
     </div>
   )
 }

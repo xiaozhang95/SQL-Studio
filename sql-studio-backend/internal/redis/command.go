@@ -5,14 +5,23 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	driver "github.com/redis/go-redis/v9"
 	"sql-studio-backend/internal/model"
 )
 
-func (*Client) Run(ctx context.Context, connection model.Connection, db int, args []string) (model.RedisReply, error) {
-	reply := model.RedisReply{Database: db}
+func (*Client) Run(ctx context.Context, connection model.Connection, db int, args []string) (reply model.RedisReply, err error) {
+	start := time.Now()
+	reply = model.RedisReply{Database: db}
 	cmd := strings.ToUpper(args[0])
+	var value any
+	defer func() {
+		if err == nil {
+			reply.Result = commandResult(args, value)
+			reply.Result.DurationMS = time.Since(start).Milliseconds()
+		}
+	}()
 	switch cmd {
 	case "SELECT":
 		if len(args) != 2 {
@@ -27,6 +36,7 @@ func (*Client) Run(ctx context.Context, connection model.Connection, db int, arg
 		if err := client.Do(ctx, "SELECT", selected).Err(); err != nil {
 			return reply, err
 		}
+		value = "OK"
 		return model.RedisReply{Database: int(selected), Output: "OK"}, nil
 	case "AUTH", "HELLO", "QUIT", "RESET", "MONITOR", "SUBSCRIBE", "PSUBSCRIBE", "SSUBSCRIBE", "UNSUBSCRIBE", "PUNSUBSCRIBE", "SUNSUBSCRIBE",
 		"MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH", "READONLY", "READWRITE", "ASKING", "CLIENT":
@@ -38,9 +48,10 @@ func (*Client) Run(ctx context.Context, connection model.Connection, db int, arg
 	for i, arg := range args {
 		command[i] = arg
 	}
-	value, err := client.Do(ctx, command...).Result()
+	value, err = client.Do(ctx, command...).Result()
 	if errors.Is(err, driver.Nil) {
 		reply.Output = "(nil)"
+		value = nil
 		return reply, nil
 	}
 	if err != nil {
