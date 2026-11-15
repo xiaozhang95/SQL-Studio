@@ -1,6 +1,7 @@
+import { LoadingOutlined } from '@ant-design/icons'
 import { autocompletion } from '@codemirror/autocomplete'
 import { StateField } from '@codemirror/state'
-import type { EditorState } from '@codemirror/state'
+import type { EditorState, Extension } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
@@ -22,7 +23,8 @@ type Props = {
   onRun: (view: EditorView) => void
   onViewChange: (view: EditorView | null) => void
   onContentChange: (hasText: boolean) => void
-  completionEnabled: boolean
+  aiExtensions: Extension[]
+  aiCompletionLoading: boolean
 }
 
 const editorSetup = { foldGutter: false, autocompletion: false }
@@ -75,12 +77,12 @@ function commandHints(label: string) {
   })
 }
 
-export default function Editor({ model, themeMode, shortcutEnabled, onRun, onViewChange, onContentChange, completionEnabled }: Props) {
+export default function Editor({ model, themeMode, shortcutEnabled, onRun, onViewChange, onContentChange, aiExtensions, aiCompletionLoading }: Props) {
   const { t } = useTranslation()
   const [initial] = useState(() => ({ value: model.tab.sql, extensions: [sqlEditorAppearance, ...model.getEditorHistory(model.tab.id)] }))
   const hintLabel = t('命令用法')
   const hints = useMemo(() => commandHints(hintLabel), [hintLabel])
-  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, ...(completionEnabled ? [completion] : [])], [completionEnabled, hints, initial.extensions])
+  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, completion, ...aiExtensions], [hints, initial.extensions, aiExtensions])
   const editor = useRef<EditorView | null>(null)
   const callbacks = useRef({ model, onViewChange, onContentChange })
   useLayoutEffect(() => {
@@ -107,7 +109,7 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
 
   return (
     <div
-      style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'text', cursor: 'text' }}
+      style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'text', cursor: 'text', position: 'relative' }}
       onScrollCapture={model.rememberEditor}
       onBlurCapture={() => model.getCurrentSQL()}
       onClickCapture={() => {
@@ -130,6 +132,9 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
         }}
         onUpdate={onUpdate}
       />
+      {aiCompletionLoading && (
+        <LoadingOutlined spin aria-label={t('AI 代码补全中')} role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />
+      )}
     </div>
   )
 }

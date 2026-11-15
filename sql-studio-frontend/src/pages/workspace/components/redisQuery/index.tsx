@@ -23,6 +23,7 @@ import type { Connection } from '@/typings/database'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
+import { useAISQL } from '../../hooks/useAISQL'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import QueryHistory from '../queryHistory'
@@ -49,7 +50,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const [tool, setTool] = useState(() => readRedisTool(model.tab.id))
   const [commandBusy, setCommandBusy] = useState(false)
   const [pubSubOpened, setPubSubOpened] = useState(tool === 'pubsub')
-  const [completion, setCompletion] = useState(true)
   const [loadedCommand, setLoadedCommand] = useState<HistoryItem>()
   const historyLoad = useRef<HistoryItem | undefined>(undefined)
   const [hasText, setHasText] = useState(Boolean(model.tab.sql.trim()))
@@ -61,6 +61,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const blocked = model.running || commandBusy
   const editorMode = tool === 'editor'
   const consoleMode = tool === 'console'
+  const ai = useAISQL({ ...tab, database: database ?? '' }, objects, blocked || !active || !editorMode || database === undefined, connection.type)
   const { beforeImport, importing, error: importError, clearError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
 
   function format() {
@@ -107,10 +108,18 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           ))}
         </div>
         <div className="query-toolbar-group">
-          <Tooltip title={t('代码补全')}>
+          <Tooltip title={ai.configured ? t('AI 代码补全') : t('请先在系统设置中保存默认模型')}>
             <label style={switchLabelStyle}>
+              <CodeOutlined aria-hidden="true" />
               <span className="redis-assist-label">{t('代码补全')}</span>
-              <Switch size="small" aria-label={t('代码补全')} checked={editorMode && completion} disabled={blocked || !editorMode} onChange={setCompletion} />
+              <Switch
+                size="small"
+                aria-label={t('代码补全')}
+                checked={editorMode && ai.configured && ai.enabled}
+                disabled={!active || !editorMode || blocked || database === undefined || !ai.configured || ai.preferenceSaving}
+                loading={ai.preferenceSaving}
+                onChange={(value) => void ai.changeCompletion(value)}
+              />
             </label>
           </Tooltip>
           <ToolbarButton label={t('SQL 美化')} icon={<FormatPainterOutlined />} disabled={blocked || !editorMode || !hasText} onClick={format} />
@@ -132,6 +141,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             id={connection.id}
             connectionName={connection.name}
             database={Number(database)}
+            databases={snapshot?.databases ?? []}
             visible={active && consoleMode}
             blocked={model.running}
             loadedCommand={loadedCommand}
@@ -151,7 +161,8 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
                   if (view) setHasText(Boolean(view.state.doc.toString().trim()))
                 }}
                 onContentChange={setHasText}
-                completionEnabled={completion}
+                aiExtensions={ai.extensions}
+                aiCompletionLoading={ai.completionLoading}
               />
               <QueryResults model={{ ...model, running: blocked }} themeMode={themeMode} />
             </>

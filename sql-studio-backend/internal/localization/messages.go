@@ -197,6 +197,7 @@ var messages = map[string]string{
 	"布局范围或草稿超限":                    "The layout scope or draft exceeds the limit",
 	"展开状态无效":                       "Invalid expansion state",
 	"AI 请求较多，请稍后重试":                "Too many AI requests. Please retry later.",
+	"Redis 不支持 SQL":                "Redis does not support SQL",
 	"未知 AI 操作":                     "Unknown AI operation",
 	"AI 上下文过大，请选取较短 SQL":           "The AI context is too large. Select shorter SQL.",
 	"SQL 内容不能为空":                   "SQL content is required",

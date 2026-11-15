@@ -50,7 +50,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | POST   | `/connections/{id}/query-batch` | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执 |
 | GET    | `/state/{section}`            | 读取配置分区                                |
 | PUT    | `/state/{section}`            | 按修订号保存配置                            |
-| POST   | `/ai/assist`                  | SQL 续写或优化                              |
+| POST   | `/ai/assist`                  | SQL 续写、SQL 优化或 Redis 命令续写     |
 | POST   | `/ai/models`                  | 获取服务商模型列表                          |
 | DELETE | `/ai/config`                  | 清除 AI 配置并关闭续写                      |
 
@@ -108,6 +108,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 - 键修改接受 `{database,ref,action}`。操作为 `value`（短 UTF-8 字符串，保留原 TTL，`before` 可匹配读取时的旧值）、`ttl`（整数秒，0 表示永久）、`rename`、`copy` 或 `delete`。复制及重命名需要 `target`，现有目标键会保留。
 - 命令请求为 `{database,command}`。支持引号、转义和 `SELECT`，以 `{database,output,truncated,result}` 返回逻辑库、终端文本和查询结果表。结果表最多 1000 行，受输出大小限制，空值以 JSON null 表示，整数使用十进制字符串。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
 - 频道列表接受可选 `pattern`，显示最多 200 个活跃频道及其直接订阅者数量，并返回实例模式订阅数。订阅请求为 `{channel,pattern}`，`pattern` 为布尔值。NDJSON 事件按 `ready`、`message`、`heartbeat` 和 `error` 识别，消息包含 `channel`、`payload` 和可选 `truncated`，断开请求释放订阅。
+- 通过 `POST /ai/assist` 的 `complete` 操作续写编辑器内的 Redis 命令。连接引擎根据 `connectionId` 解析，携带当前逻辑库 `database` 及草稿光标上下文，返回待接受的建议文本。
 - 监控沿用 `/connections/{id}/monitor`，从 Redis `INFO` 读取客户端数、每秒命令数、内存、运行时长、累计命令、过期键、淘汰键和命中率。
 
 ## 数据库同步

@@ -181,6 +181,33 @@ func (d dialectConnection) Get(string) (model.Connection, error) {
 	return model.Connection{Name: "dialect test", Type: string(d), Password: "private-password"}, nil
 }
 
+func TestRedisCompletionUsesCommandSyntaxAndLogicalDatabase(t *testing.T) {
+	g := &generator{content: `{"completion":"2"}`}
+	s := New(repository{}, dialectConnection(model.TypeRedis), g)
+	input := model.AIRequest{Action: "complete", ConnectionID: "redis", Database: "4", Prefix: "select ", Suffix: "\nPING",
+		Document: "select \nPING", Connection: &model.AIConnectionContext{Type: "mysql"}, Schema: "foreign", Table: "foreign", Tables: []model.AITable{{Name: "foreign"}}}
+	result, err := s.Assist(context.Background(), input)
+	if err != nil || result.Completion != "2" {
+		t.Fatal(result, err)
+	}
+	prompt := g.messages[0].Content
+	if !strings.Contains(prompt, "redis-cli") || !strings.Contains(prompt, "SELECT index") || strings.Contains(prompt, "SQL assistant") {
+		t.Fatal("Redis request did not use Redis command syntax")
+	}
+	var received model.AIRequest
+	payload := g.messages[1].Content
+	if err := json.Unmarshal([]byte(payload), &received); err != nil || received.Connection == nil || received.Connection.Type != model.TypeRedis ||
+		received.Database != "4" || received.Prefix != input.Prefix || received.Suffix != input.Suffix || received.Document != input.Document {
+		t.Fatal("Redis completion lost authoritative scope or cursor context", err)
+	}
+	if strings.Contains(payload, "foreign") || strings.Contains(payload, "private-password") {
+		t.Fatal("Redis completion included unrelated connection or table metadata")
+	}
+	if _, err := s.Assist(context.Background(), model.AIRequest{Action: "optimize", ConnectionID: "redis", SQL: "PING"}); err == nil || g.calls != 1 {
+		t.Fatal("Redis command incorrectly went through SQL optimization")
+	}
+}
+
 func TestMariaDBReturningOptimizationUsesDistinctDialect(t *testing.T) {
 	for _, engine := range []string{model.TypeMySQL, model.TypeMariaDB, model.TypePostgreSQL} {
 		t.Run(engine, func(t *testing.T) {

@@ -16,6 +16,7 @@ type Props = {
   page: string
   id: string
   database: number
+  databases: readonly string[]
   visible: boolean
   blocked: boolean
   connectionName: string
@@ -25,7 +26,9 @@ type Props = {
   onDatabase: (database: number) => void
 }
 
-export default function Console({ page, id, database, visible, blocked, connectionName, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
+const selectHintLimit = 16
+
+export default function Console({ page, id, database, databases, visible, blocked, connectionName, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [initial] = useState(() => readTerminal(page, id))
@@ -40,7 +43,8 @@ export default function Console({ page, id, database, visible, blocked, connecti
   const scroll = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const prompt = `redis[${database}]>`
-  const hints = redisCommandHints(command)
+  const databaseHint = databases.length ? `${t('可选逻辑库')} ${databases.slice(0, selectHintLimit).join(', ')}${databases.length > selectHintLimit ? ', …' : ''}` : undefined
+  const hints = redisCommandHints(command, databaseHint)
 
   const [lastLoad, setLastLoad] = useState(loadedCommand)
   if (lastLoad !== loadedCommand) {

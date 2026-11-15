@@ -88,12 +88,16 @@ const commands = redisCommandSignatures.map((usage) => {
   return { label, detail: args.join(' '), type: 'keyword' }
 })
 
-export function redisCommandHints(input: string): string[] {
+export function redisCommandHints(input: string, selectDatabases?: string): string[] {
   const match = /^[\t ]*([\w.-]+)([\t ;]|$)/.exec(input)
   if (!match) return []
   const name = match[1].toUpperCase()
   const exact = commands.find((command) => command.label === name)
-  if (exact) return [exact.detail ? `${exact.label} ${exact.detail}` : exact.label]
+  if (exact) {
+    const hints = [exact.detail ? `${exact.label} ${exact.detail}` : exact.label]
+    if (name === 'SELECT' && selectDatabases) hints.push(selectDatabases)
+    return hints
+  }
   return match[2]
     ? []
     : commands

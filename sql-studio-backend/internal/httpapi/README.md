@@ -24,7 +24,7 @@ module_routes_test.go 使用真实业务模块和测试数据库接口验证双�
 
 GET/PUT /api/state/:section 调用 settings。PUT 限32MiB，CAS冲突409，沿用本机同源保护。
 
-POST /api/ai/assist 调用 AI 模块；严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
+POST /api/ai/assist 调用 AI 模块，支持 SQL 续写和优化、Redis 命令续写；严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
 
 POST /api/ai/models 接收 provider、可选 apiKey/configId，通过 AI 模块获取真实可用模型；空 Key 只复用指定记录的 Key，未知 ID 拒绝，响应仅 id/name。
 

@@ -5,6 +5,7 @@ import { getAIAdapter, isAIProvider } from '@/ai'
 import { aiModelsSection } from '@/ai/typings'
 import type { AIConfigDocument, AIProviderType } from '@/ai/typings'
 import { getDatabaseAdapter } from '@/databases'
+import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseType } from '@/databases/typings'
 import type { AIResult } from '@/typings/ai'
 import type { QueryScope } from '@/typings/workspace'
@@ -16,10 +17,12 @@ import type { useDatabaseObjects } from '../useDatabaseObjects'
 
 type Preview = { result: AIResult; original: string; document: EditorView['state']['doc']; from: number; to: number; view: EditorView }
 export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnType<typeof useDatabaseObjects>, blocked: boolean, databaseType?: DatabaseType) {
-  const layout = getDatabaseAdapter(databaseType).explorer
-  const snapshot = objects.snapshots[scope.connectionId]
-  const tables = snapshot?.status === 'connected' ? snapshot.tables[scope.database] : undefined
-  const structures = snapshot?.structures
+  const { connectionId, database, schema, table } = scope
+  const redis = databaseType === DatabaseEngine.Redis
+  const layout = redis ? undefined : getDatabaseAdapter(databaseType).explorer
+  const snapshot = objects.snapshots[connectionId]
+  const tables = !redis && snapshot?.status === 'connected' ? snapshot.tables[database] : undefined
+  const structures = redis ? undefined : snapshot?.structures
   const editor = useRef<EditorView | null>(null)
   const [hasSavedModel, setHasSavedModel] = useState(false)
   const [configured, setConfigured] = useState(false)
@@ -81,16 +84,12 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const complete = useCallback(
     async (prefix: string, suffix: string, document: string, signal: AbortSignal) => {
       if (signal.aborted) return ''
-      const context = buildAIContext(
-        { connectionId: scope.connectionId, database: scope.database, schema: scope.schema, table: scope.table },
-        tables || [],
-        structures || {},
-        `${document}\n${prefix}\n${suffix}`,
-        layout
-      )
+      const context = redis
+        ? { connectionId, database, tables: [] }
+        : buildAIContext({ connectionId, database, schema, table }, tables || [], structures || {}, `${document}\n${prefix}\n${suffix}`, layout)
       return (await getAIAdapter(provider).assist({ ...context, action: 'complete', prefix, suffix, document }, signal)).completion || ''
     },
-    [scope.connectionId, scope.database, scope.schema, scope.table, tables, structures, provider, layout]
+    [connectionId, database, schema, table, tables, structures, provider, layout, redis]
   )
   const extensions = useMemo(() => {
     if (!configured || !enabled || blocked) return []
@@ -140,7 +139,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   const changeCompletion = (value: boolean) => (configured ? updatePreference({ completionEnabled: value }) : undefined)
   const optimize = async (selectionOnly = false, selectedSQL?: string) => {
     const view = editor.current
-    if (!view || !configured || blocked || (loading && requestScope === scopeKey)) return
+    if (redis || !view || !configured || blocked || (loading && requestScope === scopeKey)) return
     const doc = view.state.doc
     const selection = view.state.selection.main
     if (selectionOnly && selection.empty) return

@@ -10,4 +10,4 @@ Models(ctx, AIModelsRequest) 使用本次新 Key 或按可选 configId 精确复
 
 AIRequest增加document（最多64KB）、table和表/字段备注。连接名称与引擎由服务端按显式ID解析，只发送name/type，不含主机、用户名或密码；客户端伪造connection会被覆盖。SQL注释作为查询意图使用，不能覆盖系统角色和响应格式。
 
-AI 允许已实现的 mysql/mariadb/postgresql 引擎，系统提示按实际 connection.Type 使用对应方言，不发送数据库凭据。MariaDB 独立于 MySQL，提示词明确保留 INSERT/REPLACE/DELETE RETURNING，避免套用 MySQL 的语法限制；生成建议仍须由用户审阅，不自动执行。
+SQL 系统提示按实际 connection.Type 使用对应方言，不发送数据库凭据。Redis 连接支持 complete，使用 redis-cli 命令语法与当前逻辑库，发送光标上下文，不携带 SQL 表、字段或 Schema 信息。MariaDB 独立于 MySQL，提示词明确保留 INSERT/REPLACE/DELETE RETURNING，避免套用 MySQL 的语法限制；生成建议仍须由用户审阅，不自动执行。

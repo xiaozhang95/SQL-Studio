@@ -5,6 +5,7 @@ import { setImmediate as settle } from 'node:timers/promises'
 
 import ts from 'typescript'
 
+import { redisCommandHints } from '../src/databases/redis/editor/index.ts'
 import { RequestError } from '../src/utils/request/index.ts'
 
 function harness(modulePath, failWrite = false) {
@@ -14,7 +15,8 @@ function harness(modulePath, failWrite = false) {
     effectCursor = 0
   const writes = [],
     discovered = [],
-    notifications = []
+    notifications = [],
+    assists = []
   const browser = new EventTarget()
   browser.addEventListener('ai-settings-saved', () => notifications.push('saved'))
   let document = { revision: 7, data: { configurations: [{ id: 'a', provider: 'deepseek', model: 'deepseek-flash', modelName: 'Flash', configured: true }], activeId: 'a', completionEnabled: false } }
@@ -62,6 +64,10 @@ function harness(modulePath, failWrite = false) {
   }
   const adapter = {
     profile: { value: 'deepseek', defaultModel: 'deepseek-flash' },
+    assist: async (input, signal) => {
+      assists.push({ input, signal })
+      return { completion: '1' }
+    },
     listModels: async (key, signal, configId) => {
       discovered.push({ key, signal, configId })
       return [
@@ -75,8 +81,14 @@ function harness(modulePath, failWrite = false) {
     '@/ai': { aiProviders: [{ value: 'deepseek' }], getAIAdapter: () => adapter, isAIProvider: (value) => value === 'deepseek' },
     '@/utils/request': { request, RequestError },
     '@/ai/typings': { maxAIConfigurations: 64, aiModelsSection: 'ai-models' },
-    '@/databases': { getDatabaseAdapter: () => ({}) },
-    '../../utils/aiCompletion': { aiCompletion: () => [] },
+    '@/databases': {
+      getDatabaseAdapter: (type) => {
+        assert.notEqual(type, 'redis', 'Redis 没有 SQL 方言适配器')
+        return {}
+      }
+    },
+    '@/databases/typings': { DatabaseEngine: { Redis: 'redis' } },
+    '../../utils/aiCompletion': { aiCompletion: (options) => [options] },
     '../../utils/aiContext': { buildAIContext: () => ({}) }
   }
   const source = readFileSync(new URL(modulePath, import.meta.url), 'utf8')
@@ -94,6 +106,7 @@ function harness(modulePath, failWrite = false) {
     writes,
     discovered,
     notifications,
+    assists,
     get document() {
       return document
     },
@@ -291,4 +304,32 @@ test('已保存模型时显示 SQL AI 工具，选中当前模型后才可使用
   } finally {
     f.close()
   }
+})
+
+test('Redis 编辑器沿用默认模型及续写开关，并提交当前连接和逻辑库', async () => {
+  const f = harness('../src/pages/workspace/hooks/useAISQL/index.ts')
+  const scope = { connectionId: 'redis-fixture', database: '3', table: '', sql: '' }
+  const objects = { snapshots: { 'redis-fixture': { status: 'connected' } } }
+  try {
+    f.render(scope, objects, false, 'redis')
+    await settle()
+    const model = f.render(scope, objects, false, 'redis')
+    assert.deepEqual(model.extensions, [])
+    await model.changeCompletion(true)
+    const [extension] = f.render(scope, objects, false, 'redis').extensions
+    const { signal } = new AbortController()
+    assert.equal(await extension.complete('SELECT ', '', 'SELECT ', signal), '1')
+    assert.deepEqual(f.assists, [{ input: { connectionId: 'redis-fixture', database: '3', tables: [], action: 'complete', prefix: 'SELECT ', suffix: '', document: 'SELECT ' }, signal }])
+    assert.deepEqual(f.render(scope, objects, true, 'redis').extensions, [])
+  } finally {
+    f.close()
+  }
+})
+
+test('终端 SELECT 语法提示使用当前连接返回的逻辑库', () => {
+  const databases = '可选逻辑库 0, 2, 4'
+  assert.ok(redisCommandHints('sel', databases).includes('SELECT'))
+  assert.deepEqual(redisCommandHints('  SeLeCt\t2', databases), ['SELECT index', databases])
+  assert.deepEqual(redisCommandHints('select '), ['SELECT index'])
+  assert.deepEqual(redisCommandHints('set', databases), ['SET key value [EX seconds] [PX milliseconds] [NX | XX]'])
 })
