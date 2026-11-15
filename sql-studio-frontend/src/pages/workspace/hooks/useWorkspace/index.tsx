@@ -77,6 +77,10 @@ export const useWorkspace = (active = true) => {
   )
   const { connections: savedConnections, setConnections, setSavedGroups, groups, connectionLoading, connectionError, loadConnections } = useWorkspaceConnections(onConnectionsLoaded)
   const connections = useMemo(() => savedConnections.filter((item) => item.type !== DatabaseEngine.Redis), [savedConnections])
+  const redisConnections = useMemo(
+    () => (connectionLoading || connectionError ? undefined : new Set(savedConnections.filter((item) => item.type === DatabaseEngine.Redis).map((item) => item.id))),
+    [connectionLoading, connectionError, savedConnections]
+  )
   const [explorer, setExplorer] = useState<ExplorerLayout>({ expanded: [], selected: [], search: '', top: 0 })
   const [resultHeight, setResultHeight] = useState<number>(resultPanelLayout.defaultHeight)
   const { width: sidebarWidth, setWidth: setSidebarWidth, restoreWidth: restoreSidebarWidth } = useSidebarWidth()
@@ -236,6 +240,7 @@ export const useWorkspace = (active = true) => {
     },
     {
       busy: queryRunning || uiBlocked || Object.values(designerDirty).some(Boolean),
+      redisConnections,
       hydrate: ({ id, sql, run, expectedSQL, expectedRun }) => {
         setTabs((previous) => previous.map((page) => (page.id === id && page.sql === expectedSQL ? { ...page, sql } : page)))
         setRuns((previous) => {

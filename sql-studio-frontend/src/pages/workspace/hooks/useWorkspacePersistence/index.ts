@@ -5,9 +5,12 @@ import type { RunState, WorkspaceSnapshot, WorkspaceTab } from '@/typings/worksp
 import { createLatestWriter } from '@/utils/latestWriter'
 import { RequestError } from '@/utils/request'
 
+import { clearRedisDatabaseSession, rememberRedisDatabases, restoreRedisDatabases } from './redisDatabaseSession'
+
 type Content = { id: string; sql: string; run?: RunState; expectedSQL: string; expectedRun?: RunState }
 type Options = {
   busy: boolean
+  redisConnections?: ReadonlySet<string>
   hydrate: (content: Content) => void
   evict: (ids: string[], expected: WorkspaceSnapshot) => string[]
 }
@@ -16,8 +19,16 @@ type Options = {
 export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (snapshot: WorkspaceSnapshot) => void, options: Options) {
   const store = useRef<WorkspaceStore | null>(null)
   const current = useRef({ snapshot, restore, options })
+  const available = useRef(false)
+  const inFlight = useRef<WorkspaceTab[]>([])
+  const syncRedisDatabases = useCallback(() => {
+    const { snapshot, options } = current.current
+    const repository = store.current
+    if (available.current && repository && options.redisConnections) rememberRedisDatabases(snapshot.tabs, repository.doc.index.tabs, inFlight.current, options.redisConnections)
+  }, [])
   useLayoutEffect(() => {
     current.current = { snapshot, restore, options }
+    syncRedisDatabases()
   })
   const [repository, setRepository] = useState<WorkspaceStore | null>(null)
   const [ready, setReady] = useState(false)
@@ -26,31 +37,39 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   const [retry, setRetry] = useState(0)
   const [saving, setSaving] = useState(false)
   const [reload, setReload] = useState(false)
-  const available = useRef(false)
   const version = useRef(0)
   const dirtySince = useRef<number | null>(null)
   const queue = useRef<((value: WorkspaceSnapshot) => Promise<void>) | null>(null)
-  const save = useCallback((value: WorkspaceSnapshot) => {
-    queue.current ??= createLatestWriter<WorkspaceSnapshot>(async (value) => {
-      const repository = store.current
-      if (!repository || !available.current) return
-      try {
-        await repository.commit(value)
-      } catch (error) {
-        if (error instanceof RequestError && error.status === 409) {
-          available.current = false
-          setReload(true)
+  const save = useCallback(
+    (value: WorkspaceSnapshot) => {
+      queue.current ??= createLatestWriter<WorkspaceSnapshot>(async (value) => {
+        const repository = store.current
+        if (!repository || !available.current) return
+        inFlight.current = value.tabs
+        syncRedisDatabases()
+        try {
+          await repository.commit(value)
+        } catch (error) {
+          if (error instanceof RequestError && error.status === 409) {
+            available.current = false
+            clearRedisDatabaseSession()
+            setReload(true)
+          }
+          throw error
+        } finally {
+          inFlight.current = []
+          syncRedisDatabases()
         }
-        throw error
-      }
-      const latest = current.current.snapshot
-      const ids = repository.evictable(latest)
-      const evicted = current.current.options.evict(ids, latest)
-      repository.forget(evicted)
-      setEpoch((value) => value + 1)
-    })
-    return queue.current(value)
-  }, [])
+        const latest = current.current.snapshot
+        const ids = repository.evictable(latest)
+        const evicted = current.current.options.evict(ids, latest)
+        repository.forget(evicted)
+        setEpoch((value) => value + 1)
+      })
+      return queue.current(value)
+    },
+    [syncRedisDatabases]
+  )
   const waitForIdle = reload && options.busy
   useEffect(() => {
     if (waitForIdle) return
@@ -63,7 +82,8 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
         const repository = await WorkspaceStore.open(controller.signal)
         controller.signal.throwIfAborted()
         if (reload && current.current.options.busy) return
-        current.current.restore(repository.snapshot())
+        const saved = repository.snapshot()
+        current.current.restore(reload ? saved : { ...saved, tabs: restoreRedisDatabases(saved.tabs) })
         store.current = repository
         available.current = true
         setRepository(repository)

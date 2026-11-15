@@ -5,6 +5,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 import { setImmediate as settle } from 'node:timers/promises'
 
+import { clearRedisDatabaseSession, rememberRedisDatabases, restoreRedisDatabases } from '../src/pages/workspace/hooks/useWorkspacePersistence/redisDatabaseSession/index.ts'
 import { WorkspaceStore } from '../src/services/workspace/index.ts'
 import { createLatestWriter } from '../src/utils/latestWriter/index.ts'
 import { RequestError } from '../src/utils/request/index.ts'
@@ -129,6 +130,9 @@ test('workbench silently restores the latest index after a conflict and saves ne
     WorkspaceStore,
     RequestError,
     createLatestWriter,
+    clearRedisDatabaseSession,
+    rememberRedisDatabases,
+    restoreRedisDatabases,
     window: browser,
     useLayoutEffect: effect,
     useEffect: effect,
@@ -191,6 +195,41 @@ test('workbench silently restores the latest index after a conflict and saves ne
   assert.equal(f.doc().index.resultHeight, 888)
   assert.equal(JSON.parse(f.calls.at(-1).body).revision, 3)
   slots.forEach((entry) => entry?.cleanup?.())
+})
+
+test('refresh recovers pending Redis database selections only for matching saved scopes', (t) => {
+  const values = new Map()
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage')
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    value: { getItem: (key) => values.get(key), setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) }
+  })
+  t.after(() => {
+    if (descriptor) Object.defineProperty(globalThis, 'sessionStorage', descriptor)
+    else delete globalThis.sessionStorage
+  })
+  const scope = { id: 'p0', kind: 'query', connectionId: 'redis', database: '0' }
+  const second = { ...scope, id: 'p1' }
+  const inFlight = { ...scope, database: '5' }
+  const selected = { ...scope, database: '7' }
+  const connections = new Set(['redis'])
+  const restore = (page) => restoreRedisDatabases([page, second])[0]
+  rememberRedisDatabases([selected, second], [scope, second], [inFlight], connections)
+  assert.deepEqual(restore(scope), selected)
+  assert.deepEqual(restore(inFlight), selected)
+  assert.deepEqual(restore(second), second)
+  const differentConnection = { ...scope, connectionId: 'another' }
+  assert.deepEqual(restore(differentConnection), differentConnection)
+  const differentDatabase = { ...scope, database: '9' }
+  assert.deepEqual(restore(differentDatabase), differentDatabase)
+
+  rememberRedisDatabases([scope], [scope], [inFlight], connections)
+  assert.deepEqual(restore(inFlight), scope)
+  rememberRedisDatabases([selected], [selected], [], connections)
+  assert.deepEqual(restore(scope), scope)
+  rememberRedisDatabases([selected], [scope], [], connections)
+  clearRedisDatabaseSession()
+  assert.deepEqual(restore(scope), scope)
 })
 
 test('running batches save their index but upload cumulative results only on completion', async () => {
