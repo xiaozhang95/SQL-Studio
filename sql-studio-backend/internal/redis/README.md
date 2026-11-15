@@ -2,7 +2,9 @@
 
 `NewClient()` 使用 go-redis 连接单个 Redis 实例。连接使用独立的逻辑库、可选 ACL 用户名和密码，并支持按主机名验证的 TLS。普通操作随请求释放连接，禁用命令自动重试。测试先执行 PING，INFO 权限可用时显示服务端版本。
 
-`Keys` 返回一页 SCAN 结果。`Key` 返回类型、TTL、大小和有界预览，支持 string、hash、list、set、zset 和 stream。二进制名称以 Base64 保留身份。其他类型可查看类型与 TTL。`KeyTTL` 单独执行 PTTL 获取详情刷新所需的剩余毫秒数。`Run` 执行单条命令，SELECT 校验新逻辑库后返回其编号。
+`SetSession(ctx, connection, database, open)` 管理当前客户端拥有的请求。关闭等待对应的命令、键操作或实例请求释放资源，重新打开先验证连通性。实例级请求包含逻辑库列表、监控和发布订阅，随整个连接关闭。关闭单个逻辑库只阻止该库的操作及切入该库的 SELECT。
+
+`Keys` 返回一页 SCAN 结果，键引用可无损定位二进制键名。`Key` 返回类型、TTL、大小和有界预览，支持 string、hash、list、set、zset 和 stream。字符串预览沿 UTF-8 字符边界截断，无效 UTF-8 内容显示为 Base64。其他类型可查看类型与 TTL。`KeyTTL` 单独执行 PTTL 获取详情刷新所需的剩余毫秒数。`Run` 执行单条命令，SELECT 校验新逻辑库后返回其编号。
 
 `Channels` 读取实例活跃频道和模式订阅计数。`Subscribe` 维持独立订阅连接，确认订阅后输出消息和心跳，取消即释放。`Monitor` 解析 INFO 并返回实例指标。
 

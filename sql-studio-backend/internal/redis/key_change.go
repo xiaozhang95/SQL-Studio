@@ -14,9 +14,14 @@ var missingKey = errors.New("Redis 键已不存在")
 var keyChanged = errors.New("Redis 键已变更，请刷新后重试")
 var targetExists = errors.New("Redis 目标键已存在")
 
-func (*Client) ChangeKey(ctx context.Context, connection model.Connection, db int, name string, change model.RedisKeyChange) error {
-	client := open(connection, db)
-	defer client.Close()
+func (c *Client) ChangeKey(ctx context.Context, connection model.Connection, db int, name string, change model.RedisKeyChange) error {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
+	if err != nil {
+		return err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	switch change.Action {
 	case "create":
 		err := client.SetArgs(ctx, *change.Target, *change.Value, driver.SetArgs{Mode: "NX", TTL: time.Duration(*change.TTL) * time.Second}).Err()

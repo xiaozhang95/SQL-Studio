@@ -12,9 +12,14 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
-func (*Client) Channels(ctx context.Context, connection model.Connection, pattern string) (model.RedisChannels, error) {
-	client := open(connection, 0)
-	defer client.Close()
+func (c *Client) Channels(ctx context.Context, connection model.Connection, pattern string) (model.RedisChannels, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, instanceScope)
+	if err != nil {
+		return model.RedisChannels{}, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, 0)
+	defer closeClient()
 	if pattern == "" {
 		pattern = "*"
 	}
@@ -45,9 +50,14 @@ func (*Client) Channels(ctx context.Context, connection model.Connection, patter
 	return result, nil
 }
 
-func (*Client) Subscribe(ctx context.Context, connection model.Connection, channel string, pattern bool, emit func(model.RedisEvent) error) error {
-	client := open(connection, 0)
-	defer client.Close()
+func (c *Client) Subscribe(ctx context.Context, connection model.Connection, channel string, pattern bool, emit func(model.RedisEvent) error) error {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, instanceScope)
+	if err != nil {
+		return err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, 0)
+	defer closeClient()
 	var subscription *driver.PubSub
 	if pattern {
 		subscription = client.PSubscribe(ctx, channel)

@@ -35,14 +35,7 @@ func (d workspaceDatabase) SetSession(ctx context.Context, c model.Connection, d
 	if c.Type != model.TypeRedis {
 		return d.Client.SetSession(ctx, c, db, open)
 	}
-	if !open {
-		return nil
-	}
-	if db != nil {
-		c.Database = *db
-	}
-	_, err := d.redis.Test(ctx, c)
-	return err
+	return d.redis.SetSession(ctx, c, db, open)
 }
 
 func (d workspaceDatabase) Monitor(ctx context.Context, c model.Connection, db string) (model.MonitorSnapshot, error) {

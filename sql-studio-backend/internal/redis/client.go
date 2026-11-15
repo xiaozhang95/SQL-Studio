@@ -7,17 +7,25 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	driver "github.com/redis/go-redis/v9"
 	"sql-studio-backend/internal/model"
 )
 
-type Client struct{}
+type Client struct {
+	mu      sync.Mutex
+	control chan struct{}
+	closed  map[redisScope]bool
+	active  map[*requestLease]struct{}
+}
 
-func NewClient() *Client { return &Client{} }
+func NewClient() *Client {
+	return &Client{control: make(chan struct{}, 1), closed: make(map[redisScope]bool), active: make(map[*requestLease]struct{})}
+}
 
-func open(connection model.Connection, db int) *driver.Client {
+func open(ctx context.Context, connection model.Connection, db int) (*driver.Client, func()) {
 	host := strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(connection.Host), "]"), "[")
 	options := &driver.Options{
 		Addr:     net.JoinHostPort(host, strconv.Itoa(connection.Port)),
@@ -42,7 +50,18 @@ func open(connection model.Connection, db int) *driver.Client {
 	if connection.TLS {
 		options.TLSConfig = &tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}
 	}
-	return driver.NewClient(options)
+	client := driver.NewClient(options)
+	var once sync.Once
+	closeClient := func() {
+		once.Do(func() { _ = client.Close() })
+	}
+	// go-redis applies deadlines to socket reads. Close this request's client
+	// on cancellation to also interrupt Redis commands already blocked in a read.
+	stop := context.AfterFunc(ctx, closeClient)
+	return client, func() {
+		stop()
+		closeClient()
+	}
 }
 
 func (*Client) Test(ctx context.Context, connection model.Connection) (string, error) {
@@ -54,8 +73,8 @@ func (*Client) Test(ctx context.Context, connection model.Connection) (string, e
 		}
 		db = int(number)
 	}
-	client := open(connection, db)
-	defer client.Close()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	if err := client.Ping(ctx).Err(); err != nil {
 		return "", err
 	}
@@ -78,9 +97,14 @@ func fields(info string) map[string]string {
 	return out
 }
 
-func (*Client) Monitor(ctx context.Context, connection model.Connection, _ string) (model.MonitorSnapshot, error) {
-	client := open(connection, 0)
-	defer client.Close()
+func (c *Client) Monitor(ctx context.Context, connection model.Connection, _ string) (model.MonitorSnapshot, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, instanceScope)
+	if err != nil {
+		return model.MonitorSnapshot{}, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, 0)
+	defer closeClient()
 	info, err := client.Info(ctx).Result()
 	if err != nil {
 		return model.MonitorSnapshot{}, err

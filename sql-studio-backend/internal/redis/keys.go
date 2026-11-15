@@ -33,9 +33,31 @@ func clip(value string, size int) (string, bool) {
 	return value[:size], true
 }
 
-func (*Client) Keys(ctx context.Context, connection model.Connection, db int, cursor uint64, pattern string) (model.RedisKeyPage, error) {
-	client := open(connection, db)
-	defer client.Close()
+// The Redis byte range can cut through a valid UTF-8 rune. Look at the bytes
+// just past the display limit before deciding whether the prefix is binary.
+func clipStringPreview(value string, limit int) string {
+	if len(value) <= limit {
+		return value
+	}
+	start := limit - 1
+	for start > max(0, limit-utf8.UTFMax+1) && !utf8.RuneStart(value[start]) {
+		start--
+	}
+	_, width := utf8.DecodeRuneInString(value[start:])
+	if start+width > limit {
+		return value[:start]
+	}
+	return value[:limit]
+}
+
+func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, cursor uint64, pattern string) (model.RedisKeyPage, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
+	if err != nil {
+		return model.RedisKeyPage{}, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	names, next, err := client.Scan(ctx, cursor, pattern, 100).Result()
 	if err != nil {
 		return model.RedisKeyPage{}, err
@@ -57,9 +79,14 @@ func (*Client) Keys(ctx context.Context, connection model.Connection, db int, cu
 	return page, nil
 }
 
-func (*Client) Key(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyDetail, error) {
-	client := open(connection, db)
-	defer client.Close()
+func (c *Client) Key(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyDetail, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
+	if err != nil {
+		return model.RedisKeyDetail{}, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	kind, err := client.Type(ctx, name).Result()
 	if err != nil {
 		return model.RedisKeyDetail{}, err
@@ -80,8 +107,9 @@ func (*Client) Key(ctx context.Context, connection model.Connection, db int, nam
 	case "string":
 		detail.Size, err = client.StrLen(ctx, name).Result()
 		if err == nil {
-			detail.Preview, err = client.GetRange(ctx, name, 0, previewBytes-1).Result()
+			detail.Preview, err = client.GetRange(ctx, name, 0, previewBytes+utf8.UTFMax-2).Result()
 			detail.Truncated = detail.Size > previewBytes
+			detail.Preview = clipStringPreview(detail.Preview, previewBytes)
 		}
 		detail.Editable = !detail.Truncated && utf8.ValidString(detail.Preview)
 		detail.Preview = display(detail.Preview)
@@ -146,9 +174,14 @@ func (*Client) Key(ctx context.Context, connection model.Connection, db int, nam
 	return detail, nil
 }
 
-func (*Client) KeyTTL(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyTTL, error) {
-	client := open(connection, db)
-	defer client.Close()
+func (c *Client) KeyTTL(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyTTL, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
+	if err != nil {
+		return model.RedisKeyTTL{}, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	ttl, err := client.Do(ctx, "PTTL", name).Int64()
 	return model.RedisKeyTTL{TTLMillis: ttl}, err
 }

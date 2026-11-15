@@ -12,9 +12,14 @@ import (
 const maxListedDatabases = 65536
 
 // Databases lists configured logical indexes, including databases without keys.
-func (*Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
-	client := open(connection, 0)
-	defer client.Close()
+func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
+	ctx, release, err := c.beginRequest(ctx, connection.ID, instanceScope)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	client, closeClient := open(ctx, connection, 0)
+	defer closeClient()
 	config, err := client.ConfigGet(ctx, "databases").Result()
 	count, parseErr := strconv.Atoi(config["databases"])
 	if err != nil || parseErr != nil || count < 1 {

@@ -78,6 +78,8 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 会话控制 POST `/connections/{id}/session` 接收 `{open:boolean,database?:string}`；省略 database 为整个连接，指定库名只关闭该库。关闭取消在途请求并等待本服务驱动连接释放，超时或失败不返回成功；关闭后请求拒绝，显式打开会测试真实连通性。不会删除保存的连接，也不会终止其他客户端会话。
 
+Redis 的逻辑库列表、监控和发布订阅使用实例范围，关闭整个连接时停止。关闭单个逻辑库会拒绝针对该库的键操作、命令及切入该库的 SELECT。
+
 普通状态接口拒绝 `connections`、`workspace-index` 和 `ai` 分区。连接及工作区通过各自的专用 API 读写，`master.key` 不通过接口返回。
 
 PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。

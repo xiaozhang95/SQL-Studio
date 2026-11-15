@@ -11,10 +11,15 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
-func (*Client) Run(ctx context.Context, connection model.Connection, db int, args []string) (reply model.RedisReply, err error) {
+func (c *Client) Run(ctx context.Context, connection model.Connection, db int, args []string) (reply model.RedisReply, err error) {
 	start := time.Now()
 	reply = model.RedisReply{Database: db}
 	cmd := strings.ToUpper(args[0])
+	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
+	if err != nil {
+		return reply, err
+	}
+	defer release()
 	var value any
 	defer func() {
 		if err == nil {
@@ -31,9 +36,14 @@ func (*Client) Run(ctx context.Context, connection model.Connection, db int, arg
 		if err != nil {
 			return reply, errors.New("Redis 逻辑库编号无效")
 		}
-		client := open(connection, 0)
-		defer client.Close()
-		if err := client.Do(ctx, "SELECT", selected).Err(); err != nil {
+		targetCtx, releaseTarget, err := c.beginRequest(ctx, connection.ID, int(selected))
+		if err != nil {
+			return reply, err
+		}
+		defer releaseTarget()
+		client, closeClient := open(targetCtx, connection, 0)
+		defer closeClient()
+		if err := client.Do(targetCtx, "SELECT", selected).Err(); err != nil {
 			return reply, err
 		}
 		value = "OK"
@@ -42,8 +52,8 @@ func (*Client) Run(ctx context.Context, connection model.Connection, db int, arg
 		"MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH", "READONLY", "READWRITE", "ASKING", "CLIENT":
 		return reply, errors.New("该命令需要独立会话，请使用连接设置、逻辑库切换或发布订阅页面")
 	}
-	client := open(connection, db)
-	defer client.Close()
+	client, closeClient := open(ctx, connection, db)
+	defer closeClient()
 	command := make([]any, len(args))
 	for i, arg := range args {
 		command[i] = arg
