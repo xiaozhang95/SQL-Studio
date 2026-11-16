@@ -63,7 +63,7 @@ Windows 打包完成可执行文件编辑后，将生成的应用目录及文件
 
 浏览器与 Electron 共用业务顶栏，最小高度由 Ant Design `controlHeight + paddingSM` 决定。AI 助手隐藏最上方的 SQL Studio 应用名，业务 header 中的会话标题继续保留。
 
-工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 页仍隐藏最上方标题。
+工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。Windows 将 Logo 与标题整体左对齐，左右留白沿用 workspace-inset，默认 12px，Logo 左边缘与下方侧栏搜索框的外边缘对齐；macOS/Linux 继续居中，macOS 左侧保留红黄绿窗口按钮。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 页仍隐藏最上方标题。
 
 图标唯一来源是 [studio.svg](../sql-studio-frontend/public/studio.svg)，由主题绿色渐变底、数据库圆柱与查询光标组成。开发时直接在内存渲染。`pnpm build` 通过 `scripts/icons.mjs` 生成 `build/icons/icon.png`，electron-builder 据此生成平台图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo。
 
@@ -106,7 +106,7 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 
 Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
-窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。SQL 转储、编辑器导出及关闭前保存均通过原生保存对话框选路径，主进程分块写入同目录临时文件，写完后替换目标。取消、写入错误、页面重载及窗口退出清理未完成文件。API 仍是后端原有的本机单用户 HTTP 服务。
+窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读平台标识和标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。SQL 转储、编辑器导出及关闭前保存均通过原生保存对话框选路径，主进程分块写入同目录临时文件，写完后替换目标。取消、写入错误、页面重载及窗口退出清理未完成文件。API 仍是后端原有的本机单用户 HTTP 服务。
 
 ## 代码与检查
 

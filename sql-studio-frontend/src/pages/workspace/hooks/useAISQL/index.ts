@@ -42,6 +42,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   useEffect(() => () => preferenceRequest.current?.abort(), [])
 
   useEffect(() => {
+    if (redis) return
     let alive = true
     let latest = 0
     const refresh = () => {
@@ -74,7 +75,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
       alive = false
       window.removeEventListener('ai-settings-saved', refresh)
     }
-  }, [])
+  }, [redis])
   useEffect(
     () => () => {
       controller.current?.abort()
@@ -83,23 +84,21 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   )
   const complete = useCallback(
     async (prefix: string, suffix: string, document: string, signal: AbortSignal) => {
-      if (signal.aborted) return ''
-      const context = redis
-        ? { connectionId, database, tables: [] }
-        : buildAIContext({ connectionId, database, schema, table }, tables || [], structures || {}, `${document}\n${prefix}\n${suffix}`, layout)
+      if (signal.aborted || redis) return ''
+      const context = buildAIContext({ connectionId, database, schema, table }, tables || [], structures || {}, `${document}\n${prefix}\n${suffix}`, layout)
       return (await getAIAdapter(provider).assist({ ...context, action: 'complete', prefix, suffix, document }, signal)).completion || ''
     },
     [connectionId, database, schema, table, tables, structures, provider, layout, redis]
   )
   const extensions = useMemo(() => {
-    if (!configured || !enabled || blocked) return []
+    if (redis || !configured || !enabled || blocked) return []
     // 修订改变时重建扩展，取消旧模型/Key/开关对应的在途建议。
     void settingsRevision
     return aiCompletion({
       complete,
       loading: setCompletionLoading
     })
-  }, [complete, configured, enabled, blocked, setCompletionLoading, settingsRevision])
+  }, [complete, configured, enabled, blocked, setCompletionLoading, settingsRevision, redis])
   const close = () => {
     controller.current?.abort()
     setOpen(false)
@@ -107,7 +106,7 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
     setLoading(false)
   }
   const updatePreference = async (update: { completionEnabled: boolean }) => {
-    if (blocked || preferenceRequest.current) return
+    if (redis || blocked || preferenceRequest.current) return
     const pending = new AbortController()
     preferenceRequest.current = pending
     setPreferenceSaving(true)
@@ -186,9 +185,9 @@ export function useAISQL(scope: QueryScope & { sql: string }, objects: ReturnTyp
   }
   return {
     onEditorReady,
-    hasSavedModel,
-    configured,
-    enabled,
+    hasSavedModel: !redis && hasSavedModel,
+    configured: !redis && configured,
+    enabled: !redis && enabled,
     changeCompletion,
     preferenceSaving,
     completionLoading,

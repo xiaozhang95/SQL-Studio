@@ -1,15 +1,4 @@
-import {
-  CodeOutlined,
-  DownloadOutlined,
-  FormatPainterOutlined,
-  HistoryOutlined,
-  IdcardOutlined,
-  PlayCircleOutlined,
-  ReloadOutlined,
-  StopOutlined,
-  UploadOutlined,
-  WifiOutlined
-} from '@ant-design/icons'
+import { CodeOutlined, DownloadOutlined, FormatPainterOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView } from '@codemirror/view'
 import { Switch, Tooltip, Upload } from 'antd'
 import { useRef, useState } from 'react'
@@ -23,7 +12,6 @@ import type { Connection } from '@/typings/database'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
-import { useAISQL } from '../../hooks/useAISQL'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import QueryHistory from '../queryHistory'
@@ -34,6 +22,7 @@ import Console from './components/console'
 import Editor from './components/editor'
 import KeyBrowser from './components/keyBrowser'
 import PubSub from './components/pubsub'
+import PubSubIcon from './components/pubsubIcon'
 import { readRedisTool, saveRedisTool } from './utils/terminalSession'
 
 type Props = { model: WorkspaceModel; connection: Connection; active: boolean; themeMode: ThemeMode }
@@ -41,7 +30,7 @@ type Props = { model: WorkspaceModel; connection: Connection; active: boolean; t
 const tools = [
   { id: 'keys', label: '键详情', icon: <IdcardOutlined /> },
   { id: 'console', label: '命令行', icon: <CodeOutlined /> },
-  { id: 'pubsub', label: '发布订阅', icon: <WifiOutlined /> }
+  { id: 'pubsub', label: '发布订阅', icon: <PubSubIcon /> }
 ] as const
 const switchLabelStyle = { display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' } as const
 
@@ -61,7 +50,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const blocked = model.running || commandBusy
   const editorMode = tool === 'editor'
   const consoleMode = tool === 'console'
-  const ai = useAISQL({ ...tab, database: database ?? '' }, objects, blocked || !active || !editorMode || database === undefined, connection.type)
   const { beforeImport, importing, error: importError, clearError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
 
   function format() {
@@ -108,18 +96,11 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           ))}
         </div>
         <div className="query-toolbar-group">
-          <Tooltip title={ai.configured ? t('AI 代码补全') : t('请先在系统设置中保存默认模型')}>
+          <Tooltip title={t('Redis 暂不支持 AI 代码补全')}>
             <label style={switchLabelStyle}>
               <CodeOutlined aria-hidden="true" />
               <span className="redis-assist-label">{t('代码补全')}</span>
-              <Switch
-                size="small"
-                aria-label={t('代码补全')}
-                checked={editorMode && ai.configured && ai.enabled}
-                disabled={!active || !editorMode || blocked || database === undefined || !ai.configured || ai.preferenceSaving}
-                loading={ai.preferenceSaving}
-                onChange={(value) => void ai.changeCompletion(value)}
-              />
+              <Switch size="small" aria-label={t('代码补全')} checked={false} disabled />
             </label>
           </Tooltip>
           <ToolbarButton label={t('SQL 美化')} icon={<FormatPainterOutlined />} disabled={blocked || !editorMode || !hasText} onClick={format} />
@@ -143,6 +124,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             database={Number(database)}
             databases={snapshot?.databases ?? []}
             visible={active && consoleMode}
+            themeMode={themeMode}
             blocked={model.running}
             loadedCommand={loadedCommand}
             onHistory={model.appendHistory}
@@ -161,8 +143,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
                   if (view) setHasText(Boolean(view.state.doc.toString().trim()))
                 }}
                 onContentChange={setHasText}
-                aiExtensions={ai.extensions}
-                aiCompletionLoading={ai.completionLoading}
               />
               <QueryResults model={{ ...model, running: blocked }} themeMode={themeMode} />
             </>

@@ -10,7 +10,7 @@ import { sqlCompletionLayout } from '../../constant/layout'
 import type { SQLCompletionObjectKind } from '../../hooks/useSQLCompletion'
 import type { useSQLCompletionPopup } from '../../hooks/useSQLCompletionPopup'
 
-type Props = { completion: ReturnType<typeof useSQLCompletionPopup>; objectKinds: ReadonlyMap<string, SQLCompletionObjectKind> }
+type Props = { completion: ReturnType<typeof useSQLCompletionPopup>; objectKinds: ReadonlyMap<string, SQLCompletionObjectKind>; label?: string }
 
 function CompletionIcon({ item, objectKinds }: { item: Completion; objectKinds: Props['objectKinds'] }) {
   const { t } = useTranslation()
@@ -35,7 +35,7 @@ function CompletionIcon({ item, objectKinds }: { item: Completion; objectKinds: 
   }
 }
 
-export default function SQLCompletionSelect({ completion, objectKinds }: Props) {
+export default function SQLCompletionSelect({ completion, objectKinds, label }: Props) {
   const { t } = useTranslation()
 
   const { popup, choose, close } = completion
@@ -58,7 +58,7 @@ export default function SQLCompletionSelect({ completion, objectKinds }: Props) 
   return (
     <Select
       ref={select}
-      aria-label={t('SQL 语法补全')}
+      aria-label={label ?? t('SQL 语法补全')}
       open
       showSearch={false}
       value={popup.selected ?? undefined}

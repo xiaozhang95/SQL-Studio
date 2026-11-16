@@ -1,6 +1,6 @@
 # 公共组件
 
-- [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景。
+- [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景，仅 Windows 将标题左对齐至下方搜索框外边缘。
 - [pageHeader](pageHeader/README.md)：工作区及各功能页共用顶栏布局。
 - [databasePage](databasePage/README.md)：监控与同步的工作区返回入口、顶栏和正文布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。

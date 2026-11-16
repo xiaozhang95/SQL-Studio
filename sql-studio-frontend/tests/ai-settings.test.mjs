@@ -306,21 +306,23 @@ test('已保存模型时显示 SQL AI 工具，选中当前模型后才可使用
   }
 })
 
-test('Redis 编辑器沿用默认模型及续写开关，并提交当前连接和逻辑库', async () => {
+test('Redis 禁用 AI 续写且不改写其他数据库共享的补全偏好', async () => {
   const f = harness('../src/pages/workspace/hooks/useAISQL/index.ts')
   const scope = { connectionId: 'redis-fixture', database: '3', table: '', sql: '' }
   const objects = { snapshots: { 'redis-fixture': { status: 'connected' } } }
   try {
+    f.document = { ...f.document, data: { ...f.document.data, completionEnabled: true } }
     f.render(scope, objects, false, 'redis')
     await settle()
     const model = f.render(scope, objects, false, 'redis')
+    assert.equal(model.configured, false)
+    assert.equal(model.enabled, false)
     assert.deepEqual(model.extensions, [])
     await model.changeCompletion(true)
-    const [extension] = f.render(scope, objects, false, 'redis').extensions
-    const { signal } = new AbortController()
-    assert.equal(await extension.complete('SELECT ', '', 'SELECT ', signal), '1')
-    assert.deepEqual(f.assists, [{ input: { connectionId: 'redis-fixture', database: '3', tables: [], action: 'complete', prefix: 'SELECT ', suffix: '', document: 'SELECT ' }, signal }])
-    assert.deepEqual(f.render(scope, objects, true, 'redis').extensions, [])
+    assert.deepEqual(f.render(scope, objects, false, 'redis').extensions, [])
+    assert.equal(f.document.data.completionEnabled, true)
+    assert.deepEqual(f.writes, [])
+    assert.deepEqual(f.assists, [])
   } finally {
     f.close()
   }

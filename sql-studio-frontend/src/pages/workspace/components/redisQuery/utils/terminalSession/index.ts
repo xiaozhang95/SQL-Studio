@@ -2,7 +2,8 @@ export const terminalHistoryLimit = 50
 export const terminalCommandLimit = 64 * 1024
 
 type Entry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; truncated?: boolean }
-type Session = { command: string; history: string[]; entries: Entry[] }
+export type TerminalSelection = Readonly<{ anchor: number; head: number }>
+type Session = { command: string; selection: TerminalSelection; history: string[]; entries: Entry[] }
 export type RedisTool = 'editor' | 'console' | 'pubsub' | 'keys'
 
 const prefix = 'sql-studio:redis-terminal:'
@@ -42,13 +43,31 @@ function isEntry(value: unknown): value is Entry {
   )
 }
 
+function readSelection(value: unknown, length: number): TerminalSelection {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'anchor' in value &&
+    typeof value.anchor === 'number' &&
+    Number.isSafeInteger(value.anchor) &&
+    'head' in value &&
+    typeof value.head === 'number' &&
+    Number.isSafeInteger(value.head)
+  ) {
+    return { anchor: Math.max(0, Math.min(length, value.anchor)), head: Math.max(0, Math.min(length, value.head)) }
+  }
+  return { anchor: length, head: length }
+}
+
 export function readTerminal(page: string, connection: string): Session {
   try {
     const encoded = sessionStorage.getItem(storageKey(page, connection))
     if (encoded && encoded.length <= 3 * 1024 * 1024) {
-      const { command, history, entries } = JSON.parse(encoded)
+      const { command, selection, history, entries } = JSON.parse(encoded)
+      const draft = typeof command === 'string' ? command.replace(/[\r\n]/g, '').slice(0, terminalCommandLimit) : ''
       return {
-        command: typeof command === 'string' ? command.slice(0, terminalCommandLimit) : '',
+        command: draft,
+        selection: readSelection(selection, draft.length),
         history: Array.isArray(history) ? history.filter((value): value is string => typeof value === 'string' && value.length <= terminalCommandLimit).slice(-terminalHistoryLimit) : [],
         entries: Array.isArray(entries) ? entries.filter(isEntry).slice(-terminalHistoryLimit) : []
       }
@@ -56,7 +75,7 @@ export function readTerminal(page: string, connection: string): Session {
   } catch {
     // The terminal still works if browser storage is unavailable.
   }
-  return { command: '', history: [], entries: [] }
+  return { command: '', selection: { anchor: 0, head: 0 }, history: [], entries: [] }
 }
 
 export function saveTerminal(page: string, connection: string, session: Session) {
@@ -64,7 +83,7 @@ export function saveTerminal(page: string, connection: string, session: Session)
     const entries = session.entries.flatMap((entry) =>
       entry.answer === undefined ? [] : [{ ...entry, answer: entry.answer.slice(0, 4096), truncated: entry.truncated || entry.answer.length > 4096 }]
     )
-    sessionStorage.setItem(storageKey(page, connection), JSON.stringify({ ...session, entries }))
+    sessionStorage.setItem(storageKey(page, connection), JSON.stringify({ ...session, selection: readSelection(session.selection, session.command.length), entries }))
   } catch {
     // Browser storage can be disabled or at its quota.
   }

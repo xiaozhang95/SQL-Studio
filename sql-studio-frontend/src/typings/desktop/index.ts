@@ -6,6 +6,7 @@ export interface DesktopTitleBarTheme {
 }
 
 export interface DesktopBridge {
+  readonly platform: 'win32' | 'darwin' | 'linux'
   readonly titleBarHeight: number
   setTitleBarTheme: (value: DesktopTitleBarTheme) => void
   saveFile: {

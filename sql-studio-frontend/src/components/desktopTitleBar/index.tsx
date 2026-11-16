@@ -20,6 +20,7 @@ export default function DesktopTitleBar({ showTitle = true, title = 'SQL Studio'
     if (desktop && active) document.title = showTitle ? title : 'SQL Studio'
   }, [active, showTitle, title])
   if (!desktop) return null
+  const windows = desktop.platform === 'win32'
   return (
     <div
       className="desktop-titlebar"
@@ -28,7 +29,9 @@ export default function DesktopTitleBar({ showTitle = true, title = 'SQL Studio'
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: windows ? 'flex-start' : 'center',
+        // 与下方侧栏搜索框外边缘共用左右留白。
+        paddingInline: windows ? 'var(--workspace-inset)' : undefined,
         background: 'var(--surface)',
         color: 'var(--text)',
         userSelect: 'none'

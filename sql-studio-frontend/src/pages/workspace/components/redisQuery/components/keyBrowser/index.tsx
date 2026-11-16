@@ -1,4 +1,4 @@
-import { CopyOutlined, DeleteOutlined, EditOutlined, FormOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Button, Card, Descriptions, Empty, Flex, Form, Input, InputNumber, Modal, Tag, theme, Typography } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -9,8 +9,8 @@ import type { RedisKey, RedisKeyChange, RedisKeyDetail, RedisKeyPage } from '@/s
 
 import ToolbarButton from '../../../toolbarButton'
 
-type Action = RedisKeyChange['action']
-const actionTitle = { create: '新增键', copy: '复制键', rename: '重命名键', value: '编辑键', ttl: '编辑 TTL', delete: '删除键' } as const
+type Action = Exclude<RedisKeyChange['action'], 'rename'>
+const actionTitle = { create: '新增键', copy: '复制键', value: '编辑键', ttl: '编辑 TTL', delete: '删除键' } as const satisfies Readonly<Record<Action, string>>
 const ttlRefreshMs = 1000
 
 export default function KeyBrowser({ id, database }: { id: string; database: number }) {
@@ -157,7 +157,6 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
         change = { action, ttl }
         break
       case 'copy':
-      case 'rename':
         change = { action, target }
         break
       case 'value':
@@ -249,7 +248,6 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                 hint={detail && !detail.editable ? t('当前键值类型或大小不支持直接编辑') : undefined}
                 onClick={() => promptAction('value')}
               />
-              <ToolbarButton size="small" icon={<FormOutlined />} label={t('重命名键')} disabled={!detail} onClick={() => promptAction('rename')} />
               <ToolbarButton size="small" icon={<DeleteOutlined />} label={t('删除键')} danger disabled={!detail} onClick={() => promptAction('delete')} />
               <ToolbarButton size="small" icon={<ReloadOutlined />} label={t('刷新键详情')} onClick={() => read(selected, true)} />
             </Flex>
@@ -302,7 +300,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
         <ErrorNotice error={changeError ? t(changeError) : undefined} />
         {action !== 'delete' && (
           <Form form={form} layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0' }} disabled={saving}>
-            {(action === 'create' || action === 'value' || action === 'copy' || action === 'rename') && (
+            {(action === 'create' || action === 'value' || action === 'copy') && (
               <Form.Item label={t(action === 'create' || action === 'value' ? '键名' : '目标键名')} htmlFor="redis-key-target">
                 <Input
                   id="redis-key-target"

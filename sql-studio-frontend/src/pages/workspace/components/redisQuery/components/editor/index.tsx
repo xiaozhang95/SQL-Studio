@@ -1,7 +1,6 @@
-import { LoadingOutlined } from '@ant-design/icons'
 import { autocompletion } from '@codemirror/autocomplete'
 import { StateField } from '@codemirror/state'
-import type { EditorState, Extension } from '@codemirror/state'
+import type { EditorState } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
@@ -23,8 +22,6 @@ type Props = {
   onRun: (view: EditorView) => void
   onViewChange: (view: EditorView | null) => void
   onContentChange: (hasText: boolean) => void
-  aiExtensions: Extension[]
-  aiCompletionLoading: boolean
 }
 
 const editorSetup = { foldGutter: false, autocompletion: false }
@@ -57,7 +54,6 @@ const hintAppearance = EditorView.theme({
   '.cm-redis-command-hint': {
     padding: '0 4px',
     color: 'var(--ant-color-text-secondary)',
-    fontFamily: 'monospace',
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere'
   }
@@ -77,12 +73,12 @@ function commandHints(label: string) {
   })
 }
 
-export default function Editor({ model, themeMode, shortcutEnabled, onRun, onViewChange, onContentChange, aiExtensions, aiCompletionLoading }: Props) {
+export default function Editor({ model, themeMode, shortcutEnabled, onRun, onViewChange, onContentChange }: Props) {
   const { t } = useTranslation()
   const [initial] = useState(() => ({ value: model.tab.sql, extensions: [sqlEditorAppearance, ...model.getEditorHistory(model.tab.id)] }))
   const hintLabel = t('命令用法')
   const hints = useMemo(() => commandHints(hintLabel), [hintLabel])
-  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, completion, ...aiExtensions], [hints, initial.extensions, aiExtensions])
+  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, completion], [hints, initial.extensions])
   const editor = useRef<EditorView | null>(null)
   const callbacks = useRef({ model, onViewChange, onContentChange })
   useLayoutEffect(() => {
@@ -132,9 +128,6 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
         }}
         onUpdate={onUpdate}
       />
-      {aiCompletionLoading && (
-        <LoadingOutlined spin aria-label={t('AI 代码补全中')} role="status" style={{ position: 'absolute', right: 20, bottom: 12, zIndex: 2, pointerEvents: 'none', color: 'var(--text)' }} />
-      )}
     </div>
   )
 }

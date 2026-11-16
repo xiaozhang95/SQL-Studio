@@ -1,14 +1,16 @@
 import { LoadingOutlined } from '@ant-design/icons'
+import type { EditorView } from '@codemirror/view'
 import { theme } from 'antd'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { KeyboardEvent } from 'react'
 
 import { redisCommandHints } from '@/databases/redis/editor'
 import { useTranslation } from '@/hooks/useTranslation'
 import { runCommand } from '@/services/redis'
+import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
-import { readTerminal, saveTerminal, terminalCommandLimit, terminalHistoryLimit } from '../../utils/terminalSession'
+import { readTerminal, saveTerminal, terminalHistoryLimit } from '../../utils/terminalSession'
+import ConsoleInput from '../consoleInput'
 
 type Entry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; truncated?: boolean }
 
@@ -18,6 +20,7 @@ type Props = {
   database: number
   databases: readonly string[]
   visible: boolean
+  themeMode: ThemeMode
   blocked: boolean
   connectionName: string
   loadedCommand?: HistoryItem
@@ -28,11 +31,12 @@ type Props = {
 
 const selectHintLimit = 16
 
-export default function Console({ page, id, database, databases, visible, blocked, connectionName, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
+export default function Console({ page, id, database, databases, visible, themeMode, blocked, connectionName, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [initial] = useState(() => readTerminal(page, id))
   const [command, setCommand] = useState(initial.command)
+  const [selection, setSelection] = useState(initial.selection)
   const [pending, setPending] = useState(false)
   const [entries, setEntries] = useState<Entry[]>(initial.entries)
   const request = useRef<AbortController | null>(null)
@@ -41,7 +45,7 @@ export default function Console({ page, id, database, databases, visible, blocke
   const cursor = useRef<number | null>(null)
   const draft = useRef('')
   const scroll = useRef<HTMLDivElement>(null)
-  const input = useRef<HTMLInputElement>(null)
+  const input = useRef<EditorView | null>(null)
   const prompt = `redis[${database}]>`
   const databaseHint = databases.length ? `${t('可选逻辑库')} ${databases.slice(0, selectHintLimit).join(', ')}${databases.length > selectHintLimit ? ', …' : ''}` : undefined
   const hints = redisCommandHints(command, databaseHint)
@@ -54,13 +58,13 @@ export default function Console({ page, id, database, databases, visible, blocke
 
   useEffect(() => () => request.current?.abort(), [])
   useLayoutEffect(() => {
-    saveTerminal(page, id, { command, entries, history: history.current })
-  }, [page, id, command, entries])
+    saveTerminal(page, id, { command, selection, entries, history: history.current })
+  }, [page, id, command, selection, entries])
   useLayoutEffect(() => {
     if (visible && scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight
   }, [entries, visible])
   useEffect(() => {
-    if (visible) input.current?.focus({ preventScroll: true })
+    if (visible) input.current?.focus()
   }, [visible, loadedCommand])
 
   function record(value: string) {
@@ -128,20 +132,6 @@ export default function Console({ page, id, database, databases, visible, blocke
     }
   }
 
-  function keys(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.nativeEvent.isComposing || event.altKey) return
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l' && !request.current) {
-      event.preventDefault()
-      setEntries([])
-    } else if (!event.ctrlKey && !event.metaKey && event.key === 'Enter') {
-      event.preventDefault()
-      void execute()
-    } else if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !request.current) {
-      event.preventDefault()
-      recall(event.key === 'ArrowUp' ? -1 : 1)
-    }
-  }
-
   return (
     <div
       ref={scroll}
@@ -150,9 +140,9 @@ export default function Console({ page, id, database, databases, visible, blocke
       hidden={!visible}
       onClick={(event) => {
         const selection = window.getSelection()
-        if (!selection || selection.isCollapsed || !event.currentTarget.contains(selection.anchorNode)) input.current?.focus({ preventScroll: true })
+        if (!selection || selection.isCollapsed || !event.currentTarget.contains(selection.anchorNode)) input.current?.focus()
       }}
-      style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', cursor: 'text', fontFamily: 'monospace', lineHeight: 1.65, userSelect: 'text' }}
+      style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', cursor: 'text', lineHeight: 1.65, userSelect: 'text' }}
     >
       <div role="log" aria-label={t('命令输出')}>
         {entries.map((entry) => (
@@ -167,37 +157,27 @@ export default function Console({ page, id, database, databases, visible, blocke
           </div>
         ))}
       </div>
-      <label style={{ display: 'flex', alignItems: 'baseline', gap: token.marginXS, color: token.colorTextSecondary, width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: token.marginXS, color: token.colorTextSecondary, width: '100%' }}>
         <span aria-hidden="true">{prompt}</span>
-        <input
-          type="text"
-          ref={input}
+        <ConsoleInput
           value={command}
-          readOnly={pending || blocked}
-          autoCapitalize="off"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label={t('Redis 命令')}
-          maxLength={terminalCommandLimit}
-          onChange={(event) => {
+          initialSelection={initial.selection}
+          themeMode={themeMode}
+          disabled={pending || blocked}
+          onChange={(value) => {
             cursor.current = null
-            setCommand(event.target.value)
+            setCommand(value)
           }}
-          onKeyDown={keys}
-          style={{
-            minWidth: 0,
-            flex: 1,
-            font: 'inherit',
-            lineHeight: 'inherit',
-            background: 'transparent',
-            border: 0,
-            outline: 'none',
-            padding: 0,
-            color: token.colorText,
-            caretColor: token.colorText
+          onSelectionChange={(next) => setSelection((previous) => (previous.anchor === next.anchor && previous.head === next.head ? previous : next))}
+          onExecute={() => void execute()}
+          onRecall={recall}
+          onClear={() => setEntries([])}
+          onViewChange={(view) => {
+            input.current = view
+            if (visible) view?.focus()
           }}
         />
-      </label>
+      </div>
       {hints.length > 0 && (
         <div aria-label={t('命令用法')} style={{ color: token.colorTextSecondary, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
           {hints.join(' · ')}

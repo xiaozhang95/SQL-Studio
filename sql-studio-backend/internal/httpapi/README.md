@@ -24,7 +24,7 @@ module_routes_test.go 使用真实业务模块和测试数据库接口验证双�
 
 GET/PUT /api/state/:section 调用 settings。PUT 限32MiB，CAS冲突409，沿用本机同源保护。
 
-POST /api/ai/assist 调用 AI 模块，支持 SQL 续写和优化、Redis 命令续写；严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
+POST /api/ai/assist 调用 AI 模块，支持 SQL 续写和优化；Redis 连接不支持 AI 辅助。严格解码和1MiB限制，AI并发超限429，未装配503。继承HTTP请求取消。
 
 POST /api/ai/models 接收 provider、可选 apiKey/configId，通过 AI 模块获取真实可用模型；空 Key 只复用指定记录的 Key，未知 ID 拒绝，响应仅 id/name。
 
@@ -51,7 +51,6 @@ DELETE /connection-groups 接收 {name:string}，调用 connections.DeleteGroup 
 /api/agent路由调用Agent、布局与共享settings公开方法；流式端点每10秒心跳并独立续期写截止时间，断开取消后等待最终保存完成。布局冲突409，普通请求32KiB，严格JSON/同源规则不变。
 
 POST /agent/sessions支持可选ensure=true，仅在空列表创建默认会话；PATCH /agent/sessions/:id接收{title}并返回索引信息，严格JSON、同源和32KiB限制沿用现有Agent路由。
-
 
 写入逐次确认：execute_write通过write_confirmation SSE事件暂停，携带approvalId/connection/database/objects/sql。POST /api/agent/write-confirmation提交allow，确认ID不可重复使用；未确认、取消、超时、断开不执行，取消结束本轮。服务端生成明细并绑定本次目标/SQL，不接收前端替换SQL。确认独立等待最多5分钟，等待期间暂停本轮执行计时；恢复历史只展示原记录。继续确认通过 `continue_confirmation` 和 `POST /api/agent/continue-confirmation` 处理，拒绝产生 `stopped` 事件。模式提示不替代逐次确认。
 

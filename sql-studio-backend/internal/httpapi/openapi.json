@@ -2534,11 +2534,11 @@
     "/ai/assist": {
       "post": {
         "operationId": "assist",
-        "summary": "SQL 续写、SQL 优化或 Redis 命令续写",
+        "summary": "SQL 续写或优化",
         "tags": [
           "AI"
         ],
-        "description": "续写 12 秒，优化 30 秒；与模型发现共享 4 并发；SQL 发送草稿上下文与结构；Redis 续写使用显式连接 ID、逻辑库和命令草稿，无 SQL 结构。无数据库凭据或查询结果；不执行语句。",
+        "description": "续写 12 秒，优化 30 秒；与模型发现共享 4 并发；只发送 SQL 上下文和结构，无数据库凭据或查询结果；不执行 SQL。Redis 连接不支持 AI 辅助。",
         "requestBody": {
           "required": true,
           "content": {
