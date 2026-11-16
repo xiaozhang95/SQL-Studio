@@ -6,14 +6,27 @@ export function splitSQLStatements(script: string, executableComments: readonly 
   let lineComment = false
   let blockComment = false
   let hasSQL = false
+  let lineStart = 0
+  let commentGaps: number[] = []
   const append = (end: number) => {
-    if (hasSQL) statements.push(script.slice(start, end).trim())
+    if (hasSQL) {
+      const parts: string[] = []
+      let from = start
+      for (const position of commentGaps) {
+        parts.push(script.slice(from, position), ' ')
+        from = position
+      }
+      parts.push(script.slice(from, end))
+      statements.push(parts.join('').trim())
+    }
     start = end
     hasSQL = false
+    commentGaps = []
   }
   for (let i = 0; i < script.length; i++) {
     const char = script[i]
     const next = script[i + 1]
+    if (char === '\n' || (ansi && char === '\r')) lineStart = i + 1
     if (lineComment) {
       if (char === '\n' || (ansi && char === '\r')) lineComment = false
       continue
@@ -33,7 +46,12 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       }
       continue
     }
-    if ((!ansi && char === '#') || (char === '-' && next === '-' && (ansi || i + 2 === script.length || script.charCodeAt(i + 2) <= 32))) {
+    const dashComment = char === '-' && next === '-'
+    const leadingComment = dashComment && /^[\t ]*$/.test(script.slice(lineStart, i))
+    const standardComment = i + 2 === script.length || script.charCodeAt(i + 2) <= 32
+    if ((!ansi && char === '#') || (dashComment && (ansi || standardComment || leadingComment))) {
+      // 编辑器常见的行首 --CREATE 在 MySQL 执行前补空白，行中 1--2 保留运算含义。
+      if (!ansi && leadingComment && !standardComment) commentGaps.push(i + 2)
       lineComment = true
       continue
     }

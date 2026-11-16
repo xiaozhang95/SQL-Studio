@@ -4,12 +4,14 @@
 
 `SetSession(ctx, connection, database, open)` 管理当前客户端拥有的请求。关闭等待对应的命令、键操作或实例请求释放资源，重新打开先验证连通性。实例级请求包含逻辑库列表、监控和发布订阅，随整个连接关闭。关闭单个逻辑库只阻止该库的操作及切入该库的 SELECT。
 
-`Keys` 返回一页 SCAN 结果，键引用可无损定位二进制键名。`Key` 返回类型、TTL、大小和有界预览，支持 string、hash、list、set、zset 和 stream。字符串预览沿 UTF-8 字符边界截断，无效 UTF-8 内容显示为 Base64。其他类型可查看类型与 TTL。`KeyTTL` 单独执行 PTTL 获取详情刷新所需的剩余毫秒数。`Run` 执行单条命令，SELECT 校验新逻辑库后返回其编号。
+`Keys` 返回一页 SCAN 结果，键引用可无损定位二进制键名。`Key` 返回类型、TTL、大小和有界预览，支持 string、hash、list、set、zset 和 stream。字符串预览沿 UTF-8 字符边界截断，无效 UTF-8 内容显示为 Base64。完整 UTF-8 String/List/Set/Hash/ZSet 在 16KiB、最多 50 个集合元素以内标为 editable；无序集合按成员/字段排序，保证旧值比较稳定。List 保留元素顺序，Hash/ZSet 使用二元字符串数组，ZSet 分数须为有限数。截断、二进制、Stream 和未知类型保留只读预览。`KeyTTL` 单独执行 PTTL 获取详情刷新所需的剩余毫秒数。`Run` 执行单条命令，SELECT 校验新逻辑库后返回其编号。
 
 `Channels` 读取实例活跃频道和模式订阅计数。`Subscribe` 维持独立订阅连接，确认订阅后输出消息和心跳，取消即释放。`Monitor` 解析 INFO 并返回实例指标。
 
 `Databases(ctx, connection)` 读取 `CONFIG GET databases` 并返回从 0 开始的编号（含空库）。服务限制 CONFIG 时，以独立连接通过 SELECT 查询范围，保留普通连接默认的 0 号库，并继承元数据超时和取消信号。
 
-`ChangeKey` 根据连接和逻辑库修改一个键。重命名、复制使用 Redis 的原生无覆盖命令，删除使用 UNLINK。TTL 以整数秒设置，0 表示移除过期时间。新增使用 SET NX，避免覆盖同名键。字符串编辑检查值类型、UTF-8、大小和可选的旧值，通过 WATCH 同时监视源键与可选的目标键。事务中用 SET XX 一并更新值和 TTL，需要改名时再执行 RENAMENX。省略 TTL 时使用 KEEPTTL 保留过期时间。
+`ChangeKey` 根据连接和逻辑库修改一个键。重命名、复制使用 Redis 的原生无覆盖命令，删除使用 UNLINK。TTL 以整数秒设置，0 表示移除过期时间。新增使用 SET NX，避免覆盖同名键。值编辑检查 valueType、UTF-8、大小和旧值，通过 WATCH 同时监视源键与可选的目标键。String 用 SET XX/KEEPTTL；List 用 LSET/RPUSH/LTRIM，Set 用 SADD/SREM，Hash 用 HSET/HDEL，ZSet 用 ZADD/ZREM，在原类型内修改。集合先新增再移除旧成员，避免替换时短暂变空而丢失 TTL；拒绝空集合及重复成员/字段。省略 TTL 不调整期限，指定时同事务更新；需要改名时再执行 RENAMENX。冲突拒绝写入，不自动重试。Redis 事务错误和取消不描述为已经回滚。
+
+rename 携带 TTL 时，通过 WATCH 监视源键和目标键，检查源键存在且目标不存在，再在同一 MULTI/EXEC 内执行 RENAMENX 与目标键的 EXPIRE/PERSIST；0 移除期限。省略 TTL 时继续使用原生 RENAMENX 并保留期限。冲突拒绝写入，不自动重试。
 
 命令回执同时提供终端文本与查询表。标量、空值和列表使用 value 列，HGETALL、HMGET、MGET 以及带 WITHSCORES 的区间查询提供对应的字段、键名或分数列。结果表保留整数文本并限制返回行数和输出大小。

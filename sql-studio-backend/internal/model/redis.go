@@ -30,11 +30,12 @@ type RedisKeyChangeResult struct {
 }
 
 type RedisKeyChange struct {
-	Action string  `json:"action"`
-	Target *string `json:"target,omitempty"`
-	Value  *string `json:"value,omitempty"`
-	Before *string `json:"before,omitempty"`
-	TTL    *int64  `json:"ttl,omitempty"`
+	Action    string  `json:"action"`
+	ValueType string  `json:"valueType,omitempty"`
+	Target    *string `json:"target,omitempty"`
+	Value     *string `json:"value,omitempty"`
+	Before    *string `json:"before,omitempty"`
+	TTL       *int64  `json:"ttl,omitempty"`
 }
 
 type RedisReply struct {

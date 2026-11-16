@@ -23,6 +23,7 @@ type Props = {
   themeMode: ThemeMode
   blocked: boolean
   connectionName: string
+  host: string
   loadedCommand?: HistoryItem
   onHistory: (item: HistoryItem) => void
   onBusy: (busy: boolean) => void
@@ -31,7 +32,7 @@ type Props = {
 
 const selectHintLimit = 16
 
-export default function Console({ page, id, database, databases, visible, themeMode, blocked, connectionName, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
+export default function Console({ page, id, database, databases, visible, themeMode, blocked, connectionName, host, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [initial] = useState(() => readTerminal(page, id))
@@ -46,7 +47,7 @@ export default function Console({ page, id, database, databases, visible, themeM
   const draft = useRef('')
   const scroll = useRef<HTMLDivElement>(null)
   const input = useRef<EditorView | null>(null)
-  const prompt = `redis[${database}]>`
+  const prompt = `${host}:db${database}>`
   const databaseHint = databases.length ? `${t('可选逻辑库')} ${databases.slice(0, selectHintLimit).join(', ')}${databases.length > selectHintLimit ? ', …' : ''}` : undefined
   const hints = redisCommandHints(command, databaseHint)
 
@@ -83,7 +84,13 @@ export default function Console({ page, id, database, databases, visible, themeM
 
   async function execute() {
     const value = command.trim()
-    if (!value || request.current || blocked) return
+    if (request.current || blocked) return
+    if (!value) {
+      const entry = { index: ++counter.current, command: '', prompt, answer: '' }
+      setEntries((previous) => [...previous.slice(-(terminalHistoryLimit - 1)), entry])
+      setCommand('')
+      return
+    }
     record(value)
     setCommand('')
     if (value.toLowerCase() === 'clear') {
@@ -142,23 +149,36 @@ export default function Console({ page, id, database, databases, visible, themeM
         const selection = window.getSelection()
         if (!selection || selection.isCollapsed || !event.currentTarget.contains(selection.anchorNode)) input.current?.focus()
       }}
-      style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', cursor: 'text', lineHeight: 1.65, userSelect: 'text' }}
+      style={{
+        flex: 1,
+        minHeight: 0,
+        overflow: 'auto',
+        padding: 'var(--workspace-inset)',
+        cursor: 'text',
+        lineHeight: 1.65,
+        userSelect: 'text',
+        background: themeMode === 'dark' ? token.colorBgLayout : token.colorBgContainer
+      }}
     >
       <div role="log" aria-label={t('命令输出')}>
         {entries.map((entry) => (
           <div key={entry.index} style={{ marginBottom: token.marginXS, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
             <div>
-              <span style={{ color: token.colorTextSecondary }}>{entry.prompt}</span> {entry.command}
+              <span style={{ color: token.colorWarningText }}>{entry.prompt}</span> {entry.command}
             </div>
-            <div style={{ color: entry.error ? token.colorErrorText : token.colorText }}>
-              {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t(entry.answer) : entry.answer || '""'}
-            </div>
+            {entry.command.trim() && (
+              <div style={{ color: entry.error ? token.colorErrorText : token.colorText }}>
+                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t(entry.answer) : entry.answer || '""'}
+              </div>
+            )}
             {entry.truncated && <div style={{ color: token.colorTextSecondary }}>{t('仅显示部分内容')}</div>}
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: token.marginXS, color: token.colorTextSecondary, width: '100%' }}>
-        <span aria-hidden="true">{prompt}</span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: token.marginXS, width: '100%' }}>
+        <span aria-hidden="true" style={{ color: token.colorWarningText }}>
+          {prompt}
+        </span>
         <ConsoleInput
           value={command}
           initialSelection={initial.selection}

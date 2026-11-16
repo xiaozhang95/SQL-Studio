@@ -10,7 +10,7 @@ History受控items/activeId/busy/loading/open及onSelect/onRefresh/onDelete/onRe
 
 桌面刷新按钮与历史标题同排，窄屏复用抽屉标题栏的操作位。
 
-useSessionRename管理弹窗选中项、Form、busy/error。名称1–80字符，空白/控制字符禁止；取消不提交，失败保留输入，成功关闭，父hook更新列表和顶栏标题。初始化失败可保留空态与错误，不能伪装创建成功；恢复不重放SQL。
+useSessionRename管理弹窗选中项、Form、busy/error。重命名弹窗使用 forceRender 预先挂载 Form，再由 hook 填入名称，避免首次打开前操作未连接的表单实例。名称1–80字符，空白/控制字符禁止；取消不提交，失败保留输入，成功关闭，父hook更新列表和顶栏标题。初始化失败可保留空态与错误，不能伪装创建成功；恢复不重放SQL。
 
 selecting表示当前会话内容加载中：暂停新建、删除和重命名，但允许继续选择其他会话；busy用于模型执行、初始化与管理操作，禁止选择。列表loading仅表示轻量索引刷新，不代替会话内容加载。
 

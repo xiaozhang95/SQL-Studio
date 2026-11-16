@@ -18,6 +18,6 @@ workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题�
 
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 
-objectTreeLayout.rowHeight=30 与既有 28px 节点内容和 2px 行距一致；scrollSaveDelay=150ms 在滚动结束后保存位置。
+objectTreeLayout.rowHeight=30 由连接对象树和 Redis 键树共用，与 28px 节点内容和 2px 行距一致；switcherWidth=20 用于 Redis 键树统一分组箭头与叶节点占位列宽，使同层文件夹和键图标、文字对齐；scrollSaveDelay=150ms 在连接对象树滚动结束后保存位置。
 
 sqlCompletionLayout.width=360、height=256：Ant Design 语法候选下拉的最大尺寸，实际宽度受窗口限制。

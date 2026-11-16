@@ -83,6 +83,7 @@ export function History(props: Props) {
         <HistoryContents {...contentsProps} />
       </Drawer>
       <Modal
+        forceRender
         title={t('重命名会话')}
         open={Boolean(rename.selected)}
         onCancel={rename.close}

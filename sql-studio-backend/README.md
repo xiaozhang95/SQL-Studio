@@ -17,7 +17,7 @@ go run main.go
 
 服务监听 `127.0.0.1:18080`，日志直接输出终端，Ctrl+C 退出并给予在途请求 5 秒结束时间。当前不提供启停脚本、后台 PID、日志文件和部署配置。
 
-开发时从后端根目录启动，网页目录为 `../sql-studio-frontend/dist`。连接、密钥和布局配置默认保存在 `~/.sql-studio/state/`，Windows 路径为 `%USERPROFILE%\.sql-studio\state`。没有保存连接时可在网页创建。数据库范围见 [数据库支持](../docs/DATABASES.md)，可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。
+开发时从后端根目录启动，网页目录为 `../sql-studio-frontend/dist`。连接、密钥和布局配置默认保存在 `~/.sql-studio-dev/state/`，Windows 路径为 `%USERPROFILE%\.sql-studio-dev\state`。Electron 打包后端的默认环境为 production，配置位于 `~/.sql-studio/state/`。`SQLDESK_ENV=development|production` 可显式选择环境，目录覆盖参数优先，已有文件不自动迁移。没有保存连接时可在网页创建。数据库范围见 [数据库支持](../docs/DATABASES.md)，可选的 MySQL 首次连接参数见 [运行配置](internal/config/README.md)。
 
 ## 桌面打包与网页目录
 

@@ -10,9 +10,9 @@
 
 ## 生命周期与边界
 
-仅 MySQL，无初始库或切换类型分支。空密码保留交给服务端按 ID 处理；不回显凭据。测试状态在关闭后清理，避免动画结束覆盖成功反馈。
+数据库类型通过 getDatabaseProfile 读取，支持已注册引擎。空密码保留交给服务端按 ID 处理；不回显凭据。测试状态在关闭后清理，避免动画结束覆盖成功反馈。
 
-engine 读取 getDatabaseAdapter(...).profile，类型、标签和端口的唯一来源为所属数据库配置；表单不重复写死 MySQL 或 3306。
+engine 读取 getDatabaseProfile，类型、标签和端口的唯一来源为所属数据库配置；表单不重复写死 MySQL 或 3306。
 
 请求错误、取消和持久化失败沿用实现中的边界，组件不重复维护同一份业务状态。
 
@@ -22,4 +22,4 @@ engine 读取 getDatabaseAdapter(...).profile，类型、标签和端口的唯�
 
 group 可自由输入或选择已有值，提交前去除首尾空白；清空后保存仍归入默认分组。不因仅输入或取消表单而创建分组。
 
-selectEngine(type:DatabaseType) 仅允许新建且非 busy 时切换，引擎 profile 提供默认端口及维护库，保留名称/主机/用户名。初始化不依赖当前所选 engine，避免切换时重置整张表。PostgreSQL 维护库默认 postgres，保存与测试传给后端。
+selectEngine(type:DatabaseType) 仅允许新建且非 busy 时切换，忽略重复选择。切换先重置字段生命周期，清除旧引擎的校验错误、触碰状态及在途校验，再恢复共用输入；引擎 profile 提供默认端口及维护库，名称、分组、主机、用户名、密码与 TLS 输入继续保留。初始化不依赖当前所选 engine。PostgreSQL 维护库默认 postgres，保存与测试传给后端。

@@ -10,7 +10,7 @@ export function isAppURL(target, origin) {
 export function backendEnvironment(parent, runtime, state, address) {
   // 避免继承开发终端的初始密码、旧数据目录或数据库范围配置。
   const env = Object.fromEntries(Object.entries(parent).filter(([key]) => !key.toUpperCase().startsWith('SQLDESK_')))
-  return { ...env, SQLDESK_ADDR: address, SQLDESK_STATE_DIR: state, SQLDESK_DATA_DIR: state, SQLDESK_WEB_DIR: runtime }
+  return { ...env, SQLDESK_ENV: 'production', SQLDESK_ADDR: address, SQLDESK_STATE_DIR: state, SQLDESK_DATA_DIR: state, SQLDESK_WEB_DIR: runtime }
 }
 
 export function validTitleBarTheme(value) {

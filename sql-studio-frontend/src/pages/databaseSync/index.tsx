@@ -213,6 +213,8 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
           <Button danger onClick={model.cancel}>
             {t('取消同步')}
           </Button>
+        ) : done ? (
+          <Button onClick={pageProps.onBack}>{t('完成')}</Button>
         ) : result ? (
           <Button onClick={model.back}>{t('修改配置')}</Button>
         ) : (

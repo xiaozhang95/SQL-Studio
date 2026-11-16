@@ -154,7 +154,20 @@ func (s *Service) ChangeKey(ctx context.Context, id, database string, ref *strin
 		}
 	case "create", "value":
 		if change.Value == nil || len(*change.Value) > 16*1024 || (change.Before != nil && len(*change.Before) > 16*1024) {
-			return result, errors.New("Redis 字符串值超过编辑上限或未提供")
+			return result, errors.New("Redis 键值超过编辑上限或未提供")
+		}
+		if change.Action == "value" {
+			if change.ValueType == "" {
+				change.ValueType = "string"
+			}
+			switch change.ValueType {
+			case "string", "list", "set", "hash", "zset":
+			default:
+				return result, errors.New("当前 Redis 类型不支持直接编辑")
+			}
+			if change.ValueType != "string" && change.Before == nil {
+				return result, errors.New("请刷新 Redis 键值后再编辑")
+			}
 		}
 		if (change.Action == "create" && (change.Target == nil || *change.Target == "")) || (change.Target != nil && len(*change.Target) > 16*1024) {
 			return result, errors.New("Redis 键名无效")

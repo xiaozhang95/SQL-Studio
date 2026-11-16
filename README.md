@@ -26,7 +26,7 @@
 - 表数据新增与编辑，暂存修改后统一保存。
 - 查看建表语句，转储结构或结构和数据。
 - 亮色、暗色和跟随系统主题，支持简体中文与 English 界面。
-- 用户主目录下的 `~/.sql-studio/state/` 保存布局、页签、查询草稿、结果快照与历史。
+- 用户主目录下的 `~/.sql-studio-dev/state/`（开发）或 `~/.sql-studio/state/`（发行）保存布局、页签、查询草稿、结果快照与历史。
 - DeepSeek SQL 续写、优化与可选模型配置，生成后由用户决定是否运行。
 
 ## 安装与启动
@@ -78,7 +78,7 @@ pnpm build
 
 ### 启动失败与配置保存提示
 
-默认配置目录为 `~/.sql-studio/state/`，首次启动时创建。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件。
+开发默认配置目录为 `~/.sql-studio-dev/state/`，发行版为 `~/.sql-studio/state/`，首次启动时创建。`open ...\.state-*.tmp: Access is denied` 表示处理保存请求的后端进程被系统拒绝创建临时文件。
 
 先确认浏览器连接的后端：程序启动日志会输出 PID、可执行文件路径、监听地址及配置目录。开发时若 18080 已有 `go run` 的临时 main.exe，新服务会因端口占用退出，浏览器仍然访问旧服务；先正常停止旧服务再启动。也可通过 SQLDESK_ADDR 指定其他监听地址，并同步前端代理配置。Electron 打包版使用自己的空闲端口。
 
@@ -96,7 +96,7 @@ SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快�
 
 ## 本机配置
 
-默认保存到用户主目录下的 `~/.sql-studio/state/`：
+开发默认保存到用户主目录下的 `~/.sql-studio-dev/state/`，打包发行版保存到 `~/.sql-studio/state/`：
 
 - `workspace-index.json` 保存布局、页签和内容引用，`workspace-parts/` 保存按散列寻址的查询草稿和结果。
 - `history.json`：按连接保存的执行历史。
@@ -104,7 +104,7 @@ SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快�
 
 配置采用带版本号和修订号的 JSON 格式，可通过 `SQLDESK_STATE_DIR` 指定目录。配置文件缺失时使用默认布局并重新生成，不再读取浏览器旧记录。恢复页面不会自动执行查询。
 
-连接与加密密钥默认也保存在 `~/.sql-studio/state/`，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`。界面配置可能包含查询文本和结果。
+连接与加密密钥也保存在所选环境的 `state/` 中，连接接口不返回密码。备份连接时需同时保管 `connections.json` 与 `master.key`。界面配置可能包含查询文本和结果。
 
 ## 使用范围
 
@@ -133,6 +133,6 @@ psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --fil
 
 需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。
 
-默认状态目录为 `~/.sql-studio/state/`，Windows 为 `%USERPROFILE%\.sql-studio\state`。`SQLDESK_STATE_DIR` 可覆盖状态目录，`SQLDESK_DATA_DIR` 可单独指定连接目录。显式相对路径以启动工作目录为基准。
+`go run main.go` 默认使用开发目录 `~/.sql-studio-dev/state/`，桌面打包版使用 `~/.sql-studio/state/`；Windows 在 `%USERPROFILE%` 下使用对应目录。`SQLDESK_ENV=development|production` 可显式选择 Go 环境，`SQLDESK_STATE_DIR` 可覆盖状态目录，`SQLDESK_DATA_DIR` 可单独指定连接目录。显式相对路径以启动工作目录为基准。
 
 旧数据保留在原目录。如需沿用，退出应用和服务后，将选定的旧 `state/` 整体复制到尚无数据的新位置，包括密钥和工作区分片。

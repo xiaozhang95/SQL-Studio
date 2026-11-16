@@ -113,47 +113,11 @@ func (c *Client) Key(ctx context.Context, connection model.Connection, db int, n
 		}
 		detail.Editable = !detail.Truncated && utf8.ValidString(detail.Preview)
 		detail.Preview = display(detail.Preview)
-	case "list":
-		detail.Size, err = client.LLen(ctx, name).Result()
-		if err == nil {
-			nested, err = client.Do(ctx, "LRANGE", name, 0, previewItems-1).Result()
-		}
-		detail.Truncated = detail.Size > previewItems
-	case "hash", "set", "zset":
-		var entries []string
-		var next uint64
-		switch kind {
-		case "hash":
-			detail.Size, err = client.HLen(ctx, name).Result()
-			if err == nil {
-				entries, next, err = client.HScan(ctx, name, 0, "*", previewItems).Result()
-			}
-		case "set":
-			detail.Size, err = client.SCard(ctx, name).Result()
-			if err == nil {
-				entries, next, err = client.SScan(ctx, name, 0, "*", previewItems).Result()
-			}
-		case "zset":
-			detail.Size, err = client.ZCard(ctx, name).Result()
-			if err == nil {
-				entries, next, err = client.ZScan(ctx, name, 0, "*", previewItems).Result()
-			}
-		}
-		capacity := previewItems
-		if kind != "set" {
-			capacity *= 2
-		}
-		detail.Truncated = next != 0 || len(entries) > capacity
-		entries = entries[:min(len(entries), capacity)]
-		if kind == "set" {
-			nested = entries
-		} else {
-			pairs := make([][]string, 0, len(entries)/2)
-			for i := 0; i+1 < len(entries); i += 2 {
-				pairs = append(pairs, entries[i:i+2])
-			}
-			nested = pairs
-		}
+	case "list", "hash", "set", "zset":
+		var value collectionValue
+		value, err = readCollectionValue(ctx, client, kind, name)
+		detail.Size, detail.Preview = value.size, value.text
+		detail.Truncated, detail.Editable = value.truncated, value.editable
 	case "stream":
 		detail.Size, err = client.XLen(ctx, name).Result()
 		if err == nil {

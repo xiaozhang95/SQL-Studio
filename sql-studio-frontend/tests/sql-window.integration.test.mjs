@@ -222,6 +222,18 @@ for (const type of ['mysql', 'postgresql']) {
         assert.equal(small.truncated, true)
       })
       if (type === 'mysql') {
+        await step(t, 'bulk write receipts do not create global notifications', async () => {
+          const statements = Array.from({ length: 160 }, (_, index) => `SET @sql_studio_notice = ${index};`)
+          const output = await run([...statements, 'SELECT @sql_studio_notice AS notice_value;'].join('\n'))
+          assert.equal(output.batch.statements.length, 161)
+          assert.equal(output.histories.length, 161)
+          assert.ok(
+            output.histories.every(({ ok }) => ok),
+            output.batch.error
+          )
+          assert.equal(output.batch.statements.at(-1).result.rows[0][0], '159')
+          assert.deepEqual(output.messages, [])
+        })
         await step(t, 'restore session variables and preserve transactions across dump statements', async () => {
           const original = (await query('SELECT @@SESSION.sql_mode, @@SESSION.foreign_key_checks')).rows[0]
           const output = await success(

@@ -6,8 +6,9 @@ export type RedisKeyPage = { keys: RedisKey[]; cursor: string }
 export type RedisKeyDetail = { name?: string; type: string; ttlMillis: number; size: number; preview: string; truncated: boolean; editable: boolean }
 export type RedisKeyChange =
   | { action: 'delete' }
-  | { action: 'copy' | 'rename'; target: string }
-  | { action: 'value'; target?: string; value: string; before: string; ttl?: number }
+  | { action: 'copy'; target: string }
+  | { action: 'rename'; target: string; ttl?: number }
+  | { action: 'value'; valueType?: string; target?: string; value: string; before: string; ttl?: number }
   | { action: 'create'; target: string; value: string; ttl: number }
   | { action: 'ttl'; ttl: number }
 export type RedisReply = { database: number; output: string; truncated: boolean; result?: QueryResult }

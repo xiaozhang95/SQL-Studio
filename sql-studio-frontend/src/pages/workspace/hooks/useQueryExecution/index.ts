@@ -18,7 +18,7 @@ type Options = {
   objects: Pick<ReturnType<typeof useDatabaseObjects>, 'snapshots'>
   running: boolean
   request: { current: AbortController | null }
-  message: Pick<MessageInstance, 'info' | 'success'> & { error: (reason: string) => unknown }
+  message: Pick<MessageInstance, 'info'> & { error: (reason: string) => unknown }
   startRun: (id: string, run: RunState) => AbortController
   finishRun: (controller: AbortController) => void
   publishResult: (id: string, run: RunState) => void
@@ -42,7 +42,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
       return
     }
     if (!statements.length) {
-      message.info(redis ? '请输入一条有效的 Redis 命令' : '请先输入 SQL 语句')
+      message.info(redis ? '请输入一条有效的 Redis 命令' : statement.trim() ? '内容仅包含注释或空白，无需执行' : '请先输入 SQL 语句')
       return
     }
     const source = `${target.name} / ${scope.database || '未选择数据库'}${scope.schema ? ' / ' + scope.schema : ''}`
@@ -61,7 +61,6 @@ export function createQueryExecutor({ connections, objects, running, request, me
           previous.map((page) => (page.id === tabId && page.kind === 'query' && page.connectionId === target.id ? { ...page, database: selectedDatabase, schema: '', table: '' } : page))
         )
       }
-      if (entry.result && !entry.result.isQuery) message.success(`执行成功，影响 ${entry.result.affectedRows} 行`)
       if (kind === 'query') {
         const item: HistoryItem = {
           id: crypto.randomUUID(),

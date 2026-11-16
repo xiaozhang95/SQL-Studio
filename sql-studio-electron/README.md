@@ -37,7 +37,7 @@ Windows 在 `release/` 下生成两份分发产物。
 
 ### GitHub Release 与更新
 
-「系统设置 → 关于软件」显示当前版本。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，确认后退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
+「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源；网页端隐藏该入口。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，点击“重启并安装”后直接退出本地 Go 服务并启动安装，不再弹出二次确认。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
 
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
@@ -87,7 +87,7 @@ electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-
 
 桌面页面使用 `/`、`/agent`、`/monitor`、`/sync` 历史路由，页面内切换不整页加载。同源导航与标题栏桥接沿用现有规则，直接访问或刷新时由随包 Go 服务提供同一网页入口。
 
-桌面调试、绿色版和安装版默认都使用当前用户主目录下的 `.sql-studio/`，Windows 路径为 `%USERPROFILE%\.sql-studio`，macOS 和 Linux 路径为 `~/.sql-studio/`。
+桌面调试默认使用当前用户主目录下的 `.sql-studio-dev/`，与 `go run main.go` 的开发配置一致。绿色版和安装版使用 `.sql-studio/`。Windows 位于 `%USERPROFILE%` 下，macOS 和 Linux 位于 `~/` 下。`app.isPackaged` 决定桌面默认目录；构建脚本将随包 Go 程序的默认环境设为 production，启动子进程时同时明确 `SQLDESK_ENV=production`。开发与发行配置互相独立，不自动迁移已有文件。
 
 - `state/` 保存连接、密钥、工作区及 AI 配置，与独立运行的 Go 服务共用默认路径。
 - `electron/` 保存 Electron 和 Chromium 自身数据。
@@ -113,7 +113,7 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 - `src/main.mjs`：窗口、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/policy.mjs`：导航边界、权限判定与后端环境隔离。
-- `src/preload.cjs`：标题栏、更新与原生保存桥接。
+- `src/preload.cjs`：标题栏、控制台、更新与原生保存桥接。
 - `src/sql-save.mjs`：原生保存会话、分块写盘、原子替换和取消清理。
 - `src/updates.mjs`：GitHub 正式版本查询、NSIS 更新下载与安装。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。

@@ -82,8 +82,8 @@ SQL 补全与美化使用共享默认模型。页面、范围或模型变化时�
 
 ## 持久化与运行
 
-连接密码由后端 AES-GCM 加密后保存在配置目录，默认路径为 `~/.sql-studio/state/`。密钥随连接文件备份。该目录的分区 JSON 保存工作区、历史、主题和 AI 配置。配置使用版本号与修订号，拒绝冲突覆盖。工作区不含连接密码，恢复不自动执行 SQL。AI Key 仅后端保存，公开响应脱敏，SQL 续写和优化只生成建议。Agent 工具执行遵守 [操作模式与确认规则](AGENT.md#操作模式与确认)。
+连接密码由后端 AES-GCM 加密后保存在配置目录，开发默认路径为 `~/.sql-studio-dev/state/`，打包发行默认路径为 `~/.sql-studio/state/`。密钥随连接文件备份。该目录的分区 JSON 保存工作区、历史、主题和 AI 配置。配置使用版本号与修订号，拒绝冲突覆盖。工作区不含连接密码，恢复不自动执行 SQL。AI Key 仅后端保存，公开响应脱敏，SQL 续写和优化只生成建议。Agent 工具执行遵守 [操作模式与确认规则](AGENT.md#操作模式与确认)。
 
 开发时 Vite 15173 将 /api 同源代理到 Go 18080。构建后 Go 同时提供网页、Swagger 页面与 API，无额外服务进程。启动见 [项目 README](../README.md)，包依赖细节见 [后端架构](BACKEND_ARCHITECTURE.md)。
 
-[Electron 桌面项目](../sql-studio-electron/README.md) 的调试窗口加载开发者手动启动的 Vite 和 Go 服务。打包版由主进程启动随包 Go 服务、加载构建后的前端页面，并管理服务退出。桌面版和独立 Go 服务默认共用用户主目录下的 `.sql-studio/state/`。
+[Electron 桌面项目](../sql-studio-electron/README.md) 的调试窗口加载开发者手动启动的 Vite 和 Go 服务，共用 `.sql-studio-dev/state/`。打包版由主进程启动默认环境为 production 的随包 Go 服务，使用 `.sql-studio/state/`、加载构建后的前端页面，并管理服务退出。Go 的 `SQLDESK_ENV` 和显式目录参数可覆盖默认选择，开发与发行文件不自动搬迁。

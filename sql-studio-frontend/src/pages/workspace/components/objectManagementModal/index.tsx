@@ -17,13 +17,13 @@ export default function ObjectManagementModal({ manager, themeMode }: Props) {
   const destructive = action === ObjectAction.DropDatabase || action === ObjectAction.DropSchema || action === ObjectAction.DropTable || action === ObjectAction.TruncateTable
   return (
     <Modal
+      forceRender
       title={t(manager.title)}
       open={Boolean(dialog) && !tableForm}
       width={640}
       loading={loading}
       closable={!saving}
       mask={{ closable: !saving }}
-      destroyOnHidden
       onCancel={manager.close}
       styles={{ body: { maxHeight: '70vh', overflow: 'auto' } }}
       footer={

@@ -51,6 +51,8 @@ PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test
 
 真实 SQL 窗口回归：`node --test tests/sql-window.integration.test.mjs` 默认跳过。先用独立 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 启动本地后端，再设置 SQLDESK_SQL_WINDOW_INTEGRATION=1、SQLDESK_MYSQL_PASSWORD、SQLDESK_PG_PASSWORD；SQLDESK_TEST_API 可覆盖接口地址（默认 http://127.0.0.1:18080/api）。SQLDESK_SQL_WINDOW_ENGINE 可选 mysql 或 postgresql；SQLDESK_MYSQL_PORT 可覆盖 MySQL 映射端口。测试执行实际 executeSQL 编排和引擎切分器，经 HTTP 访问本机默认 3306/root 与 5432/postgres；只创建随机 sqldesk_window_ 临时库/schema、临时连接，finally 清理。覆盖精确值、多结果、错误停止、取消后重跑、行数限制、MySQL USE/SET/建表/重建表/INSERT/UPDATE/DELETE/ALTER/RENAME/TRUNCATE/DROP、同会话变量与外键开关、事务提交与取消回滚、写入失败停止和 API 默认读取边界、PostgreSQL DDL/DML/RETURNING 与美元引号。它替换 React 状态并断言请求、逐条结果及历史，不替代浏览器点击、选区或快捷键检查。凭据只从环境变量读取，勿把真实密码写入测试文件或报告。
 
+MySQL 真实窗口编排另覆盖连续 160 条写入回执：所有语句及历史保留，最后查询同一会话变量得到预期值，整个批次不创建全局成功通知。浏览器大脚本回归同时核对控制台没有 Maximum update depth exceeded、页面保持可操作且完成数量与脚本切分数量一致。
+
 explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
 
 Schema 回归覆盖结构列表拆列、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。

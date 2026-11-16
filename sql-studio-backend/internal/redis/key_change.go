@@ -30,6 +30,9 @@ func (c *Client) ChangeKey(ctx context.Context, connection model.Connection, db 
 		}
 		return err
 	case "rename":
+		if change.TTL != nil {
+			return renameKeyWithTTL(ctx, client, name, *change.Target, *change.TTL)
+		}
 		changed, err := client.RenameNX(ctx, name, *change.Target).Result()
 		if err == nil && !changed {
 			return targetExists
@@ -65,13 +68,59 @@ func (c *Client) ChangeKey(ctx context.Context, connection model.Connection, db 
 		}
 		return err
 	case "value":
-		return editStringKey(ctx, client, name, change)
+		return editKeyValue(ctx, client, name, change)
 	default:
 		return errors.New("不支持的 Redis 键操作")
 	}
 }
 
-func editStringKey(ctx context.Context, client *driver.Client, name string, change model.RedisKeyChange) error {
+// 改名与过期时间一起提交，监视两个键以保留目标已存在时的拒绝覆盖语义。
+func renameKeyWithTTL(ctx context.Context, client *driver.Client, name, target string, ttl int64) error {
+	err := client.Watch(ctx, func(tx *driver.Tx) error {
+		exists, err := tx.Exists(ctx, name).Result()
+		if err != nil {
+			return err
+		}
+		if exists == 0 {
+			return missingKey
+		}
+		exists, err = tx.Exists(ctx, target).Result()
+		if err != nil {
+			return err
+		}
+		if exists != 0 {
+			return targetExists
+		}
+		_, err = tx.TxPipelined(ctx, func(pipe driver.Pipeliner) error {
+			pipe.RenameNX(ctx, name, target)
+			if ttl == 0 {
+				pipe.Persist(ctx, target)
+			} else {
+				pipe.Expire(ctx, target, time.Duration(ttl)*time.Second)
+			}
+			return nil
+		})
+		return err
+	}, name, target)
+	if errors.Is(err, driver.TxFailedErr) {
+		return keyChanged
+	}
+	return err
+}
+
+func editKeyValue(ctx context.Context, client *driver.Client, name string, change model.RedisKeyChange) error {
+	valueType := change.ValueType
+	if valueType == "" {
+		valueType = "string"
+	}
+	var next collectionValue
+	var err error
+	if valueType != "string" {
+		next, err = parseCollectionValue(valueType, *change.Value)
+		if err != nil {
+			return err
+		}
+	}
 	watched := []string{name}
 	if change.Target != nil && *change.Target != name {
 		watched = append(watched, *change.Target)
@@ -80,7 +129,7 @@ func editStringKey(ctx context.Context, client *driver.Client, name string, chan
 	if change.TTL != nil {
 		args.TTL = time.Duration(*change.TTL) * time.Second
 	}
-	err := client.Watch(ctx, func(tx *driver.Tx) error {
+	err = client.Watch(ctx, func(tx *driver.Tx) error {
 		kind, err := tx.Type(ctx, name).Result()
 		if err != nil {
 			return err
@@ -88,15 +137,26 @@ func editStringKey(ctx context.Context, client *driver.Client, name string, chan
 		if kind == "none" {
 			return missingKey
 		}
-		if kind != "string" {
+		if kind != valueType {
 			return keyChanged
 		}
-		current, err := tx.GetRange(ctx, name, 0, previewBytes).Result()
-		if err != nil {
-			return err
-		}
-		if len(current) > previewBytes || !utf8.ValidString(current) || (change.Before != nil && current != *change.Before) {
-			return keyChanged
+		var current collectionValue
+		if kind == "string" {
+			text, err := tx.GetRange(ctx, name, 0, previewBytes).Result()
+			if err != nil {
+				return err
+			}
+			if len(text) > previewBytes || !utf8.ValidString(text) || (change.Before != nil && text != *change.Before) {
+				return keyChanged
+			}
+		} else {
+			current, err = readCollectionValue(ctx, tx, kind, name)
+			if err != nil {
+				return err
+			}
+			if !current.editable || change.Before == nil || current.text != *change.Before {
+				return keyChanged
+			}
 		}
 		if len(watched) == 2 {
 			exists, err := tx.Exists(ctx, watched[1]).Result()
@@ -108,7 +168,18 @@ func editStringKey(ctx context.Context, client *driver.Client, name string, chan
 			}
 		}
 		_, err = tx.TxPipelined(ctx, func(pipe driver.Pipeliner) error {
-			pipe.SetArgs(ctx, name, *change.Value, args)
+			if kind == "string" {
+				pipe.SetArgs(ctx, name, *change.Value, args)
+			} else {
+				applyCollectionValue(ctx, pipe, name, current, next)
+				if change.TTL != nil {
+					if *change.TTL == 0 {
+						pipe.Persist(ctx, name)
+					} else {
+						pipe.Expire(ctx, name, time.Duration(*change.TTL)*time.Second)
+					}
+				}
+			}
 			if len(watched) == 2 {
 				pipe.RenameNX(ctx, name, watched[1])
 			}

@@ -1,12 +1,10 @@
-import { CodeOutlined, DownloadOutlined, FormatPainterOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import type { EditorView } from '@codemirror/view'
-import { Switch, Tooltip, Upload } from 'antd'
+import { CodeOutlined, DownloadOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
 import { selectedRedisDatabase } from '@/databases/redis'
-import { formatRedisCommands } from '@/databases/redis/editor'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { ThemeMode } from '@/typings/theme'
@@ -32,7 +30,6 @@ const tools = [
   { id: 'console', label: '命令行', icon: <CodeOutlined /> },
   { id: 'pubsub', label: '发布订阅', icon: <PubSubIcon /> }
 ] as const
-const switchLabelStyle = { display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' } as const
 
 export default function RedisQuery({ model, connection, active, themeMode }: Props) {
   const { t } = useTranslation()
@@ -46,20 +43,10 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const snapshot = objects.snapshots[connection.id]
   const database = selectedRedisDatabase(snapshot?.databases ?? [], tab.database, connection.database)
   const status = snapshot?.status
-  const editor = useRef<EditorView | null>(null)
   const blocked = model.running || commandBusy
   const editorMode = tool === 'editor'
   const consoleMode = tool === 'console'
   const { beforeImport, importing, error: importError, clearError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
-
-  function format() {
-    const view = editor.current
-    if (!view) return
-    const original = view.state.doc.toString()
-    const formatted = formatRedisCommands(original)
-    if (original !== formatted) view.dispatch({ changes: { from: 0, to: original.length, insert: formatted } })
-    view.focus()
-  }
 
   return (
     <section className="editor-panel redis-query-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
@@ -95,16 +82,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             />
           ))}
         </div>
-        <div className="query-toolbar-group">
-          <Tooltip title={t('Redis 暂不支持 AI 代码补全')}>
-            <label style={switchLabelStyle}>
-              <CodeOutlined aria-hidden="true" />
-              <span className="redis-assist-label">{t('代码补全')}</span>
-              <Switch size="small" aria-label={t('代码补全')} checked={false} disabled />
-            </label>
-          </Tooltip>
-          <ToolbarButton label={t('SQL 美化')} icon={<FormatPainterOutlined />} disabled={blocked || !editorMode || !hasText} onClick={format} />
-        </div>
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={blocked || !editorMode || importing}>
           <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={blocked || !editorMode} />
         </Upload>
@@ -121,6 +98,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             page={tab.id}
             id={connection.id}
             connectionName={connection.name}
+            host={connection.host}
             database={Number(database)}
             databases={snapshot?.databases ?? []}
             visible={active && consoleMode}
@@ -139,7 +117,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
                 shortcutEnabled={!blocked && !model.historyOpen}
                 onRun={model.runSQL}
                 onViewChange={(view) => {
-                  editor.current = view
                   if (view) setHasText(Boolean(view.state.doc.toString().trim()))
                 }}
                 onContentChange={setHasText}

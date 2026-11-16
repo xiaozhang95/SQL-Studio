@@ -18,9 +18,25 @@ type Config struct {
 	InitialConnection *model.Connection
 }
 
+// 桌面构建通过 -ldflags 设置为 production，直接 go run 默认 development。
+var defaultEnvironment = "development"
+
 // Load defaults state to the user's home directory and resolves relative overrides from the working directory.
 func Load() (Config, error) {
 	cfg := Config{Address: "127.0.0.1:18080"}
+	environment := os.Getenv("SQLDESK_ENV")
+	if environment == "" {
+		environment = defaultEnvironment
+	}
+	var directory string
+	switch environment {
+	case "development":
+		directory = ".sql-studio-dev"
+	case "production":
+		directory = ".sql-studio"
+	default:
+		return cfg, fmt.Errorf("SQLDESK_ENV 必须是 development 或 production")
+	}
 	if address := os.Getenv("SQLDESK_ADDR"); address != "" {
 		cfg.Address = address
 	}
@@ -30,7 +46,7 @@ func Load() (Config, error) {
 		if err != nil {
 			return cfg, fmt.Errorf("获取用户主目录失败: %w", err)
 		}
-		stateDir = filepath.Join(home, ".sql-studio", "state")
+		stateDir = filepath.Join(home, directory, "state")
 	}
 	var err error
 	cfg.StateDir, err = resolveDirectory("SQLDESK_STATE_DIR", stateDir)

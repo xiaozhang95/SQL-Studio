@@ -32,7 +32,7 @@ const goEnvironment = {
   GOARCH: goArch,
   CGO_ENABLED: '0'
 }
-run('go', ['build', '-trimpath', '-o', binary, '.'], path.join(root, 'sql-studio-backend'), goEnvironment)
+run('go', ['build', '-trimpath', '-ldflags', '-X sql-studio-backend/internal/config.defaultEnvironment=production', '-o', binary, '.'], path.join(root, 'sql-studio-backend'), goEnvironment)
 if (goOS === 'windows') {
   // electron-builder 写入图标和版本资源时要求启动器没有 COFF 符号表。
   run('go', [

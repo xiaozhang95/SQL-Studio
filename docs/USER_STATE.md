@@ -1,6 +1,6 @@
 # 用户状态配置格式
 
-默认目录为用户主目录下的 `.sql-studio/state/`，Go 服务和 Electron 共用这一默认值。`SQLDESK_STATE_DIR` 可指定状态目录，`SQLDESK_DATA_DIR` 可单独指定连接目录，默认与状态目录相同。存储仅读写当前目录和最新格式。每个目录由一个后端进程使用。
+开发环境默认目录为用户主目录下的 `.sql-studio-dev/state/`，打包发行环境使用 `.sql-studio/state/`，对应环境的 Go 服务和 Electron 共用配置。直接 `go run main.go` 默认开发环境，桌面构建将后端默认环境设为 production；`SQLDESK_ENV=development|production` 可显式选择 Go 环境。`SQLDESK_STATE_DIR` 可指定状态目录，`SQLDESK_DATA_DIR` 可单独指定连接目录，默认与状态目录相同。Electron 的 `SQL_STUDIO_DATA_DIR` 覆盖桌面数据根。存储仅读写当前目录和最新格式，不在开发和发行目录之间自动迁移。每个目录由一个后端进程使用。
 
 | 文件 | 当前内容 |
 | --- | --- |

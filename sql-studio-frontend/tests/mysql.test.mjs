@@ -65,6 +65,19 @@ test('does not execute whitespace or ordinary comments as statements', () => {
   assert.deepEqual(splitSQLStatements('/*!80000 SELECT 1 */;'), ['/*!80000 SELECT 1 */;'])
 })
 
+test('line-leading comments without spaces are skipped or normalized without changing subtraction and literals', () => {
+  const comment = `-- 打印执行与运营管理扩展表
+--CREATE TABLE IF NOT EXISTS oa_print_task (
+--    id BIGINT PRIMARY KEY,
+--    create_by BIGINT NULL, create_time DATETIME NULL,
+--    KEY idx_print_task_apply (apply_id)
+--);`
+  assert.deepEqual(splitSQLStatements(comment), [])
+  assert.deepEqual(splitSQLStatements('--CREATE TABLE ignored (id INT);\nSELECT 1;'), ['-- CREATE TABLE ignored (id INT);\nSELECT 1;'])
+  assert.deepEqual(splitSQLStatements("SELECT 1\n  --comment; '\n;SELECT 3;"), ["SELECT 1\n  -- comment; '\n;", 'SELECT 3;'])
+  assert.deepEqual(splitSQLStatements("SELECT 1--2, '--CREATE', `--column`;"), ["SELECT 1--2, '--CREATE', `--column`;"])
+})
+
 test('rejects an incomplete script before any statement is submitted', () => {
   for (const sql of ["SELECT 1; SELECT 'unfinished", 'SELECT "unfinished', 'SELECT `unfinished', 'SELECT 1; /* unfinished']) {
     assert.throws(() => splitSQLStatements(sql), /未闭合/)

@@ -1156,7 +1156,8 @@
                       "type": "string"
                     },
                     "editable": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "完整 UTF-8 String、List、Set、Hash、ZSet 值可编辑；集合最多 50 项且 JSON 不超过 16KiB。"
                     },
                     "ttlMillis": {
                       "type": "integer",
@@ -1407,19 +1408,31 @@
                   "value": {
                     "type": "string"
                   },
+                  "valueType": {
+                    "type": "string",
+                    "enum": [
+                      "string",
+                      "list",
+                      "set",
+                      "hash",
+                      "zset"
+                    ],
+                    "default": "string",
+                    "description": "value 操作的原始类型。String 为原文；List/Set 为 JSON 字符串数组，Hash/ZSet 为二元字符串数组。"
+                  },
                   "target": {
                     "type": "string",
                     "description": "新增、重命名、复制的目标键名，也可随 value 一起变更键名。"
                   },
                   "before": {
                     "type": "string",
-                    "description": "读取时的旧字符串值，提供时检查是否有其他写入。"
+                    "description": "读取时的原始 preview；集合编辑必须提供，String 可选。保存前校验类型及当前完整值，拒绝覆盖并发修改。"
                   },
                   "ttl": {
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 315360000,
-                    "description": "过期秒数，0 表示永久有效。create 与 ttl 必填，value 省略时保留过期时间。"
+                    "description": "过期秒数，0 表示永久有效。create 与 ttl 必填，value 与 rename 可选，省略时保留过期时间。"
                   }
                 },
                 "additionalProperties": false
@@ -1427,7 +1440,7 @@
             }
           }
         },
-        "description": "在所选逻辑库编辑字符串、设置 TTL、重命名、复制或删除键。复制和重命名不会覆盖已有目标键。"
+        "description": "在所选逻辑库编辑 String、List、Set、Hash、ZSet 的完整 UTF-8 值，集合最多 50 项、16KiB，不接受空集合、重复成员/字段或非有限分数。按原类型更新，省略 TTL 保留期限，可同时修改键名。复制和重命名不会覆盖已有目标键。"
       }
     },
     "/connections/{id}/redis/command": {

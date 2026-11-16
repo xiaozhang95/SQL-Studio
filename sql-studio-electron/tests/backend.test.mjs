@@ -41,6 +41,7 @@ test('桌面子进程隔离继承的 SQLDESK 配置和初始密码', () => {
   )
   assert.deepEqual(env, {
     PATH: '/bin',
+    SQLDESK_ENV: 'production',
     SQLDESK_ADDR: '127.0.0.1:12345',
     SQLDESK_WEB_DIR: '/runtime/web',
     SQLDESK_STATE_DIR: '/desktop/state',

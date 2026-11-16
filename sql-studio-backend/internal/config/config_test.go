@@ -59,6 +59,7 @@ func TestDefaultWebDirectory(t *testing.T) {
 }
 
 func TestDefaultConfigurationUsesUserHome(t *testing.T) {
+	t.Setenv("SQLDESK_ENV", "development")
 	t.Setenv("SQLDESK_DATA_DIR", "")
 	t.Setenv("SQLDESK_STATE_DIR", "")
 	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
@@ -66,7 +67,7 @@ func TestDefaultConfigurationUsesUserHome(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("USERPROFILE", home)
 	t.Setenv("HOME", home)
-	want := filepath.Join(home, ".sql-studio", "state")
+	want := filepath.Join(home, ".sql-studio-dev", "state")
 	first, second := t.TempDir(), t.TempDir()
 	for _, dir := range []string{first, second} {
 		t.Chdir(dir)
@@ -80,6 +81,30 @@ func TestDefaultConfigurationUsesUserHome(t *testing.T) {
 		if _, err := os.Stat(want); !os.IsNotExist(err) {
 			t.Fatalf("Load must not create configuration files: %v", err)
 		}
+	}
+}
+
+func TestEnvironmentSeparatesConfigurationDirectories(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("HOME", home)
+	t.Setenv("SQLDESK_STATE_DIR", "")
+	t.Setenv("SQLDESK_DATA_DIR", "")
+	t.Setenv("SQLDESK_MYSQL_PASSWORD", "")
+	for _, tc := range []struct{ environment, directory string }{
+		{"development", ".sql-studio-dev"},
+		{"production", ".sql-studio"},
+	} {
+		t.Setenv("SQLDESK_ENV", tc.environment)
+		cfg, err := Load()
+		want := filepath.Join(home, tc.directory, "state")
+		if err != nil || cfg.StateDir != want || cfg.DataDir != want {
+			t.Fatal(tc.environment, cfg, err)
+		}
+	}
+	t.Setenv("SQLDESK_ENV", "invalid")
+	if _, err := Load(); err == nil {
+		t.Fatal("invalid environment accepted")
 	}
 }
 func TestRelativeConfigurationOverridesUseWorkingDirectory(t *testing.T) {

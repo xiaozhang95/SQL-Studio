@@ -24,6 +24,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
   const { form, selectEngine, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   return (
     <Modal
+      forceRender
       className="connection-dialog"
       width={960}
       styles={{
@@ -37,7 +38,6 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
       onCancel={busy ? undefined : onClose}
       closable={!busy}
       mask={{ closable: !busy }}
-      destroyOnHidden
       afterOpenChange={(visible) => {
         if (!visible) {
           setStatus(undefined)

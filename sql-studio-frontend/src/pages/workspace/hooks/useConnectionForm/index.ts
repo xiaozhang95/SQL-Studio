@@ -39,9 +39,12 @@ export const useConnectionForm = ({ open, connection, groups, onSaved }: Props) 
     }
   }, [open, connection, form])
   function selectEngine(type: DatabaseType) {
-    if (busy || connection) return
+    if (busy || connection || type === engine.value) return
     const profile = getDatabaseProfile(type)
-    form.setFieldsValue({ type, port: profile.port, database: profile.database })
+    const current = form.getFieldsValue(true)
+    // 重置字段生命周期以取消旧引擎校验，再恢复共用输入和新引擎默认值。
+    form.resetFields()
+    form.setFieldsValue({ ...current, type, port: profile.port, database: profile.database })
     setStatus(undefined)
   }
   async function values() {

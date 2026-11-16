@@ -12,9 +12,9 @@ import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 import { createDesktopUpdates } from './updates.mjs'
 
-// 默认状态目录与独立运行的 Go 服务一致。
+// 开发和发行使用独立目录，与对应环境的 Go 服务保持一致。
 const dataOverride = process.env.SQL_STUDIO_DATA_DIR?.trim()
-const dataDirectory = dataOverride ? path.resolve(dataOverride) : path.join(app.getPath('home'), '.sql-studio')
+const dataDirectory = dataOverride ? path.resolve(dataOverride) : path.join(app.getPath('home'), app.isPackaged ? '.sql-studio' : '.sql-studio-dev')
 app.setName('SQL Studio')
 if (app.isPackaged && process.platform === 'win32') app.setAppUserModelId('com.sqlstudio.desktop')
 const userDataDirectory = path.join(dataDirectory, 'electron')
@@ -140,6 +140,7 @@ function createWindow(dark, appIcon, updates) {
   }
   ipcMain.on('sql-studio:titlebar-theme', syncTheme)
   const desktopActions = {
+    'sql-studio:open-console': () => contents.openDevTools({ mode: 'detach' }),
     'sql-studio:check-updates': updates.check,
     'sql-studio:download-update': updates.download,
     'sql-studio:open-release': updates.openRelease,
