@@ -40,6 +40,6 @@ QueryRequest.MatchRows（JSON matchRows）默认为false；只供显式单元格
 
 database_sync.go 定义 同引擎同步的连接范围、选项、检查摘要和进度计数。
 
-monitor.go 定义数据库监控采样和指标契约，数值使用十进制字符串。
+monitor.go 定义数据库监控采样和指标契约，数值使用十进制字符串。MonitorSnapshot.Redis 可选，RedisMonitor 提供版本/模式/角色/runId、白名单 MonitorSection 和 RedisKeyspace；键空间 keyspaces=null 表示未知，空数组表示无非空逻辑库，AverageTTLMS 为毫秒字符串。其他引擎不返回 redis。
 
 redis.go 定义二进制键引用、详情和键修改。RedisKeyDetail.editable 表示当前完整预览可按原类型修改；RedisKeyChange.valueType 缺省 string，集合类型支持 list/set/hash/zset，value 使用 JSON 字符串数组或二元字符串数组，before 携带原 preview。target 可与值同时变更，省略 ttl 保留原期限；格式、大小及并发边界由 Redis 工具服务和引擎校验。

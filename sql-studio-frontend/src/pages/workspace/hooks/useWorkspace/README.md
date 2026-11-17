@@ -34,7 +34,7 @@ validateDatabases 仅在有效库列表加载成功后校验查询页范围，�
 
 ## 本地恢复
 
-useWorkspacePersistence 通过 Go 服务在配置目录保存轻量标签/范围/布局索引，SQL 草稿和结果各自独立保存。启动只读取活动页，其他页按需读取，已保存的非活动内容可释放。只传页面白名单字段，不保存连接密码或表单凭据。顶部展示保存/错误状态。
+useWorkspacePersistence 通过 Go 服务在配置目录保存轻量标签/范围/布局索引，SQL 草稿和结果各自独立保存。启动只读取活动页，其他页按需读取，已保存的非活动内容可释放。只传页面白名单字段，不保存连接密码或表单凭据。后台保存不在顶部展示 loading，配置错误继续由 PageHeader 展示。
 
 sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏与Agent历史栏同步；宽度继续纳入现有轻量布局索引。恢复通过restoreWidth保留已有宽度；旧快照缺少该字段或不是有效数字时使用272px。Agent打开时工作台保持挂载，调整会触发同一布局保存；展示宽度由useSidebarResize根据窗口边界约束，隐藏/窄屏测量不改写偏好。
 

@@ -3,6 +3,7 @@ import { Alert, Dropdown, Empty, Input, Pagination, Table, Typography } from 'an
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
+import DeleteConfirmation from '@/components/deleteConfirmation'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
@@ -77,6 +78,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   })
   const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
   const selectedRows = selection.result === result ? selection.keys : []
+  const [deleteTarget, setDeleteTarget] = useState<{ result: typeof result; pageId: string; rows: number[] }>()
+  const deletingRows = deleteTarget?.result === result && deleteTarget?.pageId === tab.id ? deleteTarget.rows : undefined
   const [sorting, setSorting] = useState<{ result?: typeof result; sort?: ResultSort }>({})
   const sort = sorting.result === result ? sorting.sort : undefined
   const [selectedView, setSelectedView] = useState<{
@@ -227,14 +230,30 @@ export default function QueryResults({ model, themeMode }: Props) {
                     void editing.addRow()
                   }}
                 />
-                <ToolbarButton
-                  label={t('删除行')}
-                  icon={<DeleteOutlined />}
-                  danger
-                  disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length}
-                  hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
-                  onClick={() => editing.deleteRows(selectedRows, () => setSelection({ keys: [] }))}
-                />
+                <DeleteConfirmation
+                  title={t('删除选中的 {value1} 行数据？', { value1: (deletingRows ?? selectedRows).length })}
+                  description={t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。')}
+                  open={Boolean(deletingRows)}
+                  disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving}
+                  onOpenChange={(open) => {
+                    if (!editing.saving) setDeleteTarget(open ? { result, pageId: tab.id, rows: [...selectedRows] } : undefined)
+                  }}
+                  okButtonProps={{ danger: true, loading: editing.saving }}
+                  cancelButtonProps={{ disabled: editing.saving }}
+                  onConfirm={async () => {
+                    if (!deletingRows || editingBlocked || editing.dirty) return
+                    await editing.deleteRows(deletingRows, () => setSelection({ keys: [] }))
+                    setDeleteTarget(undefined)
+                  }}
+                >
+                  <ToolbarButton
+                    label={t('删除行')}
+                    icon={<DeleteOutlined />}
+                    danger
+                    disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving}
+                    hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
+                  />
+                </DeleteConfirmation>
                 <ToolbarButton
                   label={t('保存')}
                   icon={<SaveOutlined />}

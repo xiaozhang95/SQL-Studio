@@ -17,6 +17,8 @@
 
 ## 单一功能模块
 
+删除确认按入口统一：右键菜单中的删除使用 Ant Design Modal 确认弹框；直接点击按钮发起的删除及清空使用 [DeleteConfirmation](../sql-studio-frontend/src/components/deleteConfirmation/README.md)，沿用会话列表的 Popconfirm 气泡确认。保留对象范围、风险说明、完整名称校验及请求互斥等业务规则，确认按钮使用 default 类型。表单内删除字段只在确认后修改草稿，保存表结构时才生效。
+
 独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
 
 错误提示统一复用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md)，使用 Ant Design 默认 error 颜色、图标、边框、圆角和关闭按钮。页面级错误由 PageHeader 放在顶栏下方，重复原因合并。弹窗、SQL 输出和聊天消息内的错误在所属区域使用同一组件。HTTP 请求通过共享 request 工具处理网络、空响应及 JSON 解析失败，统一提示检查后端服务和代理配置。

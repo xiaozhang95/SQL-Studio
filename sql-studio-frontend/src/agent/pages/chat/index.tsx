@@ -5,7 +5,6 @@ import { useEffect, useMemo } from 'react'
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
 import PageHeader from '@/components/pageHeader'
-import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -64,18 +63,7 @@ export function ChatPage({
         colorScheme: dark ? 'dark' : 'light'
       }}
     >
-      <PageHeader
-        showDesktopTitle={false}
-        title={activeTitle}
-        titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
-        errors={[chat.error]}
-        actions={
-          <>
-            <SaveStatus saving={workspace.ready && workspace.saving} label={t('正在保存对话…')} />
-            <SystemSettings {...appearancePreferences} />
-          </>
-        }
-      >
+      <PageHeader showDesktopTitle={false} title={activeTitle} titleOffset={mobile ? 0 : sidebar.visibleWidth / 2} errors={[chat.error]} actions={<SystemSettings {...appearancePreferences} />}>
         {' '}
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
           {localizedDefaultTitle}

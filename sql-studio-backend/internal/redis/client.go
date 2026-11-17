@@ -96,39 +96,3 @@ func fields(info string) map[string]string {
 	}
 	return out
 }
-
-func (c *Client) Monitor(ctx context.Context, connection model.Connection, _ string) (model.MonitorSnapshot, error) {
-	ctx, release, err := c.beginRequest(ctx, connection.ID, instanceScope)
-	if err != nil {
-		return model.MonitorSnapshot{}, err
-	}
-	defer release()
-	client, closeClient := open(ctx, connection, 0)
-	defer closeClient()
-	info, err := client.Info(ctx).Result()
-	if err != nil {
-		return model.MonitorSnapshot{}, err
-	}
-	values := fields(info)
-	order := []struct{ source, key string }{
-		{"connected_clients", "connections"},
-		{"instantaneous_ops_per_sec", "redis_ops"},
-		{"used_memory", "redis_memory_bytes"},
-		{"uptime_in_seconds", "uptime"},
-		{"total_commands_processed", "redis_commands"},
-		{"expired_keys", "redis_expired"},
-		{"evicted_keys", "redis_evicted"},
-	}
-	var metrics []model.MonitorMetric
-	for _, item := range order {
-		if value := values[item.source]; value != "" {
-			metrics = append(metrics, model.MonitorMetric{Key: item.key, Value: value})
-		}
-	}
-	hits, hitErr := strconv.ParseFloat(values["keyspace_hits"], 64)
-	misses, missErr := strconv.ParseFloat(values["keyspace_misses"], 64)
-	if hitErr == nil && missErr == nil && hits+misses > 0 {
-		metrics = append(metrics, model.MonitorMetric{Key: "cache_hit_percent", Value: strconv.FormatFloat(100*hits/(hits+misses), 'f', 1, 64)})
-	}
-	return model.MonitorSnapshot{Database: "", SampledAt: time.Now().UTC(), Metrics: metrics}, nil
-}

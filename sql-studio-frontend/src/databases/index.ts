@@ -3,6 +3,7 @@ import mariadb from './mariadb'
 import mysql from './mysql'
 import postgresql from './postgresql'
 import { redisProfile } from './redis'
+import RedisMonitor from './redis/monitor'
 import { DatabaseEngine } from './typings'
 import type { DatabaseAdapter, DatabaseProfile, DatabaseType, SQLDatabaseType } from './typings'
 
@@ -20,3 +21,6 @@ export const getDatabaseAdapter = (type: DatabaseType = DatabaseEngine.MySQL): D
 export const getDatabaseProfile = (type?: DatabaseType): DatabaseProfile => (type === DatabaseEngine.Redis ? redisProfile : getDatabaseAdapter(type).profile)
 export const sqlDatabaseProfiles = Object.values(adapters).map((adapter) => adapter.profile)
 export const databaseProfiles: readonly DatabaseProfile[] = [...sqlDatabaseProfiles, redisProfile]
+
+/** 引擎专属监控展示与 SQL 适配器分开分派，Redis 不进入 SQL 能力。 */
+export const getDatabaseMonitorPanel = (type?: DatabaseType) => (type === DatabaseEngine.Redis ? RedisMonitor : undefined)

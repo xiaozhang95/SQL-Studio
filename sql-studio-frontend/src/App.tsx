@@ -25,7 +25,7 @@ const AgentPage = lazy(() => import('@/pages/agent'))
 const MonitorPage = lazy(() => import('@/pages/databaseMonitor'))
 const SyncPage = lazy(() => import('@/pages/databaseSync'))
 
-function Studio({ themeMode, themeSaving, ...appearance }: AppearancePreferences & { themeMode: ThemeMode; themeSaving: boolean }) {
+function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMode: ThemeMode }) {
   const { t } = useTranslation()
   const navigation = useAppSection()
   const { section, connectionId, database } = navigation
@@ -48,15 +48,7 @@ function Studio({ themeMode, themeSaving, ...appearance }: AppearancePreferences
   return (
     <>
       <div style={{ display: active ? undefined : 'none' }}>
-        <Workspace
-          model={model}
-          active={active}
-          onOpenAgent={navigation.openAgent}
-          onOpenDatabaseSection={navigation.openDatabaseSection}
-          {...appearance}
-          themeSaving={themeSaving}
-          themeMode={themeMode}
-        />
+        <Workspace model={model} active={active} onOpenAgent={navigation.openAgent} onOpenDatabaseSection={navigation.openDatabaseSection} {...appearance} themeMode={themeMode} />
       </div>
       {section === 'agent' && (
         <Suspense fallback={null}>
@@ -86,7 +78,7 @@ function Studio({ themeMode, themeSaving, ...appearance }: AppearancePreferences
 
 /** 动态弹框使用 AntApp 上下文，确保亮暗主题一致。 */
 export default function App() {
-  const { preference, fontSizePreference, language, savePreferences, mode, ready, saving } = useThemePreference()
+  const { preference, fontSizePreference, language, savePreferences, mode, ready } = useThemePreference()
   const themeConfig = useMemo(() => createThemeConfig(mode, fontSizePreference), [mode, fontSizePreference])
   const locale = useMemo(() => (language === 'en-US' ? { ...enUS, ...xEnUS } : { ...zhCN, ...xZhCN }), [language])
   const appearancePreferences = {
@@ -102,7 +94,7 @@ export default function App() {
         <AntApp message={{ styles: { root: { display: 'none' } } }}>
           {ready ? (
             <SidebarWidthProvider>
-              <Studio {...appearancePreferences} themeSaving={saving} themeMode={mode} />
+              <Studio {...appearancePreferences} themeMode={mode} />
             </SidebarWidthProvider>
           ) : (
             <ContentLoading label={translate('正在读取界面设置…', language)} style={{ height: '100dvh' }} />

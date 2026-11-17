@@ -23,7 +23,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
   const adapter = getDatabaseAdapter(connection?.type)
   const dataEditing = adapter.dataEditing
 
-  const { message, modal } = App.useApp()
+  const { message } = App.useApp()
   const [cell, setCell] = useState<Cell>()
   const [drafts, setDrafts] = useState<Record<string, Cell>>({})
   const [newRows, setNewRows] = useState<{ key: number; cells: unknown[]; columns: Column[] }[]>([])
@@ -202,55 +202,45 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       }
     }
   }
-  function deleteRows(keys: number[], onDeleted: () => void) {
+  async function deleteRows(keys: number[], onDeleted: () => void) {
     if (!dataEditing || blocked || dirty || request.current || !result || !connection || tab.kind !== 'data' || !keys.length) return
     const selected = [...new Set(keys)].filter((key) => key >= 0 && result.rows[key])
     if (!selected.length) return
-    modal.confirm({
-      title: t('删除选中的 {value1} 行数据？', { value1: selected.length }),
-      content: t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。'),
-      okText: t('删除'),
-      cancelText: t('取消'),
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        if (request.current) return
-        const controller = new AbortController()
-        request.current = controller
-        setSaving(true)
-        onBusyChange(tab.id, true)
-        setDeletionError(undefined)
-        const removed = new Set<number>()
-        try {
-          const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
-          const table = tables.find((item) => item.name === tab.table)
-          if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接删除数据，请打开基础表'))
-          const statements = selected.map((key) => ({ key, sql: dataEditing.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
-          for (const { key, sql } of statements) {
-            const deleted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
-            if (deleted.affectedRows !== 1) throw new Error(t('目标行已变化或不存在，请刷新后重试'))
-            removed.add(key)
-          }
-          const refreshed = await executeQuery(tab.connectionId, { database: tab.database, sql: adapter.tableDataSQL(tab.database, tab.table) }, controller.signal)
-          if (!controller.signal.aborted) onResult(tab.id, refreshed)
-        } catch (error) {
-          if (!controller.signal.aborted) {
-            if (removed.size) onResult(tab.id, { ...result, rows: result.rows.filter((_, index) => !removed.has(index)), rowCount: result.rows.length - removed.size })
-            setDeletionError({
-              page: tab.id,
-              detail: t('已删除 {value1} 行。', { value1: removed.size }) + (error instanceof Error ? error.message : t('删除失败')) + t('；若请求中断，请刷新核对实际数据后再重试。')
-            })
-          }
-        } finally {
-          onDeleted()
-          setCell(undefined)
-          if (request.current === controller) {
-            request.current = null
-            setSaving(false)
-            onBusyChange(tab.id, false)
-          }
-        }
+    const controller = new AbortController()
+    request.current = controller
+    setSaving(true)
+    onBusyChange(tab.id, true)
+    setDeletionError(undefined)
+    const removed = new Set<number>()
+    try {
+      const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
+      const table = tables.find((item) => item.name === tab.table)
+      if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接删除数据，请打开基础表'))
+      const statements = selected.map((key) => ({ key, sql: dataEditing.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
+      for (const { key, sql } of statements) {
+        const deleted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
+        if (deleted.affectedRows !== 1) throw new Error(t('目标行已变化或不存在，请刷新后重试'))
+        removed.add(key)
       }
-    })
+      const refreshed = await executeQuery(tab.connectionId, { database: tab.database, sql: adapter.tableDataSQL(tab.database, tab.table) }, controller.signal)
+      if (!controller.signal.aborted) onResult(tab.id, refreshed)
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        if (removed.size) onResult(tab.id, { ...result, rows: result.rows.filter((_, index) => !removed.has(index)), rowCount: result.rows.length - removed.size })
+        setDeletionError({
+          page: tab.id,
+          detail: t('已删除 {value1} 行。', { value1: removed.size }) + (error instanceof Error ? error.message : t('删除失败')) + t('；若请求中断，请刷新核对实际数据后再重试。')
+        })
+      }
+    } finally {
+      onDeleted()
+      setCell(undefined)
+      if (request.current === controller) {
+        request.current = null
+        setSaving(false)
+        onBusyChange(tab.id, false)
+      }
+    }
   }
   return {
     rows: previewRows,

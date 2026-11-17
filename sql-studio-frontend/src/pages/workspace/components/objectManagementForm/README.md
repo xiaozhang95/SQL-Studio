@@ -26,4 +26,4 @@ ObjectManagementForm 接收 manager（对象管理 hook 的表单展示子集）
 
 右侧控件列统一使用flex:1 1 0及minWidth:0，保留原标签宽度与右对齐；允许长内容和帮助说明在控件列内换行，不通过内容最小宽度撑开表单。
 
-添加和删除字段复用 ToolbarButton 图标按钮；特殊字段仍禁用，禁用时可通过 Tooltip 查看原因。字段删除只修改当前表单，提交行为由宿主控制。
+添加和删除字段复用 ToolbarButton 图标按钮；特殊字段仍禁用，禁用时可通过 Tooltip 查看原因。字段删除通过全局 DeleteConfirmation 气泡确认后只修改当前表单，提交行为由宿主控制。

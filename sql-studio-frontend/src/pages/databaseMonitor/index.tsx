@@ -6,7 +6,7 @@ import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
-import { getDatabaseProfile } from '@/databases'
+import { getDatabaseMonitorPanel, getDatabaseProfile } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 
@@ -68,6 +68,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
   const monitor = useDatabaseMonitor(connections, initialConnection, initialDatabase)
   const { connection, result } = monitor
   const snapshot = result?.snapshot
+  const MonitorPanel = getDatabaseMonitorPanel(connection?.type)
   const defaultDatabase = connection?.database || getDatabaseProfile(connection?.type).database
   const options = connections.map((item) => ({
     value: item.id,
@@ -130,7 +131,9 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
             </Flex>
           )}
           <ErrorNotice error={result?.error} />
-          {snapshot ? (
+          {snapshot && MonitorPanel ? (
+            <MonitorPanel key={connection?.id} snapshot={snapshot} history={result?.history ?? []} />
+          ) : snapshot ? (
             <div className="database-monitor-metrics" style={{ display: 'grid', gap: token.marginMD }}>
               {snapshot.metrics.map(({ key, value }) => (
                 <Card key={key} styles={{ body: { minHeight: 144, display: 'flex', alignItems: 'center' } }}>

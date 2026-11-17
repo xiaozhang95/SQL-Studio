@@ -1,0 +1,5 @@
+# Redis 状态详情
+
+`StatusInfo({detail})` 接收可选 MonitorSnapshot.redis，用原生 small Table 展示各逻辑库键数、带过期时间的键数和平均 TTL；没有过期键时 TTL 显示“—”。keyspaces=null 表示服务端未返回统计，空数组表示没有非空逻辑库，两种空态区分展示。
+
+sections 按服务端提供的分类顺序展示横向 Descriptions，字段标签、容量/时间单位和状态经共享定义及格式化处理。未知字段保留原始名称和文本。所有内容只读，无表单或回调，不发请求、不扫描键、不修改配置。

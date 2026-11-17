@@ -1,4 +1,3 @@
-import { CheckOutlined, CopyOutlined } from '@ant-design/icons'
 import { Button, Flex, Form, Input, InputNumber, Space, Tag, theme, Typography } from 'antd'
 
 import ErrorNotice from '@/components/errorNotice'
@@ -49,27 +48,16 @@ export default function KeyEditor({ selected, detail, saving, error, onSave, cle
       disabled={saving}
     >
       <Form.Item label={`${t('键名')}:`} htmlFor="redis-detail-name" style={{ marginBottom: token.marginSM }}>
-        <Space.Compact block>
-          <Input
-            id="redis-detail-name"
-            aria-label={t('键名')}
-            value={editor.name}
-            disabled={saving || detail.name === undefined}
-            maxLength={16384}
-            placeholder={t('输入键名')}
-            style={{ width: '100%', flex: 1, minWidth: 0 }}
-            onChange={(event) => editor.changeName(event.target.value)}
-          />
-          <Button
-            icon={editor.copiedName ? <CheckOutlined /> : <CopyOutlined />}
-            aria-label={t('复制键名')}
-            title={t(editor.copiedName ? '已复制' : '复制键名')}
-            onClick={() => void editor.copy('name')}
-            style={{ flex: 'none' }}
-          >
-            {t('复制')}
-          </Button>
-        </Space.Compact>
+        <Input
+          id="redis-detail-name"
+          aria-label={t('键名')}
+          value={editor.name}
+          disabled={saving || detail.name === undefined}
+          maxLength={16384}
+          placeholder={t('输入键名')}
+          style={{ width: '100%', flex: 1, minWidth: 0 }}
+          onChange={(event) => editor.changeName(event.target.value)}
+        />
       </Form.Item>
       <Form.Item label={`${t('类型')}:`} style={{ marginBottom: token.marginSM }}>
         <Flex wrap gap="middle" align="center" style={{ minHeight: token.controlHeight }}>
@@ -122,31 +110,20 @@ export default function KeyEditor({ selected, detail, saving, error, onSave, cle
         }
         style={{ marginBottom: token.marginSM }}
       >
-        <Space.Compact block>
-          <Input.TextArea
-            id="redis-detail-value"
-            aria-label={t('键值')}
-            rows={8}
-            readOnly={!detail.editable}
-            maxLength={16384}
-            value={editor.value}
-            placeholder={t(detail.type === 'string' ? '输入键值，可留空' : '输入 JSON 格式的键值')}
-            spellCheck={false}
-            style={{ width: '100%', flex: 1, minWidth: 0 }}
-            onChange={(event) => editor.changeValue(event.target.value)}
-          />
-          <Button
-            icon={editor.copiedValue ? <CheckOutlined /> : <CopyOutlined />}
-            aria-label={t(detail.truncated ? '复制当前预览' : '复制键值')}
-            title={t(editor.copiedValue ? '已复制' : detail.truncated ? '复制当前预览' : '复制键值')}
-            onClick={() => void editor.copy('value')}
-            style={{ flex: 'none', height: 'auto', alignSelf: 'stretch' }}
-          >
-            {t('复制')}
-          </Button>
-        </Space.Compact>
+        <Input.TextArea
+          id="redis-detail-value"
+          aria-label={t('键值')}
+          rows={8}
+          readOnly={!detail.editable}
+          maxLength={16384}
+          value={editor.value}
+          placeholder={t(detail.type === 'string' ? '输入键值，可留空' : '输入 JSON 格式的键值')}
+          spellCheck={false}
+          style={{ width: '100%', flex: 1, minWidth: 0 }}
+          onChange={(event) => editor.changeValue(event.target.value)}
+        />
       </Form.Item>
-      <ErrorNotice errors={[error, editor.copyError]} />
+      <ErrorNotice error={error ? t(error) : undefined} />
       <Flex justify="end" gap="small" style={{ marginTop: token.marginSM }}>
         <Button disabled={saving} onClick={editor.cancel}>
           {t('取消')}

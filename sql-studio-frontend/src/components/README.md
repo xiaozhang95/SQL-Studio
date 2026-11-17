@@ -5,10 +5,9 @@
 - [databasePage](databasePage/README.md)：监控与同步的工作区返回入口、顶栏和正文布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
 - [errorNotice](errorNotice/README.md)：页面、弹窗和执行结果共用的错误提示。
+- [deleteConfirmation](deleteConfirmation/README.md)：直接点击删除按钮的会话列表同款气泡确认；右键删除使用业务弹窗。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
-
-- [saveStatus](saveStatus/README.md)：工作区和 Agent 共用的保存期间 loading，空闲时隐藏。
 
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。

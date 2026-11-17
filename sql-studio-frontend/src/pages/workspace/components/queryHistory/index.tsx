@@ -1,9 +1,10 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined } from '@ant-design/icons'
-import { App as AntApp, Drawer, Empty, Input, Table, Tag } from 'antd'
+import { Drawer, Empty, Input, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
+import DeleteConfirmation from '@/components/deleteConfirmation'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
@@ -41,7 +42,6 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
   const redis = connection?.type === DatabaseEngine.Redis
   // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
   const connectionHistory = history
-  const { modal } = AntApp.useApp()
   const [page, setPage] = useState(1)
   const [drawerReady, setDrawerReady] = useState(false)
   const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${drawerReady}:${connectionId}:${connectionHistory.length}:${historySearch}`)
@@ -127,21 +127,16 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
       size="min(1080px, 100vw)"
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={
-        <ToolbarButton
-          label={t('清空执行历史')}
-          icon={<DeleteOutlined />}
-          danger
+        <DeleteConfirmation
+          title={t('清空连接「{value1}」的执行历史？', { value1: connection?.name || '' })}
           disabled={!connectionHistory.length}
-          onClick={() =>
-            modal.confirm({
-              title: t('清空连接「{value1}」的执行历史？', { value1: connection?.name || '' }),
-              onOk: () => {
-                clearHistory(connectionId)
-                setPage(1)
-              }
-            })
-          }
-        />
+          onConfirm={() => {
+            clearHistory(connectionId)
+            setPage(1)
+          }}
+        >
+          <ToolbarButton label={t('清空执行历史')} icon={<DeleteOutlined />} danger disabled={!connectionHistory.length} />
+        </DeleteConfirmation>
       }
     >
       <Input

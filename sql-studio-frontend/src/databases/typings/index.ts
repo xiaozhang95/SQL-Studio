@@ -1,7 +1,7 @@
 import type { sql } from '@codemirror/lang-sql'
 import type { ComponentType } from 'react'
 
-import type { Column, DBTable, QueryResult } from '@/typings/database'
+import type { Column, DBTable, MonitorSnapshot, QueryResult } from '@/typings/database'
 
 import type { DatabaseDefinition, DatabaseObjectAdapter, ObjectAction, ObjectFormValues, ObjectTarget, TableDesignAdapter } from './objectManagement'
 
@@ -9,6 +9,11 @@ import type { DatabaseDefinition, DatabaseObjectAdapter, ObjectAction, ObjectFor
 export const DatabaseEngine = { MySQL: 'mysql', MariaDB: 'mariadb', PostgreSQL: 'postgresql', GreptimeDB: 'greptimedb', Redis: 'redis' } as const
 export type DatabaseType = (typeof DatabaseEngine)[keyof typeof DatabaseEngine]
 export type SQLDatabaseType = Exclude<DatabaseType, 'redis'>
+
+export interface DatabaseMonitorPanelProps {
+  snapshot: MonitorSnapshot
+  history: readonly MonitorSnapshot[]
+}
 
 export interface DatabaseProfile {
   readonly value: DatabaseType

@@ -1762,6 +1762,94 @@
                           }
                         }
                       }
+                    },
+                    "redis": {
+                      "type": "object",
+                      "description": "Redis INFO 的可选实例详情，仅包含白名单字段，当前节点统计。",
+                      "required": [
+                        "version",
+                        "mode",
+                        "role",
+                        "runId",
+                        "sections",
+                        "keyspaces"
+                      ],
+                      "properties": {
+                        "version": {
+                          "type": "string"
+                        },
+                        "mode": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "runId": {
+                          "type": "string"
+                        },
+                        "sections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "key",
+                              "fields"
+                            ],
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "fields": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "key",
+                                    "value"
+                                  ],
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "keyspaces": {
+                          "type": "array",
+                          "nullable": true,
+                          "description": "null 表示未返回 Keyspace，空数组表示没有非空逻辑库。计数和 TTL 保留十进制文本。",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "database",
+                              "keys",
+                              "expires",
+                              "averageTtlMillis"
+                            ],
+                            "properties": {
+                              "database": {
+                                "type": "string"
+                              },
+                              "keys": {
+                                "type": "string"
+                              },
+                              "expires": {
+                                "type": "string"
+                              },
+                              "averageTtlMillis": {
+                                "type": "string",
+                                "description": "平均剩余 TTL，单位毫秒。"
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }

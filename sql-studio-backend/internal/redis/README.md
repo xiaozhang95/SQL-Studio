@@ -6,7 +6,7 @@
 
 `Keys` 返回一页 SCAN 结果，键引用可无损定位二进制键名。`Key` 返回类型、TTL、大小和有界预览，支持 string、hash、list、set、zset 和 stream。字符串预览沿 UTF-8 字符边界截断，无效 UTF-8 内容显示为 Base64。完整 UTF-8 String/List/Set/Hash/ZSet 在 16KiB、最多 50 个集合元素以内标为 editable；无序集合按成员/字段排序，保证旧值比较稳定。List 保留元素顺序，Hash/ZSet 使用二元字符串数组，ZSet 分数须为有限数。截断、二进制、Stream 和未知类型保留只读预览。`KeyTTL` 单独执行 PTTL 获取详情刷新所需的剩余毫秒数。`Run` 执行单条命令，SELECT 校验新逻辑库后返回其编号。
 
-`Channels` 读取实例活跃频道和模式订阅计数。`Subscribe` 维持独立订阅连接，确认订阅后输出消息和心跳，取消即释放。`Monitor` 解析 INFO 并返回实例指标。
+`Channels` 读取实例活跃频道和模式订阅计数。`Subscribe` 维持独立订阅连接，确认订阅后输出消息和心跳，取消即释放。`Monitor` 在同一请求中读取一次默认 INFO，返回客户端、吞吐、内存/RSS/峰值/碎片率、连接、网络速率及累计流量、命令、过期/淘汰、命中率等实例指标。附带版本/模式/角色/runId、服务器/客户端/内存/持久化/复制/运行统计/CPU 的白名单字段，以及 INFO 非空逻辑库的键数、带期限键数、平均 TTL（毫秒）。键数用 big.Int 汇总并返回字符串。缺失字段省略，未返回 Keyspace 时 keyspaces=null，返回空节时为 [] 且总键数为 0。不扫描键、不执行 CONFIG、不汇总集群其他节点；沿用请求取消、连接关闭和元数据超时。
 
 `Databases(ctx, connection)` 读取 `CONFIG GET databases` 并返回从 0 开始的编号（含空库）。服务限制 CONFIG 时，以独立连接通过 SELECT 查询范围，保留普通连接默认的 0 号库，并继承元数据超时和取消信号。
 

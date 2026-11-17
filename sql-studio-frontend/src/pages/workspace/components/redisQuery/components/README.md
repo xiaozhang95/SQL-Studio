@@ -1,6 +1,7 @@
 # Redis 查询组件
 
 - [键浏览](keyBrowser/README.md)根据连接和逻辑库显示键列表及详情，[键分组树](keyTree/README.md)按命名空间组织已扫描的键。
+- [删除键确认](keyDelete/README.md)供详情按钮复用全局气泡确认；键树右键删除使用 Modal。
 - [键详情编辑](keyEditor/README.md)在原位编辑键名、TTL 和完整键值，草稿由 [useKeyEditor](../hooks/useKeyEditor/README.md) 管理。
 - [命令编辑器](editor/README.md)提供选区执行、补全和结果。
 - [命令行](console/README.md)执行单条 Redis 命令并展示回执，[单行输入](consoleInput/README.md)提供本地 Select 命令候选。

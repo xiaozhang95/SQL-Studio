@@ -62,4 +62,12 @@ export type MonitorSnapshot = {
   database: string
   sampledAt: string
   metrics: { key: string; value: string }[]
+  redis?: {
+    version: string
+    mode: string
+    role: string
+    runId: string
+    sections: { key: string; fields: { key: string; value: string }[] }[]
+    keyspaces: { database: string; keys: string; expires: string; averageTtlMillis: string }[] | null
+  }
 }

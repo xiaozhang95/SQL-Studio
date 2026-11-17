@@ -1,9 +1,10 @@
 import { DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
-import { Button, Drawer, Empty, Flex, Form, Input, Modal, Popconfirm, Spin, theme, Tooltip, Typography } from 'antd'
+import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 
+import DeleteConfirmation from '@/components/deleteConfirmation'
 import ErrorNotice from '@/components/errorNotice'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -173,17 +174,9 @@ function HistoryContents({
                     </Typography.Text>
                     <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                      <Popconfirm
-                        okType="default"
-                        title={t('删除这条会话？')}
-                        description={t('将删除本机保存的消息和查询结果。')}
-                        okText={t('删除')}
-                        cancelText={t('取消')}
-                        onConfirm={() => onDelete(i.id)}
-                        disabled={busy || selecting}
-                      >
+                      <DeleteConfirmation title={t('删除这条会话？')} description={t('将删除本机保存的消息和查询结果。')} onConfirm={() => onDelete(i.id)} disabled={busy || selecting}>
                         <Button danger type="text" size="small" aria-label={t('删除会话 ') + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
-                      </Popconfirm>
+                      </DeleteConfirmation>
                     </span>
                   </Flex>
                 )

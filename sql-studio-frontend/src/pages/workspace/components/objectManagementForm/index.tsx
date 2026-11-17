@@ -3,6 +3,7 @@ import { Alert, AutoComplete, Checkbox, Form, Input, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 
+import DeleteConfirmation from '@/components/deleteConfirmation'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
@@ -237,14 +238,15 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
                   width: 48,
                   fixed: 'right',
                   render: (_, row) => (
-                    <ToolbarButton
-                      label={t('删除字段')}
-                      danger
-                      icon={<DeleteOutlined />}
+                    <DeleteConfirmation
+                      title={t('删除这个字段？')}
                       disabled={locked(row)}
-                      hint={locked(row) ? t('特殊字段暂不支持修改或删除') : t('删除字段')}
-                      onClick={() => remove(row.name)}
-                    />
+                      onConfirm={() => {
+                        if (!locked(row)) remove(row.name)
+                      }}
+                    >
+                      <ToolbarButton label={t('删除字段')} danger icon={<DeleteOutlined />} disabled={locked(row)} hint={locked(row) ? t('特殊字段暂不支持修改或删除') : t('删除字段')} />
+                    </DeleteConfirmation>
                   )
                 }
               ]

@@ -32,8 +32,6 @@
 
 操作文案采用简短动作：预览、复制、运行选中内容、转储文件；语句结果提示使用“执行语句”，文件格式与技术错误说明按需保留 SQL。
 
-- [saveStatus](../../../components/saveStatus/README.md)：仅配置保存期间显示 loading，其他状态由页面内容区承载。
-
 - [AI 配置](../../../components/aiSettings/README.md)：顶部模型与 API Key 弹窗。
 
 - [SQL 优化预览](sqlOptimization/README.md)：原文、建议和说明。

@@ -1,9 +1,10 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Empty, Flex, Popconfirm, Radio, Spin, theme, Tooltip, Typography } from 'antd'
+import { Button, Empty, Flex, Radio, Spin, theme, Tooltip, Typography } from 'antd'
 import { useId } from 'react'
 
 import { getAIAdapter } from '@/ai'
 import { maxAIConfigurations } from '@/ai/typings'
+import DeleteConfirmation from '@/components/deleteConfirmation'
 import type { useAISettings } from '@/hooks/useAISettings'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -70,17 +71,14 @@ export default function AISettings({ model, disabled }: Props) {
               <Tooltip title={t('编辑模型')}>
                 <Button type="text" icon={<EditOutlined />} aria-label={t('编辑模型 {value1}', { value1: entry.model })} disabled={locked} onClick={() => editor.show(entry)} />
               </Tooltip>
-              <Popconfirm
-                okType="default"
+              <DeleteConfirmation
                 title={t('删除这个模型？')}
                 description={<span style={{ overflowWrap: 'anywhere' }}>{t('「{name}」将在保存设置后删除。', { name: entry.modelName })}</span>}
-                okText={t('删除')}
-                cancelText={t('取消')}
                 disabled={locked}
                 onConfirm={() => model.removeEntry(entry.id)}
               >
                 <Button type="text" danger icon={<DeleteOutlined />} aria-label={t('删除模型 {value1}', { value1: entry.modelName })} title={t('删除模型')} disabled={locked} />
-              </Popconfirm>
+              </DeleteConfirmation>
             </Flex>
           ))}
           {!model.entries.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('还未添加模型')} />}

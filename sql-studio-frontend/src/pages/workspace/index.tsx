@@ -3,7 +3,6 @@ import { Button, Empty } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
-import SaveStatus from '@/components/saveStatus'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
 import { sidebarLayout } from '@/constant/sidebarLayout'
@@ -33,11 +32,10 @@ type Props = AppearancePreferences & {
   active: boolean
   onOpenAgent: () => void
   onOpenDatabaseSection: (section: DatabaseSection, scope?: DatabaseSectionScope) => void
-  themeSaving: boolean
   themeMode: ThemeMode
 }
 /** 页面入口只组合区域组件，执行和状态逻辑由独立 hook 管理。 */
-export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSection, themeMode, themeReady, themeSaving, ...appearancePreferences }: Props) {
+export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSection, themeMode, themeReady, ...appearancePreferences }: Props) {
   const { t } = useTranslation()
 
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
@@ -92,7 +90,6 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
             {t('取消执行')}
           </Button>
         )}
-        <SaveStatus saving={model.workspaceReady && (model.saving || themeSaving)} />
       </PageHeader>
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
