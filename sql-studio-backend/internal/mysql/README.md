@@ -42,4 +42,4 @@ MariaDB 独立引擎组合本包共享协议实现；driverConfig 明确接受 m
 
 `ForeignKeys(ctx, connection, ref)` 按库表读取 information_schema 中的外键，保留跨库引用、更新与删除规则和复合约束的列映射顺序。
 
-监控通过 SHOW GLOBAL STATUS 读取连接、运行线程、客户端语句、慢查询、连接失败、收发流量及运行时间。
+Monitor 读取白名单 SHOW GLOBAL STATUS，覆盖连接/线程、语句、临时表、网络、InnoDB 缓冲池、字节读写及行锁；再读取有界 SHOW GLOBAL VARIABLES 补充版本、读写模式、连接和缓冲池上限及配置。MariaDB 复用相同消费接口，保留独立连接身份。只读系统状态，不依赖 performance_schema 或业务表；可选变量失败保留基础指标并返回 details.warnings，取消仍终止整个采样。数值保持字符串，缓存命中率使用有理数计算，无读请求时不伪造命中率。details.identity 优先使用 server_uuid，缺少时使用可用主机名/服务器 ID；重启由 uptime 回退识别。

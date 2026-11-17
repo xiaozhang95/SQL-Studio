@@ -9,3 +9,5 @@ API 默认只读：拒绝 DDL、DML 和 MySQL/MariaDB 可执行注释；显式�
 真实集成见 tests/integration/mariadb_test.go；默认跳过，通过 SQLDESK_MARIADB_INTEGRATION=1 和 SQLDESK_MARIADB_PASSWORD 启用，端口可由 SQLDESK_MARIADB_PORT 覆盖，只写入随机临时库并清理。
 
 数据库同步复用 InnoDB 同步协议，按 FULL_COLLATION_NAME 查询排序规则（含 UCA1400），保留不可见列。跳过视图和独立序列，系统版本表不在范围内。
+
+监控继承 MySQL 协议客户端的有界白名单状态/变量读取，响应附带 MariaDB 实际版本、配置及分类明细；各实例仍独立拥有连接和取消状态，缺失变量省略。

@@ -58,16 +58,26 @@ export type QueryResult = {
 }
 export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number }
 
+export type MonitorMetric = { key: string; value: string }
+export type MonitorSection = { key: string; fields: MonitorMetric[] }
+
 export type MonitorSnapshot = {
   database: string
   sampledAt: string
-  metrics: { key: string; value: string }[]
+  metrics: MonitorMetric[]
+  details?: {
+    version: string
+    role: string
+    identity: string
+    sections: MonitorSection[]
+    warnings?: string[]
+  }
   redis?: {
     version: string
     mode: string
     role: string
     runId: string
-    sections: { key: string; fields: { key: string; value: string }[] }[]
+    sections: MonitorSection[]
     keyspaces: { database: string; keys: string; expires: string; averageTtlMillis: string }[] | null
   }
 }

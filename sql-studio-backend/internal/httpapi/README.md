@@ -12,7 +12,7 @@
 
 ## 约束与调用
 
-`New(services Services) *gin.Engine` 接收 app 装配的 Connections、Metadata、Queries、Settings、AI 模块，只调用公开方法，不直接开数据库或读文件，也不在每次请求时重建模块；路径/字段契约见 [API 列表](../../../docs/API.md) 和 [OpenAPI](openapi.json)。监控响应的可选 redis 字段透传 model.RedisMonitor，含 INFO 白名单分类字段和键空间统计；不在 HTTP 层计算指标。连接、结构、SQL 路由分别使用所属模块；`query.ErrBusy` 映射为 429。
+`New(services Services) *gin.Engine` 接收 app 装配的 Connections、Metadata、Queries、Settings、AI 模块，只调用公开方法，不直接开数据库或读文件，也不在每次请求时重建模块；路径/字段契约见 [API 列表](../../../docs/API.md) 和 [OpenAPI](openapi.json)。监控响应的可选 redis 字段透传 model.RedisMonitor，含 INFO 白名单分类字段和键空间统计；其他引擎通过 details 透传 model.MonitorDetails，保留分类字段和可选采样告警；不在 HTTP 层计算指标。连接、结构、SQL 路由分别使用所属模块；`query.ErrBusy` 映射为 429。
 
 连接新增/更新和列表透传可选 group 字段。TestConnectionGroupRoundTrip 使用临时目录验证 API 保存、重启读取、更换及清空分组，同时检查编辑空密码保留原凭据。
 

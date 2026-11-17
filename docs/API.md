@@ -98,7 +98,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 ## 数据库监控
 
-`GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。
+`GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。MySQL/MariaDB、PostgreSQL/PolarDB、GreptimeDB 可附带 details:{version,role,identity,sections:[{key,fields:[{key,value}]}],warnings?}，身份和状态字段保持文本，不含凭据。可选服务器变量或扩展目录失败保留基础 metrics，并返回提示；基础采样失败仍返回错误。MySQL/MariaDB 从全局状态/变量读取语句、连接、网络、InnoDB 和配置；PostgreSQL 增加会话可见性、锁、扫描、维护与统计重置；GreptimeDB 扩展构建和主分片存储/累计活动，缺失统计保持未知。前端按实际间隔计算累计计数速率，首点与重置断开，不新增采样或写入接口。
 
 ## Redis 查询
 

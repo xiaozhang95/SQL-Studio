@@ -8,6 +8,30 @@ type MonitorSnapshot struct {
 	SampledAt time.Time       `json:"sampledAt"`
 	Metrics   []MonitorMetric `json:"metrics"`
 	Redis     *RedisMonitor   `json:"redis,omitempty"`
+	Details   *MonitorDetails `json:"details,omitempty"`
+}
+
+// MonitorDetails holds engine-owned, read-only server and database information.
+type MonitorDetails struct {
+	Version  string           `json:"version"`
+	Role     string           `json:"role"`
+	Identity string           `json:"identity"`
+	Sections []MonitorSection `json:"sections"`
+	Warnings []string         `json:"warnings,omitempty"`
+}
+
+// SelectMonitorSection preserves a fixed order and omits unavailable fields.
+func SelectMonitorSection(key string, metrics []MonitorMetric, keys ...string) MonitorSection {
+	section := MonitorSection{Key: key, Fields: make([]MonitorMetric, 0, len(keys))}
+	for _, name := range keys {
+		for _, metric := range metrics {
+			if metric.Key == name {
+				section.Fields = append(section.Fields, metric)
+				break
+			}
+		}
+	}
+	return section
 }
 
 type MonitorMetric struct {

@@ -15,3 +15,5 @@
 - [结果 SQL 列](resultSQL/README.md)：识别查询结果中的 SQL 定义与语句列，统一高亮和复制。
 
 dumpFile 封装数据库默认字符集/排序规则、外键检查与 NO_AUTO_VALUE_ON_ZERO 的保存恢复，prepare 按表生成结构与数据批次，不把方言放入工作区。
+
+- [监控](monitor/README.md)：同一概览、趋势及分类状态布局，指标和统计口径由本引擎维护。

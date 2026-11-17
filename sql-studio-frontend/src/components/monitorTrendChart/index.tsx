@@ -1,12 +1,11 @@
 import { Card, Empty, Flex, theme, Typography } from 'antd'
 import { useMemo, useState } from 'react'
 
+import { chartLayout } from '@/constant/monitor'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { MonitorSnapshot } from '@/typings/database'
-
-import { chartLayout } from '../../constant'
-import type { TrendSeries } from '../../constant'
-import { formatMetric, metricValue } from '../../utils'
+import type { TrendSeries } from '@/typings/databaseMonitor'
+import { formatMetric, sampleValue } from '@/utils/monitorMetrics'
 
 type Props = { title: string; series: readonly TrendSeries[]; history: readonly MonitorSnapshot[] }
 
@@ -19,8 +18,8 @@ export default function TrendChart({ title, series, history }: Props) {
     () =>
       series.map((item) => ({
         ...item,
-        points: samples.flatMap((sample, index) => {
-          const raw = metricValue(sample, item.key)
+        points: samples.flatMap((_, index) => {
+          const raw = sampleValue(samples, index, item)
           const value = raw === undefined || raw === '' ? NaN : Number(raw)
           return Number.isFinite(value) && value >= 0 ? [{ index, value }] : []
         })
@@ -52,7 +51,7 @@ export default function TrendChart({ title, series, history }: Props) {
               <Flex key={track.key} align="center" gap="small">
                 <span aria-hidden style={{ width: token.sizeSM, height: token.lineWidthBold, background: colors[track.tone] }} />
                 <Typography.Text>
-                  {t(track.label)}: {formatMetric(metricValue(current, track.key), track.format, language)}
+                  {t(track.label)}: {formatMetric(sampleValue(samples, currentIndex, track), track.format, language)}
                 </Typography.Text>
               </Flex>
             ))}
@@ -94,18 +93,33 @@ export default function TrendChart({ title, series, history }: Props) {
               </g>
             ))}
             {tracks.map((track) => {
-              const points = track.points.map((point) => `${x(point.index)},${y(point.value)}`).join(' ')
-              const first = track.points[0]
-              const last = track.points.at(-1)
+              const segments: { index: number; value: number }[][] = []
+              let segment: { index: number; value: number }[] = []
+              for (const point of track.points) {
+                if (segment.at(-1)?.index !== point.index - 1) {
+                  segment = []
+                  segments.push(segment)
+                }
+                segment.push(point)
+              }
               return (
                 <g key={track.key}>
-                  {first && last && <polygon points={`${x(first.index)},${y(0)} ${points} ${x(last.index)},${y(0)}`} fill={colors[track.tone]} fillOpacity={0.1} />}
-                  <polyline points={points} fill="none" stroke={colors[track.tone]} strokeWidth={2} strokeLinejoin="round" />
+                  {segments.map((segment, index) => {
+                    const first = segment[0],
+                      last = segment[segment.length - 1]
+                    const points = segment.map((point) => `${x(point.index)},${y(point.value)}`).join(' ')
+                    return (
+                      <g key={index}>
+                        <polygon points={`${x(first.index)},${y(0)} ${points} ${x(last.index)},${y(0)}`} fill={colors[track.tone]} fillOpacity={0.1} />
+                        <polyline points={points} fill="none" stroke={colors[track.tone]} strokeWidth={2} strokeLinejoin="round" />
+                      </g>
+                    )
+                  })}
                   {track.points
                     .filter((point) => point.index === currentIndex || track.points.length === 1)
                     .map((point) => (
                       <circle key={point.index} cx={x(point.index)} cy={y(point.value)} r={3} fill={colors[track.tone]} stroke={token.colorBgContainer}>
-                        <title>{`${time(samples[point.index])} · ${t(track.label)}: ${formatMetric(metricValue(samples[point.index], track.key), track.format, language)}`}</title>
+                        <title>{`${time(samples[point.index])} · ${t(track.label)}: ${formatMetric(sampleValue(samples, point.index, track), track.format, language)}`}</title>
                       </circle>
                     ))}
                 </g>
@@ -124,7 +138,7 @@ export default function TrendChart({ title, series, history }: Props) {
             )}
           </svg>
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('服务端未返回此项统计')} />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(series.some((item) => item.source === 'counter') && samples.length < 2 ? '速率至少需要两次有效采样' : '服务端未返回此项统计')} />
         )}
       </Flex>
     </Card>

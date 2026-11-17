@@ -23,3 +23,5 @@ QueryRequest.schema? 为 PostgreSQL 当前 schema，后端在本次请求独占�
 QueryRequest.matchRows? 表示 MySQL/MariaDB 请求匹配行计数，仅单元格 UPDATE 使用；默认 false，不改变 allowWrite 与单语句限制。
 
 MonitorSnapshot 包含 database、sampledAt、metrics；可选 redis 提供 version/mode/role/runId、分类 sections 和 keyspaces。指标与状态字段均为 key/value 字符串；键空间 keys/expires/averageTtlMillis 保留十进制文本。keyspaces=null 表示未返回统计，[] 表示没有非空逻辑库；该信息仅代表当前节点，不汇总集群。
+
+MonitorSnapshot.details 为 MySQL/MariaDB、PostgreSQL/PolarDB、GreptimeDB 的可选扩展，含 version/role/identity、sections:[{key,fields:[{key,value}]}] 和可选 warnings:string[]；数值留在 metrics，配置/版本等文本仅出现在 sections。可选读取失败不覆盖基础指标，identity 或 uptime 回退使旧采样失效。

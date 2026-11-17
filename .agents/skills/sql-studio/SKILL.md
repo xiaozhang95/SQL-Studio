@@ -23,6 +23,10 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 
 - SQL 窗口回归使用 [sql-studio-sql-regression](../sql-studio-sql-regression/SKILL.md)，区分真实驱动/API、执行编排和浏览器验证，使用隔离临时对象并核验清理。
 
+## 交付与 Git 提交日志
+
+每次完成代码修改后，最终回复主动附上可直接复制的 Git commit 提交日志，包含简洁标题和必要的变更要点，以本次实际改动为准，无需用户另行索取。仅生成提交日志文本，不自动执行 git add、git commit 或 git push；用户另有明确要求时，以当前要求为准。
+
 ## Agent 操作模式（用户明确约定）
 
 Agent仅有“只读模式”和“完全访问模式”，默认只读，切换必须提示权限和不可撤销风险。完全访问可查询、新增、修改及非删除结构操作，不再限定为简单INSERT/UPDATE。

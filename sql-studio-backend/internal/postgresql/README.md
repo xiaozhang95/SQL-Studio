@@ -28,4 +28,4 @@ export.go 的 StreamTableData(ctx,connection,ref,emit) 解析显式 schema/table
 
 `ForeignKeys(ctx, connection, ref)` 从 pg_catalog 读取指定 schema/table 的外键列映射、引用关系和更新、删除规则。
 
-监控读取所选库的连接数、提交及回滚事务、数据库大小、缓冲命中率、死锁、临时文件写入及变更行数。
+Monitor 基础读取所选库 pg_stat_database，覆盖事务、块访问、临时文件、行变更、冲突和统计重置；有界可选查询补充版本/角色/启动及内存配置、pg_stat_activity 会话分类、pg_locks 锁记录和 pg_stat_user_tables 的估算元组/扫描/维护统计。仅系统视图与配置，不读取业务表内容。会话状态可能因权限为 NULL，独立返回 unknown_sessions，不宣称可见状态覆盖全部会话。pg_database_size 等基础读取失败仍返回错误；可选扩展失败保留基础指标并在 details.warnings 提示。identity 绑定 postmaster 启动与库统计重置，避免速率跨周期计算。

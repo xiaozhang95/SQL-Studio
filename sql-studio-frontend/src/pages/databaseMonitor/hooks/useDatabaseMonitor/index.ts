@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DatabaseEngine } from '@/databases/typings'
 import { getDatabaseMonitor, getDatabases } from '@/services/database'
 import type { Connection, MonitorSnapshot } from '@/typings/database'
+import { isMonitorReset } from '@/utils/monitorMetrics'
 
 export const refreshIntervals = [0, 5, 15, 30, 60, 300] as const
 type RefreshInterval = (typeof refreshIntervals)[number]
@@ -53,7 +54,7 @@ export function useDatabaseMonitor(connections: readonly Connection[], initialCo
         const snapshot = await getDatabaseMonitor(connection.id, scopeDatabase, controller.signal)
         if (!controller.signal.aborted)
           setResult((previous) => {
-            const restarted = previous?.snapshot?.redis?.runId && snapshot.redis?.runId && previous.snapshot.redis.runId !== snapshot.redis.runId
+            const restarted = isMonitorReset(previous?.snapshot, snapshot)
             const history = restarted ? [] : (previous?.history ?? [])
             return { snapshot, history: [...history.filter((sample) => sample.sampledAt !== snapshot.sampledAt), snapshot].slice(-maximumHistory) }
           })

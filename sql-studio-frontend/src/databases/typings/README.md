@@ -38,4 +38,4 @@ DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/
 
 DatabaseEngine.MariaDB=mariadb，注册表必须提供独立 DatabaseAdapter；兼容协议能力可以显式组合，MariaDB 配置、方言与元数据差异由 mariadb 模块拥有。
 
-DatabaseMonitorPanelProps 统一引擎专属监控展示的 snapshot:MonitorSnapshot 与 history:readonly MonitorSnapshot[]，由 getDatabaseMonitorPanel 独立分派；组件只读消费采样，不携带连接凭据或执行 SQL。
+DatabaseMonitorPanelProps 统一引擎专属监控展示的 snapshot:MonitorSnapshot 与 history:readonly MonitorSnapshot[]，由 getDatabaseMonitorPanel 对全部已支持引擎穷尽分派；组件只读消费采样，不携带连接凭据或执行 SQL。

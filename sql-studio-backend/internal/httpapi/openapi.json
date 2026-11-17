@@ -1850,6 +1850,67 @@
                           }
                         }
                       }
+                    },
+                    "details": {
+                      "type": "object",
+                      "description": "SQL 引擎的可选只读详情，扩展读取失败保留基础 metrics。",
+                      "required": [
+                        "version",
+                        "role",
+                        "identity",
+                        "sections"
+                      ],
+                      "properties": {
+                        "version": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "identity": {
+                          "type": "string",
+                          "description": "统计周期或服务进程身份；可能为空，运行时间回退也表示重置。"
+                        },
+                        "sections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "key",
+                              "fields"
+                            ],
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "fields": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "key",
+                                    "value"
+                                  ],
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "warnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
                     }
                   }
                 }

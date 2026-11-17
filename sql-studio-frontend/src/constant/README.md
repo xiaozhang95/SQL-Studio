@@ -10,3 +10,5 @@
 - [共享侧栏尺寸](sidebarLayout/README.md)：工作台连接栏与Agent历史栏的默认值及拖动边界。
 
 - [主题配置](theme/README.md)：纯色文案、布局底色、字号与组件 token。
+
+- [monitor](monitor/README.md)：跨引擎共用的趋势图尺寸。

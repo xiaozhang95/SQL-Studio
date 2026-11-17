@@ -1,6 +1,4 @@
-export type MetricFormat = 'count' | 'bytes' | 'rate' | 'seconds' | 'milliseconds' | 'microseconds' | 'percent' | 'ratio' | 'date' | 'text' | 'flag'
-export type MetricDefinition = { readonly key: string; readonly label: string; readonly format: MetricFormat }
-export type TrendSeries = MetricDefinition & { readonly tone: 'primary' | 'warning' | 'secondary' | 'link' }
+import type { MetricDefinition, MetricFormat, TrendSeries } from '@/typings/databaseMonitor'
 
 export const overviewMetrics = [
   { key: 'uptime', label: '运行时间', format: 'seconds' },
@@ -123,5 +121,3 @@ export const infoFields = {
   used_cpu_sys_children: { label: '子进程系统态 CPU 耗时', format: 'seconds' },
   used_cpu_user_children: { label: '子进程用户态 CPU 耗时', format: 'seconds' }
 } as const satisfies Readonly<Record<string, { label: string; format: MetricFormat }>>
-
-export const chartLayout = { width: 640, height: 250, left: 92, right: 20, top: 16, bottom: 32 } as const

@@ -1,11 +1,17 @@
+import type { ComponentType } from 'react'
+
 import greptimedb from './greptimedb'
+import GreptimeMonitor from './greptimedb/monitor'
 import mariadb from './mariadb'
+import MariaDBMonitor from './mariadb/monitor'
 import mysql from './mysql'
+import MySQLMonitor from './mysql/monitor'
 import postgresql from './postgresql'
+import PostgreSQLMonitor from './postgresql/monitor'
 import { redisProfile } from './redis'
 import RedisMonitor from './redis/monitor'
 import { DatabaseEngine } from './typings'
-import type { DatabaseAdapter, DatabaseProfile, DatabaseType, SQLDatabaseType } from './typings'
+import type { DatabaseAdapter, DatabaseMonitorPanelProps, DatabaseProfile, DatabaseType, SQLDatabaseType } from './typings'
 
 const adapters = { [DatabaseEngine.MySQL]: mysql, [DatabaseEngine.MariaDB]: mariadb, [DatabaseEngine.PostgreSQL]: postgresql, [DatabaseEngine.GreptimeDB]: greptimedb } satisfies Record<
   SQLDatabaseType,
@@ -22,5 +28,13 @@ export const getDatabaseProfile = (type?: DatabaseType): DatabaseProfile => (typ
 export const sqlDatabaseProfiles = Object.values(adapters).map((adapter) => adapter.profile)
 export const databaseProfiles: readonly DatabaseProfile[] = [...sqlDatabaseProfiles, redisProfile]
 
-/** 引擎专属监控展示与 SQL 适配器分开分派，Redis 不进入 SQL 能力。 */
-export const getDatabaseMonitorPanel = (type?: DatabaseType) => (type === DatabaseEngine.Redis ? RedisMonitor : undefined)
+const monitorPanels = {
+  [DatabaseEngine.MySQL]: MySQLMonitor,
+  [DatabaseEngine.MariaDB]: MariaDBMonitor,
+  [DatabaseEngine.PostgreSQL]: PostgreSQLMonitor,
+  [DatabaseEngine.GreptimeDB]: GreptimeMonitor,
+  [DatabaseEngine.Redis]: RedisMonitor
+} satisfies Record<DatabaseType, ComponentType<DatabaseMonitorPanelProps>>
+
+/** 监控与 SQL 适配器独立分派；各引擎保留自己的指标语义。 */
+export const getDatabaseMonitorPanel = (type: DatabaseType = DatabaseEngine.MySQL): ComponentType<DatabaseMonitorPanelProps> => monitorPanels[type]

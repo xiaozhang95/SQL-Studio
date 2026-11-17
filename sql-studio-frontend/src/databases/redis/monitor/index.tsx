@@ -1,12 +1,12 @@
 import { Card, Flex, Progress, Statistic, Tabs, Tag, theme, Typography } from 'antd'
 
+import TrendChart from '@/components/monitorTrendChart'
 import type { DatabaseMonitorPanelProps } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
+import { formatMetric, metricValue } from '@/utils/monitorMetrics'
 
 import StatusInfo from './components/statusInfo'
-import TrendChart from './components/trendChart'
 import { activityMetrics, overviewMetrics, trendCharts } from './constant'
-import { formatMetric, metricValue } from './utils'
 
 export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanelProps) {
   const { t, language } = useTranslation()

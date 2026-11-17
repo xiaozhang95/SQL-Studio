@@ -20,3 +20,5 @@
 - [contentCard](contentCard/README.md)：内容与代码卡片的统一外框。
 - [emptyStateIcon](emptyStateIcon/README.md)：空态图标尺寸与主题色。
 - [dropdownChevron](dropdownChevron/README.md)：下拉箭头尺寸、颜色与禁用态。
+
+- [monitorPanel](monitorPanel/README.md) 与 [monitorTrendChart](monitorTrendChart/README.md)：跨数据库共享监控布局及真实采样趋势。

@@ -8,4 +8,4 @@
 
 - [组件](components/README.md)：趋势图与状态详情。
 - [定义](constant/README.md)：指标、字段、图例及图表尺寸。
-- [格式化](utils/README.md)：精确计数、容量、速率与时间展示。
+- [格式化](utils/README.md)：Redis 状态语义；数字格式化和趋势复用共享 monitorMetrics/monitorTrendChart。

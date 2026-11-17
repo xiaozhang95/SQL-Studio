@@ -17,4 +17,4 @@ Schemas(ctx,id,database) 复用显式目标、凭据消费接口与 10 秒超时
 
 StreamTableData(ctx,id,database,table,emit) 使用可选导出消费接口，独立于普通查询限制，必须显式指定库表；同一个 Service 最多2条导出流，每条最多30分钟，回调背压、取消和错误透传，无结果缓存，不执行用户 SQL。
 
-Monitor(ctx,id,database) 使用已保存连接并按引擎读取只读统计，沿用 10 秒超时，响应加上 UTC 采样时间。MySQL、MariaDB 和 Redis 使用实例状态，PostgreSQL 和 GreptimeDB 支持数据库范围。Redis 可选详情由引擎一次 INFO 采样返回，模块原样传递，不扫描键或汇总集群。
+Monitor(ctx,id,database) 使用已保存连接并按引擎读取只读统计，沿用 10 秒超时，响应加上 UTC 采样时间。MySQL、MariaDB 和 Redis 使用实例状态，PostgreSQL 和 GreptimeDB 支持数据库范围。Redis 可选详情由引擎一次 INFO 采样返回，模块原样传递，不扫描键或汇总集群。其他引擎可附带 MonitorDetails，版本/参数和扩展视图失败由引擎以 warnings 降级，不改变基础读取失败与统一超时。

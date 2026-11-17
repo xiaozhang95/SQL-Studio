@@ -15,4 +15,4 @@ databaseProfiles 导出已实现引擎 profile 列表。objects 可为 undefined
 - [MariaDB](mariadb/README.md)：独立类型、MariaSQL 补全、默认值及排序规则适配，显式复用 MySQL 协议通用能力。
 - [GreptimeDB](greptimedb/README.md)：独立连接配置、语句切分与库表浏览。
 
-Redis 连接资料通过 [redis](redis/README.md) 提供，操作位于[工作区查询标签](../pages/workspace/components/redisQuery/README.md)。getDatabaseMonitorPanel(type?) 独立分派 Redis [实例监控组件](redis/monitor/README.md)，其他引擎使用通用指标卡；此入口不把 Redis 纳入 SQL 适配器。
+Redis 连接资料通过 [redis](redis/README.md) 提供，操作位于[工作区查询标签](../pages/workspace/components/redisQuery/README.md)。getDatabaseMonitorPanel(type?) 通过 DatabaseType 穷尽注册表分派各引擎监控：[MySQL](mysql/monitor/README.md)、[MariaDB](mariadb/monitor/README.md)、[PostgreSQL/PolarDB](postgresql/monitor/README.md)、[GreptimeDB](greptimedb/monitor/README.md) 和 [Redis](redis/monitor/README.md)。SQL 引擎组合共享 MonitorPanel，Redis 保留键空间专属详情，趋势和格式化共用；监控不依赖 SQL 能力分派。

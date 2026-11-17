@@ -23,3 +23,5 @@ deleteConnectionGroup(name) DELETE /connection-groups，返回 groups 与脱敏 
 executeObjectSQL(id,database,sql,signal?,matchRows=false) 的 matchRows 仅由单元格 UPDATE 显式开启；普通 SQL 和其他对象操作保持默认影响行数语义。
 
 getDatabaseMonitor(id,database,signal?) 读取已保存连接的监控采样，支持取消。
+
+监控响应可选 details 提供 SQL 引擎的版本、角色、统计身份、分类状态及可选采样告警；Redis 继续使用 redis 对象。服务只传输，不在请求层计算速率。

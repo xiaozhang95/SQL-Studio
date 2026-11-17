@@ -4,9 +4,10 @@ import type { TableColumnsType } from 'antd'
 import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { MonitorSnapshot } from '@/typings/database'
+import { formatMetric } from '@/utils/monitorMetrics'
 
 import { infoFields, sectionLabels } from '../../constant'
-import { formatInfoField, formatMetric } from '../../utils'
+import { formatInfoField } from '../../utils'
 
 type RedisDetails = NonNullable<MonitorSnapshot['redis']>
 type Keyspace = NonNullable<RedisDetails['keyspaces']>[number]

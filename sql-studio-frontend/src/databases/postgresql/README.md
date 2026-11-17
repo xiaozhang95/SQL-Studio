@@ -19,3 +19,5 @@ objects=undefined 表示不使用 MySQL 的库表一体能力；databaseEditor �
 查询页增加独立 schema 选择，当前 schema 传给后端执行、补全与 AI 上下文。数据库/schema 结构结果拆开列，对象页标题保留 schema 以区分同名表。[AI 引用](context/README.md) 保留完整对象身份。
 
 dumpFile 封装数据库/Schema 结构头、序列和延后外键；流式 prepareDump/dumpRows 见 dataDump。
+
+- [监控](monitor/README.md)：同一概览、趋势及分类状态布局，指标和统计口径由本引擎维护。
