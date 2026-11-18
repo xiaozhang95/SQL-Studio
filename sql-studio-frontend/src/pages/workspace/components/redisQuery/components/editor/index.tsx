@@ -11,8 +11,10 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
 import { useQueryShortcut } from '../../../../hooks/useQueryShortcut'
+import { useSQLCompletionPopup } from '../../../../hooks/useSQLCompletionPopup'
 import type { WorkspaceModel } from '../../../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../../../utils/editorAppearance'
+import SQLCompletionSelect from '../../../sqlCompletionSelect'
 
 export type RedisEditorModel = Pick<WorkspaceModel, 'onEditorReady' | 'onEditorUpdate' | 'onEditorDispose' | 'rememberEditor' | 'getCurrentSQL' | 'getEditorHistory' | 'tab'>
 type Props = {
@@ -25,7 +27,8 @@ type Props = {
 }
 
 const editorSetup = { foldGutter: false, autocompletion: false }
-const completion = autocompletion({ override: [redisCompletion] })
+const localCompletion = autocompletion({ override: [redisCompletion] })
+const objectKinds: ReadonlyMap<string, never> = new Map<string, never>()
 
 class CommandHint extends WidgetType {
   readonly text: string
@@ -75,10 +78,12 @@ function commandHints(label: string) {
 
 export default function Editor({ model, themeMode, shortcutEnabled, onRun, onViewChange, onContentChange }: Props) {
   const { t } = useTranslation()
+  const completion = useSQLCompletionPopup()
+  const { update: updateCompletion } = completion
   const [initial] = useState(() => ({ value: model.tab.sql, extensions: [sqlEditorAppearance, ...model.getEditorHistory(model.tab.id)] }))
   const hintLabel = t('命令用法')
   const hints = useMemo(() => commandHints(hintLabel), [hintLabel])
-  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, completion], [hints, initial.extensions])
+  const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, localCompletion, ...completion.extensions], [hints, initial.extensions, completion.extensions])
   const editor = useRef<EditorView | null>(null)
   const callbacks = useRef({ model, onViewChange, onContentChange })
   useLayoutEffect(() => {
@@ -98,36 +103,43 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
       if (editor.current) onRun(editor.current)
     }
   })
-  const onUpdate = useCallback((update: ViewUpdate) => {
-    callbacks.current.model.onEditorUpdate(update)
-    if (update.docChanged) callbacks.current.onContentChange(Boolean(update.state.doc.toString().trim()))
-  }, [])
+  const onUpdate = useCallback(
+    (update: ViewUpdate) => {
+      updateCompletion(update)
+      callbacks.current.model.onEditorUpdate(update)
+      if (update.docChanged) callbacks.current.onContentChange(Boolean(update.state.doc.toString().trim()))
+    },
+    [updateCompletion]
+  )
 
   return (
-    <div
-      style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'text', cursor: 'text', position: 'relative' }}
-      onScrollCapture={model.rememberEditor}
-      onBlurCapture={() => model.getCurrentSQL()}
-      onClickCapture={() => {
-        const view = editor.current
-        if (view && !view.hasFocus) view.focus()
-      }}
-    >
-      <CodeMirror
-        value={initial.value}
-        extensions={extensions}
-        theme={themeMode}
-        height="100%"
-        style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
-        aria-label={t('Redis 命令编辑器')}
-        basicSetup={editorSetup}
-        onCreateEditor={(view) => {
-          editor.current = view
-          callbacks.current.model.onEditorReady(view)
-          callbacks.current.onViewChange(view)
+    <>
+      <div
+        style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'text', cursor: 'text', position: 'relative' }}
+        onScrollCapture={model.rememberEditor}
+        onBlurCapture={() => model.getCurrentSQL()}
+        onClickCapture={() => {
+          const view = editor.current
+          if (view && !view.hasFocus) view.focus()
         }}
-        onUpdate={onUpdate}
-      />
-    </div>
+      >
+        <CodeMirror
+          value={initial.value}
+          extensions={extensions}
+          theme={themeMode}
+          height="100%"
+          style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
+          aria-label={t('Redis 命令编辑器')}
+          basicSetup={editorSetup}
+          onCreateEditor={(view) => {
+            editor.current = view
+            callbacks.current.model.onEditorReady(view)
+            callbacks.current.onViewChange(view)
+          }}
+          onUpdate={onUpdate}
+        />
+      </div>
+      <SQLCompletionSelect completion={completion} objectKinds={objectKinds} label={t('Redis 命令')} />
+    </>
   )
 }

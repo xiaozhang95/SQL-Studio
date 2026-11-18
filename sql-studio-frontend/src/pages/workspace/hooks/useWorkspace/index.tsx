@@ -47,6 +47,7 @@ export const useWorkspace = (active = true) => {
   const [refresh, setRefresh] = useState(0)
   const [connectionModal, setConnectionModal] = useState(false)
   const [desktopClosing, setDesktopClosing] = useState(false)
+  const [desktopPreparing, setDesktopPreparing] = useState(false)
   const [editing, setEditing] = useState<Connection>()
   const {
     tabs,
@@ -212,7 +213,7 @@ export const useWorkspace = (active = true) => {
     [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, restoringConnections, openedConnections, runningTabId]
   )
   const queryRunning = Boolean(runningTabId)
-  const uiBlocked = objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
+  const uiBlocked = desktopPreparing || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
   const storage = useWorkspacePersistence(
     snapshot,
     (saved) => {
@@ -304,7 +305,7 @@ export const useWorkspace = (active = true) => {
   const workspaceReady = storage.ready && historyStore.ready
   const saving = storage.saving || editorSession.pending || historyStore.saving
   useEffect(() => {
-    if (desktopClosing || !storage.ready || connectionLoading || connectionError || !restoringConnections) return
+    if (desktopPreparing || desktopClosing || !storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
     const restored = savedConnections.filter((item) => restoringConnections.includes(item.id))
     void Promise.resolve().then(() => {
@@ -330,7 +331,20 @@ export const useWorkspace = (active = true) => {
     return () => {
       stale = true
     }
-  }, [desktopClosing, storage.ready, connectionLoading, connectionError, restoringConnections, savedConnections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
+  }, [
+    desktopPreparing,
+    desktopClosing,
+    storage.ready,
+    connectionLoading,
+    connectionError,
+    restoringConnections,
+    savedConnections,
+    openObjectsConnection,
+    loadTables,
+    loadTableDetails,
+    explorer.expanded,
+    setTabs
+  ])
 
   const redisConnectionStatus = redisConnection ? objects.snapshots[redisConnection.id]?.status : undefined
   const redisDatabase = redisConnection ? selectedRedisDatabase(objects.databases, database, redisConnection.database) : undefined
@@ -342,8 +356,9 @@ export const useWorkspace = (active = true) => {
     [closedPages, setTabs]
   )
   useEffect(() => {
-    if (!desktopClosing && active && storage.ready && storage.pageReady && redisConnection && !redisConnectionStatus) void openObjectsConnection(redisConnection.id).catch(() => {})
-  }, [desktopClosing, active, storage.ready, storage.pageReady, redisConnection, redisConnectionStatus, openObjectsConnection])
+    if (!desktopPreparing && !desktopClosing && active && storage.ready && storage.pageReady && redisConnection && !redisConnectionStatus)
+      void openObjectsConnection(redisConnection.id).catch(() => {})
+  }, [desktopPreparing, desktopClosing, active, storage.ready, storage.pageReady, redisConnection, redisConnectionStatus, openObjectsConnection])
   useEffect(() => {
     if (storage.pageReady && !database && redisDatabase !== undefined) selectRedisDatabase(tab.id, connectionId, redisDatabase)
   }, [storage.pageReady, database, redisDatabase, selectRedisDatabase, tab.id, connectionId])
@@ -440,6 +455,7 @@ export const useWorkspace = (active = true) => {
     setHistoryOpen(false)
   }
   function selectTab(id: string, discard = false) {
+    if (desktopPreparing && !discard) return
     if (id === activeTabRef.current) {
       editorSession.flush()
       return
@@ -1011,11 +1027,18 @@ export const useWorkspace = (active = true) => {
     snapshot,
     connections: savedConnections,
     dirty: designerDirty,
+    pageReady: storage.pageReady,
+    pageLoadFailed: storage.pageLoadFailed,
     flushEditor: () => {
       editorSession.remember()
       editorSession.flush()
     },
     draftsFor: storage.draftsFor,
+    activatePage: (id) => selectTab(id, true),
+    setPreparing: (preparing) => {
+      storage.setAutoSavePaused(preparing)
+      setDesktopPreparing(preparing)
+    },
     setClosing: (closing) => {
       storage.setAutoSavePaused(closing)
       setDesktopClosing(closing)
@@ -1028,28 +1051,33 @@ export const useWorkspace = (active = true) => {
     running: () => Boolean(request.current),
     persist: storage.flush,
     closeConnection: objects.closeConnection,
-    clearWorkspace: (empty) => {
-      const removed = new Set(tabs.map((page) => page.id))
+    applyWorkspace: (next) => {
+      const retained = new Set(next.tabs.map((page) => page.id))
+      const removed = new Set(tabs.filter((page) => !retained.has(page.id)).map((page) => page.id))
+      const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
       for (const id of removed) {
         closedPages.current.add(id)
         discardTerminal(id)
+        pendingDrafts.current.delete(id)
       }
       editorSession.discard(removed)
-      pendingDrafts.current.clear()
-      setTabs(empty.tabs)
-      setActiveTab(empty.activeTab)
-      activeTabRef.current = empty.activeTab
-      setRuns(empty.runs)
-      setResultViews(empty.resultViews)
-      setEditorLayouts(empty.editorLayouts)
-      setExplorer(empty.explorer)
-      setDesignerDirty({})
-      setDesignerBusy({})
+      setTabs(next.tabs)
+      setActiveTab(next.activeTab)
+      activeTabRef.current = next.activeTab
+      setRuns(next.runs)
+      setResultViews(next.resultViews)
+      setEditorLayouts(next.editorLayouts)
+      setExplorer(next.explorer)
+      setDesignerDirty(keep)
+      setDesignerBusy(keep)
+      const page = next.tabs.find((page) => page.id === next.activeTab)
+      resetStructure(page?.kind === 'query' && Boolean(page.table))
       setHistoryOpen(false)
     }
   })
   return {
     desktopClosing,
+    desktopPreparing,
     connectionGroups,
     dataExport,
     workspaceReady,

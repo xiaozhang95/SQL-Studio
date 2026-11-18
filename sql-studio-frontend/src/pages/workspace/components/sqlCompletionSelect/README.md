@@ -4,7 +4,7 @@
 
 `completion: ReturnType<typeof useSQLCompletionPopup>` 提供候选、当前项、光标位置及编辑区字体；`objectKinds: ReadonlyMap<string, SQLCompletionObjectKind>` 提供当前连接的对象类型。使用真实 Ant Design Select 的主题、虚拟选项和弹层翻转，最大宽度 360px、高度 256px，弹层挂载 body 避免编辑器裁切。
 
-SQL 编辑器和 Redis 命令行共享此候选展示；可选 `label` 覆盖候选框的无障碍名称，默认使用已翻译的“SQL 语法补全”。Redis 提供本地命令及参数详情，对象类型映射为空，执行和历史快捷键由命令行输入组件处理。
+SQL 编辑器、Redis 多行编辑器和 Redis 命令行共享此候选展示；可选 `label` 覆盖候选框的无障碍名称，默认使用已翻译的“SQL 语法补全”。Redis 提供本地命令及参数详情，对象类型映射为空，各编辑器继续管理自己的执行和历史快捷键。
 
 隐藏 Select 仅作定位锚点，输入焦点属于 CodeMirror；候选区阻止 mousedown 抢走焦点，点击调用原生补全命令。原生键盘选中项同步到 Select 并滚入可见区；选项保留字符串无障碍标签，字段/表/关键词来源仍由数据库 adapter 提供。
 

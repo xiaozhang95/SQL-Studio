@@ -1,3 +1,3 @@
 # 监控页 hooks
 
-- [useDatabaseMonitor](useDatabaseMonitor/README.md)：选择已保存连接和数据库，进入时立即采样并默认每 5 秒轮询指标。
+- [useDatabaseMonitor](useDatabaseMonitor/README.md)：连接就绪立即采样并自动补齐速率基线，之后默认每 5 秒轮询指标。

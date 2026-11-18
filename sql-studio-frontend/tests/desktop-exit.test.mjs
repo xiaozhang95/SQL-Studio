@@ -10,9 +10,9 @@ function fixture(overrides = {}) {
     version: 1,
     tabs: [page, { ...page, id: 'unloaded', title: '查询 2', sql: '' }, { ...page, id: 'data', kind: 'data', sql: 'SELECT preview;' }, { ...page, id: 'design', kind: 'table-design', sql: '' }],
     activeTab: 'query',
-    runs: { query: { source: 'fixture' } },
-    resultViews: { query: { search: '', page: 1, resultIndex: 0 } },
-    editorLayouts: { query: { anchor: 1, head: 1, top: 20, left: 0 } },
+    runs: { query: { source: 'fixture' }, unloaded: { source: 'unloaded' } },
+    resultViews: { query: { search: '', page: 1, resultIndex: 0 }, unloaded: { search: 'keep', page: 2, resultIndex: 0 } },
+    editorLayouts: { query: { anchor: 1, head: 1, top: 20, left: 0 }, unloaded: { anchor: 0, head: 0, top: 40, left: 0 } },
     explorer: { expanded: ['connection:a'], selected: ['table:a'], search: 'draft', top: 200 },
     resultHeight: 200,
     openedConnections: ['a'],
@@ -21,182 +21,254 @@ function fixture(overrides = {}) {
   const options = {
     snapshot: () => state,
     flushEditor: () => {
-      events.push('editor')
-      state.tabs[0].sql = 'SELECT latest;'
+      events.push(['editor', state.activeTab])
+      const page = state.tabs.find((page) => page.id === 'query')
+      if (page) page.sql = 'SELECT latest;'
     },
     draftsFor: async (pages) => {
-      events.push('drafts')
+      events.push(['drafts', pages.map((page) => page.id)])
       return pages.map((page) => (page.id === 'unloaded' ? { ...page, sql: 'SELECT unloaded;' } : page))
     },
-    decide: async (sql) => {
-      events.push(['confirm', sql])
+    activatePage: async (id) => {
+      events.push(['activate', id])
+      state.activeTab = id
+    },
+    isDirty: () => false,
+    decide: async (page) => {
+      events.push(['confirm', structuredClone(page)])
       return 'exit'
     },
-    exportSQL: async (sql) => events.push(['export', sql]),
+    exportSQL: async (sql, title) => events.push(['export', sql, title]),
+    setPreparing: (value) => events.push(['preparing', value]),
     setClosing: (value) => events.push(['closing', value]),
-    stop: () => events.push('stop'),
-    waitForIdle: async () => events.push('idle'),
+    stop: () => {
+      events.push(['stop', state.runningTabId])
+      state.runningTabId = ''
+    },
+    waitForIdle: async () => events.push(['idle']),
     persist: async (snapshot) => events.push(['persist', structuredClone(snapshot)]),
     connections: () => [
       { id: 'a', name: 'A' },
       { id: 'b', name: 'B' }
     ],
     closeConnection: async (id) => events.push(['close', id]),
-    clearWorkspace: (empty) => {
-      events.push('clear')
-      Object.assign(state, empty)
+    applyWorkspace: (next) => {
+      events.push(['apply', structuredClone(next)])
+      Object.assign(state, next)
     },
     ...overrides
   }
   return { state, events, options }
 }
 
-test('全部查询参与确认，取消不停止请求、不关闭连接、不保存退出索引', async () => {
-  const f = fixture({
-    decide: async (sql) => {
-      assert.match(sql, /SELECT latest;/)
-      assert.match(sql, /SELECT unloaded;/)
-      return 'cancel'
-    }
-  })
+const eventsOf = (fixture, kind) => fixture.events.filter((event) => event[0] === kind)
+
+test('首个确认取消保留当前和其余标签，不取消请求或关闭连接', async () => {
+  const f = fixture({ decide: async () => 'cancel' })
   assert.equal(await runDesktopExit(f.options), false)
-  assert.deepEqual(f.events, ['editor', 'drafts'])
+  assert.equal(f.state.tabs.length, 4)
+  assert.equal(f.state.activeTab, 'query')
+  for (const kind of ['stop', 'close', 'persist', 'apply']) assert.deepEqual(eventsOf(f, kind), [])
+  assert.deepEqual(f.events.at(-1), ['preparing', false])
 })
 
-test('退出前同步最新草稿，全部连接关闭后提交空索引再清除所有类型的标签', async () => {
+test('逐页保存原文和对应标题，关闭并切到下一页后继续询问；后续取消不恢复已关闭页', async () => {
   const f = fixture()
+  f.options.decide = async (page) => {
+    assert.equal(f.state.activeTab, page.id)
+    if (page.kind !== 'query') return 'exit'
+    f.events.push(['confirm', structuredClone(page)])
+    if (page.id === 'query') return 'save'
+    assert.equal(
+      f.state.tabs.some((page) => page.id === 'query'),
+      false
+    )
+    assert.equal(f.state.runs.query, undefined)
+    assert.equal(f.state.resultViews.query, undefined)
+    assert.equal(f.state.editorLayouts.query, undefined)
+    assert.equal(f.state.runs.unloaded.source, 'unloaded')
+    return 'cancel'
+  }
+  assert.equal(await runDesktopExit(f.options), false)
+  assert.deepEqual(eventsOf(f, 'export'), [['export', 'SELECT latest;', '查询 1']])
+  assert.deepEqual(
+    eventsOf(f, 'confirm').map(([, page]) => page.id),
+    ['query', 'unloaded']
+  )
+  assert.deepEqual(
+    f.state.tabs.map((page) => page.id),
+    ['unloaded', 'data', 'design']
+  )
+  assert.equal(f.state.activeTab, 'unloaded')
+  assert.deepEqual(f.state.openedConnections, ['a'])
+  assert.deepEqual(eventsOf(f, 'close'), [])
+  assert.equal(eventsOf(f, 'persist').length, 1)
+  assert.equal(eventsOf(f, 'persist')[0][1].activeTab, 'unloaded')
+})
+
+test('从当前标签依次处理右侧相邻页，再处理左侧剩余页', async () => {
+  const f = fixture()
+  f.state.activeTab = 'unloaded'
   assert.equal(await runDesktopExit(f.options), true)
-  const writes = f.events.filter((event) => Array.isArray(event) && event[0] === 'persist')
-  assert.equal(writes.length, 2)
-  assert.equal(writes[0][1].tabs[0].sql, 'SELECT latest;')
-  assert.deepEqual(writes[1][1].openedConnections, [])
-  assert.equal(writes[1][1].runningTabId, '')
-  assert.deepEqual(writes[1][1].tabs, [])
-  assert.equal(writes[1][1].activeTab, '')
-  assert.deepEqual(writes[1][1].runs, {})
-  assert.deepEqual(writes[1][1].resultViews, {})
-  assert.deepEqual(writes[1][1].editorLayouts, {})
-  assert.deepEqual(writes[1][1].explorer, { expanded: [], selected: [], search: '', top: 0 })
-  assert.deepEqual(f.state.tabs, [])
-  assert.equal(f.state.resultHeight, 200)
-  assert.equal(f.events.at(-1), 'clear')
-  assert.ok(f.events.indexOf('clear') > f.events.indexOf(writes[1]))
-  assert.ok(f.events.indexOf('idle') < f.events.indexOf(writes[0]))
-  assert.ok(f.events.findIndex((event) => event[0] === 'close') > f.events.indexOf(writes[0]))
-  assert.equal(
-    f.events.some((event) => Array.isArray(event) && event[0] === 'closing' && event[1] === false),
-    false
+  assert.deepEqual(
+    eventsOf(f, 'activate').map(([, id]) => id),
+    ['unloaded', 'data', 'design', 'query']
+  )
+  assert.deepEqual(
+    eventsOf(f, 'confirm').map(([, page]) => page.id),
+    ['unloaded', 'query']
   )
 })
 
-test('退出保留默认及自定义分组的展开或收起状态，只清理连接及数据库后代', async () => {
-  const defaultGroup = JSON.stringify(['group', '默认分组'])
-  const customGroup = JSON.stringify(['group', '开发: "数据库"'])
-  for (const defaultExpanded of [true, false]) {
-    for (const customExpanded of [true, false]) {
-      const f = fixture()
-      const groups = [...(defaultExpanded ? [defaultGroup] : []), ...(customExpanded ? [customGroup] : [])]
-      const before = [
-        JSON.stringify(['connection', 'a']),
-        ...groups,
-        JSON.stringify(['database', 'a', 'db']),
-        JSON.stringify(['schema', 'a', 'db', 'public']),
-        JSON.stringify(['tables', 'a', 'db']),
-        JSON.stringify(['table', 'a', 'db', 'table']),
-        JSON.stringify(['columns', 'a', 'db', 'table']),
-        'invalid',
-        JSON.stringify(['group']),
-        JSON.stringify(['group', 1]),
-        JSON.stringify(['group', 'extra', 'part'])
-      ]
-      f.state.explorer.expanded = [...before]
-      assert.equal(await runDesktopExit(f.options), true)
-      const writes = f.events.filter((event) => Array.isArray(event) && event[0] === 'persist')
-      assert.deepEqual(writes[0][1].explorer.expanded, before)
-      assert.deepEqual(writes[1][1].explorer.expanded, groups)
-      assert.deepEqual(f.state.explorer.expanded, groups)
-      assert.deepEqual(f.state.explorer.selected, [])
-      assert.deepEqual(f.state.openedConnections, [])
-      assert.deepEqual(f.state.tabs, [])
-    }
-  }
+test('多个查询分别导出文件，全部标签关闭后才释放连接并保存最终索引', async () => {
+  const f = fixture()
+  f.options.decide = async (page) => (page.kind === 'query' ? 'save' : 'exit')
+  assert.equal(await runDesktopExit(f.options), true)
+  assert.deepEqual(eventsOf(f, 'export'), [
+    ['export', 'SELECT latest;', '查询 1'],
+    ['export', 'SELECT unloaded;', '查询 2']
+  ])
+  assert.deepEqual(eventsOf(f, 'drafts'), [
+    ['drafts', ['query']],
+    ['drafts', ['unloaded']]
+  ])
+  const writes = eventsOf(f, 'persist')
+  assert.deepEqual(
+    writes.map(([, value]) => value.tabs.length),
+    [3, 2, 1, 0, 0, 0]
+  )
+  assert.ok(f.events.indexOf(eventsOf(f, 'close')[0]) > f.events.indexOf(writes[4]))
+  const final = writes.at(-1)[1]
+  assert.deepEqual(final.tabs, [])
+  assert.equal(final.activeTab, '')
+  for (const field of ['runs', 'resultViews', 'editorLayouts']) assert.deepEqual(final[field], {})
+  assert.deepEqual(final.openedConnections, [])
+  assert.deepEqual(final.explorer, { expanded: [], selected: [], search: '', top: 0 })
+  assert.equal(f.state.resultHeight, 200)
+  assert.deepEqual(eventsOf(f, 'apply').at(-1)[1], final)
 })
 
-test('文件导出取消或草稿读取失败会保留整个窗口及连接', async () => {
+test('空白查询和干净对象页直接关闭，未常驻草稿按真实内容判断', async () => {
+  const f = fixture({ flushEditor() {}, draftsFor: async (pages) => pages.map((page) => ({ ...page, sql: ' \n\t ' })) })
+  assert.equal(await runDesktopExit(f.options), true)
+  assert.deepEqual(eventsOf(f, 'confirm'), [])
+  assert.deepEqual(eventsOf(f, 'export'), [])
+  const unloaded = fixture({ flushEditor() {} })
+  unloaded.state.tabs[0].sql = '  '
+  assert.equal(await runDesktopExit(unloaded.options), true)
+  assert.deepEqual(
+    eventsOf(unloaded, 'confirm').map(([, page]) => page.id),
+    ['unloaded']
+  )
+})
+
+test('后续文件选择取消保留该标签和剩余标签，已关闭标签不恢复', async () => {
+  const f = fixture()
+  f.options.decide = async (page) => (page.id === 'unloaded' ? 'save' : 'exit')
+  f.options.exportSQL = async () => {
+    throw new DOMException('cancelled', 'AbortError')
+  }
+  await assert.rejects(runDesktopExit(f.options), { name: 'AbortError' })
+  assert.deepEqual(
+    f.state.tabs.map((page) => page.id),
+    ['unloaded', 'data', 'design']
+  )
+  assert.equal(f.state.activeTab, 'unloaded')
+  assert.deepEqual(eventsOf(f, 'close'), [])
+  assert.deepEqual(f.events.at(-1), ['preparing', false])
+})
+
+test('激活、读取或关闭索引保存失败保留当前标签，不删除未确认内容', async () => {
   for (const overrides of [
-    {
-      decide: async () => 'save',
-      exportSQL: async () => {
-        throw new DOMException('cancelled', 'AbortError')
-      }
-    },
     {
       draftsFor: async () => {
         throw new Error('read failed')
+      }
+    },
+    {
+      activatePage: async () => {
+        throw new Error('load failed')
+      }
+    },
+    {
+      persist: async () => {
+        throw new Error('conflict')
       }
     }
   ]) {
     const f = fixture(overrides)
     await assert.rejects(runDesktopExit(f.options))
-    assert.equal(
-      f.events.some((event) => event === 'stop' || event[0] === 'close' || event[0] === 'persist'),
-      false
-    )
+    assert.equal(f.state.tabs.length, 4)
+    for (const kind of ['apply', 'close']) assert.deepEqual(eventsOf(f, kind), [])
+    assert.deepEqual(f.events.at(-1), ['preparing', false])
   }
 })
 
-test('保存失败或冲突不关闭任何连接，关闭失败仍尝试其余连接并恢复界面', async () => {
-  const save = fixture({
-    persist: async () => {
-      throw new Error('conflict')
-    }
-  })
-  await assert.rejects(runDesktopExit(save.options), /conflict/)
-  assert.equal(
-    save.events.some((event) => event[0] === 'close'),
-    false
-  )
-  assert.deepEqual(save.events.at(-1), ['closing', false])
+test('运行页确认后取消并等待该页请求，关闭其他页不提前取消后台任务', async () => {
+  const f = fixture()
+  f.state.runningTabId = 'unloaded'
+  assert.equal(await runDesktopExit(f.options), true)
+  const stop = eventsOf(f, 'stop')[0]
+  assert.deepEqual(stop, ['stop', 'unloaded'])
+  assert.ok(f.events.indexOf(stop) > f.events.indexOf(eventsOf(f, 'apply')[0]))
+  assert.ok(f.events.indexOf(eventsOf(f, 'idle')[0]) < f.events.indexOf(eventsOf(f, 'persist')[1]))
+})
+
+test('未提交对象页单独取消关闭，其余查询不受影响', async () => {
+  const f = fixture({ isDirty: (id) => id === 'data', decide: async (page) => (page.id === 'data' ? 'cancel' : 'exit') })
+  f.state.activeTab = 'data'
+  assert.equal(await runDesktopExit(f.options), false)
+  assert.equal(f.state.tabs.length, 4)
+  assert.equal(f.state.activeTab, 'data')
+  assert.deepEqual(eventsOf(f, 'persist'), [])
+})
+
+test('连接释放或最终保存失败保留窗口，已逐项关闭的标签不恢复', async () => {
   const f = fixture()
   f.options.closeConnection = async (id) => {
     f.events.push(['close', id])
     if (id === 'a') throw new Error('release failed')
   }
   await assert.rejects(runDesktopExit(f.options), /A: release failed/)
-  assert.deepEqual(
-    f.events.filter((event) => event[0] === 'close'),
-    [
-      ['close', 'a'],
-      ['close', 'b']
-    ]
-  )
-  assert.deepEqual(f.events.at(-1), ['closing', false])
-  assert.equal(f.events.filter((event) => event[0] === 'persist').length, 1)
-  assert.equal(f.state.tabs.length, 4)
-  assert.equal(f.events.includes('clear'), false)
-})
-
-test('最终空工作区保存失败时不移除内存标签；空 SQL 查询也参与保存决定', async () => {
-  const failed = fixture({
+  assert.deepEqual(eventsOf(f, 'close'), [
+    ['close', 'a'],
+    ['close', 'b']
+  ])
+  assert.deepEqual(f.state.tabs, [])
+  assert.deepEqual(f.events.at(-1), ['preparing', false])
+  const saved = fixture({
     persist: async (value) => {
-      if (!value.tabs.length) throw new Error('empty index failed')
+      if (!value.openedConnections.length) throw new Error('empty index failed')
     }
   })
-  await assert.rejects(runDesktopExit(failed.options), /empty index failed/)
-  assert.equal(failed.state.tabs.length, 4)
-  assert.equal(failed.events.includes('clear'), false)
-  assert.deepEqual(failed.events.at(-1), ['closing', false])
-  const blank = fixture({ flushEditor() {}, draftsFor: async (pages) => pages.map((page) => ({ ...page, sql: '' })) })
-  blank.options.decide = async (sql, pages) => {
-    assert.equal(sql, '')
-    assert.equal(pages.length, 2)
-    return 'save'
-  }
-  assert.equal(await runDesktopExit(blank.options), true)
-  assert.ok(blank.events.some((event) => Array.isArray(event) && event[0] === 'export' && event[1] === ''))
+  await assert.rejects(runDesktopExit(saved.options), /empty index failed/)
+  assert.deepEqual(saved.state.tabs, [])
+  assert.deepEqual(saved.events.at(-1), ['preparing', false])
 })
 
-test('关闭回执与最终保存是退出屏障，连接去重且并发最多为4', async () => {
+test('退出保留默认及自定义分组的展开或收起状态，清理连接和数据库后代', async () => {
+  const defaultGroup = JSON.stringify(['group', '默认分组'])
+  const customGroup = JSON.stringify(['group', '开发: "数据库"'])
+  for (const defaultExpanded of [true, false])
+    for (const customExpanded of [true, false]) {
+      const f = fixture()
+      const groups = [...(defaultExpanded ? [defaultGroup] : []), ...(customExpanded ? [customGroup] : [])]
+      f.state.explorer.expanded = [
+        JSON.stringify(['connection', 'a']),
+        ...groups,
+        JSON.stringify(['database', 'a', 'db']),
+        JSON.stringify(['table', 'a', 'db', 'table']),
+        'invalid',
+        JSON.stringify(['group', 1])
+      ]
+      assert.equal(await runDesktopExit(f.options), true)
+      assert.deepEqual(f.state.explorer.expanded, groups)
+      assert.deepEqual(f.state.explorer.selected, [])
+      assert.deepEqual(f.state.openedConnections, [])
+    }
+})
+
+test('连接关闭去重且并发最多4，最终保存等待全部回执', async () => {
   let active = 0,
     maximum = 0,
     finalSaved = false
@@ -214,7 +286,6 @@ test('关闭回执与最终保存是退出屏障，连接去重且并发最多�
       if (!snapshot.openedConnections.length) {
         assert.equal(ids.length, 9)
         assert.equal(active, 0)
-        await new Promise((resolve) => setTimeout(resolve, 2))
         finalSaved = true
       }
     }

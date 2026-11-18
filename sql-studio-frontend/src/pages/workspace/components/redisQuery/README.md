@@ -2,4 +2,4 @@
 
 `RedisQuery` 渲染在统一的查询标签内，接收连接、页签范围和主题。左侧是连接、逻辑库和运行操作。右侧从键详情、命令行和发布订阅图标切换工具，右边是导入导出及执行历史，按钮提示和可访问名称使用“导入”“导出”。再次点击当前工具返回编辑器。Redis 页面完全隐藏代码补全与优化按钮，不读取或修改其他数据库共享的 AI 偏好。编辑器和命令行的本地命令候选、参数用法继续可用。连接选择包含已保存的 Redis 和关系型数据库。
 
-[编辑器](components/editor/README.md)复用工作区文档草稿和位置保存。[终端](components/console/README.md)按标签和连接保存草稿、光标/选区、历史及回执，刷新时恢复原输入位置和当前工具。[键详情](components/keyEditor/README.md)直接编辑名称、TTL 和完整 String/List/Set/Hash/ZSet 值，修改后原位保存/取消。TTL 单独一行，数字框与只读倒计时按钮组合铺满可用空间，左侧输入默认 0，右侧倒计时独立显示实际期限，未编辑 TTL 时保存保留原期限；按钮显示时分秒，超过一天时带天数。[发布订阅](components/pubsub/README.md)在工具切换时保留实时请求。关闭标签或切换连接时释放旧范围的请求。使用 SELECT 更新发起标签的数据库。
+[编辑器](components/editor/README.md)复用工作区文档草稿和位置保存，多行编辑器与命令行的本地候选均使用与 SQL 编辑器相同的 Ant Design Select 和字体同步。[终端](components/console/README.md)按标签和连接保存草稿、光标/选区、历史及回执，刷新时恢复原输入位置和当前工具。[键详情](components/keyEditor/README.md)直接编辑名称、TTL 和完整 String/List/Set/Hash/ZSet 值，修改后原位保存/取消。TTL 单独一行，数字框与只读倒计时按钮组合铺满可用空间，左侧输入默认 0，右侧倒计时独立显示实际期限，未编辑 TTL 时保存保留原期限；按钮显示时分秒，超过一天时带天数。[发布订阅](components/pubsub/README.md)在工具切换时保留实时请求。关闭标签或切换连接时释放旧范围的请求。使用 SELECT 更新发起标签的数据库。

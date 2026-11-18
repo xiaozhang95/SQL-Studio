@@ -1,13 +1,14 @@
+import { QuestionCircleOutlined } from '@ant-design/icons'
 import { App as AntApp, Button } from 'antd'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
+import { useAppSection } from '@/hooks/useAppSection'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { saveSQL } from '@/utils/sqlSave'
 
-import { scopeCloseDialogLayout } from '../../constant/layout'
 import { runDesktopExit } from '../../utils/desktopExit'
 import type { ExitDecision } from '../../utils/desktopExit'
 
@@ -18,23 +19,28 @@ interface Options {
   snapshot: WorkspaceSnapshot
   connections: readonly Connection[]
   dirty: Readonly<Record<string, boolean>>
+  pageReady: boolean
+  pageLoadFailed: boolean
   flushEditor: () => void
   draftsFor: (pages: WorkspaceTab[]) => Promise<WorkspaceTab[]>
+  activatePage: (id: string) => void
+  setPreparing: (preparing: boolean) => void
   setClosing: (closing: boolean) => void
   stop: () => void
   running: () => boolean
   persist: (snapshot: WorkspaceSnapshot) => Promise<void>
   closeConnection: (id: string) => Promise<void>
-  clearWorkspace: (snapshot: WorkspaceSnapshot) => void
+  applyWorkspace: (snapshot: WorkspaceSnapshot) => void
 }
 
 /** Only the desktop bridge registers this hook; browsers keep their existing unload behavior. */
 export function useDesktopExit(options: Options) {
   const { modal } = AntApp.useApp()
   const { t } = useTranslation()
-  const latest = useRef({ options, modal, t })
+  const { openWorkspace } = useAppSection()
+  const latest = useRef({ options, modal, t, openWorkspace })
   useLayoutEffect(() => {
-    latest.current = { options, modal, t }
+    latest.current = { options, modal, t, openWorkspace }
   })
   useEffect(() => {
     const desktop = window.sqlStudioDesktop
@@ -49,57 +55,58 @@ export function useDesktopExit(options: Options) {
         return await runDesktopExit({
           snapshot: () => current().snapshot,
           connections: () => current().connections,
+          isDirty: (id) => Boolean(current().dirty[id]),
           flushEditor: () => flushSync(() => current().flushEditor()),
-          draftsFor: async (pages) => {
-            const loading = modal.info({ title: t('正在检查工作区…'), footer: null, closable: false, keyboard: false, mask: { closable: false } })
-            try {
-              return await current().draftsFor(pages)
-            } finally {
-              loading.destroy()
+          draftsFor: (pages) => current().draftsFor(pages),
+          activatePage: async (id) => {
+            flushSync(() => {
+              latest.current.openWorkspace()
+              current().activatePage(id)
+            })
+            const deadline = Date.now() + 10000
+            while (current().snapshot.activeTab !== id || !current().pageReady) {
+              if (current().pageLoadFailed || Date.now() >= deadline) throw new Error(t('查询内容读取失败'))
+              await new Promise<void>((resolve) => window.setTimeout(resolve, 20))
             }
           },
-          decide: async (_sql, queries) => {
-            const dirty = current().snapshot.tabs.filter((page) => current().dirty[page.id])
-            const running = current().running()
-            if (!queries.length && !dirty.length && !running) return 'exit'
+          decide: async (page) => {
+            const hasSQL = page.kind === 'query' && Boolean(page.sql.trim())
+            const dirty = current().dirty[page.id]
+            const running = current().snapshot.runningTabId === page.id && current().running()
+            if (!hasSQL && !dirty && !running) return 'exit'
             return new Promise<ExitDecision>((resolve) => {
+              let decision: ExitDecision = 'cancel'
               const dialog = modal.confirm({
-                width: scopeCloseDialogLayout.width,
-                title: t('退出 SQL Studio？'),
+                centered: true,
+                title: t('确认'),
+                icon: <QuestionCircleOutlined />,
                 content: (
-                  <>
-                    {queries.length > 0 && (
-                      <p style={{ overflowWrap: 'anywhere' }}>
-                        {t('退出前是否保存这些 SQL 查询？')}
-                        {queries.map((page) => page.title).join('、')}
-                      </p>
-                    )}
-                    {queries.length > 0 && <p>{t('退出将关闭全部标签；未保存为文件的 SQL 不会在下次启动时恢复。')}</p>}
-                    {dirty.length > 0 && (
-                      <p style={{ overflowWrap: 'anywhere' }}>
-                        {dirty.map((page) => page.title).join('、')}
-                        {t(' 的表结构或数据修改尚未提交，退出将放弃这些修改。')}
-                      </p>
-                    )}
-                    {running && <p>{t('退出会取消正在执行的请求；已执行的数据库操作不会因此回滚。')}</p>}
-                    <p>{t('确认后将关闭全部标签和连接并退出应用。')}</p>
-                  </>
+                  <div style={{ display: 'grid', gap: 8, overflowWrap: 'anywhere' }}>
+                    <div>{hasSQL ? t('是否保存对「{value1}」的更改？', { value1: page.title }) : t('是否关闭「{value1}」？', { value1: page.title })}</div>
+                    {dirty && <div>{t('未提交的表结构或数据修改将被放弃。')}</div>}
+                    {running && <div>{t('正在执行的请求将被取消。')}</div>}
+                  </div>
                 ),
-                okText: queries.length ? t('保存 SQL 并退出') : t('退出'),
+                okText: hasSQL ? t('保存') : t('关闭'),
                 cancelText: t('取消'),
-                onOk: () => resolve(queries.length ? 'save' : 'exit'),
-                onCancel: () => resolve('cancel'),
+                onOk: () => {
+                  decision = hasSQL ? 'save' : 'exit'
+                },
+                onCancel: () => {
+                  decision = 'cancel'
+                },
+                afterClose: () => resolve(decision),
                 footer: (_, { OkBtn, CancelBtn }) => (
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                     <CancelBtn />
-                    {queries.length > 0 && (
+                    {hasSQL && (
                       <Button
                         onClick={() => {
-                          resolve('exit')
+                          decision = 'exit'
                           dialog.destroy()
                         }}
                       >
-                        {t('不保存并退出')}
+                        {t('不保存')}
                       </Button>
                     )}
                     <OkBtn />
@@ -108,7 +115,8 @@ export function useDesktopExit(options: Options) {
               })
             })
           },
-          exportSQL: (sql) => saveSQL(sql, t('SQL Studio 查询')),
+          exportSQL: (sql, title) => saveSQL(sql, title),
+          setPreparing: (preparing) => flushSync(() => current().setPreparing(preparing)),
           setClosing: (closing) => flushSync(() => current().setClosing(closing)),
           stop: () => current().stop(),
           waitForIdle: async () => {
@@ -120,7 +128,7 @@ export function useDesktopExit(options: Options) {
           },
           persist: (value) => current().persist(value),
           closeConnection: (id) => current().closeConnection(id),
-          clearWorkspace: (value) => flushSync(() => current().clearWorkspace(value))
+          applyWorkspace: (value) => flushSync(() => current().applyWorkspace(value))
         })
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError'))
