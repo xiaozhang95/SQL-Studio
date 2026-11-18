@@ -39,6 +39,12 @@ Windows 在 `release/` 下生成两份分发产物。
 
 「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源；网页端隐藏该入口。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，点击“重启并安装”后先完成同一退出确认与连接清理流程，再退出本地 Go 服务并启动安装；取消退出不会安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
 
+检查读取公开 `/releases/latest` 的 JSON 响应，允许 GitHub 跳转到具体发行版页面，设置 Accept 与产品 User-Agent，禁用响应缓存，版本查询超时 15 秒；与 electron-updater 的 GitHub 正式版检查方式一致，不依赖 `api.github.com` 的匿名 REST 配额。仅接受有效的正式语义版本。Windows 安装版再由 electron-updater 读取更新清单，核对目标版本、当前架构安装包名称、单文件记录与 SHA-512；清单缺失、不可读取或不匹配时仍显示发现的新版本并保留手动下载。下载前再次验证清单，下载本身继续使用 updater 的完整文件与校验流程。
+
+主进程记录详细异常，更新 IPC 仅返回固定错误码，preload 解包为原有 Promise 接口。界面区分限流、HTTP 403 拒绝、无公开正式版、超时、网络、服务故障、响应格式与清单不匹配，不把所有失败归为无法访问 GitHub。共享检查/下载任务与退出后安装流程保持不变。
+
+应用内下载通过 electron-updater 的 `download-progress` 事件展示真实百分比、已下载/总大小和速度。准备传输与校验阶段分别显示状态；仅安装包下载及校验成功后显示 100% 完成和“重启并安装”。主进程保留递增 revision 的状态快照，`getState`/`onState` 桥接仅供同源工作台读取和订阅，页面关闭或重开不影响下载并能恢复进度。失败保留最后进度与安全错误码，重试清零；绿色版等手动下载不提供应用内进度。
+
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
 3. 已安装 `0.1.1` 的用户先下载新版安装包覆盖安装一次。从带更新功能的版本开始，可在应用内安装后续版本。Windows 安装版升级时可能出现管理员授权提示。
@@ -83,7 +89,7 @@ electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-
 
 ## 进程与配置
 
-关闭窗口、应用退出和更新安装共用退出握手。原生窗口先保留，前端回到工作区，从当前标签开始逐页激活和读取内容。非空查询使用居中确认框询问“是否保存对「标签名」的更改？”，按钮从左到右为“取消 / 不保存 / 保存”；空白查询直接关闭，未提交对象修改和运行请求按页提示。每次仅保存对应标签原文为独立文件，确认框完全关闭、保存完成后，严格提交本页关闭快照并删除标签、切到下一页。准备阶段暂停自动保存并锁定工作区交互，标签保持可见。
+关闭窗口、应用退出和更新安装共用退出握手。原生窗口先保留，前端回到工作区，从当前标签开始逐页激活和读取内容。非空查询使用 Ant Design 默认位置的确认框询问“是否保存对「标签名」的更改？”，按钮从左到右为“取消 / 不保存 / 保存”；空白查询直接关闭，未提交对象修改和运行请求按页提示。每次仅保存对应标签原文为独立文件，确认框完全关闭、保存完成后，严格提交本页关闭快照并删除标签、切到下一页。准备阶段暂停自动保存并锁定工作区交互，标签保持可见。
 
 取消或保存失败停在当前标签，当前及未处理标签和连接保留，已关闭标签不恢复。全部标签处理完才挂起页面，停止监控、Agent 和 Redis 订阅及其他请求，再等待全部已保存连接的关闭回执，最后提交空工作区才通知主进程退出。下次正常启动不恢复已关闭标签、结果或连接；默认及自定义连接分组保留原展开或收起状态。没有导出为文件的 SQL 不再恢复，连接配置不删除。
 
@@ -112,7 +118,7 @@ $env:SQL_STUDIO_DATA_DIR="D:\sql-studio-data"; pnpm start
 
 Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC0000005`）时，会从系统临时目录的 Electron 副本重试，继续连接同一套开发服务。Windows 绿色版和安装版始终从发行目录启动，遇到这两个退出码时带 `--no-sandbox` 重试一次。其他失败由启动器显示原因和日志路径。
 
-窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读平台标识和标题栏高度、主题同步和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。SQL 转储、编辑器导出及关闭前保存均通过原生保存对话框选路径，主进程分块写入同目录临时文件，写完后替换目标。取消、写入错误、页面重载及窗口退出清理未完成文件。API 仍是后端原有的本机单用户 HTTP 服务。
+窗口配置关闭 Node 集成并启用 contextIsolation、sandbox 和 webSecurity。传入 `--no-sandbox` 时关闭 Chromium 沙箱。preload 提供只读平台标识和标题栏高度、主题同步、纯文本复制和受限的更新方法。主进程校验调用窗口和来源，更新只访问配置的公开 GitHub 仓库；工作台拒绝外部导航、新窗口、webview 和页面权限请求。SQL 预览通过 `writeClipboardText(text)` 桥接调用原生 clipboard.writeText，仅允许当前工作台主 frame 的同源请求，退出中或复制失败时返回 false，不提供剪贴板读取能力。SQL 转储、编辑器导出及关闭前保存均通过原生保存对话框选路径，主进程分块写入同目录临时文件，写完后替换目标。取消、写入错误、页面重载及窗口退出清理未完成文件。API 仍是后端原有的本机单用户 HTTP 服务。
 
 ## 代码与检查
 
@@ -120,7 +126,8 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 - `src/quit.mjs`：窗口退出握手、请求去重、取消及无响应时的原生确认。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/policy.mjs`：导航边界、权限判定与后端环境隔离。
-- `src/preload.cjs`：标题栏、控制台、更新与原生保存桥接。
+- `src/preload.cjs`：标题栏、控制台、纯文本复制、更新与原生保存桥接。
+- `src/clipboard.mjs`：受限的原生文本写入，非法请求或系统失败静默返回 false。
 - `src/sql-save.mjs`：原生保存会话、分块写盘、原子替换和取消清理。
 - `src/updates.mjs`：GitHub 正式版本查询、NSIS 更新下载与安装。
 - `src/startup/`：不依赖 Go 服务的本地全窗口启动动画及视图清理。
@@ -128,9 +135,10 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 - `scripts/windows/`：Windows GUI 启动入口及 NSIS 安装、升级和卸载逻辑。
 - `electron-builder.cjs`：应用与安装包配置。
 - `tests/`：导航、权限策略、配置隔离与健康检查契约测试。
+- `tests/updates.test.mjs`：公开发行页检查、真实 HTTP 跳转、安全错误码与 preload 解包、绿色版回退、更新清单和下载/安装边界；使用替身与临时 HTTP 服务，不访问 GitHub 或启动 Electron。
 
 ```sh
 node --test tests/*.test.mjs
 ```
 
-这些 Node 测试使用临时 HTTP 服务，不访问数据库；不能替代真实窗口、安装包或 SQL 回归。
+这些 Node 测试使用替身或临时 HTTP 服务，不访问数据库；不能替代真实窗口、安装包或 SQL 回归。

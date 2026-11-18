@@ -19,7 +19,7 @@
 
 - [逐条执行消息](queryMessages/README.md)
 - [批次执行摘要](querySummary/README.md)
-- [只读 SQL 高亮与复制](sqlPreview/README.md)
+- [只读 SQL 高亮与复制](sqlPreview/README.md)：桌面使用原生文本复制，复制失败静默处理。
 
 - [库表管理弹窗](objectManagementModal/README.md)：可视化库表编辑、名称确认与 SQL 预览。
 

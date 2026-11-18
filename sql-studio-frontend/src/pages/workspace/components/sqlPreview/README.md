@@ -10,7 +10,7 @@ memo 复用相同内容/主题的预览，basicSetup 保持稳定，避免输入
 
 所有调用完整显示 SQL，保留换行并自动折行；不提供固定高度、最大高度或首行截断参数，不产生编辑器内部滚动条。结果表格、消息区、历史抽屉和对象/优化弹窗各自负责外层滚动。容器布局使用组件 style，编辑器内部使用 [editorAppearance](../../utils/editorAppearance/README.md) 的 CodeMirror 原生样式扩展。
 
-compact 在 SQL 首行旁显示复制图标。panel 使用 small Card 标题栏放置 title 和复制按钮，与 Agent 代码卡片共用公共 ContentCard 的外框。默认展示在 SQL 上方显示标题与复制按钮。复制使用原始全文，失败在预览中通过全局 ErrorNotice 提示。
+compact 在 SQL 首行旁显示复制图标。panel 使用 small Card 标题栏放置 title 和复制按钮，与 Agent 代码卡片共用公共 ContentCard 的外框。默认展示在 SQL 上方显示标题与复制按钮。复制使用原始全文，Electron 通过 [桌面桥接](../../../../typings/desktop/README.md) 写入系统剪贴板，网页使用浏览器剪贴板接口。成功提示“已复制”，失败静默处理，不显示错误提示或改变预览布局。
 
 复制入口复用 ToolbarButton 的 small 无边框图标按钮，Tooltip 和 aria-label 均为“复制 SQL”，与工作区其他操作保持一致。
 

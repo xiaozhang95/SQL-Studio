@@ -3,10 +3,9 @@ import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
 import { App, Typography } from 'antd'
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 
 import ContentCard from '@/components/contentCard'
-import ErrorNotice from '@/components/errorNotice'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseType } from '@/databases/typings'
@@ -30,14 +29,16 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
   const { t } = useTranslation()
 
   const { message } = App.useApp()
-  const [copyError, setCopyError] = useState('')
   const copySQL = async () => {
-    setCopyError('')
     try {
-      await navigator.clipboard.writeText(sql)
+      if (window.sqlStudioDesktop) {
+        if (!(await window.sqlStudioDesktop.writeClipboardText(sql))) return
+      } else {
+        await navigator.clipboard.writeText(sql)
+      }
       message.success(t('已复制'))
     } catch {
-      setCopyError(t('复制失败，请选中文本后手动复制'))
+      // Copying is optional; permission or clipboard failures must not interrupt the preview.
     }
   }
   const redis = databaseType === DatabaseEngine.Redis
@@ -48,7 +49,6 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
   const copyButton = <ToolbarButton size="small" icon={<CopyOutlined />} onClick={copySQL} label={t(redis ? '复制命令' : '复制 SQL')} style={{ flex: 'none' }} />
   const editor = (
     <div style={{ flex: 1, minWidth: 0 }}>
-      <ErrorNotice error={copyError} onClose={() => setCopyError('')} />
       <CodeMirror value={sql} theme={themeMode} extensions={extensions} editable={false} readOnly basicSetup={previewSetup} aria-label={t(redis ? 'Redis 命令' : 'SQL 文本')} />
     </div>
   )

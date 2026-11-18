@@ -3,15 +3,16 @@ import path from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 
-import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeTheme } from 'electron'
 
 import { startBackend, waitForService } from './backend.mjs'
+import { createClipboardWriter } from './clipboard.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createQuitGuard } from './quit.mjs'
 import { createSQLSaves } from './sql-save.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
 import { createStartupScreen } from './startup/index.mjs'
-import { createDesktopUpdates } from './updates.mjs'
+import { createDesktopUpdates, desktopUpdateErrorCode } from './updates.mjs'
 
 // 开发和发行使用独立目录，与对应环境的 Go 服务保持一致。
 const dataOverride = process.env.SQL_STUDIO_DATA_DIR?.trim()
@@ -181,6 +182,7 @@ function createWindow(dark, appIcon, updates) {
   const desktopActions = {
     'sql-studio:open-console': () => contents.openDevTools({ mode: 'detach' }),
     'sql-studio:check-updates': updates.check,
+    'sql-studio:get-update-state': updates.getState,
     'sql-studio:download-update': updates.download,
     'sql-studio:open-release': updates.openRelease,
     'sql-studio:install-update': () => updates.install(requestExit)
@@ -189,14 +191,20 @@ function createWindow(dark, appIcon, updates) {
     ipcMain.handle(channel, async (event) => {
       if (!isWorkbench(event) || quitting) throw new Error('桌面操作不可用')
       try {
-        return await action()
+        const value = await action()
+        return channel === 'sql-studio:open-console' ? value : { ok: true, value }
       } catch (error) {
         trace(`${channel}: ${error.stack ?? error.message}`)
+        if (channel !== 'sql-studio:open-console') return { ok: false, errorCode: desktopUpdateErrorCode(error) }
         throw new Error('桌面操作失败')
       }
     })
   }
+  const unsubscribeUpdates = updates.subscribe((state) => {
+    if (!contents.isDestroyed() && isAppURL(contents.mainFrame?.url, origin)) contents.send('sql-studio:updates-changed', state)
+  })
   const saves = createSQLSaves((options) => dialog.showSaveDialog(window, options))
+  ipcMain.handle('sql-studio:write-clipboard-text', createClipboardWriter((text) => clipboard.writeText(text), (event) => isWorkbench(event) && !quitting))
   saveCleanup = () => saves.reset()
   const saveActions = {
     'sql-studio:save-begin': saves.begin,
@@ -234,6 +242,8 @@ function createWindow(dark, appIcon, updates) {
     quitGuard.reset()
     for (const channel of Object.keys(desktopActions)) ipcMain.removeHandler(channel)
     for (const channel of Object.keys(saveActions)) ipcMain.removeHandler(channel)
+    ipcMain.removeHandler('sql-studio:write-clipboard-text')
+    unsubscribeUpdates()
     resetSaves()
   })
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))

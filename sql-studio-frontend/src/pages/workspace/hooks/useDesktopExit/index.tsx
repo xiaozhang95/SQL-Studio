@@ -77,7 +77,6 @@ export function useDesktopExit(options: Options) {
             return new Promise<ExitDecision>((resolve) => {
               let decision: ExitDecision = 'cancel'
               const dialog = modal.confirm({
-                centered: true,
                 title: t('确认'),
                 icon: <QuestionCircleOutlined />,
                 content: (
