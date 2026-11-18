@@ -63,7 +63,7 @@ export function ChatPage({
         colorScheme: dark ? 'dark' : 'light'
       }}
     >
-      <PageHeader showDesktopTitle={false} title={activeTitle} titleOffset={mobile ? 0 : sidebar.visibleWidth / 2} errors={[chat.error]} actions={<SystemSettings {...appearancePreferences} />}>
+      <PageHeader desktopTitle={t('AI 助手')} title={activeTitle} titleOffset={mobile ? 0 : sidebar.visibleWidth / 2} errors={[chat.error]} actions={<SystemSettings {...appearancePreferences} />}>
         {' '}
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
           {localizedDefaultTitle}

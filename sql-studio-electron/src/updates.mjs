@@ -80,7 +80,7 @@ export function createDesktopUpdates(log) {
     },
     install(shutdown) {
       if (!updater || !downloadedVersion || downloadedVersion !== release?.version || checking || downloading) throw new Error('请先下载更新')
-      shutdown(() => {
+      return shutdown(() => {
         updater.once('error', () => app.quit())
         updater.quitAndInstall(false, true)
       })

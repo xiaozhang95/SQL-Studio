@@ -23,7 +23,7 @@ export default function AgentPage(props: Props) {
   if (!workspace.ready)
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: token.colorBgContainer }}>
-        <PageHeader showDesktopTitle={false} actions={<SystemSettings {...props} />}>
+        <PageHeader desktopTitle={t('AI 助手')} actions={<SystemSettings {...props} />}>
           <Button type="text" icon={<PlusOutlined />} disabled>
             {t('新建会话')}
           </Button>

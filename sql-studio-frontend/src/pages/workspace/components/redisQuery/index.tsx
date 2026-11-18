@@ -83,9 +83,9 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           ))}
         </div>
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={blocked || !editorMode || importing}>
-          <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={blocked || !editorMode} />
+          <ToolbarButton label={t('导入')} icon={<UploadOutlined />} loading={importing} disabled={blocked || !editorMode} />
         </Upload>
-        <ToolbarButton label={t('导出 SQL')} icon={<DownloadOutlined />} disabled={blocked || !editorMode || !hasText} onClick={() => void model.exportCurrentSQL()} />
+        <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={blocked || !editorMode || !hasText} onClick={() => void model.exportCurrentSQL()} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={blocked || (!editorMode && !consoleMode)} onClick={model.openHistory} />
       </QueryToolbar>
       <ErrorNotice title={t('连接加载失败')} error={snapshot?.error} />

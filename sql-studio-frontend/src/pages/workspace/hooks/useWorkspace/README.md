@@ -34,6 +34,8 @@ validateDatabases 仅在有效库列表加载成功后校验查询页范围，�
 
 ## 本地恢复
 
+Electron 窗口关闭使用 [useDesktopExit](../useDesktopExit/README.md)，通过原生桥接在存在 SQL 查询标签时提示保存文件，另行确认未提交表修改。确认后关闭全部连接，提交空工作区，清空所有查询、数据、结构、DDL 和设计标签及对应结果、编辑状态和 Redis 终端会话；正常下次启动保持无标签、无已打开连接。对象树保留默认及自定义连接分组的展开或收起状态，只清理连接、数据库及其后代的展开和选中记录。desktopClosing 让 App 挂起各页面、暂停自动保存，取消监控、Agent、Redis 订阅和查询请求，同时阻止 Redis 及恢复流程在收尾时重新打开连接。取消或文件保存取消不清理；清理失败保留标签并恢复页面与自动保存。Web 不注册该退出流程。
+
 useWorkspacePersistence 通过 Go 服务在配置目录保存轻量标签/范围/布局索引，SQL 草稿和结果各自独立保存。启动只读取活动页，其他页按需读取，已保存的非活动内容可释放。只传页面白名单字段，不保存连接密码或表单凭据。后台保存不在顶部展示 loading，配置错误继续由 PageHeader 展示。
 
 sidebarWidth/setSidebarWidth 消费App下useSidebarWidth共享状态，连接栏与Agent历史栏同步；宽度继续纳入现有轻量布局索引。恢复通过restoreWidth保留已有宽度；旧快照缺少该字段或不是有效数字时使用272px。Agent打开时工作台保持挂载，调整会触发同一布局保存；展示宽度由useSidebarResize根据窗口边界约束，隐藏/窄屏测量不改写偏好。

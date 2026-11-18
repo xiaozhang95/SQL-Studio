@@ -26,6 +26,7 @@ import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pa
 import { useConnectionGroups } from '../useConnectionGroups'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useDataExport } from '../useDataExport'
+import { useDesktopExit } from '../useDesktopExit'
 import { useObjectManagement } from '../useObjectManagement'
 import { useQueryExecution } from '../useQueryExecution'
 import { useQueryHistory } from '../useQueryHistory'
@@ -45,6 +46,7 @@ export const useWorkspace = (active = true) => {
   const { message, modal } = AntApp.useApp()
   const [refresh, setRefresh] = useState(0)
   const [connectionModal, setConnectionModal] = useState(false)
+  const [desktopClosing, setDesktopClosing] = useState(false)
   const [editing, setEditing] = useState<Connection>()
   const {
     tabs,
@@ -302,7 +304,7 @@ export const useWorkspace = (active = true) => {
   const workspaceReady = storage.ready && historyStore.ready
   const saving = storage.saving || editorSession.pending || historyStore.saving
   useEffect(() => {
-    if (!storage.ready || connectionLoading || connectionError || !restoringConnections) return
+    if (desktopClosing || !storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
     const restored = savedConnections.filter((item) => restoringConnections.includes(item.id))
     void Promise.resolve().then(() => {
@@ -328,7 +330,7 @@ export const useWorkspace = (active = true) => {
     return () => {
       stale = true
     }
-  }, [storage.ready, connectionLoading, connectionError, restoringConnections, savedConnections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
+  }, [desktopClosing, storage.ready, connectionLoading, connectionError, restoringConnections, savedConnections, openObjectsConnection, loadTables, loadTableDetails, explorer.expanded, setTabs])
 
   const redisConnectionStatus = redisConnection ? objects.snapshots[redisConnection.id]?.status : undefined
   const redisDatabase = redisConnection ? selectedRedisDatabase(objects.databases, database, redisConnection.database) : undefined
@@ -340,8 +342,8 @@ export const useWorkspace = (active = true) => {
     [closedPages, setTabs]
   )
   useEffect(() => {
-    if (active && storage.ready && storage.pageReady && redisConnection && !redisConnectionStatus) void openObjectsConnection(redisConnection.id).catch(() => {})
-  }, [active, storage.ready, storage.pageReady, redisConnection, redisConnectionStatus, openObjectsConnection])
+    if (!desktopClosing && active && storage.ready && storage.pageReady && redisConnection && !redisConnectionStatus) void openObjectsConnection(redisConnection.id).catch(() => {})
+  }, [desktopClosing, active, storage.ready, storage.pageReady, redisConnection, redisConnectionStatus, openObjectsConnection])
   useEffect(() => {
     if (storage.pageReady && !database && redisDatabase !== undefined) selectRedisDatabase(tab.id, connectionId, redisDatabase)
   }, [storage.pageReady, database, redisDatabase, selectRedisDatabase, tab.id, connectionId])
@@ -1002,7 +1004,52 @@ export const useWorkspace = (active = true) => {
     }
     setEditing(undefined)
   }
+  useDesktopExit({
+    ready: storage.ready,
+    blocked: uiBlocked || connectionLoading || connectionGroups.saving || closingScope.current,
+    connectionError,
+    snapshot,
+    connections: savedConnections,
+    dirty: designerDirty,
+    flushEditor: () => {
+      editorSession.remember()
+      editorSession.flush()
+    },
+    draftsFor: storage.draftsFor,
+    setClosing: (closing) => {
+      storage.setAutoSavePaused(closing)
+      setDesktopClosing(closing)
+    },
+    stop: () => {
+      request.current?.abort()
+      dataExport.cancel()
+      setRestoringConnections(null)
+    },
+    running: () => Boolean(request.current),
+    persist: storage.flush,
+    closeConnection: objects.closeConnection,
+    clearWorkspace: (empty) => {
+      const removed = new Set(tabs.map((page) => page.id))
+      for (const id of removed) {
+        closedPages.current.add(id)
+        discardTerminal(id)
+      }
+      editorSession.discard(removed)
+      pendingDrafts.current.clear()
+      setTabs(empty.tabs)
+      setActiveTab(empty.activeTab)
+      activeTabRef.current = empty.activeTab
+      setRuns(empty.runs)
+      setResultViews(empty.resultViews)
+      setEditorLayouts(empty.editorLayouts)
+      setExplorer(empty.explorer)
+      setDesignerDirty({})
+      setDesignerBusy({})
+      setHistoryOpen(false)
+    }
+  })
   return {
+    desktopClosing,
     connectionGroups,
     dataExport,
     workspaceReady,

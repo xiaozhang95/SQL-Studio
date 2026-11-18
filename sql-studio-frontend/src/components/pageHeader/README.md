@@ -10,6 +10,6 @@ title 和 titleOffset 为业务 header 的可选居中标题和水平偏移，�
 
 `errors` 接收页面级错误原因，通过共享 ErrorNotice 在顶栏下方合并、去重展示。`errorAction` 放置重试操作，`onErrorClose` 可清理调用方的操作错误。提示区最多占视口高度的四分之一，长错误可滚动阅读。
 
-showDesktopTitle?: boolean 默认 true，只控制 Electron 最上方的 SQL Studio 应用名。AI 助手传 false；它与业务 header 的会话标题是两个独立区域。
+showDesktopTitle?: boolean 默认 true，只控制 Electron 最上方的应用标题。AI 助手沿用默认值，应用标题与业务 header 的会话标题是两个独立区域。
 
-desktopTitle?: string 为 Electron 最上方的标题，缺省 SQL Studio；desktopActive?: boolean 默认 true，控制是否由当前页面同步系统窗口标题。工作台传活动页派生标题及自身 active 状态；AI 页隐藏此标题，业务 header 的会话标题独立显示。
+desktopTitle?: string 为 Electron 最上方的标题，缺省 SQL Studio；desktopActive?: boolean 默认 true，控制是否由当前页面同步系统窗口标题。工作台传活动页派生标题及自身 active 状态；AI 助手、监控和同步页传入当前语言的功能页名称，AI 页业务 header 的会话标题独立显示。

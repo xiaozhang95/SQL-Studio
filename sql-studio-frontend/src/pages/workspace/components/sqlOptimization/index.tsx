@@ -13,7 +13,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
 
   return (
     <Modal
-      title={t('SQL 美化建议')}
+      title={t('优化建议')}
       open={model.open}
       onCancel={model.close}
       onOk={model.apply}

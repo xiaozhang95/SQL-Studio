@@ -76,7 +76,7 @@ flowchart LR
 5. 表数据页将单元格和新行修改保留为草稿，显式保存时逐项提交；已有行更新、删除要求完整主键，更新还核对原值和表结构。失败保留剩余草稿并报告已成功数量，整批不保证事务原子性。视图和不支持字段不能直接编辑。
 6. 页面草稿和结果通过工作区索引与分片保存，恢复不执行 SQL，未完成运行标记为中断；未提交的数据编辑不承诺刷新后恢复。文件格式与冲突规则见 [用户状态](USER_STATE.md)。
 
-SQL 补全与美化使用共享默认模型。页面、范围或模型变化时取消旧请求，应用建议前再次核对原文档及范围；生成 SQL 只作为建议，不自动执行。SQL、注释和选取的库表结构会作为模型上下文，数据库密码及查询结果不进入 SQL 辅助请求。具备工具执行能力的 [数据库 Agent](AGENT.md) 使用独立的权限和逐次确认流程。
+SQL 补全与优化使用共享默认模型。页面、范围或模型变化时取消旧请求，应用建议前再次核对原文档及范围；生成 SQL 只作为建议，不自动执行。SQL、注释和选取的库表结构会作为模型上下文，数据库密码及查询结果不进入 SQL 辅助请求。具备工具执行能力的 [数据库 Agent](AGENT.md) 使用独立的权限和逐次确认流程。
 
 实现入口见 [工作区业务编排](../sql-studio-frontend/src/pages/workspace/hooks/useWorkspace/README.md)、[查询执行](../sql-studio-frontend/src/pages/workspace/hooks/useQueryExecution/README.md)、[表数据编辑](../sql-studio-frontend/src/pages/workspace/hooks/useDataEditing/README.md)与[数据库适配器](../sql-studio-frontend/src/databases/README.md)。
 

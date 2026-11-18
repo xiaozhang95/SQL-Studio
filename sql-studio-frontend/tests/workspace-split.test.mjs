@@ -171,7 +171,8 @@ test('workbench silently restores the latest index after a conflict and saves ne
     for (const callback of current) callback()
     await settle()
   }
-  render()
+  const initial = render()
+  await assert.rejects(initial.flush(), /尚未就绪/)
   await settle()
   assert.equal(render().ready, true)
   await external.commit({ ...external.snapshot(), activeTab: '', resultHeight: 777 })
@@ -180,6 +181,7 @@ test('workbench silently restores the latest index after a conflict and saves ne
   render()
   await tick()
   assert.equal(render().saving, false)
+  await assert.rejects(render().flush(), /尚未就绪/)
   assert.equal(restored, 1)
   assert.equal(f.doc().index.resultHeight, 777)
   busy = false
@@ -194,6 +196,29 @@ test('workbench silently restores the latest index after a conflict and saves ne
   await tick()
   assert.equal(f.doc().index.resultHeight, 888)
   assert.equal(JSON.parse(f.calls.at(-1).body).revision, 3)
+  snapshot = { ...snapshot, resultHeight: 889 }
+  const latest = render()
+  await latest.flush()
+  assert.equal(f.doc().index.resultHeight, 889, 'explicit exit flush waits for a real commit without running the debounce timer')
+  latest.setAutoSavePaused(true)
+  const expandedGroups = [JSON.stringify(['group', '默认分组']), JSON.stringify(['group', '开发环境'])]
+  snapshot = { ...snapshot, resultHeight: 890, explorer: { ...snapshot.explorer, expanded: expandedGroups } }
+  render()
+  await tick()
+  assert.equal(f.doc().index.resultHeight, 889, 'confirmed desktop exit pauses autosave')
+  const empty = { ...snapshot, tabs: [], activeTab: '', runs: {}, resultViews: {}, editorLayouts: {}, openedConnections: [], runningTabId: '' }
+  await render().flush(empty)
+  await tick()
+  assert.deepEqual(f.doc().index.tabs, [], 'stale autosave cannot restore tabs after the final empty index commit')
+  const reopened = await WorkspaceStore.open()
+  assert.deepEqual(reopened.snapshot().tabs, [], 'a new app session restores no tabs')
+  assert.deepEqual(reopened.snapshot().openedConnections, [], 'a new app session reopens no connections')
+  assert.deepEqual(reopened.snapshot().explorer.expanded, expandedGroups, 'a new app session preserves expanded connection groups')
+  snapshot = { ...empty, resultHeight: 891 }
+  render().setAutoSavePaused(false)
+  render()
+  await tick()
+  assert.equal(f.doc().index.resultHeight, 891, 'failed or cancelled cleanup can resume autosave')
   slots.forEach((entry) => entry?.cleanup?.())
 })
 

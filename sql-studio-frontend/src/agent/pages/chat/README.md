@@ -10,7 +10,7 @@ ChatPage 组合会话列表、回复、思考过程、结果表和输入框。wo
 - [components](components/README.md)
 - [constant](constant/README.md)
 
-业务顶栏保留会话标题，偏移侧栏宽度的一半使其居中于右侧内容区；Electron 最上方的 SQL Studio 应用标题隐藏。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用CHAT.content，按conversationMaxWidth（960px）居中并保留两侧transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
+业务顶栏保留会话标题，偏移侧栏宽度的一半使其居中于右侧内容区；Electron 最上方显示 Logo 和当前语言的「AI 助手」页面标题，并同步系统窗口标题，与监控、同步页使用相同规则。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用CHAT.content，按conversationMaxWidth（960px）居中并保留两侧transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
 
 空会话通过 Welcome 展示引导标题和三类带功能图标的提问示例。
 

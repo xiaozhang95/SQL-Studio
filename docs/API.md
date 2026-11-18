@@ -10,49 +10,49 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 
 路径均相对于 `/api`。开发时经 Vite 同源代理访问 Go。
 
-| 方法   | 路径                          | 说明                                        |
-| ------ | ----------------------------- | ------------------------------------------- |
-| GET    | `/health`                     | 服务健康（不测试数据库）                    |
-| GET | `/workspace` | 读取 v2 工作区轻量索引 |
-| PUT | `/workspace` | revision/index/drafts/results，CAS 增量内容提交 |
-| GET | `/workspace/parts/{id}` | 按64位SHA256读取草稿或结果，不执行SQL |
-| GET    | `/openapi.json`               | OpenAPI 文档                                |
-| GET    | `/connections`                | 连接列表（无密码）                          |
-| GET | `/connection-groups` | 共享分组列表，包含空分组及默认分组 |
-| POST | `/connection-groups` | `{name}` 新建独立分组，返回 string[] |
-| POST | `/connection-groups/rename` | `{name,newName}` 原子重命名及更新成员，返回 `{groups,connections}` |
-| DELETE | `/connection-groups` | 删除分组，成员移入默认分组 |
-| PATCH | `/connections/{id}/group` | `{group}` 移动连接，返回脱敏 Connection |
-| POST   | `/connections`                | 新增或更新连接                              |
-| DELETE | `/connections/{id}`           | 删除本地连接                                |
-| POST   | `/connections/{id}/session`   | 打开/关闭连接或数据库，关闭等待底层连接释放 |
-| POST   | `/connections/test`           | 测试表单连接，返回版本                      |
-| GET    | `/connections/{id}/databases` | 数据库名称列表，Redis 返回逻辑库编号（含空库） |
-| GET | `/connections/{id}/monitor` | 通过已保存连接读取实例或数据库统计 |
-| GET | `/connections/{id}/redis/keys` | 用 SCAN 按模式浏览键 |
-| POST | `/connections/{id}/redis/key` | 读取键类型、TTL、大小及预览 |
-| POST | `/connections/{id}/redis/key/ttl` | 使用 `ref` 读取剩余毫秒数，-1 为永久，-2 为已不存在 |
-| POST | `/connections/{id}/redis/key/change` | 新增 Redis 字符串键，修改键名、值和 TTL，或复制、删除键 |
-| POST | `/connections/{id}/redis/command` | 执行单条 Redis 命令 |
-| GET | `/connections/{id}/redis/channels` | 读取活跃频道、订阅者数及模式订阅数 |
-| POST | `/connections/{id}/redis/subscribe` | 以 NDJSON 查看实时频道或模式订阅 |
-| GET    | `/connections/{id}/schemas` | 数据库内可访问的 schema（含空 schema） |
-| GET    | `/connections/{id}/tables`    | 表和视图列表，PostgreSQL 视图附可选依赖       |
-| GET    | `/connections/{id}/columns`   | 字段列表，MySQL 协议文本列附可选字符集和排序规则 |
-| GET    | `/connections/{id}/indexes`   | 索引列表，含唯一性、类型及按顺序排列的字段  |
-| GET    | `/connections/{id}/foreign-keys` | 外键列表，含引用对象、字段映射和更新、删除规则 |
-| GET    | `/connections/{id}/ddl`       | 对象建表语句                                |
-| GET | `/connections/{id}/export-data` | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
-| POST | `/database-sync/databases` | 读取同步用 MySQL 连接的可见用户库 |
-| POST | `/database-sync/check` | 同引擎同步的只读检查 |
-| POST | `/database-sync/run` | 创建目标库，流式返回同步进度 |
-| POST   | `/connections/{id}/query`     | 执行一条 SQL                                |
-| POST   | `/connections/{id}/query-batch` | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执 |
-| GET    | `/state/{section}`            | 读取配置分区                                |
-| PUT    | `/state/{section}`            | 按修订号保存配置                            |
-| POST   | `/ai/assist`                  | SQL 续写或优化                              |
-| POST   | `/ai/models`                  | 获取服务商模型列表                          |
-| DELETE | `/ai/config`                  | 清除 AI 配置并关闭续写                      |
+| 方法   | 路径                                 | 说明                                                                   |
+| ------ | ------------------------------------ | ---------------------------------------------------------------------- |
+| GET    | `/health`                            | 服务健康（不测试数据库）                                               |
+| GET    | `/workspace`                         | 读取 v2 工作区轻量索引                                                 |
+| PUT    | `/workspace`                         | revision/index/drafts/results，CAS 增量内容提交                        |
+| GET    | `/workspace/parts/{id}`              | 按64位SHA256读取草稿或结果，不执行SQL                                  |
+| GET    | `/openapi.json`                      | OpenAPI 文档                                                           |
+| GET    | `/connections`                       | 连接列表（无密码）                                                     |
+| GET    | `/connection-groups`                 | 共享分组列表，包含空分组及默认分组                                     |
+| POST   | `/connection-groups`                 | `{name}` 新建独立分组，返回 string[]                                   |
+| POST   | `/connection-groups/rename`          | `{name,newName}` 原子重命名及更新成员，返回 `{groups,connections}`     |
+| DELETE | `/connection-groups`                 | 删除分组，成员移入默认分组                                             |
+| PATCH  | `/connections/{id}/group`            | `{group}` 移动连接，返回脱敏 Connection                                |
+| POST   | `/connections`                       | 新增或更新连接                                                         |
+| DELETE | `/connections/{id}`                  | 删除本地连接                                                           |
+| POST   | `/connections/{id}/session`          | 打开/关闭连接或数据库，关闭等待底层连接释放                            |
+| POST   | `/connections/test`                  | 测试表单连接，返回版本                                                 |
+| GET    | `/connections/{id}/databases`        | 数据库名称列表，Redis 返回逻辑库编号（含空库）                         |
+| GET    | `/connections/{id}/monitor`          | 通过已保存连接读取实例或数据库统计                                     |
+| GET    | `/connections/{id}/redis/keys`       | 用 SCAN 按模式浏览键                                                   |
+| POST   | `/connections/{id}/redis/key`        | 读取键类型、TTL、大小及预览                                            |
+| POST   | `/connections/{id}/redis/key/ttl`    | 使用 `ref` 读取剩余毫秒数，-1 为永久，-2 为已不存在                    |
+| POST   | `/connections/{id}/redis/key/change` | 新增 Redis 字符串键，修改键名、值和 TTL，或复制、删除键                |
+| POST   | `/connections/{id}/redis/command`    | 执行单条 Redis 命令                                                    |
+| GET    | `/connections/{id}/redis/channels`   | 读取活跃频道、订阅者数及模式订阅数                                     |
+| POST   | `/connections/{id}/redis/subscribe`  | 以 NDJSON 查看实时频道或模式订阅                                       |
+| GET    | `/connections/{id}/schemas`          | 数据库内可访问的 schema（含空 schema）                                 |
+| GET    | `/connections/{id}/tables`           | 表和视图列表，PostgreSQL 视图附可选依赖                                |
+| GET    | `/connections/{id}/columns`          | 字段列表，MySQL 协议文本列附可选字符集和排序规则                       |
+| GET    | `/connections/{id}/indexes`          | 索引列表，含唯一性、类型及按顺序排列的字段                             |
+| GET    | `/connections/{id}/foreign-keys`     | 外键列表，含引用对象、字段映射和更新、删除规则                         |
+| GET    | `/connections/{id}/ddl`              | 对象建表语句                                                           |
+| GET    | `/connections/{id}/export-data`      | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
+| POST   | `/database-sync/databases`           | 读取同步用 MySQL 连接的可见用户库                                      |
+| POST   | `/database-sync/check`               | 同引擎同步的只读检查                                                   |
+| POST   | `/database-sync/run`                 | 创建目标库，流式返回同步进度                                           |
+| POST   | `/connections/{id}/query`            | 执行一条 SQL                                                           |
+| POST   | `/connections/{id}/query-batch`      | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执                       |
+| GET    | `/state/{section}`                   | 读取配置分区                                                           |
+| PUT    | `/state/{section}`                   | 按修订号保存配置                                                       |
+| POST   | `/ai/assist`                         | SQL 续写或优化                                                         |
+| POST   | `/ai/models`                         | 获取服务商模型列表                                                     |
+| DELETE | `/ai/config`                         | 清除 AI 配置并关闭续写                                                 |
 
 ## 公共约定
 
@@ -74,7 +74,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 - **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
 - **AI 配置**：ai-models 分区使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}`，最多 64 条。model 是实际调用 ID，modelName 为显示名称。相同供应商与模型 ID 不得重复。编辑空 Key 保留该行原值，完整列表一次 CAS 保存，空数组清空。仅支持列表格式。activeId 是 SQL 工具栏与 AI 助手共享的默认记录 ID，可从系统设置模型列表或 AI 助手切换。列表非空且 activeId 为空时，读取和调用使用首条可用记录，保存时写入该 ID。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
-- **AI 调用**：assist 的 action 为 complete/optimize，分别使用 prefix/suffix 或 sql，可附 document、database、table、tables。SQL 三字段合计最多 48000 字节，document 最多 64000 字节，最多 12 表/每表 128 字段。提供 connectionId 时后端解析名称与引擎，忽略客户端伪造的 connection。续写 12 秒，优化 30 秒，模型发现 10 秒，共享 4 并发。不执行生成 SQL，不发送数据库密码或查询结果。模型发现使用本次 Key，或在空 Key 时以 configId 精确指定记录，未知记录拒绝。发现结果须由用户选中并保存为记录。SQL 和 AI 助手调用当前默认记录。
+- **AI 调用**：assist 的 action 为 complete/optimize，分别使用 prefix/suffix 或 sql，可附 document、database、table、tables。SQL 三字段合计最多 48000 字节，document 最多 64000 字节，最多 12 表/每表 128 字段。提供 connectionId 时后端解析名称与引擎，忽略客户端伪造的 connection。续写 12 秒，优化 30 秒，模型发现 10 秒，共享 4 并发。不执行生成 SQL，不发送数据库密码或查询结果。模型发现使用本次 Key，或在空 Key 时以 configId 精确指定记录，未知记录拒绝。发现列表在前端无已有选择时默认选中第一项，由用户确认并保存为记录。SQL 和 AI 助手调用当前默认记录。
 
 会话控制 POST `/connections/{id}/session` 接收 `{open:boolean,database?:string}`；省略 database 为整个连接，指定库名只关闭该库。关闭取消在途请求并等待本服务驱动连接释放，超时或失败不返回成功；关闭后请求拒绝，显式打开会测试真实连通性。不会删除保存的连接，也不会终止其他客户端会话。
 
@@ -129,21 +129,21 @@ PUT /workspace 接受 {revision,index,drafts:{pageId:sql},results:{pageId:RunSta
 
 ## 数据库 Agent
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/agent/sessions` | 会话索引 |
-| POST | `/agent/sessions` | 创建会话，{ensure:true}仅在空列表原子创建默认会话 |
-| GET | `/agent/sessions/{id}` | 分页读取会话事件 |
-| DELETE | `/agent/sessions/{id}` | 删除空闲会话 |
-| PATCH | `/agent/sessions/{id}` | {title}重命名空闲会话，返回更新后的索引信息 |
-| POST | `/agent/chat` | SSE思考、工具与回答 |
-| POST | `/agent/write-confirmation` | {approvalId,allow} 确认或取消当前待执行写入 |
-| POST | `/agent/continue-confirmation` | {approvalId,allow} 确认或停止当前继续请求，确认令牌按用途隔离且只用一次 |
-| GET | `/agent/workspace` | 恢复Agent布局 |
-| PUT | `/agent/workspace` | CAS保存Agent布局 |
-| GET | `/agent/settings` | 读取共享DeepSeek脱敏配置 |
-| PUT | `/agent/settings` | 用 `{configId}` 选择已添加模型 |
-| DELETE | `/agent/settings` | 清除共享DeepSeek配置 |
+| 方法   | 路径                           | 说明                                                                    |
+| ------ | ------------------------------ | ----------------------------------------------------------------------- |
+| GET    | `/agent/sessions`              | 会话索引                                                                |
+| POST   | `/agent/sessions`              | 创建会话，{ensure:true}仅在空列表原子创建默认会话                       |
+| GET    | `/agent/sessions/{id}`         | 分页读取会话事件                                                        |
+| DELETE | `/agent/sessions/{id}`         | 删除空闲会话                                                            |
+| PATCH  | `/agent/sessions/{id}`         | {title}重命名空闲会话，返回更新后的索引信息                             |
+| POST   | `/agent/chat`                  | SSE思考、工具与回答                                                     |
+| POST   | `/agent/write-confirmation`    | {approvalId,allow} 确认或取消当前待执行写入                             |
+| POST   | `/agent/continue-confirmation` | {approvalId,allow} 确认或停止当前继续请求，确认令牌按用途隔离且只用一次 |
+| GET    | `/agent/workspace`             | 恢复Agent布局                                                           |
+| PUT    | `/agent/workspace`             | CAS保存Agent布局                                                        |
+| GET    | `/agent/settings`              | 读取共享DeepSeek脱敏配置                                                |
+| PUT    | `/agent/settings`              | 用 `{configId}` 选择已添加模型                                          |
+| DELETE | `/agent/settings`              | 清除共享DeepSeek配置                                                    |
 
 同源 `/api/agent` 路由复用单进程服务；Chat 请求 `{sessionId,message,mode?}`，SSE data为JSON，最后done表示结束，error不代表成功。会话布局PUT要求{revision,state}，冲突409；设置与 SQL 续写共用新 ai-models 列表，Agent 设置 PUT 只接收 `{configId}` 切换已添加的模型记录。只读查询使用 `allowWrite: false`、上限 100 行，与 SQL 窗口共享 4 路数据库查询预算。Agent 自身有 2 路执行名额，接收提问前检查，等待确认时释放，获准后重新获取。
 

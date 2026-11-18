@@ -1,15 +1,16 @@
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme } from 'electron'
 
 import { startBackend, waitForService } from './backend.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
+import { createQuitGuard } from './quit.mjs'
 import { createSQLSaves } from './sql-save.mjs'
-import { createStartupScreen } from './startup/index.mjs'
 import { readStartupAppearance } from './startup/appearance.mjs'
+import { createStartupScreen } from './startup/index.mjs'
 import { createDesktopUpdates } from './updates.mjs'
 
 // 开发和发行使用独立目录，与对应环境的 Go 服务保持一致。
@@ -47,6 +48,7 @@ let startupTask
 let shutdownTask
 let saveCleanup
 let allowQuit = false
+let quitGuard
 const startupAbort = new AbortController()
 const developmentURL = 'http://127.0.0.1:15173'
 
@@ -64,7 +66,10 @@ function shutdown(afterStop = () => app.quit()) {
     allowQuit = true
     app.quit()
   })
+  return shutdownTask
 }
+
+const requestExit = (afterStop) => (quitGuard ? quitGuard.request(afterStop) : shutdown(afterStop))
 
 async function checkDevelopmentServices(signal) {
   const response = await fetch(`${developmentURL}/@vite/client`, {
@@ -132,6 +137,40 @@ function createWindow(dark, appIcon, updates) {
   if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(appIcon)
   const contents = mainWindow.webContents
   const isWorkbench = (event) => event.sender === contents && event.senderFrame && event.senderFrame === contents.mainFrame && isAppURL(event.senderFrame.url, origin)
+  quitGuard = createQuitGuard({
+    send: (id) => contents.send('sql-studio:prepare-quit', id),
+    shutdown,
+    confirmForce: async () => {
+      const result = await dialog.showMessageBox(window, {
+        type: 'warning',
+        title: '退出 SQL Studio',
+        message: '工作台没有响应，是否强制退出？',
+        detail: '尚未保存的 SQL 和其他修改可能丢失，连接清理可能无法完成。',
+        buttons: ['取消', '强制退出'],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true
+      })
+      return result.response === 1
+    }
+  })
+  const exitReady = (event, ready) => {
+    if (isWorkbench(event)) quitGuard.setReady(ready)
+  }
+  const exitReceived = (event, id) => {
+    return isWorkbench(event) ? quitGuard.received(id) : false
+  }
+  const exitPrepared = (event, id, allowed) => {
+    if (isWorkbench(event)) quitGuard.respond(id, allowed)
+  }
+  ipcMain.on('sql-studio:quit-ready', exitReady)
+  ipcMain.handle('sql-studio:quit-received', exitReceived)
+  ipcMain.on('sql-studio:quit-prepared', exitPrepared)
+  window.on('close', (event) => {
+    if (allowQuit) return
+    event.preventDefault()
+    void requestExit()
+  })
   const syncTheme = (event, value) => {
     if (!isWorkbench(event) || !validTitleBarTheme(value)) return
     mainWindow?.setBackgroundColor(value.background)
@@ -144,7 +183,7 @@ function createWindow(dark, appIcon, updates) {
     'sql-studio:check-updates': updates.check,
     'sql-studio:download-update': updates.download,
     'sql-studio:open-release': updates.openRelease,
-    'sql-studio:install-update': () => updates.install(shutdown)
+    'sql-studio:install-update': () => updates.install(requestExit)
   }
   for (const [channel, action] of Object.entries(desktopActions)) {
     ipcMain.handle(channel, async (event) => {
@@ -178,11 +217,21 @@ function createWindow(dark, appIcon, updates) {
   }
   const resetSaves = () => void saves.reset()
   contents.on('did-start-navigation', ({ isMainFrame, isSameDocument }) => {
-    if (isMainFrame && !isSameDocument) resetSaves()
+    if (isMainFrame && !isSameDocument) {
+      quitGuard.reset()
+      resetSaves()
+    }
   })
-  contents.on('render-process-gone', resetSaves)
+  contents.on('render-process-gone', () => {
+    quitGuard.reset()
+    resetSaves()
+  })
   contents.once('destroyed', () => {
     ipcMain.removeListener('sql-studio:titlebar-theme', syncTheme)
+    ipcMain.removeListener('sql-studio:quit-ready', exitReady)
+    ipcMain.removeHandler('sql-studio:quit-received')
+    ipcMain.removeListener('sql-studio:quit-prepared', exitPrepared)
+    quitGuard.reset()
     for (const channel of Object.keys(desktopActions)) ipcMain.removeHandler(channel)
     for (const channel of Object.keys(saveActions)) ipcMain.removeHandler(channel)
     resetSaves()
@@ -240,16 +289,13 @@ if (dataError) {
   app.on('before-quit', (event) => {
     if (allowQuit) return
     event.preventDefault()
-    shutdown()
+    void requestExit()
   })
   startupTask = app
     .whenReady()
     .then(async () => {
       if (!app.isPackaged) await checkDevelopmentServices(startupAbort.signal)
-      const [appearance, { icon, appIcon }] = await Promise.all([
-        readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors),
-        loadIcons()
-      ])
+      const [appearance, { icon, appIcon }] = await Promise.all([readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors), loadIcons()])
       startupAbort.signal.throwIfAborted()
       const desktop = createWindow(appearance.dark, appIcon, createDesktopUpdates(trace))
       startupScreen = await createStartupScreen(desktop.window, { icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })

@@ -1,4 +1,4 @@
-import { BulbOutlined, CodeOutlined, DownloadOutlined, FormatPainterOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
@@ -127,20 +127,13 @@ export default function QueryEditor({ model, themeMode }: Props) {
                 />
               </div>
             </Tooltip>
-            <ToolbarButton
-              label={t('SQL 美化')}
-              hint={aiModelHint}
-              icon={<FormatPainterOutlined />}
-              disabled={!ai.configured || !hasSQL || running}
-              loading={ai.loading}
-              onClick={() => void ai.optimize()}
-            />
+            <ToolbarButton label={t('优化')} hint={aiModelHint} icon={<BulbOutlined />} disabled={!ai.configured || !hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
           </div>
         )}
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
-          <ToolbarButton label={t('导入 SQL')} icon={<UploadOutlined />} loading={importing} disabled={running} />
+          <ToolbarButton label={t('导入')} icon={<UploadOutlined />} loading={importing} disabled={running} />
         </Upload>
-        <ToolbarButton label={t('导出 SQL')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
+        <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
       </QueryToolbar>
       <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearImportError} />

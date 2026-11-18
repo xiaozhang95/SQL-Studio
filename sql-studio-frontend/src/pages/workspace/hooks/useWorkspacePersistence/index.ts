@@ -20,6 +20,8 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   const store = useRef<WorkspaceStore | null>(null)
   const current = useRef({ snapshot, restore, options })
   const available = useRef(false)
+  const autoSavePaused = useRef(false)
+  const [savePaused, setSavePaused] = useState(false)
   const inFlight = useRef<WorkspaceTab[]>([])
   const syncRedisDatabases = useCallback(() => {
     const { snapshot, options } = current.current
@@ -131,14 +133,14 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   }, [active, ready, retry, epoch, repository])
 
   useEffect(() => {
-    if (!ready || !available.current) return
+    if (savePaused || !ready || !available.current) return
     const token = ++version.current
     const repository = store.current
     if (!pageReady) return
     dirtySince.current ??= Date.now()
     const delay = Math.min(500, Math.max(0, 3000 - (Date.now() - dirtySince.current)))
     const timer = window.setTimeout(() => {
-      if (!available.current || store.current !== repository) return
+      if (autoSavePaused.current || !available.current || store.current !== repository) return
       dirtySince.current = null
       setSaving(true)
       void save(snapshot)
@@ -148,7 +150,7 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
         })
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [ready, snapshot, pageReady, repository, save])
+  }, [ready, snapshot, pageReady, repository, save, savePaused])
   async function draftsFor(pages: WorkspaceTab[], signal?: AbortSignal) {
     const repository = store.current
     const output: WorkspaceTab[] = []
@@ -164,6 +166,15 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
     return output
   }
   return {
+    setAutoSavePaused: (paused: boolean) => {
+      autoSavePaused.current = paused
+      setSavePaused(paused)
+    },
+    flush: async (value = current.current.snapshot) => {
+      if (!available.current || !store.current) throw new Error('工作区尚未就绪，无法安全退出')
+      await save(value)
+      if (!available.current) throw new Error('工作区保存失败，请重试退出')
+    },
     ready,
     pageReady,
     pageLoadFailed,

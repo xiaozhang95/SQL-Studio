@@ -5,6 +5,25 @@ contextBridge.exposeInMainWorld('sqlStudioDesktop', {
   titleBarHeight: process.platform === 'darwin' ? 24 : 32,
   setTitleBarTheme: (value) => ipcRenderer.send('sql-studio:titlebar-theme', value),
   openConsole: () => ipcRenderer.invoke('sql-studio:open-console'),
+  onBeforeQuit: (handler) => {
+    const prepare = (_event, id) => {
+      if (typeof id !== 'string') return
+      ipcRenderer
+        .invoke('sql-studio:quit-received', id)
+        .then(async (accepted) => {
+          if (accepted !== true) return
+          const allowed = await handler()
+          ipcRenderer.send('sql-studio:quit-prepared', id, allowed === true)
+        })
+        .catch(() => ipcRenderer.send('sql-studio:quit-prepared', id, false))
+    }
+    ipcRenderer.on('sql-studio:prepare-quit', prepare)
+    ipcRenderer.send('sql-studio:quit-ready', true)
+    return () => {
+      ipcRenderer.removeListener('sql-studio:prepare-quit', prepare)
+      ipcRenderer.send('sql-studio:quit-ready', false)
+    }
+  },
   saveFile: {
     begin: (filename, filterName) => ipcRenderer.invoke('sql-studio:save-begin', filename, filterName),
     append: (id, bytes) => ipcRenderer.invoke('sql-studio:save-append', id, bytes),

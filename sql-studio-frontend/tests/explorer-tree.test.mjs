@@ -25,6 +25,38 @@ test('shared groups include empty folders, deduplicate member groups and filter 
   assert.equal(empty.nodes.length, 3)
 })
 
+test('expanded empty groups and loaded connections show noninteractive hints, while pending and failed requests stay distinct', () => {
+  const groupKey = key('group', '空分组')
+  const group = buildExplorerTree([], {}, [groupKey], '', {}, ['空分组']).byKey.get(groupKey)
+  assert.equal(group.children[0].title, '暂无连接')
+  assert.equal(group.children[0].selectable, false)
+  assert.equal(group.children[0].isLeaf, true)
+  assert.equal(explorerQueryScope(group.children[0], true), undefined)
+
+  for (const type of ['mysql', 'mariadb', 'postgresql', 'greptimedb', 'redis']) {
+    const connection = { id: type, name: type, group: '空分组', type, host: 'fixture', port: 1 }
+    const connectionKey = key('connection', type)
+    const expanded = [groupKey, connectionKey]
+    const render = (state, search = '') => buildExplorerTree([connection], state ? { [type]: state } : {}, expanded, search)
+    const loaded = render({ status: 'connected', databases: [] })
+    const hint = loaded.byKey.get(connectionKey).children[0]
+    assert.equal(hint.title, '暂无数据库', type)
+    assert.equal(hint.selectable, false)
+    assert.equal(hint.isLeaf, true)
+    assert.equal(explorerQueryScope(hint, true), undefined)
+    assert.ok(loaded.loadedKeys.includes(connectionKey))
+    for (const state of [undefined, { status: 'loading', databases: [] }]) {
+      const pending = render(state)
+      assert.equal(pending.byKey.get(connectionKey).children, undefined)
+      assert.equal(pending.ready, false)
+    }
+    const failure = render({ status: 'error', databases: [], error: 'permission denied' }).byKey.get(connectionKey).children[0]
+    assert.equal(failure.retry, 'connection')
+    assert.equal(failure.title, 'permission denied')
+    assert.equal(render({ status: 'connected', databases: [] }, 'missing').byKey.has(connectionKey), false)
+  }
+})
+
 const connections = [
   { id: 'a', name: 'A', group: '默认分组', host: 'fixture', port: 3306 },
   { id: 'b', name: 'B', group: '默认分组', host: 'fixture', port: 3306 }
@@ -100,6 +132,42 @@ test('cached columns and indexes are constructed only when their own group is ex
   )
 })
 
+test('loaded empty metadata keeps table, view and detail categories expandable without creating actionable objects', () => {
+  const table = 't_00000'
+  const initial = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big')]
+  const expanded = [...initial, key('tables', 'a', 'big'), key('views', 'a', 'big'), key('table', 'a', 'big', table)]
+  for (const kind of ['columns', 'indexes', 'foreign-keys']) expanded.push(key(kind, 'a', 'big', table))
+  const state = { ...snapshot, tables: { big: [tables[0]] }, details: { [key('big', table)]: { columns: [], indexes: [], foreignKeys: [] } } }
+  const tree = buildExplorerTree(connections.slice(0, 1), { a: state }, expanded, '')
+  for (const [kind, title] of [
+    ['views', '暂无视图'],
+    ['columns', '暂无字段'],
+    ['indexes', '暂无索引'],
+    ['foreign-keys', '暂无外键']
+  ]) {
+    const parent = tree.byKey.get(key(kind, 'a', 'big', ...(kind === 'views' ? [] : [table])))
+    assert.equal(parent.isLeaf, false)
+    const hint = parent.children[0]
+    assert.equal(hint.title, title)
+    assert.equal(hint.selectable, false)
+    assert.equal(hint.isLeaf, true)
+    assert.equal(explorerQueryScope(hint, true), undefined)
+    assert.equal(hint.retry, undefined)
+  }
+  const empty = buildExplorerTree(connections.slice(0, 1), { a: { ...snapshot, tables: { big: [] } } }, expanded, '')
+  assert.equal(empty.byKey.get(key('tables', 'a', 'big')).children[0].title, '暂无表')
+  assert.equal(empty.byKey.get(key('views', 'a', 'big')).children[0].title, '暂无视图')
+  const pending = buildExplorerTree(connections.slice(0, 1), { a: { ...snapshot, tables: {}, loadingTables: ['big'] } }, expanded, '')
+  assert.equal(pending.byKey.get(key('database', 'a', 'big')).children, undefined)
+  assert.equal(pending.ready, false)
+  const failed = buildExplorerTree(connections.slice(0, 1), { a: { ...snapshot, tables: {}, tableErrors: { big: 'load failed' } } }, expanded, '')
+  assert.equal(failed.byKey.get(key('database', 'a', 'big')).children[0].retry, 'database')
+  assert.equal(
+    [...failed.byKey.values()].some((node) => node.kind.startsWith('empty-')),
+    false
+  )
+})
+
 test('foreign key nodes preserve column mapping and distinguish unsupported and empty metadata', () => {
   const table = 't_00000'
   const groupKey = key('foreign-keys', 'a', 'big', table)
@@ -109,7 +177,10 @@ test('foreign key nodes preserve column mapping and distinguish unsupported and 
     buildExplorerTree(connections, { a: { ...snapshot, details: { [detailKey]: { columns: [], indexes: [], foreignKeys, foreignKeyError } } } }, expanded, '').byKey
 
   assert.equal(render(undefined).has(groupKey), false)
-  assert.deepEqual(render([]).get(groupKey).children, [])
+  const empty = render([]).get(groupKey).children[0]
+  assert.equal(empty.title, '暂无外键')
+  assert.equal(empty.selectable, false)
+  assert.equal(empty.isLeaf, true)
   const failed = render(undefined, '外键加载失败')
   assert.equal(failed.get(groupKey).children[0].retry, 'table')
   assert.ok(failed.has(key('columns', 'a', 'big', table)))
@@ -183,4 +254,36 @@ test('PostgreSQL shows database/schema/category/table and preserves full action 
   assert.equal(new Set(tree.byKey.keys()).size, tree.byKey.size)
   const search = buildExplorerTree(connections, { a: state }, expanded, 'empty', layout)
   assert.equal(search.byKey.get(key('database', 'a', 'big')).children[0].title, 'empty')
+})
+
+test('empty PostgreSQL schema lists and sibling category hints retain their exact scope', () => {
+  const layout = { a: { tableIdentity: explorerTableIdentity } }
+  const initial = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', 'big')]
+  const state = { ...snapshot, schemas: { big: [] }, tables: { big: [] } }
+  const render = (state, expanded = initial) => buildExplorerTree(connections.slice(0, 1), { a: state }, expanded, '', layout)
+  const empty = render(state).byKey.get(key('database', 'a', 'big')).children[0]
+  assert.equal(empty.title, '暂无 Schema')
+  assert.equal(empty.selectable, false)
+  assert.equal(empty.isLeaf, true)
+  assert.equal(render({ ...state, tables: {} }).byKey.get(key('database', 'a', 'big')).children, undefined)
+
+  const schemas = ['a.b', 'a/b']
+  const expanded = [...initial]
+  for (const schema of schemas) for (const kind of ['schema', 'tables', 'views']) expanded.push(key(kind, 'a', 'big', schema))
+  const tree = render({ ...state, schemas: { big: schemas } }, expanded)
+  const hints = []
+  for (const schema of schemas) {
+    for (const [kind, title] of [
+      ['tables', '暂无表'],
+      ['views', '暂无视图']
+    ]) {
+      const hint = tree.byKey.get(key(kind, 'a', 'big', schema)).children[0]
+      assert.equal(hint.title, title)
+      assert.equal(hint.owner, 'a')
+      assert.equal(hint.database, 'big')
+      assert.equal(JSON.parse(hint.key).at(-1), schema)
+      hints.push(hint.key)
+    }
+  }
+  assert.equal(new Set(hints).size, hints.length)
 })

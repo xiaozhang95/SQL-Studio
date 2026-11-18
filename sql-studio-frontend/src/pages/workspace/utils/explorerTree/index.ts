@@ -75,8 +75,8 @@ export function buildExplorerTree(
     byKey.set(node.key, node)
     return node
   }
-  const placeholder = (kind: string, title: string, id: string, db: string, table = '') => {
-    const node = make(kind, title, id, db, table)
+  const placeholder = (kind: string, title: string, id: string, db: string, table = '', name?: string) => {
+    const node = make(kind, title, id, db, table, name)
     node.selectable = false
     return node
   }
@@ -147,7 +147,6 @@ export function buildExplorerTree(
               ['views', '视图', true]
             ] as const) {
               const items = entries.filter((table) => table.type.includes('VIEW') === view)
-              if (view && !items.length) continue
               const category = make(kind, title, id, db, '', schema)
               category.schema = schema
               category.isLeaf = false
@@ -177,7 +176,7 @@ export function buildExplorerTree(
                 const addDetails = <T extends { name: string }>(
                   kind: string,
                   title: string,
-                  empty: string | undefined,
+                  empty: string,
                   leaf: string,
                   entries: T[],
                   describe: (item: ExplorerNode, entry: T) => void,
@@ -199,7 +198,7 @@ export function buildExplorerTree(
                     describe(item, entry)
                     return item
                   })
-                  if (!group.children.length && empty) group.children = [placeholder(`empty-${kind}`, empty, id, db, table.name)]
+                  if (!group.children.length) group.children = [placeholder(`empty-${kind}`, empty, id, db, table.name)]
                 }
                 addDetails('columns', '字段', '暂无字段', 'column', details.columns, (item, column) => {
                   item.primary = column.key === 'PRI'
@@ -213,7 +212,7 @@ export function buildExplorerTree(
                   addDetails(
                     'foreign-keys',
                     '外键',
-                    undefined,
+                    '暂无外键',
                     'foreign-key',
                     details.foreignKeys ?? [],
                     (item, foreignKey) => {
@@ -224,9 +223,7 @@ export function buildExplorerTree(
                 return node
               })
               if (!category.children.length) {
-                const empty = make('empty-tables', '暂无表', id, db, '', schema)
-                empty.selectable = false
-                category.children = [empty]
+                category.children = [placeholder(`empty-${kind}`, view ? '暂无视图' : '暂无表', id, db, '', schema)]
               }
             }
           }
@@ -249,6 +246,7 @@ export function buildExplorerTree(
               databaseNode.children.push(node)
               if (open.has(node.key)) addCategories(node, entries, schema)
             }
+            if (!databaseNode.children.length) databaseNode.children = [placeholder('empty-schemas', '暂无 Schema', id, db)]
           }
           return databaseNode
         })
@@ -256,6 +254,7 @@ export function buildExplorerTree(
         byKey.delete(root.key)
         continue
       }
+      if (root.children && !root.children.length) root.children = [placeholder('empty-databases', '暂无数据库', id, '')]
     } else if (state?.status === 'error') {
       // 本次加载已结束；阻止 Tree 因受控展开状态重复 loadData，重试由显式入口触发。
       loadedKeys.push(root.key)
@@ -269,6 +268,7 @@ export function buildExplorerTree(
     // 关闭分组时仍保留连接根节点，搜索可以显式展开分组展示匹配项。
     group.children!.push(root)
   }
+  for (const group of groups.values()) if (!group.children!.length && (open.has(group.key) || term)) group.children = [placeholder('empty-connections', '暂无连接', group.owner, '')]
   const expandedKeys = expanded.filter((value) => byKey.has(value))
   if (term) for (const group of groups.values()) if (!expandedKeys.includes(group.key)) expandedKeys.push(group.key)
   return { nodes, loadedKeys, expandedKeys, byKey, ready }

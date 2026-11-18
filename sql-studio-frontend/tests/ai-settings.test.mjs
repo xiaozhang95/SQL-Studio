@@ -207,7 +207,7 @@ test('旧单条格式不转换为列表', async () => {
   }
 })
 
-test('添加弹框测试连接不自动选择模型，重复供应商模型不可提交', async () => {
+test('添加弹框读取列表后默认选择首个模型，重复供应商模型不可提交', async () => {
   const selected = []
   const f = harness('../src/components/aiSettings/hooks/useModelEditor/index.ts')
   const configured = [entry('saved', 'deepseek-flash')]
@@ -223,9 +223,8 @@ test('添加弹框测试连接不自动选择模型，重复供应商模型不�
     f.render(...args).changeProvider('deepseek')
     f.render(...args).changeKey('fixture-new-key')
     await f.render(...args).refreshModels()
-    assert.equal(f.render(...args).draft.model, '')
-    assert.equal(f.render(...args).canCommit, false)
-    f.render(...args).changeModel('deepseek-flash')
+    assert.equal(f.render(...args).draft.model, 'deepseek-flash')
+    assert.equal(f.render(...args).draft.modelName, 'DeepSeek Flash')
     assert.equal(f.render(...args).duplicate, true)
     assert.equal(f.render(...args).canCommit, false)
     f.render(...args).changeModel('deepseek-v4-pro')

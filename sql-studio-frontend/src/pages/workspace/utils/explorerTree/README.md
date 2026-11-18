@@ -1,6 +1,6 @@
 # 对象树数据构建
 
-`buildExplorerTree(connections,snapshots,expanded,search)` 返回 nodes、loadedKeys、expandedKeys 与 byKey。仅构建已展开层级的纯数据，折叠分支不创建字段/索引/外键节点，不生成 React 元素或菜单。titleRender 只渲染可见节点，右键时才创建菜单。
+`buildExplorerTree(connections,snapshots,expanded,search)` 返回 nodes、loadedKeys、expandedKeys 与 byKey。仅构建已展开层级的纯数据，折叠分支不创建字段/索引/外键节点，不生成 React 元素或菜单。titleRender 只渲染可见节点，右键时才创建菜单。空连接分组、已加载的数据库/Schema 列表和表、视图、字段、索引、外键分类使用 `empty-*` 叶节点提示，统一不可选中；未加载与失败状态继续等待请求或保留重试。空视图分类始终保留，外键分类仅在引擎返回外键元数据或对应错误时提供。空态 key 包含父分支的连接、数据库、表或 schema，避免相邻空 Schema 的提示互相覆盖。
 
 `explorerQueryScope(node,connected,layout?)` 从已连接的连接节点提取连接，或从数据库及下级可见节点提取连接、库及 schema；无有效目标返回 undefined，表不作为查询预选项。
 

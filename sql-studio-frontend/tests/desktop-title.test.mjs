@@ -33,10 +33,17 @@ test('真实桌面标题组件同步可见内容和 document.title，切页切�
   assert.equal(f.document.title, 'other · 查询 2')
   f.render({})
   assert.equal(f.document.title, 'SQL Studio')
+  for (const title of ['AI 助手', '监控指标', '同步数据库', 'AI assistant']) {
+    assert.match(f.render({ title }), new RegExp(title))
+    assert.equal(f.document.title, title)
+    f.render({ active: false, title: 'background · 查询 9' })
+    assert.equal(f.document.title, title)
+  }
 })
 
-test('AI 页隐藏最上方标题，后台工作台和普通浏览器不改写窗口标题', () => {
+test('默认标题与显式隐藏独立，后台工作台和普通浏览器不改写窗口标题', () => {
   const f = harness()
+  assert.match(f.render({}), /SQL Studio/)
   assert.doesNotMatch(f.render({ showTitle: false }), /SQL Studio/)
   assert.equal(f.document.title, 'SQL Studio')
   f.render({ active: false, title: 'background · 查询 9' })

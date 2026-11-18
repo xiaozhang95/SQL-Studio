@@ -1,5 +1,7 @@
 # 前端回归
 
+desktop-exit.test.mjs 执行退出编排，覆盖实时编辑缓冲及未常驻草稿参与确认、取消/导出取消不清理、空查询标签保存选择、持久化与连接回执的顺序、最终空索引提交后才清空全部类型标签及结果、保留默认和自定义分组的展开/收起状态并清理数据库后代、冲突和失败保留窗口、所有连接继续尝试、去重及最多 4 个并发。workspace-split.test.mjs 检查退出时暂停自动保存，防止旧快照覆盖空工作区，并验证重新打开得到无标签、无已打开连接而分组展开状态保留的工作区，以及失败后可恢复自动保存。Electron 的 quit.test.mjs 验证实际握手控制器的重复关闭、取消、迟到回执、无响应及更新回调顺序。接口使用替身，不访问业务数据库；原生窗口与提示另用隔离页面验证。
+
 query-output.test.mjs执行真实useQueryMessageScroll，验证新增回执及ResizeObserver高度变化跟随底部、滚轮/滚动条/键盘向上阅读暂停、返回底部恢复、跨分页与手动分页、新批次重置、静态历史从顶部阅读及卸载清理。使用受控DOM/Observer替身，不执行SQL；浏览器另验证真实消息区滚动与50条分页边界。
 
 agent.test.mjs的会话列表刷新回归覆盖当前项缺失、空列表、列表重排、草稿/展开与正文保留、最新响应优先、迟到失败与手动改选隔离；后台不创建默认会话、不读取其他正文。显式删除当前项仍确保并激活默认会话，删除其他项不自动切换。请求使用受控替身，不删除真实会话或访问数据库。
@@ -53,7 +55,7 @@ PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test
 
 MySQL 真实窗口编排另覆盖连续 160 条写入回执：所有语句及历史保留，最后查询同一会话变量得到预期值，整个批次不创建全局成功通知。浏览器大脚本回归同时核对控制台没有 Maximum update depth exceeded、页面保持可操作且完成数量与脚本切分数量一致。
 
-explorer-tree.test.mjs 额外验证 PostgreSQL 空 schema、schema 分类隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。
+explorer-tree.test.mjs 额外验证空连接分组、数据库/Schema 列表及表、视图、字段、索引、外键的文本提示与非交互边界，区分未加载、加载中、失败和空数据；覆盖 PostgreSQL 相邻空 Schema 的 key 隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。Redis 键树只从实际键生成分组，不会产生空文件夹；空扫描页的提示由 KeyBrowser 提供。
 
 Schema 回归覆盖结构列表拆列、同名/特殊标识符、指定 schema 下补全、AI 引用与历史/刷新请求范围；后端用同一物理连接的替身检查 search_path 参数化及只读边界。
 
@@ -75,7 +77,7 @@ workspace-pages.test.mjs验证提交前标签校正：未知/空/有效schema、
 
 page-title.test.mjs 验证查询页标题随所属数据库/Schema 变化、清空范围回退、多页与恢复隔离、导入文件名及原始 title/SQL 保留、旧执行来源不覆盖当前标题，以及非查询页标题保持原值。不执行 SQL，不访问用户配置。
 
-desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 document.title：切页/切库使用最新标题，空工作区回退，AI 页隐藏，后台工作台不覆盖，浏览器不改写。主题 token 和 effect 调度使用替身，不代表原生 Electron 窗口视觉检查。
+desktop-title.test.mjs 转译真实 DesktopTitleBar 并检查渲染内容与 document.title：切页/切库使用最新标题，空工作区默认显示 SQL Studio、可显式隐藏，AI 助手、监控和同步等二级页使用功能名称，后台工作台不覆盖，浏览器不改写。主题 token 和 effect 调度使用替身，不代表原生 Electron 窗口视觉检查。
 
 review-fixes.test.mjs 覆盖快捷键可见性、目标、模态框与组合键边界，以及历史分页。workspace-split.test.mjs 覆盖 CAS 连续冲突保留内容、批次最终结果一次上传及过期运行标记提交。SQL 编排测试读取 useQueryExecution 的实际 executeSQL。这些检查使用测试替身，CodeMirror、HTTP、数据库与下载仍需分别验证。
 

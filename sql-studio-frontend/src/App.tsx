@@ -45,6 +45,7 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
       <ContentLoading label={t('正在加载连接…')} />
     </DatabasePage>
   )
+  if (model.desktopClosing) return <ContentLoading label={t('正在保存工作区并关闭全部连接…')} style={{ height: '100dvh' }} />
   return (
     <>
       <div style={{ display: active ? undefined : 'none' }}>

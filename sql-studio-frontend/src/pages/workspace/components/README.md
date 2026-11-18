@@ -34,7 +34,7 @@
 
 - [AI 配置](../../../components/aiSettings/README.md)：顶部模型与 API Key 弹窗。
 
-- [SQL 优化预览](sqlOptimization/README.md)：原文、建议和说明。
+- [优化预览](sqlOptimization/README.md)：原文、建议和说明。
 
 - [AI 服务商图标](../../../components/aiProviderIcon/README.md)：按服务商 profile 展示亮暗主题图标。
 

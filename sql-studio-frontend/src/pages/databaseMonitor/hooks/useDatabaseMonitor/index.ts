@@ -15,7 +15,7 @@ export function useDatabaseMonitor(connections: readonly Connection[], initialCo
   const [databaseList, setDatabaseList] = useState<{ connectionId: string; names: string[] }>()
   const [result, setResult] = useState<{ snapshot?: MonitorSnapshot; history: readonly MonitorSnapshot[]; error?: string }>()
   const [refreshCount, setRefreshCount] = useState(0)
-  const [refreshInterval, setRefreshInterval] = useState<RefreshInterval>(0)
+  const [refreshInterval, setRefreshInterval] = useState<RefreshInterval>(5)
   const [loading, setLoading] = useState(false)
   const sampleRequest = useRef<AbortController | null>(null)
   const connection = connections.find((item) => item.id === connectionId)

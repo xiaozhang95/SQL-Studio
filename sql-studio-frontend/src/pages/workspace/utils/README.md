@@ -12,6 +12,7 @@
 
 - [单库请求代](databaseLifecycle/README.md)。
 - [范围关闭与 SQL 汇总](scopeClose/README.md)。
+- [Electron 退出编排](desktopExit/README.md)：确认后严格等待保存和全部连接释放，保留连接分组展开状态。
 
 - [目标范围状态更新](workspaceTransitions/README.md)。
 - [纯数据对象树](explorerTree/README.md)。

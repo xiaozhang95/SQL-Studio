@@ -31,8 +31,11 @@ export function useModelEditor(entries: readonly AISettingsEntry[], onCommit: (e
     try {
       const models = await getAIAdapter(value.provider).listModels(value.apiKey.trim(), controller.signal, value.configured ? value.id : undefined)
       if (session !== generation.current || controller.signal.aborted) return
-      // Model discovery never selects or substitutes a model.
-      setDraft((current) => (current ? { ...current, models, modelsLoading: false, modelsError: '' } : null))
+      setDraft((current) => {
+        if (!current) return null
+        const selected = current.model ? models.find((model) => model.id === current.model) : models[0]
+        return { ...current, models, model: selected?.id ?? current.model, modelName: selected?.name ?? current.modelName, modelsLoading: false, modelsError: '' }
+      })
     } catch (cause) {
       if (session === generation.current && !controller.signal.aborted)
         setDraft((current) => (current ? { ...current, modelsLoading: false, modelsError: cause instanceof Error ? cause.message : '连接失败' } : null))

@@ -17,10 +17,10 @@ pnpm install --frozen-lockfile
 
 在 `sql-studio-electron` 目录执行。
 
-| 命令 | 用途 |
-| --- | --- |
+| 命令         | 用途                                                   |
+| ------------ | ------------------------------------------------------ |
 | `pnpm start` | 连接已运行的 Vite 和 Go 服务，打开 Electron 调试窗口。 |
-| `pnpm build` | 构建当前前后端并打包，产物写到 `release/`。 |
+| `pnpm build` | 构建当前前后端并打包，产物写到 `release/`。            |
 
 调试时，在 `sql-studio-backend` 目录手动执行 `go run main.go`，在 `sql-studio-frontend` 目录手动执行 `pnpm dev`，最后在本目录执行 `pnpm start`。Electron 检查 `http://127.0.0.1:15173` 上的 Vite 服务和它转发到 Go `127.0.0.1:18080` 的 `/api/health`。检查失败时，终端和弹窗会提示对应的启动命令。调试窗口直接加载 Vite 提供的前端源码，支持热更新。
 
@@ -37,7 +37,7 @@ Windows 在 `release/` 下生成两份分发产物。
 
 ### GitHub Release 与更新
 
-「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源；网页端隐藏该入口。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，点击“重启并安装”后直接退出本地 Go 服务并启动安装，不再弹出二次确认。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
+「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源；网页端隐藏该入口。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，点击“重启并安装”后先完成同一退出确认与连接清理流程，再退出本地 Go 服务并启动安装；取消退出不会安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
 
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。
@@ -61,9 +61,9 @@ Windows 打包完成可执行文件编辑后，将生成的应用目录及文件
 
 桌面窗口采用隐藏原生标题背景、保留系统窗口按钮的方式。前端共享的 DesktopTitleBar 提供 macOS 24px、Windows/Linux 32px 高拖动区域，和业务 PageHeader 都使用 Ant Design `colorBgContainer`（`--surface`）；亮色、暗色、跟随系统及工作区/AI 助手切换均沿用同一主题。Windows/Linux 窗口按钮背景通过受限 IPC 同步，macOS 红黄绿按钮位于 x=12/y=6，与缩短的标题栏一起布局。系统级菜单栏仍由操作系统管理。
 
-浏览器与 Electron 共用业务顶栏，最小高度由 Ant Design `controlHeight + paddingSM` 决定。AI 助手隐藏最上方的 SQL Studio 应用名，业务 header 中的会话标题继续保留。
+浏览器与 Electron 共用业务顶栏，最小高度由 Ant Design `controlHeight + paddingSM` 决定。AI 助手在恢复记录期间和聊天页面均显示最上方的 Logo 和当前语言的「AI 助手」页面标题，业务 header 中的会话标题继续保留。
 
-工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。Windows 将 Logo 与标题整体左对齐，左右留白沿用 workspace-inset，默认 12px，Logo 左边缘与下方侧栏搜索框的外边缘对齐；macOS/Linux 继续居中，macOS 左侧保留红黄绿窗口按钮。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 页仍隐藏最上方标题。
+工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。Windows 将 Logo 与标题整体左对齐，左右留白沿用 workspace-inset，默认 12px，Logo 左边缘与下方侧栏搜索框的外边缘对齐；macOS/Linux 继续居中，macOS 左侧保留红黄绿窗口按钮。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 助手、监控和同步页均显示当前语言的功能页名称。
 
 图标唯一来源是 [studio.svg](../sql-studio-frontend/public/studio.svg)，由主题绿色渐变底、数据库圆柱与查询光标组成。开发时直接在内存渲染。`pnpm build` 通过 `scripts/icons.mjs` 生成 `build/icons/icon.png`，electron-builder 据此生成平台图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo。
 
@@ -82,6 +82,10 @@ electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-
 `scripts/electron.mjs` 在启动 Electron 前显式设置 `ELECTRON_MIRROR`，确保 Electron 首次按需下载也走镜像；`electron-builder.cjs` 配置 `electronDownload.mirror` 与 `ELECTRON_BUILDER_BINARIES_MIRROR`，覆盖打包下载。可通过同名环境变量覆盖镜像。保留正常 TLS 与校验和验证。
 
 ## 进程与配置
+
+关闭窗口、应用退出和更新安装共用退出握手。原生窗口先保留，前端同步实时编辑器并按需读取全部查询草稿；存在 SQL 查询标签时提示取消、不保存并退出或保存 SQL 并退出，空查询标签也提供保存选择；未提交表设计/数据修改或正在执行的请求另有提示。取消和文件选择取消保留全部标签及连接。确认后挂起页面并暂停自动保存以取消监控、Agent 和 Redis 订阅，取消并等待 SQL 请求结束，再等待全部已保存连接的关闭回执，最后提交空工作区并清空全部内存标签才通知主进程退出。下次正常启动不恢复这些标签、结果或连接；默认及自定义连接分组保留退出前的展开或收起状态。没有导出为文件的 SQL 不再恢复，连接配置不删除。
+
+保存失败、版本冲突或连接释放失败会显示原因并保留窗口，已成功关闭的连接不自动恢复。重复关闭共享一个任务，旧请求回执不能结束新请求；仅当前窗口、主 frame 和同源页面可参与握手。开屏可直接取消启动；工作台崩溃或未接收请求时提供原生“取消/强制退出”提示，强制退出可能丢失未保存内容并跳过连接清理。Web 的关闭与刷新行为保持原样。
 
 桌面调试使用手动启动的 Vite 和 Go 服务，关闭 Electron 后，开发服务继续运行。打包版自动选择 `127.0.0.1` 空闲端口，启动随包 Go 服务，等待 `/api/health` 就绪后加载同源网页。关闭最后一个窗口即退出，打包版会清理自己创建的 Go 子进程。macOS/Linux 最多等待 6 秒，Windows 使用系统进程终止语义。
 
@@ -111,6 +115,7 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 ## 代码与检查
 
 - `src/main.mjs`：窗口、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
+- `src/quit.mjs`：窗口退出握手、请求去重、取消及无响应时的原生确认。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/policy.mjs`：导航边界、权限判定与后端环境隔离。
 - `src/preload.cjs`：标题栏、控制台、更新与原生保存桥接。

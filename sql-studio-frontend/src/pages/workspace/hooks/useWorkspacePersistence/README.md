@@ -1,6 +1,6 @@
 # 按需工作区恢复与保存
 
-useWorkspacePersistence(snapshot,restore,{busy,hydrate,evict}) 读取v2轻量索引，恢复标签、范围、布局，然后仅加载活动页草稿和结果。返回 ready/pageReady/pageLoadFailed/retryPage/draftsFor/saving。活动页未加载时显示等待或重试，编辑器和执行快捷键受保护；切换页面取消旧读取，异步回调核对预期SQL/结果和已关闭标记。
+useWorkspacePersistence(snapshot,restore,{busy,hydrate,evict}) 读取v2轻量索引，恢复标签、范围、布局，然后仅加载活动页草稿和结果。返回 ready/pageReady/pageLoadFailed/retryPage/draftsFor/flush/setAutoSavePaused/saving。flush(snapshot?) 默认使用最新快照，通过现有串行队列严格等待提交；尚未就绪、保存失败或冲突时拒绝，供 Electron 退出阻止过早关闭。setAutoSavePaused(boolean) 默认 false；确认退出时设 true，同步阻止旧定时任务并清除防抖计时，仍允许显式 flush，以保证空工作区提交后不会被旧标签自动保存覆盖；退出失败时恢复 false 并重新安排保存。活动页未加载时显示等待或重试，编辑器和执行快捷键受保护；切换页面取消旧读取，异步回调核对预期SQL/结果和已关闭标记。
 
 保存500ms防抖、持续变化最多等待3秒入队，单在途及最新等待。服务按页面基线只发送变化部分，保留未加载页引用；成功落盘后仅释放非活动、非运行、与已保存版本一致的内容，未保存/失败状态保留在内存。索引及基线不保存全部页面全文。遇到 409 丢弃排队的旧快照，等当前操作结束后读取最新索引并重新加载活动页。初始化或冲突后读取失败时暂时停止写入，窗口重新聚焦后再次读取。故障页可重试，其他页仍可切换。
 
