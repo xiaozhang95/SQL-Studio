@@ -10,7 +10,7 @@ import { DatabaseEngine } from '../src/databases/typings/index.ts'
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
 const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
 const implementation = executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL'))
-async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
+async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBatch = false) {
   const controller = new AbortController()
   const calls = [],
     histories = [],
@@ -25,7 +25,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
     objects: { snapshots: { a: { status: 'connected' } } },
     running: false,
     request: { current: null },
-    getDatabaseAdapter: () => ({ splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL, tableLabel: (table) => table }),
+    getDatabaseAdapter: () => ({ sessionBatch, splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL, tableLabel: (table) => table }),
     message: { error() {}, info() {}, success() {} },
     startRun: () => controller,
     finishRun() {},
@@ -34,6 +34,14 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query') {
       if (input.sql === cancelSQL) controller.abort()
       if (input.sql === failSQL) throw new Error('denied')
       return { isQuery: true, durationMs: 1 }
+    },
+    executeQueryBatch: async (id, database, statements, signal, onStep) => {
+      for (const [index, sql] of statements.entries()) {
+        calls.push({ id, database, sql })
+        if (sql === cancelSQL) controller.abort()
+        signal.throwIfAborted()
+        onStep({ index, result: { columns: [{ name: 'n' }], rows: [['1']], durationMs: 1 } })
+      }
     },
     setTabs: (update) => {
       pages = update(pages)
@@ -77,7 +85,27 @@ test('cancelled USE retains scope and stops subsequent statements', async () => 
   const output = await run('USE first; SELECT 1;', undefined, 'USE first;')
   assert.equal(output.calls.length, 1)
   assert.equal(output.pages[0].database, '')
-  assert.match(output.results[0].statements[0].error, /请求已取消/)
+  assert.equal(output.results[0].cancelled, true)
+  assert.equal(output.results[0].statements[0].cancelled, true)
+  assert.equal(output.results[0].error, undefined)
+  assert.equal(output.histories[0].cancelled, true)
+  assert.equal(output.histories[0].ok, false)
+})
+
+test('cancelled session batch keeps earlier receipts and records only the cancelled statement', async () => {
+  const output = await run('SELECT 1; SELECT SLEEP(3); SELECT 2;', undefined, 'SELECT SLEEP(3);', undefined, 'query', true)
+  const runState = output.results.at(-1)
+  assert.equal(output.calls.length, 2)
+  assert.equal(runState.cancelled, true)
+  assert.deepEqual(runState.statements[0].result.rows, [['1']])
+  assert.equal(runState.statements[1].cancelled, true)
+  assert.deepEqual(
+    output.histories.map(({ ok, cancelled }) => [ok, Boolean(cancelled)]),
+    [
+      [true, false],
+      [false, true]
+    ]
+  )
 })
 
 test('schema follows the originating batch into requests, histories and refresh records', async () => {

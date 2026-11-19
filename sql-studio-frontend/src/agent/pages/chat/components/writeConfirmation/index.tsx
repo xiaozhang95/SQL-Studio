@@ -2,7 +2,6 @@ import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { Button, Descriptions, Flex, Space, Typography } from 'antd'
 
 import ContentCard from '@/components/contentCard'
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { ConfirmationRequest } from '../../../../typings/writeConfirmation'
@@ -12,11 +11,10 @@ import { CodeBlock } from '../codeBlock'
 interface Props {
   value: ConfirmationRequest
   submitting: boolean
-  error: string
   onDecide: (allow: boolean) => Promise<void>
 }
 
-export function WriteConfirmation({ value, submitting, error, onDecide }: Props) {
+export function WriteConfirmation({ value, submitting, onDecide }: Props) {
   const { t } = useTranslation()
 
   const writing = !('kind' in value)
@@ -53,7 +51,6 @@ export function WriteConfirmation({ value, submitting, error, onDecide }: Props)
         ) : (
           <Typography.Text>{value.detail}</Typography.Text>
         )}
-        <ErrorNotice error={error} />
         <Flex gap={CHAT.spacing.detail} wrap>
           <Button type="default" loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
             {continueLabel}

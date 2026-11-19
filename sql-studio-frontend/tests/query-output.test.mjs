@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
-import { defaultOutputView, resultOutputs, statementOutputs } from '../src/pages/workspace/utils/queryOutput/index.ts'
+import { defaultOutputView, executionCancelled, resultOutputs, statementOutputs } from '../src/pages/workspace/utils/queryOutput/index.ts'
 
 const result = (columns = [], rows = [], affectedRows = 1) => ({ columns, rows, affectedRows, rowCount: rows.length, durationMs: 1, truncated: false, isQuery: columns.length > 0, lastInsertId: '' })
 
@@ -62,6 +62,23 @@ test('legacy snapshots and object datasets keep their single result; no output s
   assert.equal(defaultOutputView({ source: '', result: data }, 0, false), '0')
   assert.equal(defaultOutputView({ source: '', result: result() }, 0, false), 'summary')
   assert.equal(defaultOutputView({ source: '' }, 0, false), 'messages')
+})
+
+test('cancellation preserves completed dataset navigation and recognizes older records', () => {
+  const kept = result([{ name: 'id' }], [['1']])
+  const run = {
+    source: '',
+    cancelled: true,
+    statements: [
+      { sql: 'SELECT 1', result: kept },
+      { sql: 'SELECT SLEEP(3)', cancelled: true }
+    ]
+  }
+  assert.equal(defaultOutputView(run, 1, false), 'messages')
+  assert.equal(defaultOutputView(run, 0, false), '0')
+  assert.equal(resultOutputs(run)[0].item.result, kept)
+  assert.equal(executionCancelled({ error: '请求已取消。\n后续 1 条语句未执行。' }), true)
+  assert.equal(executionCancelled({ error: 'canceling statement due to statement timeout' }), false)
 })
 
 function messageScrollHarness(overrides = {}) {

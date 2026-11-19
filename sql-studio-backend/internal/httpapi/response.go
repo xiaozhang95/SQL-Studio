@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -39,13 +40,24 @@ func respond(c *gin.Context, status int, value any) {
 }
 func fail(c *gin.Context, err error) {
 	status := http.StatusBadRequest
+	message := err.Error()
+	var limit *http.MaxBytesError
 	switch {
+	case errors.As(err, &limit):
+		status = http.StatusRequestEntityTooLarge
+		size := fmt.Sprintf("%d B", limit.Limit)
+		if limit.Limit%maxRequestBytes == 0 {
+			size = fmt.Sprintf("%d MiB", limit.Limit/maxRequestBytes)
+		} else if limit.Limit%1024 == 0 && limit.Limit < maxRequestBytes {
+			size = fmt.Sprintf("%d KiB", limit.Limit/1024)
+		}
+		message = fmt.Sprintf("请求体超过大小上限（%s）。", size)
 	case errors.Is(err, fs.ErrNotExist):
 		status = http.StatusNotFound
 	case errors.Is(err, query.ErrBusy):
 		status = http.StatusTooManyRequests
 	}
-	respond(c, status, gin.H{"error": err.Error()})
+	respond(c, status, gin.H{"error": message})
 }
 func decode(c *gin.Context, value any) error {
 	return decodeLimit(c, value, maxRequestBytes)
@@ -79,6 +91,10 @@ func decodeLimit(c *gin.Context, value any, limit int64) error {
 	}
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
+		var limit *http.MaxBytesError
+		if errors.As(err, &limit) {
+			return err
+		}
 		return errors.New("请求必须为单个 JSON 对象")
 	}
 	return nil

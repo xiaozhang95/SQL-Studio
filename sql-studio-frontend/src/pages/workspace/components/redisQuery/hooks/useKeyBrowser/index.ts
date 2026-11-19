@@ -30,6 +30,7 @@ export function useKeyBrowser(id: string, database: number) {
   const [ttl, setTTL] = useState<number | null>(0)
   const [saving, setSaving] = useState(false)
   const [changeError, setChangeError] = useState('')
+  const [lastChange, setLastChange] = useState<RedisKeyChange['action']>()
 
   const clearMissingKey = useCallback((ref: string) => {
     if (selectedRef.current !== ref) return
@@ -148,6 +149,7 @@ export function useKeyBrowser(id: string, database: number) {
     const controller = new AbortController()
     mutation.current = controller
     setSaving(true)
+    setLastChange(change.action)
     setChangeError('')
     try {
       const result = await changeKey(id, database, change.action === 'create' ? undefined : item?.ref, change, controller.signal)
@@ -199,6 +201,7 @@ export function useKeyBrowser(id: string, database: number) {
     setTTL,
     saving,
     changeError,
+    lastChange,
     setChangeError,
     expandedKeys,
     setExpandedKeys,

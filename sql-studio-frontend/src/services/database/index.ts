@@ -1,5 +1,5 @@
 import type { Column, Connection, ConnectionInput, DBForeignKey, DBIndex, DBTable, MonitorSnapshot, QueryRequest, QueryResult } from '@/typings/database'
-import { post, request } from '@/utils/request'
+import { post, postWithinLimit, request } from '@/utils/request'
 
 const connectionPath = (id: string) => `/connections/${encodeURIComponent(id)}`
 const tableQuery = (database: string, table: string) => new URLSearchParams({ database, table })
@@ -23,7 +23,7 @@ export const getDDL = (id: string, database: string, table: string, signal?: Abo
 export const getIndexes = (id: string, database: string, table: string, signal?: AbortSignal) => request<DBIndex[]>(`${connectionPath(id)}/indexes?${tableQuery(database, table)}`, { signal })
 export const getForeignKeys = (id: string, database: string, table: string, signal?: AbortSignal) =>
   request<DBForeignKey[]>(`${connectionPath(id)}/foreign-keys?${tableQuery(database, table)}`, { signal })
-export const executeQuery = (id: string, input: QueryRequest, signal?: AbortSignal) => request<QueryResult>(`${connectionPath(id)}/query`, { ...post(input), signal })
+export const executeQuery = async (id: string, input: QueryRequest, signal?: AbortSignal) => request<QueryResult>(`${connectionPath(id)}/query`, { ...postWithinLimit(input, 1), signal })
 
 /** 仅对象管理和单元格显式保存使用；普通查询保持默认只读。 */
 export const executeObjectSQL = (id: string, database: string, sql: string, signal?: AbortSignal, matchRows = false) =>

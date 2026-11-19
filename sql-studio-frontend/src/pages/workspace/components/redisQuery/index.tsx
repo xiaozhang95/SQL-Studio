@@ -3,7 +3,7 @@ import { Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
-import ErrorNotice from '@/components/errorNotice'
+import { usePageError } from '@/contexts/pageErrors'
 import { selectedRedisDatabase } from '@/databases/redis'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -46,7 +46,9 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const blocked = model.running || commandBusy
   const editorMode = tool === 'editor'
   const consoleMode = tool === 'console'
-  const { beforeImport, importing, error: importError, clearError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
+  const { beforeImport, importing, error: importError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
+  usePageError(active ? snapshot?.error : undefined)
+  usePageError(active ? importError : undefined)
 
   return (
     <section className="editor-panel redis-query-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
@@ -88,8 +90,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
         <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={blocked || !editorMode || !hasText} onClick={() => void model.exportCurrentSQL()} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={blocked || (!editorMode && !consoleMode)} onClick={model.openHistory} />
       </QueryToolbar>
-      <ErrorNotice title={t('连接加载失败')} error={snapshot?.error} />
-      <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearError} />
       {database === undefined ? (
         status !== 'error' && <ContentLoading label={t('正在加载数据库…')} style={{ flex: 1, minHeight: 0 }} />
       ) : (
@@ -131,7 +131,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           )}
           {pubSubOpened && (
             <div hidden={!active || tool !== 'pubsub'} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', userSelect: 'text' }}>
-              <PubSub id={connection.id} />
+              <PubSub id={connection.id} active={active && tool === 'pubsub'} />
             </div>
           )}
         </>

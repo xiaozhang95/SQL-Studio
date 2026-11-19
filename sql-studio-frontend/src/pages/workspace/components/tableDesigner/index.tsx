@@ -1,6 +1,7 @@
 import { EyeOutlined, ReloadOutlined, SaveOutlined } from '@ant-design/icons'
 import { Alert, Space, Spin, Typography } from 'antd'
 
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
@@ -12,11 +13,14 @@ import ToolbarButton from '../toolbarButton'
 type Props = TableDesignerOptions & {
   themeMode: ThemeMode
   available: boolean
+  active: boolean
 }
-export default function TableDesigner({ themeMode, available, ...options }: Props) {
+export default function TableDesigner({ themeMode, available, active, ...options }: Props) {
   const { t } = useTranslation()
 
   const manager = useTableDesigner(options)
+  usePageError(active ? manager.error : undefined)
+  usePageError(active ? manager.refreshError : undefined)
   return (
     <section className="workspace-page" aria-label={t('表设计工作区')} style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       <div
@@ -43,7 +47,7 @@ export default function TableDesigner({ themeMode, available, ...options }: Prop
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 12 }}>
         {!available && <Alert type="warning" showIcon title={t('连接未打开，请重新打开连接后保存。')} style={{ marginBottom: 12 }} />}
         <Spin spinning={manager.loading}>
-          <ObjectManagementForm manager={manager} themeMode={themeMode} />
+          <ObjectManagementForm manager={manager} themeMode={themeMode} showErrors={false} />
         </Spin>
       </div>
     </section>

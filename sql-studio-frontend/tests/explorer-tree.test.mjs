@@ -75,8 +75,32 @@ test('database state follows successful opening, not connection status or expans
   assert.equal(node(snapshot).databaseState, 'open')
   assert.equal(node(snapshot, { a: ['big'] }).databaseState, 'closed')
   assert.equal(node({ ...snapshot, tableErrors: { big: 'permission denied' } }).databaseState, 'error')
-  assert.match(node({ ...snapshot, tableErrors: { big: 'permission denied' } }).tooltip, /permission denied/)
+  assert.match(node({ ...snapshot, tableErrors: { big: 'permission denied' } }).tooltip, /打开失败/)
   assert.ok(!expanded.includes(key('database', 'a', 'big')))
+})
+
+test('MySQL information_schema system views are visible in the view category', () => {
+  const db = 'information_schema'
+  const expanded = [key('group', '默认分组'), key('connection', 'a'), key('database', 'a', db), key('tables', 'a', db), key('views', 'a', db)]
+  const state = {
+    ...snapshot,
+    databases: [db],
+    tables: {
+      [db]: [
+        { name: 'COLUMNS', type: 'SYSTEM VIEW' },
+        { name: 'TABLES', type: 'SYSTEM VIEW' }
+      ]
+    }
+  }
+  const tree = buildExplorerTree([{ ...connections[0], type: 'mysql' }], { a: state }, expanded, '')
+  assert.deepEqual(
+    tree.byKey.get(key('tables', 'a', db)).children.map(({ title }) => title),
+    ['暂无表']
+  )
+  assert.deepEqual(
+    tree.byKey.get(key('views', 'a', db)).children.map(({ title }) => title),
+    ['COLUMNS', 'TABLES']
+  )
 })
 
 test('new query scope follows selected database or schema, never an unrelated page', () => {

@@ -4,9 +4,11 @@ import { memo, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
+import { chatErrors } from '../../../../utils/chatEvents'
 import { conversationRounds } from '../../../../utils/conversationRounds'
 import { CHAT } from '../../constant/chat'
 import { useRoundTranscript } from '../../hooks/roundTranscript'
@@ -36,6 +38,9 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
   const { token } = theme.useToken()
   const rounds = useMemo(() => conversationRounds(entries), [entries])
   const { viewport: viewportRef, start, end, paddingTop, paddingBottom, activeIndex, loading, atBottom, jump, onScroll, toLatest } = useRoundTranscript(rounds, Boolean(confirmation), busy)
+  const activeRound = rounds[activeIndex]
+  const roundErrors = useMemo(() => (activeRound ? chatErrors(activeRound.entries) : undefined), [activeRound])
+  usePageError(roundErrors, activeRound?.id)
   return (
     <Flex vertical style={transcriptLayout}>
       <RoundNavigation rounds={rounds} activeIndex={activeIndex} onJump={jump} />

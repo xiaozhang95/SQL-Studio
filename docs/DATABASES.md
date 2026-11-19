@@ -13,7 +13,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases`
 
 连接和加密密码保存在本地 connections.json，密钥位于 master.key。当前连接文件必须明确保存 type/group；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。单语句查询及批次中的每条语句最长 30 秒，默认 1000 行，最多 5000 行及约 8 MiB 字段内容。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败或取消停止后续语句，保留已完成结果。MySQL 和 MariaDB 的多语句批次共享一个独立会话，支持脚本内的 SET、用户变量、USE 和 BEGIN/COMMIT。取消时断开批次连接，已提交写入保留。
+每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。单语句查询及批次中的每条语句最长 30 秒，默认 1000 行，最多 5000 行及约 8 MiB 字段内容。MySQL、MariaDB 和 PostgreSQL 的结果保留预算内的完整行，遇到下一行越界时标记截断。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。失败原因显示在顶栏下方，主动取消在消息、摘要和历史中显示为「执行已取消」。失败或取消停止后续语句，保留已完成结果。MySQL 和 MariaDB 的多语句批次共享一个独立会话，支持脚本内的 SET、用户变量、USE 和 BEGIN/COMMIT。取消时断开批次连接，已提交写入保留。
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 

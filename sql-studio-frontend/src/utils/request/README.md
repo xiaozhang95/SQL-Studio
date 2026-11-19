@@ -6,7 +6,9 @@
 
 JSON 与 SSE 都在 fetchResponse 中携带当前已应用的 Accept-Language（zh-CN/en-US），保留调用方显式提供的值和其他请求头。语言来自共享 getLanguage，不另存配置。网络失败使用发起请求时的界面语言；解析失败及 HTTP 备用文案优先使用响应 Content-Language，缺少该头时使用当前语言。后端提供的有效错误原因直接保留。
 
-网络连接失败、空响应及无效 JSON 使用相同的后端服务和代理配置提示。有效的非 2xx JSON 响应抛出 `RequestError(message, status)`，保留后端原因和状态码。204 成功响应返回 undefined。AbortSignal 沿用调用者传入值，中止原因原样抛出。
+网络连接失败、空响应及无效 JSON 使用后端服务和代理配置提示；HTTP 413 优先使用后端原因，缺失或代理返回非 JSON 时使用请求体超限提示。有效的非 2xx JSON 响应抛出 `RequestError(message, status)`，保留后端原因和状态码。204 成功响应返回 undefined。AbortSignal 沿用调用者传入值，中止原因原样抛出。
+
+`postWithinLimit(body, limitMiB)` 序列化 JSON，按 UTF-8 字节计算整个请求体，超限时在发出请求前抛出带本地化文案的 413。单语句和同会话批次分别使用 1 MiB 与 32 MiB。
 
 导入使用 `@/utils/request`，不追加 /index 或扩展名；改契约时同步调用方及本说明。
 

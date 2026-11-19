@@ -13,7 +13,7 @@
 
 App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。普通标签使用中性色，信息提示跟随主题绿色，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
 
-工作台、AI 助手和弹窗的错误统一使用 [ErrorNotice](components/errorNotice/README.md)。页面级错误位于共享 PageHeader 下方，同一原因合并展示。后端不可达或返回无效 JSON 时，所有 API 共用 [request](utils/request/README.md) 的错误文案。
+工作台、AI 助手、监控和同步的错误集中显示在共享 PageHeader 下方，重复原因合并。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
 App 先读取界面偏好再挂载业务页面，确保业务请求携带已恢复的语言；偏好读取失败时使用当前默认值。JSON 与 SSE 请求统一发送 Accept-Language，后端按请求语言返回系统提示，响应 Content-Language 标明所选语言。SQL、数据库返回内容和用户命名不参与翻译。
 

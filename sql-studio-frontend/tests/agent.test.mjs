@@ -513,7 +513,7 @@ test('内联写入确认等待用户决定，拦截重复提交且仅发送一�
   harness.unmount()
 })
 
-test('内联确认失败留在卡片，用户可取消；中止、过期流和卸载不能再次提交', async () => {
+test('内联确认失败保留待确认操作，用户可取消；中止、过期流和卸载不能再次提交', async () => {
   const calls = []
   const harness = await confirmationHarness(async (_url, init) => {
     calls.push(JSON.parse(init.body))

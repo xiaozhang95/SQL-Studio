@@ -2,7 +2,7 @@ import { ReloadOutlined } from '@ant-design/icons'
 import { Button, Card, Checkbox, Flex, Form, Input, Table, theme, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import { getChannels, subscribe } from '@/services/redis'
 import type { RedisChannel, RedisChannels } from '@/services/redis'
@@ -11,7 +11,7 @@ import ToolbarButton from '../../../toolbarButton'
 
 type Message = { id: number; channel: string; payload: string; truncated?: boolean }
 
-export default function PubSub({ id }: { id: string }) {
+export default function PubSub({ id, active }: { id: string; active: boolean }) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [filter, setFilter] = useState('')
@@ -24,6 +24,8 @@ export default function PubSub({ id }: { id: string }) {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'ready'>('idle')
   const [messages, setMessages] = useState<Message[]>([])
   const [subscriptionError, setSubscriptionError] = useState('')
+  usePageError(active ? channelError : undefined)
+  usePageError(active ? subscriptionError : undefined)
   const stream = useRef<AbortController | null>(null)
   const counter = useRef(0)
   const log = useRef<HTMLDivElement>(null)
@@ -101,7 +103,6 @@ export default function PubSub({ id }: { id: string }) {
             />
             <ToolbarButton label={t('刷新')} icon={<ReloadOutlined />} loading={loading} onClick={() => setRequest({ pattern: filter })} />
           </Flex>
-          <ErrorNotice error={channelError ? t(channelError) : undefined} />
           {channels && (
             <Typography.Text type="secondary">
               {t('模式订阅数')} · {channels.patterns}
@@ -151,7 +152,6 @@ export default function PubSub({ id }: { id: string }) {
               <Button onClick={stop}>{t('停止订阅')}</Button>
             )}
           </Flex>
-          <ErrorNotice error={subscriptionError ? t(subscriptionError) : undefined} />
           <Flex vertical gap="small" role="log" aria-label={t('订阅消息')} ref={log} style={{ maxHeight: 360, overflow: 'auto' }}>
             {messages.map((message) => (
               <div key={message.id} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>

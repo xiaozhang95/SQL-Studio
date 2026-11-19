@@ -5,7 +5,6 @@ import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
-import ErrorNotice from '@/components/errorNotice'
 import { getDatabaseMonitorPanel, getDatabaseProfile } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -38,7 +37,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     label: value === 0 ? t('已关闭') : value < 60 ? t('每 {count} 秒', { count: value }) : t('每 {count} 分钟', { count: value / 60 })
   }))
   return (
-    <DatabasePage title={t('监控指标')} {...pageProps}>
+    <DatabasePage title={t('监控指标')} errors={[result?.error]} {...pageProps}>
       {connections.length ? (
         <>
           <Card size="small">
@@ -81,7 +80,6 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
               </Flex>
             </Flex>
           )}
-          <ErrorNotice error={result?.error} />
           {snapshot ? (
             <MonitorPanel key={connection?.id} snapshot={snapshot} history={result?.history ?? []} />
           ) : connection && !result?.error ? (

@@ -11,7 +11,10 @@ var invalidCommand = errors.New("请输入一条有效的 Redis 命令")
 // splitCommand matches the redis-cli conventions for quoted arguments,
 // escapes, empty strings and literal byte sequences. No shell is involved.
 func splitCommand(line string) ([]string, error) {
-	if len(line) > 64*1024 || strings.ContainsAny(line, "\r\n") {
+	if len(line) > 64*1024 {
+		return nil, errors.New("Redis 命令超过 64 KiB 上限。")
+	}
+	if strings.ContainsAny(line, "\r\n") {
 		return nil, invalidCommand
 	}
 	var args []string

@@ -2,7 +2,6 @@ import { Checkbox, Flex, Table, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import type { DatabaseType } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
@@ -10,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
-import { statementDuration, statementOutputs } from '../../utils/queryOutput'
+import { executionCancelled, statementDuration, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
@@ -22,7 +21,8 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
   const [errorsOnly, setErrorsOnly] = useState(false)
   const [page, setPage] = useState(1)
   const statements = statementOutputs(run)
-  const failed = statements.filter((item) => item.error).length
+  const cancelled = statements.filter(executionCancelled).length
+  const failed = statements.filter((item) => item.error && !executionCancelled(item)).length
   const columns: TableColumnsType<StatementRun> = [
     {
       title: t('查询'),
@@ -34,8 +34,10 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
       title: t('消息'),
       width: 300,
       render: (_, item) =>
-        item.error ? (
-          <ErrorNotice error={item.error} />
+        executionCancelled(item) ? (
+          <Typography.Text type="secondary">{t('执行已取消')}</Typography.Text>
+        ) : item.error ? (
+          <Typography.Text type="danger">{t('执行失败')}</Typography.Text>
         ) : (
           <Typography.Text type="success" style={{ whiteSpace: 'pre-wrap' }}>
             {item.result && !item.result.columns.length ? t('OK，影响 {value1} 行', { value1: item.result.affectedRows }) : 'OK'}
@@ -50,8 +52,9 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
         <div>
           {t('已处理：')}
           {statements.length} / {run.statementCount ?? statements.length}　{t('　成功：')}
-          {statements.length - failed}　{t('　错误：')}
+          {statements.length - failed - cancelled}　{t('　错误：')}
           {failed}
+          {executionCancelled(run) && <>　{t('执行已取消')}</>}
         </div>
         <div>
           {t('开始时间：')}
@@ -78,7 +81,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
         size={appearance.tableSize}
         columns={columns}
         rowKey="key"
-        dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || item.error)}
+        dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || (item.error && !executionCancelled(item)))}
         pagination={{ ...tablePagination, pageSize: 50, current: page, onChange: setPage }}
         scroll={{ x: 920 }}
         locale={{ emptyText: running ? t('正在执行…') : errorsOnly ? t('没有错误记录') : t('暂无执行记录') }}

@@ -52,7 +52,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
     const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
     const completed: StatementRun[] = []
     let executionDatabase = scope.database
-    const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'durationMs'>, selectedDatabase?: string) => {
+    const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'cancelled' | 'durationMs'>, selectedDatabase?: string) => {
       const sql = statements[index]
       const entry: StatementRun = { ...outcome, sql, database: executionDatabase, schema: scope.schema }
       if (selectedDatabase !== undefined) {
@@ -72,8 +72,9 @@ export function createQueryExecutor({ connections, objects, running, request, me
           schema: scope.schema,
           time: new Date().toISOString(),
           durationMs: entry.durationMs ?? 0,
-          ok: !entry.error,
-          error: entry.error
+          ok: !entry.error && !entry.cancelled,
+          error: entry.error,
+          cancelled: entry.cancelled
         }
         appendHistory(item)
       }
@@ -87,33 +88,34 @@ export function createQueryExecutor({ connections, objects, running, request, me
         kind,
         result: entry.result,
         error: entry.error,
+        cancelled: entry.cancelled,
         source,
         title,
         statements: [...completed],
         statementCount: statements.length,
         startedAt,
-        endedAt: entry.error || index === statements.length - 1 ? new Date().toISOString() : undefined,
+        endedAt: entry.error || entry.cancelled || index === statements.length - 1 ? new Date().toISOString() : undefined,
         durationMs: Math.round(performance.now() - batchStart)
       })
       setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
     }
+    let statementStart = batchStart
     try {
       if (adapter?.sessionBatch && kind === 'query' && statements.length > 1) {
-        let lastStep = batchStart
         await executeQueryBatch(target.id, executionDatabase, statements, controller.signal, (step) => {
           const now = performance.now()
-          record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - lastStep) }, step.database)
-          lastStep = now
+          record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - statementStart) }, step.database)
+          statementStart = now
         })
       } else {
         for (const [index, sql] of statements.entries()) {
-          const start = performance.now()
+          statementStart = performance.now()
           try {
             controller.signal.throwIfAborted()
             if (redis) {
               const reply = await runCommand(target.id, Number(executionDatabase), sql, controller.signal)
               controller.signal.throwIfAborted()
-              const durationMs = reply.result?.durationMs ?? Math.round(performance.now() - start)
+              const durationMs = reply.result?.durationMs ?? Math.round(performance.now() - statementStart)
               const result = reply.result ?? {
                 columns: [{ name: 'value', type: '' }],
                 rows: [[reply.output]],
@@ -135,14 +137,20 @@ export function createQueryExecutor({ connections, objects, running, request, me
             controller.signal.throwIfAborted()
             record(index, { result, durationMs: result.durationMs }, adapter?.useDatabase(sql))
           } catch (error) {
-            const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
-            record(index, { error: reason, durationMs: Math.round(performance.now() - start) })
+            controller.signal.throwIfAborted()
+            const reason = error instanceof Error ? error.message : '查询失败'
+            record(index, { error: reason, durationMs: Math.round(performance.now() - statementStart) })
             break
           }
         }
       }
     } catch (error) {
-      const reason = controller.signal.aborted ? '请求已取消。' : error instanceof Error ? error.message : '查询失败'
+      const cancelled = controller.signal.aborted
+      if (cancelled && completed.length < statements.length && !completed.at(-1)?.error) {
+        record(completed.length, { cancelled: true, durationMs: Math.round(performance.now() - statementStart) })
+        return
+      }
+      const reason = error instanceof Error ? error.message : '查询失败'
       if (!completed.at(-1)?.error) {
         const durationMs = Math.round(performance.now() - batchStart)
         // A dropped stream cannot confirm whether its last in-flight write finished.
@@ -154,13 +162,14 @@ export function createQueryExecutor({ connections, objects, running, request, me
           statements: [...completed],
           statementCount: statements.length,
           result: completed.at(-1)?.result,
-          error: reason,
+          error: cancelled ? undefined : reason,
+          cancelled: cancelled || undefined,
           startedAt,
           endedAt: new Date().toISOString(),
           durationMs
         })
         setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: completed.length } }))
-      } else if (!controller.signal.aborted) {
+      } else if (!cancelled) {
         message.error(reason)
       }
     } finally {

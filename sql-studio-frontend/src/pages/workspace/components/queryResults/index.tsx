@@ -5,8 +5,8 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import ContentLoading from '@/components/contentLoading'
 import DeleteConfirmation from '@/components/deleteConfirmation'
 import EmptyStateIcon from '@/components/emptyStateIcon'
-import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
+import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
@@ -19,7 +19,7 @@ import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import { defaultOutputView } from '../../utils/queryOutput'
+import { defaultOutputView, executionCancelled } from '../../utils/queryOutput'
 import { exportResultRows, matchResultRows, pageResultRows, selectedResultRows, sortResultRows } from '../../utils/resultRows'
 import type { ResultSort } from '../../utils/resultRows'
 import DataCellEditor from '../dataCellEditor'
@@ -46,6 +46,7 @@ type Props = {
     | 'savedConnections'
     | 'result'
     | 'run'
+    | 'runs'
     | 'activeRunning'
     | 'tab'
     | 'cancelQuery'
@@ -66,6 +67,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   const { t } = useTranslation()
 
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
+  const batch = model.runs[tab.id] ?? run
+  usePageError(batch && !executionCancelled(batch) ? batch.error : undefined, batch?.id ?? batch?.startedAt)
   const editingBlocked = model.running || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
   const editing = useDataEditing({
     tab,
@@ -76,6 +79,8 @@ export default function QueryResults({ model, themeMode }: Props) {
     onDirtyChange: model.setTableDesignerDirty,
     onResult: model.replaceTableResult
   })
+  usePageError(editing.deletionError, tab.id)
+  usePageError(editing.operationError, tab.id)
   const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
   const selectedRows = selection.result === result ? selection.keys : []
   const [deleteTarget, setDeleteTarget] = useState<{ result: typeof result; pageId: string; rows: number[] }>()
@@ -189,8 +194,6 @@ export default function QueryResults({ model, themeMode }: Props) {
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title={t('上次执行因页面刷新中断，已完成结果保留；未自动继续执行。')} />}
-      <ErrorNotice onClose={editing.clearDeletionError} title={t('删除数据未完成')} error={editing.deletionError} />
-      <ErrorNotice onClose={editing.clearOperationError} error={editing.operationError} />
       <ResultTabs
         run={run}
         running={activeRunning}
@@ -329,13 +332,11 @@ export default function QueryResults({ model, themeMode }: Props) {
       >
         {editing.saving && <ContentLoading label={t('正在保存并刷新数据…')} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)' }} />}
         {activeKey === 'messages' ? (
-          <QueryMessages key={tab.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QueryMessages key={tab.id} run={batch ?? run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
-          <QuerySummary key={run.id} run={run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QuerySummary key={run.id} run={batch ?? run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
           <ContentLoading label={t('正在加载结果…')} />
-        ) : run?.error ? (
-          <ErrorNotice style={{ margin: 16 }} title={t('执行失败')} error={run.error} />
         ) : result ? (
           <>
             <Table

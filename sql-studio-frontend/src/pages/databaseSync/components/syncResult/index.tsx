@@ -2,7 +2,6 @@ import { ClockCircleOutlined, FileTextOutlined } from '@ant-design/icons'
 import { Alert, Card, Descriptions, Flex, Progress, Statistic, theme, Timeline } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { SyncPlan } from '@/services/databaseSync'
 
@@ -95,7 +94,6 @@ export default function SyncResult({ status, result, plan, source, target, withD
           </div>
         </Card>
       </div>
-      <ErrorNotice title={t('同步已停止')} error={error ? t(error) : undefined} />
       {(status === 'cancelled' || error) && <Alert type="warning" showIcon title={t(progress.created ? '已创建的库、表及已写入记录会保留。' : '如操作在建库时中断，请先检查目标库状态。')} />}
     </>
   )

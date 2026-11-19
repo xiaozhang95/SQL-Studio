@@ -109,7 +109,7 @@ export function buildExplorerTree(
     root.isLeaf = false
     root.status = connected ? 'is-connected' : state?.status === 'error' ? 'is-error' : 'is-closed'
     root.className = `connection-tree-node ${root.status}`
-    root.tooltip = `${connection.host}:${connection.port}${state?.error ? `\n${state.error}` : ''}`
+    root.tooltip = `${connection.host}:${connection.port}`
     if (connected) {
       loadedKeys.push(root.key)
       const databases = state.databases.filter((db) => {
@@ -125,7 +125,7 @@ export function buildExplorerTree(
           databaseNode.isLeaf = false
           databaseNode.databaseState = databaseOpenState(state, closedDatabases[id], db)
           const stateLabel = { closed: '未打开', opening: '正在打开', open: '已打开', error: '打开失败' }[databaseNode.databaseState]
-          databaseNode.tooltip = `${db}\n${stateLabel}${state.tableErrors[db] ? '\n' + state.tableErrors[db] : ''}`
+          databaseNode.tooltip = `${db}\n${stateLabel}`
           const tables = state.tables[db]
           if (open.has(databaseNode.key) && !tables && !state.tableErrors[db]) ready = false
           if (tables) loadedKeys.push(databaseNode.key)

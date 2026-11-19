@@ -35,6 +35,7 @@ export async function readJSON<T>(response: Response, signal?: AbortSignal): Pro
   } catch (error) {
     signal?.throwIfAborted()
     if (error instanceof DOMException && error.name === 'AbortError') throw error
+    if (response.status === 413) throw new RequestError(translate('请求体超过服务器大小上限。', language), response.status)
     throw new Error(translate(serviceUnavailable, language), { cause: error })
   }
   signal?.throwIfAborted()
@@ -42,7 +43,9 @@ export async function readJSON<T>(response: Response, signal?: AbortSignal): Pro
     const message =
       data && typeof data === 'object' && 'error' in data && typeof data.error === 'string' && data.error.trim()
         ? data.error
-        : translate('请求失败（HTTP {status}）', language, { status: response.status })
+        : response.status === 413
+          ? translate('请求体超过服务器大小上限。', language)
+          : translate('请求失败（HTTP {status}）', language, { status: response.status })
     throw new RequestError(message, response.status)
   }
   return data as T
@@ -55,3 +58,11 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 }
 
 export const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) })
+
+export function postWithinLimit(body: unknown, limitMiB: number): RequestInit {
+  const json = JSON.stringify(body)
+  if (new Blob([json]).size > limitMiB * 1024 * 1024) {
+    throw new RequestError(translate('请求体超过大小上限（{value1}）。', getLanguage(), { value1: `${limitMiB} MiB` }), 413)
+  }
+  return { method: 'POST', body: json }
+}

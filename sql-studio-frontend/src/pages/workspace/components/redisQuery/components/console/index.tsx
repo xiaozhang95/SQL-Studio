@@ -3,6 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import { theme } from 'antd'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { usePageError } from '@/contexts/pageErrors'
 import { redisCommandHints } from '@/databases/redis/editor'
 import { useTranslation } from '@/hooks/useTranslation'
 import { runCommand } from '@/services/redis'
@@ -40,6 +41,8 @@ export default function Console({ page, id, database, databases, visible, themeM
   const [selection, setSelection] = useState(initial.selection)
   const [pending, setPending] = useState(false)
   const [entries, setEntries] = useState<Entry[]>(initial.entries)
+  const latest = entries.at(-1)
+  usePageError(visible && latest?.error ? latest.answer : undefined, latest ? String(latest.index) : undefined)
   const request = useRef<AbortController | null>(null)
   const counter = useRef(initial.entries.at(-1)?.index ?? 0)
   const history = useRef(initial.history)
@@ -168,7 +171,7 @@ export default function Console({ page, id, database, databases, visible, themeM
             </div>
             {entry.command.trim() && (
               <div style={{ color: entry.error ? token.colorErrorText : token.colorText }}>
-                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t(entry.answer) : entry.answer || '""'}
+                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t('执行失败') : entry.answer || '""'}
               </div>
             )}
             {entry.truncated && <div style={{ color: token.colorTextSecondary }}>{t('仅显示部分内容')}</div>}

@@ -2,6 +2,7 @@ import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@a
 import { Button, Card, Empty, Flex, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
 
 import ErrorNotice from '@/components/errorNotice'
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import ToolbarButton from '../../../toolbarButton'
@@ -35,6 +36,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
     setTTL,
     saving,
     changeError,
+    lastChange,
     setChangeError,
     expandedKeys,
     setExpandedKeys,
@@ -44,6 +46,9 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
     save,
     commit
   } = useKeyBrowser(id, database)
+  usePageError(error)
+  usePageError(detailError)
+  usePageError(lastChange === 'value' || lastChange === 'ttl' ? changeError : undefined)
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -67,7 +72,6 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
             <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} loading={loading} disabled={saving} onClick={() => scan(filter)} />
             <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} disabled={loading || saving} onClick={() => scan(request.pattern)} />
           </Flex>
-          <ErrorNotice error={error ? t(error) : undefined} />
           {page && (
             <>
               {page.keys.length ? (
@@ -82,7 +86,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                   onRefresh={() => scan(request.pattern)}
                   disabled={loading || saving}
                   saving={saving}
-                  error={changeError}
+                  error={lastChange === 'delete' ? changeError : ''}
                   clearError={() => setChangeError('')}
                 />
               ) : (
@@ -110,7 +114,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                 item={selected}
                 saving={saving}
                 disabled={!detail || loading}
-                error={changeError}
+                error={lastChange === 'delete' ? changeError : ''}
                 onDelete={(item) => commit({ action: 'delete' }, item)}
                 onClearError={() => setChangeError('')}
               >
@@ -121,14 +125,12 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
           )
         }
       >
-        <ErrorNotice error={detailError ? t(detailError) : undefined} />
         {!selected && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('选择一个键查看详情')} />}
         {detail && selected && (
           <KeyEditor
             selected={selected}
             detail={detail}
             saving={saving}
-            error={changeError}
             onSave={async (change) => {
               await commit(change)
             }}
@@ -153,7 +155,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
         okButtonProps={{ disabled: !target || ttl === null }}
         okText={t('保存')}
       >
-        <ErrorNotice error={changeError ? t(changeError) : undefined} />
+        <ErrorNotice error={lastChange === 'create' ? changeError : undefined} />
         {action === 'create' && (
           <Form layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0' }} disabled={saving}>
             <Form.Item label={t('键名')} htmlFor="redis-key-target">

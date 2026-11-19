@@ -8,6 +8,7 @@ import { lazy, Suspense, useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
+import { PageErrorsProvider } from '@/components/pageErrors'
 import SidebarWidthProvider from '@/components/sidebarWidthProvider'
 import { appearance, modalDefaults } from '@/constant/appearance'
 import { createThemeConfig } from '@/constant/theme'
@@ -49,7 +50,9 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
   return (
     <>
       <div inert={model.desktopPreparing} style={{ display: active ? undefined : 'none' }}>
-        <Workspace model={model} active={active} onOpenAgent={navigation.openAgent} onOpenDatabaseSection={navigation.openDatabaseSection} {...appearance} themeMode={themeMode} />
+        <PageErrorsProvider>
+          <Workspace model={model} active={active} onOpenAgent={navigation.openAgent} onOpenDatabaseSection={navigation.openDatabaseSection} {...appearance} themeMode={themeMode} />
+        </PageErrorsProvider>
       </div>
       {section === 'agent' && (
         <Suspense fallback={null}>

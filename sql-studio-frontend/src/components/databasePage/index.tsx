@@ -17,9 +17,10 @@ interface Props extends DatabasePageProps {
   title: string
   backDisabled?: boolean
   children: ReactNode
+  errors?: readonly (string | undefined)[]
 }
 
-export default function DatabasePage({ title, onBack, connectionError, retryConnections, backDisabled, children, ...appearance }: Props) {
+export default function DatabasePage({ title, onBack, connectionError, retryConnections, backDisabled, children, errors = [], ...appearance }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   return (
@@ -27,7 +28,7 @@ export default function DatabasePage({ title, onBack, connectionError, retryConn
       <PageHeader
         desktopTitle={title}
         actions={<SystemSettings {...appearance} />}
-        errors={[connectionError]}
+        errors={[connectionError, ...errors]}
         errorAction={connectionError ? <Button onClick={retryConnections}>{t('重试')}</Button> : undefined}
       >
         <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={backDisabled} separated={false} />

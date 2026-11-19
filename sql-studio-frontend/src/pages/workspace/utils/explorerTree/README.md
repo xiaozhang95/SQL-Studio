@@ -10,7 +10,7 @@
 
 连接为 error 时也加入 loadedKeys，表示本次加载结束，避免 Tree 对已展开失败节点自动重复加载；保留错误子节点及显式重试入口。loadedKeys 不代表数据库可用，连接状态和操作门禁仍使用 snapshots.status。
 
-第七参数 closedDatabases 传入各连接显式关闭的库名；数据库节点 databaseState 使用共享 databaseOpenState，包含未打开、正在打开、已打开、打开失败。状态来自该库元数据生命周期，独立于父连接与折叠状态；tooltip 展示状态及实际错误。仅列出库名时默认未打开，成功加载空库同样已打开。
+第七参数 closedDatabases 传入各连接显式关闭的库名；数据库节点 databaseState 使用共享 databaseOpenState，包含未打开、正在打开、已打开、打开失败。状态来自该库元数据生命周期，独立于父连接与折叠状态；tooltip 展示状态，失败原因由对象树登记到页面顶栏。仅列出库名时默认未打开，成功加载空库同样已打开。
 
 索引节点接受 primary? 主键标志，不以 PostgreSQL 实际索引名推断主键；schema/table 完整身份由元数据原样传递。外键只在返回该元数据的表下显示，叶节点悬停展示引用对象、列映射及更新删除规则。
 

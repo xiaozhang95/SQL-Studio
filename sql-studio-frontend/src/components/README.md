@@ -4,7 +4,8 @@
 - [pageHeader](pageHeader/README.md)：工作区及各功能页共用顶栏布局。
 - [databasePage](databasePage/README.md)：监控与同步的工作区返回入口、顶栏和正文布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
-- [errorNotice](errorNotice/README.md)：页面、弹窗和执行结果共用的错误提示。
+- [errorNotice](errorNotice/README.md)：页面顶栏和弹框共用的错误提示。
+- [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面顶栏。
 - [deleteConfirmation](deleteConfirmation/README.md)：直接点击删除按钮的会话列表同款气泡确认；右键删除使用业务弹窗。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。

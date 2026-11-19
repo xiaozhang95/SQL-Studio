@@ -47,7 +47,13 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
       <PageHeader
         desktopTitle={model.tab.id ? workspacePageTitle(model.tab) : 'SQL Studio'}
         desktopActive={active}
-        errors={[model.connectionError, model.operationError, model.connectionGroups.moveError, model.objectManagement.refreshError]}
+        errors={[
+          model.connectionError,
+          model.operationError,
+          model.connectionGroups.moveError,
+          model.objectManagement.dialog ? undefined : model.objectManagement.refreshError,
+          model.pageLoadFailed ? t('标签内容暂不可用') : undefined
+        ]}
         onErrorClose={() => {
           model.clearOperationError()
           model.connectionGroups.clearMoveError()
@@ -60,6 +66,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
             </Button>
           ) : undefined
         }
+        errorScope={model.activeTab}
         actions={<SystemSettings themeReady={themeReady} {...appearancePreferences} />}
       >
         <div className="topbar-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
@@ -110,6 +117,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
                     <TableDesigner
                       key={page.id}
                       page={page}
+                      active={page.id === model.activeTab}
                       connections={model.connections}
                       themeMode={themeMode}
                       available={model.objects.snapshots[page.connectionId]?.status === 'connected'}
@@ -123,15 +131,9 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
                 >
                   <>
                     {!model.pageReady ? (
-                      model.pageLoadFailed ? (
-                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('标签内容暂不可用')}>
-                          <Button onClick={model.retryPage}>{t('重试')}</Button>
-                        </Empty>
-                      ) : (
-                        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                          <ContentLoading label={t('正在加载当前标签…')} />
-                        </div>
-                      )
+                      <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                        {model.pageLoadFailed ? <Button onClick={model.retryPage}>{t('重试')}</Button> : <ContentLoading label={t('正在加载当前标签…')} />}
+                      </div>
                     ) : (
                       <>
                         {model.tab.kind === 'query' && <QueryEditor key={model.activeTab} model={model} themeMode={themeMode} />}

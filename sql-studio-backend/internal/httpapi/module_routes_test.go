@@ -139,12 +139,26 @@ func TestQueryRequestValidation(t *testing.T) {
 	router := New(regressionServices(store, db))
 	for _, body := range []string{
 		`{"sql":"SELECT 1","unknown":true}`, `{"sql":"SELECT 1"} {}`, `["SELECT 1"]`, `null`, `{`, `{"sql":"  "}`,
-		`{"sql":"` + strings.Repeat("a", maxRequestBytes) + `"}`,
 	} {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/query", strings.NewReader(body)))
 		if rec.Code != http.StatusBadRequest || !json.Valid(rec.Body.Bytes()) {
 			t.Fatalf("invalid body accepted: %d", rec.Code)
+		}
+	}
+	for _, input := range []struct {
+		route, body, language, want string
+	}{
+		{"query", `{"sql":"` + strings.Repeat("a", maxRequestBytes) + `"}`, "zh-CN", "请求体超过大小上限（1 MiB）。"},
+		{"query", `{"sql":"SELECT 1"}` + strings.Repeat(" ", maxRequestBytes), "en-US", "The request body exceeds the size limit (1 MiB)."},
+		{"query-batch", `{"allowWrite":true,"statements":["` + strings.Repeat("a", maxQueryBatchRequestBytes) + `"]}`, "en-US", "The request body exceeds the size limit (32 MiB)."},
+	} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/"+input.route, strings.NewReader(input.body))
+		req.Header.Set("Accept-Language", input.language)
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusRequestEntityTooLarge || !strings.Contains(rec.Body.String(), input.want) {
+			t.Fatalf("%s (%s): %d %s", input.route, input.language, rec.Code, rec.Body.String())
 		}
 	}
 	rec := httptest.NewRecorder()
@@ -154,7 +168,7 @@ func TestQueryRequestValidation(t *testing.T) {
 	}
 }
 
-func TestQueryBusyIsHTTP429(t *testing.T) {
+func TestQueryBusyIsHTTP429AndCancellationFreesSlot(t *testing.T) {
 	store, err := connection.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -177,11 +191,19 @@ func TestQueryBusyIsHTTP429(t *testing.T) {
 	}}
 	router := New(regressionServices(store, db))
 	endpoint := "http://127.0.0.1:8080/api/connections/" + saved.ID + "/query"
+	cancellable, cancelOne := context.WithCancel(ctx)
+	defer cancelOne()
+	done := make(chan struct{})
 	var group sync.WaitGroup
 	defer func() { close(release); group.Wait() }()
 	for i := 0; i < 4; i++ {
 		group.Go(func() {
-			router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(`{"sql":"SELECT 1"}`)).WithContext(ctx))
+			requestContext := ctx
+			if i == 0 {
+				requestContext = cancellable
+				defer close(done)
+			}
+			router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(`{"sql":"SELECT 1"}`)).WithContext(requestContext))
 		})
 		select {
 		case <-entered:
@@ -193,6 +215,20 @@ func TestQueryBusyIsHTTP429(t *testing.T) {
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(`{"sql":"SELECT 1"}`)))
 	if rec.Code != http.StatusTooManyRequests || !json.Valid(rec.Body.Bytes()) {
 		t.Fatalf("busy query: %d %s", rec.Code, rec.Body.String())
+	}
+	cancelOne()
+	select {
+	case <-done:
+	case <-ctx.Done():
+		t.Fatal("cancelled request did not exit and release its slot")
+	}
+	group.Go(func() {
+		router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(`{"sql":"SELECT 2"}`)).WithContext(ctx))
+	})
+	select {
+	case <-entered:
+	case <-ctx.Done():
+		t.Fatal("replacement query did not enter while the other three queries were active")
 	}
 }
 

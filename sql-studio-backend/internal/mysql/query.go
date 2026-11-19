@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	driver "github.com/go-sql-driver/mysql"
+
 	"sql-studio-backend/internal/model"
 )
 
@@ -28,7 +30,16 @@ func (c *Client) Execute(ctx context.Context, connection model.Connection, input
 		return model.QueryResult{}, err
 	}
 	defer release()
-	return executeResult(ctx, db, input.SQL, input.Limit, input.AllowWrite, connection.Type == model.TypeMariaDB && hasReturning(input.SQL))
+	result, err := executeResult(ctx, db, input.SQL, input.Limit, input.AllowWrite, connection.Type == model.TypeMariaDB && hasReturning(input.SQL))
+	return result, queryError(err)
+}
+
+func queryError(err error) error {
+	var serverError *driver.MySQLError
+	if errors.Is(err, driver.ErrPktTooLarge) || (errors.As(err, &serverError) && serverError.Number == 1153) {
+		return fmt.Errorf("SQL 数据包超过 MySQL/MariaDB 的 max_allowed_packet 限制：%w", err)
+	}
+	return err
 }
 
 func execute(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite bool) (result model.QueryResult, err error) {

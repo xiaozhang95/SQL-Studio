@@ -689,7 +689,7 @@ export const useWorkspace = (active = true) => {
     const target = savedConnections.find((item) => item.id === id)
     if (!target) return
     if (action === 'create-database') void objectManagement.open(ObjectAction.CreateDatabase, { connectionId: id, database: '', table: '' })
-    else if (action === 'open') void openConnection(id).catch(() => {})
+    else if (action === 'open') void openConnection(id).catch((error) => setOperationError(error instanceof Error ? error.message : t('连接加载失败')))
     else if (action === 'refresh') refreshSchema(id)
     else if (action === 'edit') {
       setEditing(target)

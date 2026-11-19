@@ -28,6 +28,7 @@ import { useMemo, useState } from 'react'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
+import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
 import { ObjectAction } from '@/databases/typings/objectManagement'
@@ -61,6 +62,11 @@ type Props = {
   >
 }
 
+function ExplorerError({ error }: { error: string }) {
+  usePageError(error)
+  return null
+}
+
 /** 树只持有显示状态，操作始终携带节点原始范围；仅可见行创建图标和内容。 */
 export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props) {
   const { t } = useTranslation()
@@ -84,6 +90,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       ),
     [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups, t]
   )
+  const failures = useMemo(() => Array.from(data.byKey.values()).filter((node) => node.retry), [data])
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
 
@@ -354,7 +361,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
   }
   function renderTitle(node: ExplorerNode) {
     const generated = node.kind.startsWith('empty-') || ['tables', 'views', 'columns', 'indexes', 'foreign-keys', 'error', 'detail-error', 'foreign-keys-error'].includes(node.kind)
-    const title = node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
+    const title = node.retry ? t('加载失败') : node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
     // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
     return (
       <span
@@ -386,6 +393,9 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       className="explorer connection-explorer"
       style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: 'var(--workspace-inset) var(--workspace-inset) 0', paddingTop: 16 }}
     >
+      {failures.map((node) => (
+        <ExplorerError key={node.key} error={node.title} />
+      ))}
       <Input
         style={{ flex: 'none' }}
         prefix={<SearchOutlined />}

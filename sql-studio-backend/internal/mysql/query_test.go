@@ -145,6 +145,7 @@ func TestQueryResultBounds(t *testing.T) {
 		{"row limit", [][]driver.Value{{[]byte("a")}, {[]byte("b")}}, 1, 1, true},
 		{"exact limit", [][]driver.Value{{[]byte("a")}}, 1, 1, false},
 		{"byte limit", [][]driver.Value{{make([]byte, maxResultBytes+1)}}, 1000, 0, true},
+		{"retain complete rows within byte limit", [][]driver.Value{{[]byte("kept")}, {make([]byte, maxResultBytes)}}, 1000, 1, true},
 		{"empty", nil, 1000, 0, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {

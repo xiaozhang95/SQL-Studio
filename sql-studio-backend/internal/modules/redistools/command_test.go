@@ -2,6 +2,7 @@ package redistools
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -24,5 +25,16 @@ func TestSplitCommandPreservesRedisArguments(t *testing.T) {
 		if _, err := splitCommand(line); err == nil {
 			t.Errorf("accepted %q", line)
 		}
+	}
+}
+
+func TestSplitCommandReportsByteLimit(t *testing.T) {
+	line := "SET key  " + strings.Repeat("界", (64*1024-len("SET key  "))/len("界"))
+	line += strings.Repeat("a", 64*1024-len(line))
+	if _, err := splitCommand(line); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := splitCommand(line + "a"); err == nil || err.Error() != "Redis 命令超过 64 KiB 上限。" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

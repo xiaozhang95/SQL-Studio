@@ -62,7 +62,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
-请求必须为单个 JSON 对象，拒绝 null、未知顶层字段、多个 JSON 和超过 1 MiB 的普通请求。MySQL／MariaDB 批次的 JSON 上限为 32 MiB。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
+请求必须为单个 JSON 对象；null、未知顶层字段和多个 JSON 对象返回 400。普通 JSON 请求上限为 1 MiB，MySQL／MariaDB 批次为 32 MiB。超出相应路由的 JSON 请求体上限返回 413，`error` 包含本地化上限。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
 
 ## 请求与行为边界
 
@@ -106,7 +106,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 - 键列表接受 `cursor` 和 `pattern`，初始游标为 `0`。服务器返回 `{keys:[{name,ref}],cursor}`。游标回到 `0` 表示扫描结束。每一页可能为空，也可能返回重复的键。二进制键使用 Base64 显示，`ref` 为可逆的 URL 安全 Base64。预览请求为 `{database,ref}`，返回 `type`、毫秒 `ttlMillis`（`-1` 表示永久）、字节或元素 `size`（`-1` 表示未提供）、`preview` 、`truncated` 和 `editable`。
 - 键修改接受 `{database,ref,action}`。`create` 新建字符串键，`value` 编辑完整 UTF-8 String/List/Set/Hash/ZSet（最多 16KiB，集合最多 50 项），`valueType` 缺省 string，必须匹配当前类型。String 的 `value` 为原文，List/Set 为 JSON 字符串数组，Hash/ZSet 为 `[字段或成员,值或有限分数字符串]` 的 JSON 数组；集合不能为空，Set 成员和 Hash/ZSet 字段或成员不可重复。集合编辑必须携带原始 `preview` 作为 `before`，String 可选；WATCH 检查旧值与类型，保留未显式修改的 TTL，可随 `target` 一并改名。`ttl` 使用 0–315360000 的整数秒，0 表示永久；`rename`、`copy` 和 `delete` 继续可用。rename 可携带 TTL，在监视源键及目标键后同事务提交改名和过期时间；省略则保留原期限。复制及重命名需要 `target`，现有目标键会保留。截断、二进制及 Stream 值不直接编辑，键名和 TTL 可独立修改。
-- 命令请求为 `{database,command}`。支持引号、转义和 `SELECT`，以 `{database,output,truncated,result}` 返回逻辑库、终端文本和查询结果表。结果表最多 1000 行，受输出大小限制，空值以 JSON null 表示，整数使用十进制字符串。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
+- 命令请求为 `{database,command}`。命令文本上限为 64 KiB，按 UTF-8 字节计算，超限返回带明确原因的 400。支持引号、转义和 `SELECT`，以 `{database,output,truncated,result}` 返回逻辑库、终端文本和查询结果表。结果表最多 1000 行，受输出大小限制，空值以 JSON null 表示，整数使用十进制字符串。每次执行使用独立连接，依赖持续会话的事务、认证及订阅指令通过其他入口处理。Redis ACL 决定允许执行的命令。
 - 频道列表接受可选 `pattern`，显示最多 200 个活跃频道及其直接订阅者数量，并返回实例模式订阅数。订阅请求为 `{channel,pattern}`，`pattern` 为布尔值。NDJSON 事件按 `ready`、`message`、`heartbeat` 和 `error` 识别，消息包含 `channel`、`payload` 和可选 `truncated`，断开请求释放订阅。
 - Redis 不提供 AI 续写和 SQL 优化；`POST /ai/assist` 对 Redis 连接返回不支持的数据库引擎错误，不调用模型。编辑器和命令行只提供本地命令候选及用法提示。
 - 监控沿用 `/connections/{id}/monitor`，单次 Redis `INFO` 读取客户端、命令/秒、内存/RSS/峰值/数据集/开销/上限/碎片率、阻塞与拒绝连接、网络字节速率与累计流量、累计命令、过期/淘汰键及查找命中率。可选 `redis` 对象包含 `version/mode/role/runId`、`sections:[{key,fields:[{key,value}]}]` 和 `keyspaces:[{database,keys,expires,averageTtlMillis}]`，后者计数与 TTL 均为十进制字符串，TTL 单位为毫秒。`keyspaces:null` 表示未返回统计，`[]` 表示无非空逻辑库；`redis_keys` 汇总本节点所有返回逻辑库的键数。状态仅返回已定义的 INFO 字段，不返回服务器文件路径或任意模块输出；不执行 SCAN/CONFIG、不汇总集群其他节点。字段含义参照 [Redis INFO](https://redis.io/docs/latest/commands/info/)。

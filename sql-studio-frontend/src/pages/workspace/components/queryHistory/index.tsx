@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons'
 import { Drawer, Empty, Input, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
@@ -18,6 +18,7 @@ import type { HistoryItem } from '@/typings/workspace'
 
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
+import { executionCancelled } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 import ToolbarButton from '../toolbarButton'
 
@@ -51,15 +52,19 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
       dataIndex: 'ok',
       width: 100,
       filters: [
-        { text: t('成功'), value: true },
-        { text: t('失败'), value: false }
+        { text: t('成功'), value: 'success' },
+        { text: t('失败'), value: 'error' },
+        { text: t('执行已取消'), value: 'cancelled' }
       ],
-      onFilter: (value, item) => item.ok === value,
-      render: (ok: boolean) => (
-        <Tag color={ok ? 'success' : 'error'} icon={ok ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
-          {ok ? t('成功') : t('失败')}
-        </Tag>
-      )
+      onFilter: (value, item) => value === (executionCancelled(item) ? 'cancelled' : item.ok ? 'success' : 'error'),
+      render: (ok: boolean, item) =>
+        executionCancelled(item) ? (
+          <Tag icon={<StopOutlined />}>{t('执行已取消')}</Tag>
+        ) : (
+          <Tag color={ok ? 'success' : 'error'} icon={ok ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
+            {ok ? t('成功') : t('失败')}
+          </Tag>
+        )
     },
     {
       title: t('执行时间'),
@@ -171,7 +176,7 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
             expandedRowRender: (item) => (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} />
-                <ErrorNotice title={t('执行失败')} error={item.error} />
+                {!executionCancelled(item) && <ErrorNotice title={t('执行失败')} error={item.error} />}
               </div>
             )
           }}

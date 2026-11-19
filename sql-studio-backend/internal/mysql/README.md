@@ -12,7 +12,7 @@ GreptimeDB 通过 `NewClientWithDefaultDatabase` 指定维护库，沿用连接�
 
 ## 约束与调用
 
-SQL 默认只读事务，单语句执行；结果行数/约 8MiB 限制，保留 BIGINT/DECIMAL 精度与 NULL；标识符严格转义。
+SQL 默认只读事务，单语句执行。结果按行数和约 8 MiB 字段内容限制，保留预算内的完整行、BIGINT/DECIMAL 精度与 NULL。标识符严格转义。明确的服务器错误 1153 或驱动包大小错误会提示 max_allowed_packet，其他连接错误按原原因返回。
 
 MySQL DDL 会隐式提交，单靠只读事务不足以保护普通查询。默认入口仅接受 SELECT/SHOW/DESC/DESCRIBE/EXPLAIN/TABLE/VALUES、查询型 WITH 和 USE，发送前拒绝其他语句及字符串/普通注释之外的可执行版本注释。读查询继续使用只读事务；显式 allowWrite=true 的对象与数据操作保持原行为。statement_test.go、query_test.go 覆盖隐式提交与可执行注释边界；前端可选真实 SQL 窗口测试同时验证拒绝后数据和结构未改变。
 

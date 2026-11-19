@@ -3,7 +3,6 @@ import { Button, Flex, Grid, theme } from 'antd'
 import { useEffect, useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
-import ErrorNotice from '@/components/errorNotice'
 import PageHeader from '@/components/pageHeader'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
@@ -63,7 +62,15 @@ export function ChatPage({
         colorScheme: dark ? 'dark' : 'light'
       }}
     >
-      <PageHeader desktopTitle={t('AI 助手')} title={activeTitle} titleOffset={mobile ? 0 : sidebar.visibleWidth / 2} errors={[chat.error]} actions={<SystemSettings {...appearancePreferences} />}>
+      <PageHeader
+        desktopTitle={t('AI 助手')}
+        title={activeTitle}
+        titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
+        errors={[chat.error, chat.loadError, chat.confirmWrite.error]}
+        errorScope={workspace.state.activeId}
+        errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : undefined}
+        actions={<SystemSettings {...appearancePreferences} />}
+      >
         {' '}
         <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
           {localizedDefaultTitle}
@@ -103,9 +110,7 @@ export function ChatPage({
               <div style={chat.loading || chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
                 {chat.loading ? (
                   <ContentLoading label={t('正在加载会话…')} />
-                ) : chat.loadError ? (
-                  <ErrorNotice title={t('会话加载失败')} error={chat.loadError} action={<Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button>} />
-                ) : chat.entries.length === 0 ? (
+                ) : chat.loadError ? null : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (
                   <Transcript
@@ -116,11 +121,7 @@ export function ChatPage({
                     expanded={workspace.state.expanded}
                     onExpanded={(expanded) => workspace.update({ expanded })}
                     onEdit={chat.editQuestion}
-                    confirmation={
-                      chat.confirmWrite.pending && (
-                        <WriteConfirmation value={chat.confirmWrite.pending} submitting={chat.confirmWrite.submitting} error={chat.confirmWrite.error} onDecide={chat.decideConfirmation} />
-                      )
-                    }
+                    confirmation={chat.confirmWrite.pending && <WriteConfirmation value={chat.confirmWrite.pending} submitting={chat.confirmWrite.submitting} onDecide={chat.decideConfirmation} />}
                   />
                 )}
               </div>

@@ -2,7 +2,7 @@ import { DownloadOutlined } from '@ant-design/icons'
 import { Button, Flex } from 'antd'
 import { useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import { excelData } from '../../../../utils/excelData'
@@ -13,6 +13,7 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  usePageError(error)
   const data = excelData(value)
   if (!data) return null
   async function download() {
@@ -50,7 +51,6 @@ export function ExportExcel({ value, title }: { value: unknown; title: string })
         {t('导出 Excel')}
         {data.truncated ? t('（当前截断结果）') : ''}
       </Button>
-      <ErrorNotice error={error} />
     </Flex>
   )
 }

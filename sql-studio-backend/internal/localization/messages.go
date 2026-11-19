@@ -33,6 +33,11 @@ var messages = map[string]string{
 	"Redis 键已不存在":                      "The Redis key no longer exists",
 	"请输入一条有效的 Redis 命令":                "Enter one valid Redis command",
 	"用法：SELECT <逻辑库编号>":                "Usage: SELECT <database index>",
+
+	"Redis 命令超过 64 KiB 上限。":                              "The Redis command exceeds the 64 KiB limit.",
+	"请求体超过大小上限（%s）。":                                     "The request body exceeds the size limit ({1}).",
+	"SQL 数据包超过 MySQL/MariaDB 的 max_allowed_packet 限制：%w": "The SQL packet exceeds the MySQL/MariaDB max_allowed_packet limit: {1}",
+
 	"该命令需要独立会话，请使用连接设置、逻辑库切换或发布订阅页面": "This command requires a persistent session. Use connection settings, database switching, or the Pub/Sub tab.",
 	"Redis 频道筛选条件无效":               "Invalid Redis channel filter",
 	"请输入 Redis 频道或匹配模式":            "Enter a Redis channel or match pattern",

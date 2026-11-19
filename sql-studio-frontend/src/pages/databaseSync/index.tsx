@@ -4,7 +4,6 @@ import { Alert, Button, Card, Checkbox, Flex, Form, Input, Select, Steps, theme 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
-import ErrorNotice from '@/components/errorNotice'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -41,7 +40,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
       : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
 
   return (
-    <DatabasePage title={t('同步数据库')} backDisabled={running} {...pageProps}>
+    <DatabasePage title={t('同步数据库')} backDisabled={running} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
       <Card size="small">
         <Steps
           size="small"
@@ -92,13 +91,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('source', value)}
                     onCredentials={(patch) => model.updateExternal('source', patch)}
                   />
-                  <Form.Item
-                    label={t('源数据库')}
-                    htmlFor="sync-source-db"
-                    style={{ marginBottom: 0 }}
-                    validateStatus={model.databaseError ? 'error' : undefined}
-                    help={model.databaseError ? t(model.databaseError) : undefined}
-                  >
+                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" style={{ marginBottom: 0 }}>
                     {externalSource ? (
                       <Flex gap="small" wrap>
                         <Input
@@ -196,7 +189,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             </Flex>
           </Form>
           <Alert type={plan ? 'success' : 'info'} showIcon title={checkText || t('目标库已存在时立即停止。同步新库需要勾选表结构。')} />
-          <ErrorNotice title={t('同步检查失败')} error={model.error ? t(model.error) : undefined} />
         </>
       ) : (
         <SyncResult

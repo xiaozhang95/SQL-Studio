@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import DesktopTitleBar from '@/components/desktopTitleBar'
 import ErrorNotice from '@/components/errorNotice'
+import { usePageErrors } from '@/contexts/pageErrors'
 
 export default function PageHeader({
   children,
@@ -15,7 +16,8 @@ export default function PageHeader({
   desktopActive = true,
   errors = [],
   errorAction,
-  onErrorClose
+  onErrorClose,
+  errorScope
 }: {
   children: ReactNode
   actions: ReactNode
@@ -27,8 +29,10 @@ export default function PageHeader({
   errors?: readonly (string | undefined)[]
   errorAction?: ReactNode
   onErrorClose?: () => void
+  errorScope?: string
 }) {
   const { token } = theme.useToken()
+  const pageErrors = usePageErrors()
   const titleElement = useRef<HTMLDivElement>(null)
   const leftActions = useRef<HTMLDivElement>(null)
   const rightActions = useRef<HTMLDivElement>(null)
@@ -102,8 +106,16 @@ export default function PageHeader({
           {actions}
         </div>
       </header>
-      <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
-        <ErrorNotice errors={errors} action={errorAction} onClose={onErrorClose} />
+      <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto', paddingInline: 'var(--workspace-inset)' }}>
+        <ErrorNotice
+          key={errorScope}
+          errors={[...errors, ...(pageErrors?.errors ?? [])]}
+          action={errorAction}
+          onClose={() => {
+            pageErrors?.clearErrors()
+            onErrorClose?.()
+          }}
+        />
       </div>
     </>
   )

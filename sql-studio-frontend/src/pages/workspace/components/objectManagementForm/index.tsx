@@ -20,9 +20,9 @@ type FormManager = Pick<
   ReturnType<typeof useObjectManagement>,
   'dialog' | 'form' | 'loading' | 'saving' | 'ready' | 'error' | 'refreshError' | 'collations' | 'original' | 'previewSQL' | 'fieldTypes' | 'defaultField' | 'invalidatePreview' | 'databaseDefinition'
 >
-type Props = { manager: FormManager; themeMode: ThemeMode }
+type Props = { manager: FormManager; themeMode: ThemeMode; showErrors?: boolean }
 type FormField = { name: number; key: number }
-export default function ObjectManagementForm({ manager, themeMode }: Props) {
+export default function ObjectManagementForm({ manager, themeMode, showErrors = true }: Props) {
   const { t } = useTranslation()
 
   const { dialog, form, loading, saving, ready, error, collations, original, previewSQL } = manager
@@ -37,7 +37,7 @@ export default function ObjectManagementForm({ manager, themeMode }: Props) {
   const DatabasePropertiesForm = databaseForm && dialog ? getDatabaseAdapter(dialog.connection.type).databaseEditor?.Form : undefined
   return (
     <>
-      <ErrorNotice errors={[error, manager.refreshError]} style={{ marginBottom: 12 }} />
+      {showErrors && <ErrorNotice errors={[error, manager.refreshError]} style={{ marginBottom: 12 }} />}
       {destructive && (
         <Alert
           type="warning"

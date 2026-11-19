@@ -4,6 +4,7 @@ import { Button, theme } from 'antd'
 import { useWorkspace } from '@/agent/hooks/workspace'
 import { ChatPage } from '@/agent/pages/chat'
 import ContentLoading from '@/components/contentLoading'
+import { PageErrorsProvider } from '@/components/pageErrors'
 import PageHeader from '@/components/pageHeader'
 import SectionNavigation from '@/components/sectionNavigation'
 import SystemSettings from '@/components/systemSettings'
@@ -34,5 +35,9 @@ export default function AgentPage(props: Props) {
         </div>
       </div>
     )
-  return <ChatPage key={workspace.epoch} workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
+  return (
+    <PageErrorsProvider>
+      <ChatPage key={workspace.epoch} workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
+    </PageErrorsProvider>
+  )
 }

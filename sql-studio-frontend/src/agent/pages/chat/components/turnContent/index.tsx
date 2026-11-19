@@ -3,11 +3,9 @@ import { Bubble } from '@ant-design/x'
 import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
 import { Fragment, useMemo } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
-import { chatErrors } from '../../../../utils/chatEvents'
 import { readSQL } from '../../../../utils/queryResult'
 import { CHAT } from '../../constant/chat'
 import { AnswerContent } from '../answerContent'
@@ -107,9 +105,6 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
         if (block.type === 'footer')
           return (
             <Fragment key={`errors-${first.id}`}>
-              {chatErrors(block.entries).map((error) => (
-                <ErrorNotice key={error} error={error} />
-              ))}
               {block.entries
                 .filter((entry) => entry.stopped)
                 .map((entry) => (

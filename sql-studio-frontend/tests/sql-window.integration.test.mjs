@@ -101,7 +101,7 @@ for (const type of ['mysql', 'postgresql']) {
       group: 'SQL window integration',
       type,
       host: '127.0.0.1',
-      port: type === 'mysql' ? Number(process.env.SQLDESK_MYSQL_PORT || 3306) : 5432,
+      port: type === 'mysql' ? Number(process.env.SQLDESK_MYSQL_PORT || 3306) : Number(process.env.SQLDESK_PG_PORT || 5432),
       username: type === 'mysql' ? 'root' : 'postgres',
       password: process.env[type === 'mysql' ? 'SQLDESK_MYSQL_PASSWORD' : 'SQLDESK_PG_PASSWORD'],
       ...(type === 'postgresql' ? { database: 'postgres' } : {})
@@ -202,11 +202,12 @@ for (const type of ['mysql', 'postgresql']) {
       await step(t, 'cancellation stops the batch and permits the next run', async () => {
         const output = await run(type === 'mysql' ? 'SELECT SLEEP(3); SELECT 2;' : 'SELECT pg_sleep(3); SELECT 2;', 120)
         assert.equal(output.calls.length, 1)
-        assert.match(output.batch.error, /请求已取消/)
-        if (type === 'postgresql') {
-          assert.match(output.batch.error, /后续 1 条语句未执行/)
-          assert.equal(output.histories[0].ok, false)
-        } else assert.equal(output.histories.length, 0)
+        assert.equal(output.batch.cancelled, true)
+        assert.equal(output.batch.error, undefined)
+        assert.deepEqual(
+          output.histories.map(({ ok, cancelled }) => [ok, cancelled]),
+          [[false, true]]
+        )
         assert.equal((await success('SELECT 55'))[0].rows[0][0], '55')
       })
       await step(t, 'default and explicit row limits', async () => {
@@ -272,10 +273,14 @@ for (const type of ['mysql', 'postgresql']) {
           assert.deepEqual(events[2].result.rows, [['42']])
           assert.equal(events[3].type, 'done')
           const cancelled = await run('BEGIN; INSERT INTO parent VALUES(30); SELECT SLEEP(3); COMMIT;', 120)
-          assert.match(cancelled.batch.error, /请求已取消/)
+          assert.equal(cancelled.batch.cancelled, true)
           assert.deepEqual(
-            cancelled.histories.map(({ ok }) => ok),
-            [true, true]
+            cancelled.histories.map(({ ok, cancelled }) => [ok, Boolean(cancelled)]),
+            [
+              [true, false],
+              [true, false],
+              [false, true]
+            ]
           )
           assert.deepEqual((await query('SELECT id FROM parent')).rows, [['9']])
         })

@@ -5,7 +5,7 @@ import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
 import { Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
+import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
@@ -58,9 +58,11 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const {
     beforeImport,
     importing,
-    error: importError,
-    clearError: clearImportError
+    error: importError
   } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
+  usePageError(importError)
+  usePageError(objects.error, tab.connectionId)
+  usePageError(objects.tableError, `${tab.connectionId}:${tab.database}`)
   const [contextSQL, setContextSQL] = useState('')
   // UIW receives the initial document only; subsequent edits stay in CodeMirror.
   const [initialSQL] = useState(() => tab.sql)
@@ -136,10 +138,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
         <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
       </QueryToolbar>
-      <ErrorNotice title={t('SQL 导入失败')} error={importError} onClose={clearImportError} />
       <SQLOptimization model={ai} themeMode={themeMode} />
-      <ErrorNotice title={t('连接加载失败')} error={objects.error} />
-      <ErrorNotice title={t('表列表加载失败')} error={objects.tableError} />
       <Dropdown
         trigger={['contextMenu']}
         menu={{

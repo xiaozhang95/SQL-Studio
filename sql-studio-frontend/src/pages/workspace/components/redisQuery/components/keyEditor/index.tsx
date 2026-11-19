@@ -1,6 +1,5 @@
 import { Button, Flex, Form, Input, InputNumber, Space, Tag, theme, Typography } from 'antd'
 
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail } from '@/services/redis'
 
@@ -10,7 +9,6 @@ type Props = {
   selected: RedisKey
   detail: RedisKeyDetail
   saving: boolean
-  error: string
   onSave: (change: RedisKeyChange) => Promise<void>
   clearError: () => void
   ttlMillis: number
@@ -22,7 +20,7 @@ function formatRemainingTime(seconds: number) {
   return { days, time }
 }
 
-export default function KeyEditor({ selected, detail, saving, error, onSave, clearError, ttlMillis }: Props) {
+export default function KeyEditor({ selected, detail, saving, onSave, clearError, ttlMillis }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const editor = useKeyEditor(selected, detail, ttlMillis, onSave, clearError)
@@ -123,7 +121,6 @@ export default function KeyEditor({ selected, detail, saving, error, onSave, cle
           onChange={(event) => editor.changeValue(event.target.value)}
         />
       </Form.Item>
-      <ErrorNotice error={error ? t(error) : undefined} />
       <Flex justify="end" gap="small" style={{ marginTop: token.marginSM }}>
         <Button disabled={saving} onClick={editor.cancel}>
           {t('取消')}
