@@ -10,8 +10,8 @@
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
 3. 同类组件使用相同尺寸和外观配置，不零散写死高度、边框、弧度或颜色。全局约定放 [appearance](../sql-studio-frontend/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
 4. 成功/失败语义色、紧凑数据表等已确认要求集中配置后复用；圆角沿用 Ant Design 默认 token，不设置全局 borderRadius 覆盖。不能把单处要求扩大为所有原生组件的覆盖。修改共享配置时同时核对亮暗主题和所有使用者。
-5. **业务表单统一左侧文本标签、右侧输入控件。** 使用 Ant Design Form 的 horizontal 布局、labelCol/wrapperCol 和合适的固定标签宽度，标签右对齐；校验错误、帮助说明跟随右侧输入。新建/编辑连接、AI 配置、数据库/Schema/表管理及引擎专属属性表单均遵守，不新增 vertical 或上下排列；长名称说明放右侧内容区，表格内无标签单元格不加空白标签列。核对亮暗主题、长名称和窄窗口。
-6. **普通界面文本沿用系统和 Ant Design 默认字体。** 提示、错误详情、消息、摘要、表单及表格不单独指定字体族、字号、字重或字间距；使用组件默认层级和语义样式，不引入自定义字体。多行说明用普通文本容器配合 whiteSpace/overflowWrap，不能为了保留换行使用自带等宽字体的 pre/code。SQL 编辑与预览沿用现有统一配置，不因局部提示调整字体。样式验收核对实际计算字体、亮暗主题、换行及窄窗口。
+5. **业务表单统一左侧文本标签、右侧输入控件。** 使用 Ant Design Form 的 horizontal 布局、labelCol/wrapperCol 和合适的固定标签宽度，标签右对齐；校验错误、帮助说明跟随右侧输入。新建/编辑连接、AI 配置、数据库/Schema/表管理及引擎专属属性表单均遵守，不新增 vertical 或上下排列；长名称说明放右侧内容区，表格内无标签单元格不加空白标签列。
+6. **普通界面文本沿用系统和 Ant Design 默认字体。** 提示、错误详情、消息、摘要、表单及表格不单独指定字体族、字号、字重或字间距；使用组件默认层级和语义样式，不引入自定义字体。多行说明用普通文本容器配合 whiteSpace/overflowWrap，不能为了保留换行使用自带等宽字体的 pre/code。SQL 编辑与预览沿用现有统一配置，不因局部提示调整字体。
 
 同一引擎的新建/编辑数据库表单保持相同字段顺序、标签宽度和控件列位置。编辑时库名行保留并禁用；PostgreSQL 不可修改字段使用 disabled，不能只用 readOnly。新建尚不支持设置的属性显示默认值提示并禁用，不注册校验或提交这些字段。
 
@@ -21,7 +21,7 @@
 
 独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
 
-错误提示统一复用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md)，使用 Ant Design 默认外观与关闭按钮。页面及子区域的操作错误统一由 PageHeader 在顶栏下方展示，重复原因合并。弹框和抽屉在所属区域展示。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
+错误提示统一复用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md)，使用 Ant Design 默认外观与关闭按钮。页面及子区域的操作错误统一由 PageHeader 在顶栏下方以左右贴边的通栏展示，重复原因合并。弹框和抽屉在所属区域展示。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
 
 组件、hooks、常量/枚举、类型/接口、服务方法和工具按功能独立组织。每个实际功能使用一个目录，`index.ts` 或 `index.tsx` 为实现入口，旁边必须有 `README.md`，而非把多个无关功能堆进一个文件。
 
@@ -49,6 +49,6 @@ README 至少说明职责、导出接口、参数类型/可选值/默认值、�
 
 ## 验证
 
-修改后运行 `pnpm format`、`pnpm lint` 和 `pnpm build`。`pnpm lint` 包含模块结构和本地文档链接检查。功能迁移同步全部调用方、README、目录索引及回归入口；针对行为变化做必要验证。涉及 UI 时核对亮暗主题、长名称、尺寸一致性与伸缩布局，使用隔离数据，不读取业务表满足检查。
+交付遵循 [项目交付前检查](../.agents/skills/sql-studio/SKILL.md#交付前检查)。格式化仅处理改动文件。功能迁移同步调用方、README、目录索引和回归入口。用户要求自动化检查时按范围运行 `pnpm lint`、`pnpm build` 或对应测试，`pnpm lint` 包含模块结构和本地文档链接检查。用户要求界面实测时，使用隔离数据核对亮暗主题、字体、长名称、换行、尺寸和伸缩布局。
 
 新增连接、数据库和表只更新对应列表，不自动切换查询范围、选中或展开节点；对象变更仅刷新目标缓存，其他连接的展开/折叠保留。对象树使用虚拟滚动，滚动位置延迟保存，避免逐帧更新整个工作区。

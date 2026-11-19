@@ -106,9 +106,10 @@ export default function PageHeader({
           {actions}
         </div>
       </header>
-      <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto', paddingInline: 'var(--workspace-inset)' }}>
+      <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
         <ErrorNotice
           key={errorScope}
+          banner
           errors={[...errors, ...(pageErrors?.errors ?? [])]}
           action={errorAction}
           onClose={() => {

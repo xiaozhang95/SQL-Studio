@@ -7,13 +7,14 @@ interface Props {
   error?: string
   errors?: readonly (string | undefined)[]
   title?: string
+  banner?: boolean
   action?: ReactNode
   onClose?: () => void
   style?: CSSProperties
 }
 
 /** 全局错误展示入口，去重原因并使用相同的图标、颜色和关闭方式。 */
-export default function ErrorNotice({ error, errors = [], title, action, onClose, style }: Props) {
+export default function ErrorNotice({ error, errors = [], title, banner, action, onClose, style }: Props) {
   const { t } = useTranslation()
   const details = [...new Set([error, ...errors].filter((value): value is string => Boolean(value?.trim())).map((value) => t(value)))].join('\n')
   if (!details) return null
@@ -22,6 +23,7 @@ export default function ErrorNotice({ error, errors = [], title, action, onClose
     <Alert
       key={`${title ?? ''}\n${details}`}
       type="error"
+      banner={banner}
       showIcon
       closable
       title={title ? t(title) : content}

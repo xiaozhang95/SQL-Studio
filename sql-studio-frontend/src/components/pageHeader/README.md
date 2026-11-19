@@ -8,7 +8,7 @@ Electron 中在业务 header 前组合 [DesktopTitleBar](../desktopTitleBar/READ
 
 title 和 titleOffset 为业务 header 的可选居中标题和水平偏移，默认偏移 0。标题使用 Ant Design 的强调字重，通过 ResizeObserver 限制宽度，卸载时清理。AI 助手显示会话标题，并以侧栏宽度的一半作为偏移。
 
-`errors` 接收页面级错误原因，子区域通过 [PageErrors](../pageErrors/README.md) 登记错误。PageHeader 在顶栏下方合并并去重展示。`errorAction` 放置重试操作，`onErrorClose` 可清理调用方的操作错误，`errorScope` 用于切换工作区标签或会话时重置提示的关闭状态。提示区最多占视口高度的四分之一，长错误可滚动阅读。
+`errors` 接收页面级错误原因，子区域通过 [PageErrors](../pageErrors/README.md) 登记错误。PageHeader 在顶栏下方使用左右贴边的通栏合并并去重展示。`errorAction` 放置重试操作，`onErrorClose` 可清理调用方的操作错误，`errorScope` 用于切换工作区标签或会话时重置提示的关闭状态。提示区最多占视口高度的四分之一，长错误可滚动阅读。
 
 showDesktopTitle?: boolean 默认 true，只控制 Electron 最上方的应用标题。AI 助手沿用默认值，应用标题与业务 header 的会话标题是两个独立区域。
 

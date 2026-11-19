@@ -14,7 +14,7 @@ INSERT INTO sample VALUES
   (9007199254740993,NULL,-99.0001);
 ```
 
-前端多语句是多次独立请求，直接API也须每请求一条，不把整段发给单语句接口。
+SQL 窗口先按引擎切分。MySQL 多语句使用 `/query-batch`，同一会话按顺序执行并逐条返回回执。PostgreSQL 使用独立的 `/query` 请求逐条执行。直接调用 `/query` 时每个请求传一条 SQL。
 
 | 类别 | SQL/输入 | 断言 |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ SELECT * FROM missing_window_table;
 SELECT 999 AS never_run;
 ```
 
-第一条保留，第二条失败且提示后续1条未执行，第三条不发送。另验证 ALTER、DROP、TRUNCATE、RENAME、SET、可执行版本注释可在临时库执行，不按只读拒绝。Navicat 风格的 SET NAMES、DROP IF EXISTS、CREATE、INSERT 脚本需验证真实执行；跨请求 SET/事务状态不继承，不能由此宣称支持完整会话导入。
+第一条结果保留，第二条失败且提示后续一条未执行。另验证 ALTER、DROP、TRUNCATE、RENAME、SET、可执行版本注释可在临时库执行。用 Navicat 风格的 SET NAMES、DROP IF EXISTS、CREATE、INSERT 脚本验证真实执行。同一 MySQL 批次内，SET、用户变量和显式事务状态会延续到后续语句。每次新运行建立自己的会话。
 
 普通字面值 `SELECT '/*! literal */';` 应成功；含分号的表名使用反引号，不能按内部字符切分。二进制/JSON：
 
@@ -113,8 +113,8 @@ SELECT decode('00ff','hex'),'{"a":2}'::jsonb ->> 'a',true,current_schema();
 
 ### 错误、取消、范围与恢复
 
-- 两引擎分别运行 `SELECT 11; SELECT * FROM missing_window_table; SELECT 33;`：仅两条已尝试，第一条结果保留，失败有历史与耗时，33未发送。随后SELECT 44成功。
-- MySQL用 `SELECT SLEEP(20); SELECT 777;`，PostgreSQL用 `SELECT pg_sleep(20); SELECT 777;`。看到运行中再点取消，后续未执行、控件解锁，随后SELECT 88成功；留足UI操作时间，不在查询完成后才点击。
+- 两引擎分别运行 `SELECT 11; SELECT * FROM missing_window_table; SELECT 33;`。第一条结果保留，错误原因显示在顶栏下方，失败有历史与耗时，第三条未执行。随后 `SELECT 44` 成功。
+- MySQL 用 `SELECT 11; SELECT SLEEP(20); SELECT 777;`，PostgreSQL 用 `SELECT 11; SELECT pg_sleep(20); SELECT 777;`。收到首条回执后点击取消，核对消息、摘要与历史的取消状态。先返回的数据可重新查看，末条未执行，控件解锁后 `SELECT 88` 成功。
 - 运行时切到已有另一页，结果仍属发起页；刷新旧结果使用该条执行时的范围与SQL，不使用后来选择器或草稿。
 - 保存后刷新：恢复草稿、范围与旧结果，不自动重跑；若刷新打断运行，应标记中断并等手动执行。
 

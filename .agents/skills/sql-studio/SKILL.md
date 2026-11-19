@@ -9,19 +9,19 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 
 - 前端任务使用 [sql-studio-frontend](../sql-studio-frontend/SKILL.md)，遵守 [前端规范](../../../docs/FRONTEND_STANDARDS.md)，从 [源码索引](../../../sql-studio-frontend/src/README.md) 进入实际模块。
 - 后端任务使用 [sql-studio-backend](../sql-studio-backend/SKILL.md)，遵守 [后端规范](../../../docs/BACKEND_STANDARDS.md)，从 [架构](../../../docs/BACKEND_ARCHITECTURE.md) 和 [包索引](../../../sql-studio-backend/internal/README.md) 进入实际模块。
-- 跨端功能同时维护 API、类型与公开行为，参见 [API 文档](../../../docs/API.md) 和 [开发约定](../../../docs/DEVELOPMENT.md)。当前支持 MySQL、MariaDB 和 PostgreSQL/PolarDB，按实际引擎实现与契约维护。
+- 跨端功能同时维护 API、类型与公开行为，参见 [API 文档](../../../docs/API.md) 和 [开发约定](../../../docs/DEVELOPMENT.md)。当前连接类型包括 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、GreptimeDB 和 Redis，具体能力见 [数据库说明](../../../docs/DATABASES.md)。
 
-查询与结果始终归属发起页面和连接，旧请求取消/失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化或日志；编辑空密码保留旧值。工作区索引和分片不含连接密码，恢复不自动执行 SQL。后端保持默认只读、单语句与请求限制，前端多语句顺序调用单语句 API；取消不能描述为已回滚。
+查询与结果始终归属发起页面和连接，旧请求取消或失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化、日志或工作区索引与分片。编辑时留空保留旧密码。工作区恢复不自动执行 SQL。单语句 API 默认只读，工作台显式允许写入。MySQL 和 MariaDB 的多语句脚本通过批次 API 在同一会话内逐条执行，其他 SQL 引擎按切分结果顺序发送单语句请求。取消后保留已收到的结果与已提交的写入。
 
 ## 文档维护
 
 前后端变更均须同步调用者、模块 README、父级索引、用户文档及相关接口契约。以当前源码和配置核对受影响的入口、默认值、支持范围及行为，在原有章节直接替换过期说明、删除失效内容并合并重复描述。当前文档保持可独立阅读，避免在末尾追加补充、日期更新或修复记录来覆盖前文。交付前复查相关文档间的一致性与本地链接。
 
-## 验证
+## 交付前检查
 
-前端使用 pnpm format/lint/build，结构与文档检查已经归入原生 Node 测试；后端使用 gofmt 和 go test/vet/build，不再要求包装脚本。按行为变化验证，未执行的检查如实说明；使用隔离数据，不为满足检查访问业务表或改写凭据。项目规范不要求额外审批，也不授权提交、部署、发送消息或修改业务数据。
+**修改完成后默认核对源码、改动差异和受影响的文档，用户自行运行和调试。** 仅当用户明确要求时，才在指定范围启动应用、执行构建、lint 或测试、操作浏览器、连接数据库联调或回归。代码格式化按改动文件进行。
 
-- SQL 窗口回归使用 [sql-studio-sql-regression](../sql-studio-sql-regression/SKILL.md)，区分真实驱动/API、执行编排和浏览器验证，使用隔离临时对象并核验清理。
+- 用户明确要求 SQL 窗口实测时使用 [sql-studio-sql-regression](../sql-studio-sql-regression/SKILL.md)。使用隔离临时对象，分别报告真实驱动/API、执行编排和浏览器证据，并核验清理。
 
 ## 交付与 Git 提交日志
 

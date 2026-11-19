@@ -1,23 +1,25 @@
 # 环境、命令与清理
 
-从 [skill 入口](../SKILL.md) 进入。命令中的目录和连接参数先核对当前代码，不复制旧会话临时目录。
+用户明确要求运行回归时，从 [skill 入口](../SKILL.md) 进入。目录和连接参数以当前代码与本轮隔离环境为准。
 
 ## 环境核对
 
 1. 查看 `git status --short`，保留用户已有改动；读取当前测试和README，确认真实测试默认跳过。
 2. 检查Node/pnpm/Go；项目使用pnpm，不为回归更换包管理器或重装健康依赖。
 3. Docker CLI可用时可查 `docker ps` 的端口映射；CLI不存在不等于数据库没启动，已知端口时直接用授权的集成测试验证。
-4. 当前真实窗口测试固定 `127.0.0.1:3306/root`、`127.0.0.1:5432/postgres`，维护库postgres。SQLDESK_TEST_API仅覆盖HTTP地址，不能改数据库端口。Go MySQL集成支持SQLDESK_MYSQL_HOST，其余以代码为准；不同环境应先参数化测试，不假定某个环境变量有效。
-5. 确认8080占用及服务归属。当前config.Load固定监听127.0.0.1:8080，不虚构SQLDESK_PORT。不要停掉用户服务或把测试连接写进其配置；无法建立隔离服务时继续单元/独立Go集成并说明浏览器阻塞点。
+4. 前端真实窗口测试使用 `127.0.0.1`。MySQL 默认 `3306/root`，PostgreSQL 默认 `5432/postgres`，维护库为 `postgres`。容器映射端口分别设 `SQLDESK_MYSQL_PORT` 和 `SQLDESK_PG_PORT`，`SQLDESK_TEST_API` 指向隔离后端。Go 的 MySQL 基础集成还支持 `SQLDESK_MYSQL_HOST`，Go 的 PostgreSQL 基础集成目前使用固定端口 `5432`。
+5. 后端默认地址为 `127.0.0.1:18080`。通过 `SQLDESK_ADDR` 指定已核对空闲的本机端口。复用环境前核对实例归属与测试范围，独立服务无法建立时记录具体阻塞。
 
 ## 隔离后端
 
-在本任务可写产物根下生成唯一子目录。下面PowerShell从仓库根的独立终端执行；任务有专用产物目录时优先使用它。
+在本任务可写产物根下生成唯一子目录。下面的 PowerShell 从仓库根执行，示例端口 `18089` 需先确认空闲。任务有专用产物目录时优先使用它。
 
 ```powershell
 $taskRegressionRoot = Join-Path (Get-Location) ('.tmp-sql-regression-' + [guid]::NewGuid().ToString('N'))
 $env:SQLDESK_STATE_DIR = Join-Path $taskRegressionRoot 'state'
 $env:SQLDESK_DATA_DIR = $env:SQLDESK_STATE_DIR
+$env:SQLDESK_ADDR = '127.0.0.1:18089'
+$env:SQLDESK_WEB_DIR = Join-Path (Get-Location) 'sql-studio-frontend/dist'
 Remove-Item Env:SQLDESK_MYSQL_PASSWORD -ErrorAction SilentlyContinue
 Set-Location sql-studio-backend
 go run main.go
@@ -26,12 +28,12 @@ go run main.go
 - 同时设置 DATA_DIR 与 STATE_DIR，隔离用户默认连接和状态目录。
 - 仅后端终端清除初始化密码，防止自动创建额外连接；测试终端另行注入凭据。环境变量不跨工具进程自动持久化，保留并恢复原有值，不覆盖HOME/CODEX_HOME。
 - 保留前台go run的会话句柄，用Ctrl+C结束，不新增启停/PID/部署包装脚本。
-- 先在前端运行 `pnpm build`；Go提供 `../sql-studio-frontend/dist`，浏览器打开 `http://127.0.0.1:8080`。修复后重新构建并加载，不能用旧产物验证新源码。
+- 用户要求浏览器实测时，先在前端目录运行 `pnpm build`，再由独立后端提供 `SQLDESK_WEB_DIR` 指定的产物。浏览器打开 `SQLDESK_ADDR` 对应的地址。复测新源码使用新构建。
 - 查 `/api/health` 确认就绪，再查 `/api/connections`。新目录应为空；非空时核对来源，不批量删除未知记录。
 
 ## 自动化命令
 
-先将本次授权凭据注入测试进程的SQLDESK_MYSQL_PASSWORD和SQLDESK_PG_PASSWORD，不把值写入skill或输出环境变量列表。
+为本轮所测数据库在测试进程设置 `SQLDESK_MYSQL_PASSWORD` 或 `SQLDESK_PG_PASSWORD`。按请求选择需要的验证层和命令。
 
 ### 无数据库基线
 
@@ -48,12 +50,11 @@ pnpm build
 
 ### 真实SQL窗口编排
 
-确认隔离后端运行，仍在sql-studio-frontend的测试终端：
+确认隔离后端运行，并在 `sql-studio-frontend` 的测试终端执行。单引擎回归将 `SQLDESK_SQL_WINDOW_ENGINE` 设为 `mysql` 或 `postgresql`，分别使用实际映射端口。
 
 ```powershell
-if (-not $env:SQLDESK_MYSQL_PASSWORD -or -not $env:SQLDESK_PG_PASSWORD) { throw '请先提供本次测试凭据' }
 $env:SQLDESK_SQL_WINDOW_INTEGRATION = '1'
-$env:SQLDESK_TEST_API = 'http://127.0.0.1:8080/api'
+$env:SQLDESK_TEST_API = 'http://127.0.0.1:18089/api'
 node --test tests/sql-window.integration.test.mjs
 ```
 
@@ -97,7 +98,7 @@ go build ./...
 
 - 保存实际SQL、明确范围、错误、已发送数量及页面可见结果；先区分断言错误、环境问题和产品缺陷。
 - Windows沙箱可能拒绝pnpm目录解析、Go临时文件rename或localhost请求；按工具权限流程重跑，不据此修改业务代码。审批服务故障也不计作产品缺陷，不能绕过审批。
-- 修复后加载新构建，重跑最小复现、同引擎相邻正常路径和另一引擎受影响路径。静态检查不能取代原浏览器复现。
+- 用户要求修复后复测时加载新构建，覆盖最小复现、同引擎相邻正常路径和范围内受影响的其他引擎。浏览器问题以浏览器结果为准。
 - 清理失败时记录精确对象名称并处理本轮对象，不扩大为删除所有相似前缀的库/schema。
 
 ## 清理和交付
