@@ -58,7 +58,10 @@ func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, 
 		return model.RedisKeyPage{}, err
 	}
 	defer release()
-	client, closeClient := open(ctx, connection, db)
+	client, closeClient, err := c.acquirePool(ctx, connection, db)
+	if err != nil {
+		return model.RedisKeyPage{}, err
+	}
 	defer closeClient()
 	names, next, err := scanPage(ctx, client, cursor, pattern)
 	if err != nil {
@@ -99,7 +102,10 @@ func (c *Client) Key(ctx context.Context, connection model.Connection, db int, n
 		return model.RedisKeyDetail{}, err
 	}
 	defer release()
-	client, closeClient := open(ctx, connection, db)
+	client, closeClient, err := c.acquirePool(ctx, connection, db)
+	if err != nil {
+		return model.RedisKeyDetail{}, err
+	}
 	defer closeClient()
 	kind, err := client.Type(ctx, name).Result()
 	if err != nil {
@@ -158,7 +164,10 @@ func (c *Client) KeyTTL(ctx context.Context, connection model.Connection, db int
 		return model.RedisKeyTTL{}, err
 	}
 	defer release()
-	client, closeClient := open(ctx, connection, db)
+	client, closeClient, err := c.acquirePool(ctx, connection, db)
+	if err != nil {
+		return model.RedisKeyTTL{}, err
+	}
 	defer closeClient()
 	ttl, err := keyedCommand(ctx, client, "PTTL", name).Int64()
 	return model.RedisKeyTTL{TTLMillis: ttl}, err

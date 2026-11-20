@@ -11,6 +11,35 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
+// Keep cluster redirects, which indicate that the previous node declined the
+// command, while avoiding replay if a write may already have reached Redis.
+type userCommand struct{ *driver.Cmd }
+
+func (userCommand) NoRetry() bool { return true }
+
+func canShareRedisCommand(command string) bool {
+	switch command {
+	case "PING", "GET", "MGET", "SET", "MSET", "SETNX", "INCR", "INCRBY", "DECR", "DECRBY",
+		"EXISTS", "TYPE", "TTL", "PTTL", "EXPIRE", "PEXPIRE", "PERSIST", "DEL", "UNLINK",
+		"HGET", "HMGET", "HGETALL", "HSET", "HDEL", "HLEN",
+		"LLEN", "LINDEX", "LRANGE", "LPUSH", "RPUSH", "LPOP", "RPOP",
+		"SCARD", "SMEMBERS", "SISMEMBER", "SADD", "SREM",
+		"ZCARD", "ZSCORE", "ZRANGE", "ZREVRANGE", "ZADD", "ZREM",
+		"SCAN", "HSCAN", "SSCAN", "ZSCAN":
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *Client) commandClient(ctx context.Context, connection model.Connection, db int, command string) (driver.UniversalClient, func(), error) {
+	if canShareRedisCommand(command) {
+		return c.acquirePool(ctx, connection, db)
+	}
+	client, closeClient := open(ctx, connection, db)
+	return client, closeClient, nil
+}
+
 func (c *Client) Run(ctx context.Context, connection model.Connection, db int, args []string) (reply model.RedisReply, err error) {
 	start := time.Now()
 	reply = model.RedisReply{Database: db}
@@ -55,21 +84,28 @@ func (c *Client) Run(ctx context.Context, connection model.Connection, db int, a
 		"MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH", "READONLY", "READWRITE", "ASKING", "CLIENT":
 		return reply, &model.StatementError{Cause: errors.New("该命令需要独立会话，请使用连接设置、逻辑库切换或发布订阅页面")}
 	}
-	client, closeClient := open(ctx, connection, db)
+	client, closeClient, err := c.commandClient(ctx, connection, db, cmd)
+	if err != nil {
+		return reply, err
+	}
 	defer closeClient()
 	command := make([]any, len(args))
 	for i, arg := range args {
 		command[i] = arg
 	}
-	value, err = client.Do(ctx, command...).Result()
+	request := userCommand{driver.NewCmd(ctx, command...)}
+	err = client.Process(ctx, request)
 	if errors.Is(err, driver.Nil) {
 		reply.Output = "(nil)"
-		value = nil
 		return reply, nil
 	}
 	if err != nil {
+		if ctx.Err() != nil {
+			return reply, ctx.Err()
+		}
 		return reply, markCommandError(err)
 	}
+	value = request.Val()
 	reply.Output, reply.Truncated = preview(value, 128*1024)
 	return reply, nil
 }
@@ -81,7 +117,7 @@ func markCommandError(err error) error {
 	}
 	code, _, _ := strings.Cut(serverError.Error(), " ")
 	switch code {
-	case "NOAUTH", "WRONGPASS", "LOADING", "MASTERDOWN", "CLUSTERDOWN", "TRYAGAIN":
+	case "NOAUTH", "WRONGPASS", "LOADING", "MASTERDOWN", "CLUSTERDOWN", "READONLY", "MOVED", "ASK", "TRYAGAIN":
 		return err
 	}
 	return &model.StatementError{Cause: err}

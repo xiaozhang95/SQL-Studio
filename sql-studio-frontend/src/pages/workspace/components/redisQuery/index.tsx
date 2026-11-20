@@ -129,7 +129,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           )}
           {active && tool === 'keys' && (
             <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', userSelect: 'text' }}>
-              <KeyBrowser key={database} id={connection.id} database={Number(database)} />
+              <KeyBrowser key={`${connection.id}:${database}`} id={connection.id} database={Number(database)} />
             </div>
           )}
           {pubSubOpened && (

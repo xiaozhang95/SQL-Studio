@@ -328,8 +328,85 @@
 - 后端 `go test ./...`、`go vet ./...`、`go build ./...` 全部通过。
 - Electron `tests/updates.test.mjs` 12/12 通过。
 
-本轮清理：3 个容器（MySQL、Redis 哨兵、Redis 集群）、`v110` 库、Redis 数据、连接和临时目录均已删除；Chrome 进程与测试端口已关闭。新增截图与导出样本保留在 `test-reports/screenshots-1.1.0/`。
+第 11 节验证结束后清理了 3 个容器（MySQL、Redis 哨兵、Redis 集群）、`v110` 库、Redis 数据、连接和临时目录；Chrome 进程与测试端口已关闭。新增截图与导出样本保留在 `test-reports/screenshots-1.1.0/`。第 12 节重新搭建的 Redis 压测环境也已单独清理。
 
-## 12. 未覆盖
+## 12. Redis 哨兵/集群压力与故障转移（2026-11-20 补充）
 
-- TLS/证书、完整 30 秒超时边界、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、复制/集群/故障切换、跨库分布式事务、Redis 集群模式与 ACL 细粒度权限。
+环境：Redis 7.4.12；哨兵 26379 管理主 16379 / 从 16380（主节点名 `mymaster`）；集群 7000–7005 三主三从。独立实例 `127.0.0.1:18089`；压测通过真实 HTTP 接口执行，交互与结果核验主要用内置浏览器，截图由本机 Chrome CDP 保存（内置浏览器无可见表面）。截图目录：[stress](screenshots-1.1.0/stress/)。
+
+### 1. 常规压力
+
+- 单机/哨兵/集群各顺序执行 300 次 `GET`：单模式约 4.3s，p50 15ms，0 失败。
+- 每模式 100 并发：全部 HTTP 200；单模式完成约 50/133/110ms（单机/哨兵/集群）。
+- 30 并发 60KB value 的 `SET/GET`：全部成功，读取长度 61440 字节。
+- 集群跨槽 `MSET` 返回 400 `CROSSSLOT Keys in request don't hash to the same slot`（预期行为）。
+- 集群 API 键扫描：204 页、20,180 键、2997ms；内置浏览器键浏览 2 万键耗时 71.85s，需点击 20 次“扫描下一批”（每批约 1000 键），属可用但偏慢的交互。
+- 内置浏览器在集群窗口连续执行 400 条命令：24.2s 完成，返回结果正常。
+- 后台负载约 102 命令/秒时，集群监控正常采样节点 `127.0.0.1:7001`。截图：[01](screenshots-1.1.0/stress/01-cluster-monitor-under-load.png)。
+
+### 2. 故障转移
+
+哨兵：
+
+- 20 个并发 worker 持续 `GET`，2.5s 时停止主节点 16379。
+- 哨兵将 16380 提升为主；期间 3257 次请求中 2117 次失败（切换窗口叠加 Windows 临时端口耗尽）。
+- 约 25s 后 `GET/SET/GET` 恢复；内置浏览器查询 `GET sentinel:before` 返回 `failover-value`。截图：[02](screenshots-1.1.0/stress/02-sentinel-after-failover.png)。
+
+集群：
+
+- 8 个并发 worker，2s 时停止主节点 7000。
+- 7003 接管 0–5460 槽，`cluster_state:ok`；916 次请求中 293 次失败。
+- 约 28s 后 `GET/SET stress:key:3` 返回 `after-failover`。截图：[03](screenshots-1.1.0/stress/03-cluster-after-failover.png)。
+
+### 3. 发现
+
+- 故障切换期间失败集中在切换瞬间与客户端重连风暴，切换完成后数据未丢失，哨兵与集群最终均恢复。
+- 后端 Redis 请求按命令创建客户端（`PoolSize=1`、`MaxRetries=-1`）。在 Windows 上，故障转移叠加高并发会快速消耗临时端口，出现 `wsarecv ... forcibly closed`、`Only one usage of each socket address` 等错误，恢复时间约 25–28s。建议评估连接复用或重试退避以降低端口压力；本次记为压测发现，不作为功能失败。
+- 切换后原主 16379 未自动恢复；直接指向该端口的“单机”连接保持不可用（复测 805/805 失败），而哨兵 668/668、集群 640/640 成功。该差异由拓扑决定，不是模式缺陷。
+- 集群 UI 键浏览单次约 1000 键、2 万键需 20 次手动点击，且耗时 71.85s；功能可用，但在大数据量下交互成本较高。
+
+本轮清理：删除 3 个 Redis 测试连接；停止压测用 Chrome 与独立前后端进程；删除容器 `sqldesk-rs-sentinel`、`sqldesk-rs-cluster` 和临时脚本目录；三张压测截图保留在 `test-reports/screenshots-1.1.0/stress/`。
+
+## 13. 异常中断与恢复（2026-11-20 补充）
+
+环境：MySQL 8.4.10（13306）、PostgreSQL 16（15432）、Redis 7.4.12（16381），独立后端 `127.0.0.1:18089`；页面操作使用内置浏览器，落盘截图由本机 Chrome CDP 保存（内置浏览器截图不保存文件）。截图目录：[abnormal](screenshots-1.1.0/abnormal/)。
+
+### 1. 连接突然不可用与恢复
+
+- MySQL、PostgreSQL、Redis 分别停止容器后：查询在 3–28ms 内返回连接失败（`actively refused it`），顶部横幅显示原因，结果区显示“语句 1 执行失败”；应用、其他连接与其他查询不受影响。
+- 重启容器后直接重试即可成功（MySQL 8.4.10 / PostgreSQL 16 / Redis 7.4.12），无需重建连接或重启应用；顶部横幅随成功查询消失。
+- 截图：MySQL [断开](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[恢复](screenshots-1.1.0/abnormal/03-mysql-recovered.png)；Redis [断开](screenshots-1.1.0/abnormal/10-redis-connection-lost.png)、[恢复](screenshots-1.1.0/abnormal/11-redis-recovered.png)。
+
+### 2. 执行中强制终止
+
+- MySQL：`SELECT SLEEP(20)` 执行 2s 后 `docker kill`，1.07s 返回 400 `invalid connection`；重启后查询成功。
+- PostgreSQL：`SELECT pg_sleep(20)` 执行 2s 后 kill，1.07s 返回 400 `unexpected EOF`；重启后恢复。
+- Redis：`BLPOP ... 0` 阻塞中 kill，1.10s 返回 400 `EOF`；重启后 `GET abn:key` 成功。
+- 批量：`query-batch` 第一条 `SLEEP(10)` 中断后流式返回 index 0 错误 `invalid connection` 和 done，第二条未执行；重启后恢复。
+- 截图：[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[恢复](screenshots-1.1.0/abnormal/08-postgres-recovered.png)。
+
+### 3. 数据库卡死：暂停、超时与取消
+
+- `docker pause` 2s 后恢复：`SELECT SLEEP(6)` 最终成功（总耗时约 6.0s），连接可继续使用。
+- 暂停期间点击“取消执行”：页面显示“语句 1 执行已取消 2075 ms”，恢复容器后取消查询未残留（processlist 无 `SELECT SLEEP%`）。截图：[执行中](screenshots-1.1.0/abnormal/04-mysql-paused-running.png)、[取消](screenshots-1.1.0/abnormal/05-mysql-paused-cancel.png)、[恢复](screenshots-1.1.0/abnormal/06-mysql-after-cancel-recovered.png)。
+- 暂停至 30s：请求在 30003ms 返回 `context deadline exceeded`，无残留连接；恢复容器后新查询成功。
+- `docker network disconnect` 模拟网络分区（端口仍映射）：查询不会立即失败，而是挂起并在 30s 返回 `context deadline exceeded`；重新连接网络后查询恢复（首次约 2.4s）。截图：[超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)、[恢复](screenshots-1.1.0/abnormal/17-mysql-network-recovered.png)。
+- 容器 `stop` 会等待正在执行的语句结束（`SLEEP(20)` 最终 6.2s 成功返回），因此“突然中断”需用 `kill` 或断网模拟。
+
+### 4. 连接测试与监控
+
+- MySQL 停机时“编辑连接 → 测试连接”返回“连接失败”并附 `actively refused it`；恢复后显示“连接成功：8.4.10”。截图：[失败](screenshots-1.1.0/abnormal/14-connection-test-down.png)、[成功](screenshots-1.1.0/abnormal/15-connection-test-recovered.png)。
+- Redis 停机时监控页显示顶部连接错误，指标区为空；重启后刷新恢复实例概览（v7.4.12、运行时间 1s、键总数 2）。截图：[监控失败](screenshots-1.1.0/abnormal/12-redis-monitor-down.png)、[监控恢复](screenshots-1.1.0/abnormal/13-redis-monitor-recovered.png)。
+
+### 5. 本轮发现
+
+- **连接级错误仍走顶部红色横幅**：连接失败、`invalid connection`、`unexpected EOF`、`context deadline exceeded` 在结果区只显示“语句 1 执行失败 <耗时>”，具体原因仅在可关闭的顶部横幅；横幅关闭后消息页找不到原因。这与 1.1.0“执行错误就地显示”的 SQL 错误路径不一致，建议把连接级失败原因同步写入消息项。截图：[MySQL 断线](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[网络超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)。
+- 网络分区与容器停止表现不同：停止（端口拒绝）快速失败；断网/卡死会等待到 30s 超时，用户侧显示为长时间“执行中”。属 TCP/超时设计预期，现有“取消执行”可用。
+- 取消与超时后数据库侧未发现残留查询；批量中断后第二条语句未执行。
+- 本轮未重新发起 Agent 对话；Agent 的数据库工具失败语义已由第 9 节覆盖。
+
+本轮清理：删除 3 个测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-abn-mysql`、`sqldesk-abn-pg`、`sqldesk-abn-redis` 和临时脚本目录；17 张截图保留在 `test-reports/screenshots-1.1.0/abnormal/`。
+
+## 14. 未覆盖
+
+- TLS/证书、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、MySQL/PostgreSQL 主从复制与切换、跨库分布式事务、Redis ACL 细粒度权限与 TLS、超过 30 秒的断网后恢复、本次断线环境中的 Agent 实时对话。

@@ -171,7 +171,18 @@ export default function Console({ page, id, database, databases, visible, themeM
             </div>
             {entry.command.trim() && (
               <div style={{ color: entry.error ? token.colorErrorText : token.colorText }}>
-                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t(entry.statementError === false ? '执行失败' : entry.answer) : entry.answer || '""'}
+                {entry.answer === undefined ? (
+                  <LoadingOutlined spin aria-label={t('执行中')} />
+                ) : entry.error && entry.statementError === false ? (
+                  <details onClick={(event) => event.stopPropagation()}>
+                    <summary style={{ cursor: 'pointer' }}>{t('执行失败')}</summary>
+                    <div style={{ paddingInlineStart: token.paddingMD }}>{t(entry.answer)}</div>
+                  </details>
+                ) : entry.error ? (
+                  t(entry.answer)
+                ) : (
+                  entry.answer || '""'
+                )}
               </div>
             )}
             {entry.truncated && <div style={{ color: token.colorTextSecondary }}>{t('仅显示部分内容')}</div>}

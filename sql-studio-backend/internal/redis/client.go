@@ -19,13 +19,19 @@ type Client struct {
 	control chan struct{}
 	closed  map[redisScope]bool
 	active  map[*requestLease]struct{}
+	pools   map[redisScope]*pooledClient
 }
 
 func NewClient() *Client {
-	return &Client{control: make(chan struct{}, 1), closed: make(map[redisScope]bool), active: make(map[*requestLease]struct{})}
+	return &Client{
+		control: make(chan struct{}, 1),
+		closed:  make(map[redisScope]bool),
+		active:  make(map[*requestLease]struct{}),
+		pools:   make(map[redisScope]*pooledClient),
+	}
 }
 
-func open(ctx context.Context, connection model.Connection, db int) (driver.UniversalClient, func()) {
+func newRedisClient(connection model.Connection, db int, poolSize int) driver.UniversalClient {
 	host := strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(connection.Host), "]"), "[")
 	mode := connection.RedisModeValue()
 	addr := net.JoinHostPort(host, strconv.Itoa(connection.Port))
@@ -33,8 +39,13 @@ func open(ctx context.Context, connection model.Connection, db int) (driver.Univ
 		Addrs:    []string{addr},
 		Username: connection.Username, Password: connection.Password, DB: db,
 		Protocol: 2, DisableIdentity: true, ContextTimeoutEnabled: true,
-		MaxRetries: -1, DialerRetries: 1, PoolSize: 1,
+		MaxRetries: -1, DialerRetries: 1,
+		PoolSize:    poolSize,
 		DialTimeout: 4 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second,
+	}
+	if poolSize > 1 {
+		options.MaxActiveConns = poolSize
+		options.ConnMaxIdleTime = redisPoolIdle
 	}
 	switch mode {
 	case model.RedisSentinel:
@@ -64,15 +75,24 @@ func open(ctx context.Context, connection model.Connection, db int) (driver.Univ
 			options.TLSConfig.ServerName = host
 		}
 	}
-	var client driver.UniversalClient
 	switch mode {
 	case model.RedisSentinel:
-		client = driver.NewFailoverClient(options.Failover())
+		return driver.NewFailoverClient(options.Failover())
 	case model.RedisCluster:
-		client = driver.NewClusterClient(options.Cluster())
+		cluster := options.Cluster()
+		if poolSize > 1 {
+			// A reused client can otherwise keep a failed primary in its
+			// routing table for the driver's default one-minute interval.
+			cluster.ClusterStateReloadInterval = 3 * time.Second
+		}
+		return driver.NewClusterClient(cluster)
 	default:
-		client = driver.NewClient(options.Simple())
+		return driver.NewClient(options.Simple())
 	}
+}
+
+func open(ctx context.Context, connection model.Connection, db int) (driver.UniversalClient, func()) {
+	client := newRedisClient(connection, db, 1)
 	var once sync.Once
 	closeClient := func() {
 		once.Do(func() { _ = client.Close() })

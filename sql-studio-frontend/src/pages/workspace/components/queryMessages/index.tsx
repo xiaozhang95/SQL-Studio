@@ -19,6 +19,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
   const { t } = useTranslation()
 
   const statements = statementOutputs(run)
+  const batchError = run.error && !executionCancelled(run) && !statements.some((item) => item.error === run.error && !executionCancelled(item)) ? run.error : undefined
   const identity = run.startedAt ?? run.id
   const [selection, setSelection] = useState<{ identity: typeof identity; page: number }>()
   const latestPage = Math.max(1, Math.ceil(statements.length / 50))
@@ -27,7 +28,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
   const visible = statements.slice(offset, offset + 50)
   const { content: contentRef, pause } = useQueryMessageScroll({
     identity,
-    progress: statements.length,
+    progress: statements.length + Number(Boolean(batchError)),
     page,
     latest: page === latestPage,
     running,
@@ -43,6 +44,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
           const index = position + offset
           const cancelled = executionCancelled(item)
           const detail = run.kind === 'query' ? statementErrorDetail(item) : undefined
+          const requestError = !cancelled && !detail ? item.error : undefined
           return {
             key: String(index),
             label: (
@@ -67,6 +69,11 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
             children: (
               <section aria-label={t('语句 {value1} 执行消息', { value1: index + 1 })}>
                 {item.sql ? <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={databaseType} /> : <div>{t('此结果未记录执行语句')}</div>}
+                {requestError && (
+                  <Typography.Paragraph type="danger" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginBlock: '8px 0' }}>
+                    {t(requestError)}
+                  </Typography.Paragraph>
+                )}
                 {!item.error && !cancelled && (
                   <Typography.Paragraph type="success" style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
                     {item.result?.columns.length ? 'OK' : t('OK，影响 {value1} 行', { value1: item.result?.affectedRows ?? 0 })}
@@ -77,6 +84,27 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
           }
         })}
       />
+      {batchError && page === latestPage && (
+        <Collapse
+          destroyOnHidden
+          key={identity}
+          items={[
+            {
+              key: 'request-error',
+              label: (
+                <Typography.Text type="danger">
+                  <CloseCircleOutlined /> {t('请求失败')}
+                </Typography.Text>
+              ),
+              children: (
+                <Typography.Text type="danger" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                  {t(batchError)}
+                </Typography.Text>
+              )
+            }
+          ]}
+        />
+      )}
       {statements.length > 50 && (
         <Pagination
           {...tablePagination}

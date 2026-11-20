@@ -1,7 +1,8 @@
 import type { RunState, StatementRun } from '@/typings/workspace'
 
 /** 查询使用逐语句结果，对象浏览使用无 SQL 的单结果，绝不读取当前编辑器草稿。 */
-export const statementOutputs = (run: RunState): StatementRun[] => (run.statements?.length ? run.statements : run.result || run.error ? [{ sql: '', result: run.result, error: run.error }] : [])
+export const statementOutputs = (run: RunState): StatementRun[] =>
+  run.statements?.length ? run.statements : run.result || run.error ? [{ sql: '', result: run.result, error: run.error, cancelled: run.cancelled }] : []
 export const statementDuration = (item: StatementRun) => item.result?.durationMs ?? item.durationMs
 
 export const executionCancelled = ({ cancelled, error }: { cancelled?: boolean; error?: string }) => Boolean(cancelled || /^(?:请求已取消|Request cancelled)[。.]?(?:\n|$)/.test(error ?? ''))

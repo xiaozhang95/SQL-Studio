@@ -50,6 +50,10 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
   usePageError(error)
   usePageError(detailError)
   usePageError(lastChange === 'value' || lastChange === 'ttl' ? changeError : undefined)
+  const scanningMore = loading && request.cursor !== '0'
+  const scanningBatch = scanningMore && !request.continuous
+  const scanningContinuously = scanningMore && Boolean(request.continuous)
+  const nextCursor = page?.pattern === request.pattern && page.cursor !== '0' ? page.cursor : undefined
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -70,11 +74,25 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
               aria-label={t('筛选 Redis 键')}
               maxLength={256}
             />
-            <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} loading={loading} disabled={saving} onClick={() => scan(filter)} />
+            <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} loading={loading && !scanningMore} disabled={saving} onClick={() => scan(filter)} />
             <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} disabled={loading || saving} onClick={() => scan(request.pattern)} />
           </Flex>
           {page && (
             <>
+              <Flex align="center" gap="small" wrap>
+                <Typography.Text type="secondary">{t('已加载 {value1} 个键', { value1: page.keys.length })}</Typography.Text>
+                {nextCursor && (
+                  <>
+                    <Button loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
+                      {t('扫描下一批')}
+                    </Button>
+                    <Button loading={scanningContinuously} disabled={(loading && !scanningContinuously) || saving} onClick={() => scan(request.pattern, nextCursor, true)}>
+                      {t('连续扫描')}
+                    </Button>
+                  </>
+                )}
+                {scanningMore && <Button onClick={stopScan}>{t('停止扫描')}</Button>}
+              </Flex>
               {page.keys.length ? (
                 <KeyTree
                   expandedKeys={expandedKeys}
@@ -92,14 +110,6 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                 />
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(page.cursor === '0' ? '没有匹配的键' : '当前扫描页没有匹配的键')} />
-              )}
-              {page.cursor !== '0' && (
-                <Flex gap="small" wrap>
-                  <Button loading={loading} disabled={saving} onClick={() => scan(request.pattern, page.cursor)}>
-                    {t('扫描下一批')}
-                  </Button>
-                  {loading && request.cursor !== '0' && <Button onClick={stopScan}>{t('停止扫描')}</Button>}
-                </Flex>
               )}
             </>
           )}

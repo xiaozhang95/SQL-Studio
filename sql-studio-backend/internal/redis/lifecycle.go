@@ -17,14 +17,14 @@ type redisScope struct {
 	db int
 }
 
+func (scope redisScope) contains(other redisScope) bool {
+	return scope.id == other.id && (scope.db == instanceScope || scope.db == other.db)
+}
+
 type requestLease struct {
 	scope  redisScope
 	cancel context.CancelFunc
 	done   chan struct{}
-}
-
-func (lease *requestLease) matches(scope redisScope) bool {
-	return lease.scope.id == scope.id && (scope.db == instanceScope || lease.scope.db == scope.db)
 }
 
 func (c *Client) beginRequest(ctx context.Context, id string, db int) (context.Context, func(), error) {
@@ -34,8 +34,8 @@ func (c *Client) beginRequest(ctx context.Context, id string, db int) (context.C
 		return ctx, nil, err
 	}
 	scope := redisScope{id, db}
-	if c.closed[redisScope{id, instanceScope}] || c.closed[scope] {
-		return ctx, nil, errors.New("连接或数据库已关闭，请重新打开")
+	if c.scopeClosed(scope) {
+		return ctx, nil, errRedisScopeClosed
 	}
 	requestCtx, cancel := context.WithCancel(ctx)
 	lease := &requestLease{scope: scope, cancel: cancel, done: make(chan struct{})}
@@ -47,6 +47,13 @@ func (c *Client) beginRequest(ctx context.Context, id string, db int) (context.C
 		close(lease.done)
 		c.mu.Unlock()
 	}, nil
+}
+
+var errRedisScopeClosed = errors.New("连接或数据库已关闭，请重新打开")
+
+// scopeClosed must be called while holding c.mu.
+func (c *Client) scopeClosed(scope redisScope) bool {
+	return c.closed[redisScope{scope.id, instanceScope}] || c.closed[scope]
 }
 
 // SetSession serializes open and close, so a close stops only this client's
@@ -81,7 +88,7 @@ func (c *Client) SetSession(ctx context.Context, connection model.Connection, da
 		}
 		if c.closed[scope] {
 			for lease := range c.active {
-				if lease.matches(scope) {
+				if scope.contains(lease.scope) {
 					c.mu.Unlock()
 					return errors.New("连接仍在关闭，请稍后重试")
 				}
@@ -100,12 +107,21 @@ func (c *Client) SetSession(ctx context.Context, connection model.Connection, da
 	c.closed[scope] = true
 	var leases []*requestLease
 	for lease := range c.active {
-		if lease.matches(scope) {
+		if scope.contains(lease.scope) {
 			lease.cancel()
 			leases = append(leases, lease)
 		}
 	}
+	var pools []*pooledClient
+	for key := range c.pools {
+		if scope.contains(key) {
+			pools = append(pools, c.removePool(key))
+		}
+	}
 	c.mu.Unlock()
+	for _, entry := range pools {
+		_ = entry.client.Close()
+	}
 	for _, lease := range leases {
 		select {
 		case <-lease.done:

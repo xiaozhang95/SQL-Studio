@@ -5,15 +5,17 @@ import { changeKey, getKey, getKeyTTL, scanKeys } from '@/services/redis'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail, RedisKeyPage } from '@/services/redis'
 
 type Action = 'create'
+type ScanRequest = { pattern: string; cursor: string; continuous?: boolean }
+type ScanPage = RedisKeyPage & { pattern: string }
 const ttlRefreshMs = 1000
 const subsequentScanPages = 10
 
 export function useKeyBrowser(id: string, database: number) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('')
-  const [request, setRequest] = useState({ pattern: '', cursor: '0' })
+  const [request, setRequest] = useState<ScanRequest>({ pattern: '', cursor: '0' })
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
-  const [page, setPage] = useState<RedisKeyPage>()
+  const [page, setPage] = useState<ScanPage>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<RedisKey>()
@@ -48,41 +50,54 @@ export function useKeyBrowser(id: string, database: number) {
     scanRequest.current = controller
     setLoading(true)
     setError('')
+    let cursor = request.cursor
+    let pending: RedisKeyPage[] = []
+
+    const publish = () => {
+      if (scanRequest.current !== controller || !pending.length) return
+      const scanned = pending
+      pending = []
+      const cursor = scanned[scanned.length - 1].cursor
+      setPage((previous) => {
+        const existing = request.cursor !== '0' && previous?.pattern === request.pattern ? previous.keys : []
+        const keys = new Map(existing.map((key) => [key.ref, key]))
+        for (const page of scanned) {
+          for (const key of page.keys) keys.set(key.ref, key)
+        }
+        return { cursor, keys: [...keys.values()], pattern: request.pattern }
+      })
+    }
+
     const scanBatch = async () => {
-      const pages = request.cursor === '0' ? 1 : subsequentScanPages
-      let cursor = request.cursor
-      const keys: RedisKey[] = []
+      const pages = request.cursor === '0' ? 1 : request.continuous ? Infinity : subsequentScanPages
       for (let index = 0; index < pages; index++) {
+        controller.signal.throwIfAborted()
         const next = await scanKeys(id, database, request.pattern, cursor, controller.signal)
         controller.signal.throwIfAborted()
-        keys.push(...next.keys)
+        pending.push(next)
         cursor = next.cursor
+        if (pending.length === subsequentScanPages) publish()
         if (cursor === '0') break
       }
-      return { keys, cursor }
     }
     void scanBatch()
-      .then((value) => {
-        if (!controller.signal.aborted) {
-          setPage((previous) => {
-            const keys = new Map<string, RedisKey>((request.cursor === '0' ? [] : (previous?.keys ?? [])).map((key) => [key.ref, key]))
-            for (const key of value.keys) keys.set(key.ref, key)
-            return { cursor: value.cursor, keys: [...keys.values()] }
-          })
-        }
-      })
-      .catch((reason: Error) => {
-        if (!controller.signal.aborted) setError(reason.message)
+      .catch((reason) => {
+        if (scanRequest.current === controller && !controller.signal.aborted) setError(reason instanceof Error ? reason.message : String(reason))
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
+        if (scanRequest.current !== controller) return
+        publish()
+        scanRequest.current = null
+        setLoading(false)
       })
-    return () => controller.abort()
+    return () => {
+      if (scanRequest.current === controller) scanRequest.current = null
+      controller.abort()
+    }
   }, [id, database, request])
 
   function stopScan() {
     scanRequest.current?.abort()
-    setLoading(false)
   }
 
   useEffect(
@@ -118,11 +133,15 @@ export function useKeyBrowser(id: string, database: number) {
     }
   }, [id, database, selected, detail, expiring, saving, clearMissingKey])
 
-  function scan(pattern: string, cursor = '0') {
+  function scan(pattern: string, cursor = '0', continuous = false) {
     if (mutation.current) return
-    // 保留旧树直到扫描完成，刷新期间不卸载树的展开状态。
-    setRequest({ pattern, cursor })
+    // 同一筛选刷新时保留旧树，切换筛选时丢弃旧游标和结果。
+    scanRequest.current?.abort()
+    scanRequest.current = null
+    setLoading(true)
+    setRequest({ pattern, cursor, continuous })
     if (cursor !== '0') return
+    setPage((previous) => (previous?.pattern === pattern ? previous : undefined))
     detailRequest.current?.abort()
     selectedRef.current = undefined
     setSelected(undefined)
