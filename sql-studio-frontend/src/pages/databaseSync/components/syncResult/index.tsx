@@ -1,5 +1,5 @@
 import { ClockCircleOutlined, FileTextOutlined } from '@ant-design/icons'
-import { Alert, Card, Descriptions, Flex, Progress, Statistic, theme, Timeline } from 'antd'
+import { Alert, Card, Collapse, Descriptions, Flex, Progress, Statistic, theme, Timeline, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import { useTranslation } from '@/hooks/useTranslation'
@@ -49,6 +49,29 @@ export default function SyncResult({ status, result, plan, source, target, withD
     key: index,
     content: item.table ? `${t(phaseLabels[item.phase])} · ${item.table}` : t(phaseLabels[item.phase])
   }))
+  const finalEntry = {
+    key: -1,
+    color: done ? 'green' : error ? 'red' : 'gray',
+    content: error ? (
+      <Collapse
+        key={startedAt}
+        size="small"
+        items={[
+          {
+            key: 'error',
+            label: t(statusText),
+            children: (
+              <Typography.Text type="danger" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                {t(error)}
+              </Typography.Text>
+            )
+          }
+        ]}
+      />
+    ) : (
+      t(statusText)
+    )
+  }
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -90,7 +113,7 @@ export default function SyncResult({ status, result, plan, source, target, withD
           }
         >
           <div ref={log} role="log" aria-label={t('同步日志')} style={{ maxHeight: 340, overflowY: 'auto', overflowWrap: 'anywhere' }}>
-            <Timeline items={running ? events : [...events, { key: -1, content: t(statusText), color: done ? 'green' : error ? 'red' : 'gray' }]} />
+            <Timeline items={running ? events : [...events, finalEntry]} />
           </div>
         </Card>
       </div>

@@ -6,7 +6,6 @@ import { useMemo, useState } from 'react'
 import DeleteConfirmation from '@/components/deleteConfirmation'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance, ComponentSize } from '@/constant/appearance'
-import { usePageError } from '@/contexts/pageErrors'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -69,8 +68,7 @@ function FavoriteNameDialog({ favorites, title }: { favorites: Favorites; title?
 export default function QueryFavorites({ favorites, connections, themeMode, canOpen, onOpen }: Props) {
   const { t } = useTranslation()
   const pagination = useTablePagination()
-  const { items, open, draft, busy, error, reload, setOpen, edit, remove } = favorites
-  usePageError(open ? error : undefined)
+  const { items, open, draft, busy, error, reload, close, edit, deleting, deleteError, setDeleteOpen, remove } = favorites
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [drawerReady, setDrawerReady] = useState(false)
@@ -116,10 +114,13 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
           <ToolbarButton label={t('重命名收藏')} icon={<EditOutlined />} size={ComponentSize.Small} disabled={Boolean(busy)} onClick={() => edit(item)} />
           <DeleteConfirmation
             title={t('删除此查询收藏？')}
-            disabled={Boolean(busy)}
-            onConfirm={async () => {
-              await remove(item.id)
-            }}
+            description={deleting === item.id && deleteError ? <ErrorNotice error={deleteError} /> : undefined}
+            open={open && deleting === item.id}
+            disabled={Boolean(busy) && deleting !== item.id}
+            onOpenChange={(visible) => setDeleteOpen(item.id, visible)}
+            okButtonProps={{ loading: deleting === item.id && busy === 'write', disabled: busy === 'read' }}
+            cancelButtonProps={{ disabled: busy === 'write' }}
+            onConfirm={() => void remove(item.id)}
           >
             <ToolbarButton label={t('删除收藏')} icon={<DeleteOutlined />} size={ComponentSize.Small} danger disabled={Boolean(busy)} />
           </DeleteConfirmation>
@@ -137,7 +138,7 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
           </Space>
         }
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={close}
         afterOpenChange={setDrawerReady}
         size="min(860px, 100vw)"
         styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
@@ -149,6 +150,7 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
           ) : undefined
         }
       >
+        <ErrorNotice title={t('读取查询收藏失败')} error={error} style={{ marginBottom: 12 }} />
         <Input
           style={{ flexShrink: 0 }}
           value={search}

@@ -1,5 +1,5 @@
 import { ReloadOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, Flex, Select, Typography } from 'antd'
+import { Button, Card, Empty, Flex, Select, Tag, Tooltip, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
@@ -18,6 +18,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
   const monitor = useDatabaseMonitor(connections, initialConnection, initialDatabase)
   const { connection, result } = monitor
   const snapshot = result?.snapshot
+  const sampleError = result?.error
   const MonitorPanel = getDatabaseMonitorPanel(connection?.type)
   const defaultDatabase = connection?.database || getDatabaseProfile(connection?.type).database
   const options = connections.map((item) => ({
@@ -37,7 +38,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     label: value === 0 ? t('已关闭') : value < 60 ? t('每 {count} 秒', { count: value }) : t('每 {count} 分钟', { count: value / 60 })
   }))
   return (
-    <DatabasePage title={t('监控指标')} errors={[result?.error]} {...pageProps}>
+    <DatabasePage title={t('监控指标')} errors={[sampleError]} {...pageProps}>
       {connections.length ? (
         <>
           <Card size="small">
@@ -73,6 +74,13 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
                 {snapshot && ` · ${t('采样于 {time}', { time: new Date(snapshot.sampledAt).toLocaleTimeString(language) })}`}
               </Typography.Text>
               <Flex align="center" gap="small" wrap style={{ marginInlineStart: 'auto' }}>
+                {sampleError && (
+                  <Tooltip title={t(sampleError)} trigger={['hover', 'focus']}>
+                    <Tag color={snapshot ? 'warning' : 'error'} tabIndex={0}>
+                      {t(snapshot ? '采样失败，显示上次数据' : '采样失败')}
+                    </Tag>
+                  </Tooltip>
+                )}
                 <Select aria-label={t('自动刷新')} value={monitor.refreshInterval} options={intervalOptions} prefix={t('自动刷新')} style={{ minWidth: 164 }} onChange={monitor.setRefreshInterval} />
                 <Button icon={<ReloadOutlined />} loading={monitor.loading} onClick={monitor.refresh}>
                   {t('刷新')}
@@ -82,7 +90,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
           )}
           {snapshot ? (
             <MonitorPanel key={connection?.id} snapshot={snapshot} history={result?.history ?? []} />
-          ) : connection && !result?.error ? (
+          ) : connection && !sampleError ? (
             <ContentLoading label={t('正在读取数据库指标…')} style={{ minHeight: 120 }} />
           ) : null}
         </>

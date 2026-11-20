@@ -1,10 +1,11 @@
 import { CloseOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
 import { Alert, Empty, Input, Pagination, Table, Typography } from 'antd'
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import DeleteConfirmation from '@/components/deleteConfirmation'
 import EmptyStateIcon from '@/components/emptyStateIcon'
+import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
@@ -79,12 +80,35 @@ export default function QueryResults({ model, themeMode }: Props) {
     onDirtyChange: model.setTableDesignerDirty,
     onResult: model.replaceTableResult
   })
-  usePageError(editing.deletionError, tab.id)
   usePageError(editing.operationError, tab.id)
   const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
   const selectedRows = selection.result === result ? selection.keys : []
   const [deleteTarget, setDeleteTarget] = useState<{ result: typeof result; pageId: string; rows: number[] }>()
-  const deletingRows = deleteTarget?.result === result && deleteTarget?.pageId === tab.id ? deleteTarget.rows : undefined
+  const deletionPending = useRef(false)
+  const currentDelete = deleteTarget?.pageId === tab.id ? deleteTarget : undefined
+  const deletingRows = currentDelete && currentDelete.result === result ? currentDelete.rows : undefined
+  const deleteError = currentDelete ? editing.deletionError : ''
+
+  function setDeleteOpen(open: boolean) {
+    // 确认按钮触发的自动关闭由受控气泡忽略，等请求结果再决定是否关闭。
+    if (deletionPending.current) return
+    editing.clearDeletionError()
+    setDeleteTarget(open ? { result, pageId: tab.id, rows: [...selectedRows] } : undefined)
+  }
+
+  async function confirmDelete() {
+    if (deleteError) {
+      setDeleteOpen(false)
+      return
+    }
+    if (!deletingRows || editingBlocked || editing.dirty || deletionPending.current) return
+    deletionPending.current = true
+    try {
+      if (await editing.deleteRows(deletingRows, () => setSelection({ keys: [] }))) setDeleteTarget(undefined)
+    } finally {
+      deletionPending.current = false
+    }
+  }
   const [sorting, setSorting] = useState<{ result?: typeof result; sort?: ResultSort }>({})
   const sort = sorting.result === result ? sorting.sort : undefined
   const [selectedView, setSelectedView] = useState<{
@@ -234,20 +258,16 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                 />
                 <DeleteConfirmation
-                  title={t('删除选中的 {value1} 行数据？', { value1: (deletingRows ?? selectedRows).length })}
-                  description={t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。')}
-                  open={Boolean(deletingRows)}
-                  disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving}
-                  onOpenChange={(open) => {
-                    if (!editing.saving) setDeleteTarget(open ? { result, pageId: tab.id, rows: [...selectedRows] } : undefined)
-                  }}
-                  okButtonProps={{ danger: true, loading: editing.saving }}
+                  title={deleteError ? t('删除结果') : t('删除选中的 {value1} 行数据？', { value1: (deletingRows ?? selectedRows).length })}
+                  description={deleteError ? <ErrorNotice error={deleteError} /> : t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。')}
+                  open={Boolean(deletingRows || deleteError)}
+                  disabled={!deleteError && (editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving)}
+                  onOpenChange={setDeleteOpen}
+                  showCancel={!deleteError}
+                  okText={deleteError ? t('关闭') : undefined}
+                  okButtonProps={{ danger: !deleteError, loading: editing.saving }}
                   cancelButtonProps={{ disabled: editing.saving }}
-                  onConfirm={async () => {
-                    if (!deletingRows || editingBlocked || editing.dirty) return
-                    await editing.deleteRows(deletingRows, () => setSelection({ keys: [] }))
-                    setDeleteTarget(undefined)
-                  }}
+                  onConfirm={() => void confirmDelete()}
                 >
                   <ToolbarButton
                     label={t('删除行')}

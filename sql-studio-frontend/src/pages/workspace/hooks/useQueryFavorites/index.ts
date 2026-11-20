@@ -12,6 +12,8 @@ export function useQueryFavorites() {
   const [busy, setBusy] = useState<'read' | 'write'>()
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
+  const [deleting, setDeleting] = useState<string>()
+  const [deleteError, setDeleteError] = useState('')
   const pending = useRef(false)
 
   async function run(action: () => Promise<QueryFavorite[]>, status: 'read' | 'write', onFailure: (message: string) => void) {
@@ -35,6 +37,11 @@ export function useQueryFavorites() {
   function show() {
     setOpen(true)
     void reload()
+  }
+  function close() {
+    setOpen(false)
+    setDeleting(undefined)
+    setDeleteError('')
   }
   function edit(query: Draft) {
     if (!query.sql.trim()) return
@@ -63,9 +70,19 @@ export function useQueryFavorites() {
       setError('')
     }
   }
-  function remove(id: string) {
-    return run(() => changeQueryFavorites((items) => items.filter((item) => item.id !== id)), 'write', setError)
+  function setDeleteOpen(id: string, visible: boolean) {
+    // 请求期间保留确认气泡，删除成功后由 remove 关闭。
+    if (pending.current || (!visible && deleting !== id)) return
+    setDeleting(visible ? id : undefined)
+    setDeleteError('')
+  }
+  async function remove(id: string) {
+    if (id !== deleting) return
+    if (await run(() => changeQueryFavorites((items) => items.filter((item) => item.id !== id)), 'write', setDeleteError)) {
+      setDeleting(undefined)
+      setError('')
+    }
   }
 
-  return { busy, closeEditor, draft, edit, editError, error, items, open, reload, remove, save, setOpen, show }
+  return { busy, close, closeEditor, deleting, deleteError, draft, edit, editError, error, items, open, reload, remove, save, setDeleteOpen, show }
 }

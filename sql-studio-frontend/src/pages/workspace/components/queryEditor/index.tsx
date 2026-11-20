@@ -1,4 +1,4 @@
-import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
@@ -30,6 +30,7 @@ type Props = {
     | 'running'
     | 'activeRunning'
     | 'cancelQuery'
+    | 'connectionAction'
     | 'tab'
     | 'getCurrentSQL'
     | 'getEditorHistory'
@@ -63,7 +64,6 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
     error: importError
   } = useSQLImport((sql, title) => model.addTab(sql, { connectionId: tab.connectionId, database: tab.database, schema: tab.schema, table: tab.table }, title))
   usePageError(importError)
-  usePageError(objects.error, tab.connectionId)
   usePageError(objects.tableError, `${tab.connectionId}:${tab.database}`)
   const [contextSQL, setContextSQL] = useState('')
   const engine = connections.find((connection) => connection.id === tab.connectionId)?.type
@@ -110,6 +110,9 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
           <>
             <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
             {activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
+            {objects.error && (
+              <ToolbarButton label={t('重试连接')} hint={objects.error} icon={<ReloadOutlined />} disabled={running} onClick={() => model.connectionAction('open', tab.connectionId)} />
+            )}
           </>
         }
       >

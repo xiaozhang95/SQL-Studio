@@ -203,9 +203,9 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     }
   }
   async function deleteRows(keys: number[], onDeleted: () => void) {
-    if (!dataEditing || blocked || dirty || request.current || !result || !connection || tab.kind !== 'data' || !keys.length) return
+    if (!dataEditing || blocked || dirty || request.current || !result || !connection || tab.kind !== 'data' || !keys.length) return false
     const selected = [...new Set(keys)].filter((key) => key >= 0 && result.rows[key])
-    if (!selected.length) return
+    if (!selected.length) return false
     const controller = new AbortController()
     request.current = controller
     setSaving(true)
@@ -223,15 +223,18 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         removed.add(key)
       }
       const refreshed = await executeQuery(tab.connectionId, { database: tab.database, sql: adapter.tableDataSQL(tab.database, tab.table) }, controller.signal)
-      if (!controller.signal.aborted) onResult(tab.id, refreshed)
+      if (controller.signal.aborted) return false
+      onResult(tab.id, refreshed)
+      return true
     } catch (error) {
       if (!controller.signal.aborted) {
         if (removed.size) onResult(tab.id, { ...result, rows: result.rows.filter((_, index) => !removed.has(index)), rowCount: result.rows.length - removed.size })
         setDeletionError({
           page: tab.id,
-          detail: t('已删除 {value1} 行。', { value1: removed.size }) + (error instanceof Error ? error.message : t('删除失败')) + t('；若请求中断，请刷新核对实际数据后再重试。')
+          detail: [t('已确认删除 {value1} 行。', { value1: removed.size }), error instanceof Error ? error.message : t('删除失败'), t('请刷新核对实际数据后再重试。')].join('\n')
         })
       }
+      return false
     } finally {
       onDeleted()
       setCell(undefined)

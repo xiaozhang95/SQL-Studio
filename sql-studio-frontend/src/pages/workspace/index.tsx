@@ -185,7 +185,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
         onOpen={(item) => {
           const connection = model.connections.find(({ id }) => id === item.connectionId)
           const scope = connection ? { connectionId: connection.id, database: item.database, schema: item.schema, table: '' } : undefined
-          if (model.addTab(item.sql, scope, item.title)) favorites.setOpen(false)
+          if (model.addTab(item.sql, scope, item.title)) favorites.close()
         }}
       />
     </div>
