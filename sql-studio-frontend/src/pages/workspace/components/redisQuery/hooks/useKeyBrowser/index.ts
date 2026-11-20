@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { changeKey, getKey, getKeyTTL, scanKeys } from '@/services/redis'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail, RedisKeyPage } from '@/services/redis'
+import { RequestError } from '@/utils/request'
 
 type Action = 'create'
 type ScanRequest = { pattern: string; cursor: string; continuous?: boolean }
-type ScanPage = RedisKeyPage & { pattern: string }
+type ScanPage = Omit<RedisKeyPage, 'cursor'> & { pattern: string; cursor: string | null }
 const ttlRefreshMs = 1000
 const subsequentScanPages = 10
 
@@ -51,25 +52,29 @@ export function useKeyBrowser(id: string, database: number) {
     setLoading(true)
     setError('')
     let cursor = request.cursor
+    let cursorExpired = false
+    let replaceKeys = cursor === '0'
     let pending: RedisKeyPage[] = []
 
     const publish = () => {
-      if (scanRequest.current !== controller || !pending.length) return
+      if (scanRequest.current !== controller || (!pending.length && !cursorExpired)) return
       const scanned = pending
+      const nextCursor = cursorExpired ? null : cursor
+      const replace = replaceKeys
+      replaceKeys = false
       pending = []
-      const cursor = scanned[scanned.length - 1].cursor
       setPage((previous) => {
-        const existing = request.cursor !== '0' && previous?.pattern === request.pattern ? previous.keys : []
+        const existing = !replace && previous?.pattern === request.pattern ? previous.keys : []
         const keys = new Map(existing.map((key) => [key.ref, key]))
         for (const page of scanned) {
           for (const key of page.keys) keys.set(key.ref, key)
         }
-        return { cursor, keys: [...keys.values()], pattern: request.pattern }
+        return { cursor: nextCursor, keys: [...keys.values()], pattern: request.pattern }
       })
     }
 
     const scanBatch = async () => {
-      const pages = request.cursor === '0' ? 1 : request.continuous ? Infinity : subsequentScanPages
+      const pages = request.continuous ? Infinity : request.cursor === '0' ? 1 : subsequentScanPages
       for (let index = 0; index < pages; index++) {
         controller.signal.throwIfAborted()
         const next = await scanKeys(id, database, request.pattern, cursor, controller.signal)
@@ -82,7 +87,9 @@ export function useKeyBrowser(id: string, database: number) {
     }
     void scanBatch()
       .catch((reason) => {
-        if (scanRequest.current === controller && !controller.signal.aborted) setError(reason instanceof Error ? reason.message : String(reason))
+        if (scanRequest.current !== controller || controller.signal.aborted) return
+        cursorExpired = reason instanceof RequestError && reason.status === 409
+        setError(reason instanceof Error ? reason.message : String(reason))
       })
       .finally(() => {
         if (scanRequest.current !== controller) return

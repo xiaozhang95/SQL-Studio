@@ -1,5 +1,10 @@
 package model
 
+import "errors"
+
+// ErrRedisScanCursorExpired marks a cursor issued for a different cluster scan scope.
+var ErrRedisScanCursorExpired = errors.New("Redis 集群扫描范围已变化，请重新扫描")
+
 type RedisKey struct {
 	Name string `json:"name"`
 	Ref  string `json:"ref"`

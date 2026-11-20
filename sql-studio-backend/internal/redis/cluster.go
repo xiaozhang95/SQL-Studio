@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	driver "github.com/redis/go-redis/v9"
+	"sql-studio-backend/internal/model"
 )
 
 // clusterNodes keeps node order deterministic across independent requests.
@@ -61,12 +62,18 @@ func decodeClusterScanCursor(cursor, fingerprint string, nodes int) (clusterScan
 		return page, nil
 	}
 	parts := strings.Split(cursor, ":")
-	if len(parts) != 3 || parts[0] != fingerprint {
-		return page, errors.New("Redis 集群扫描范围已变化，请重新扫描")
+	if len(parts) != 3 {
+		return page, errors.New("Redis 游标或筛选条件无效")
 	}
 	index, indexErr := strconv.Atoi(parts[1])
 	position, positionErr := strconv.ParseUint(parts[2], 10, 64)
-	if indexErr != nil || positionErr != nil || index < 0 || index >= nodes {
+	if indexErr != nil || positionErr != nil || index < 0 {
+		return page, errors.New("Redis 游标或筛选条件无效")
+	}
+	if parts[0] != fingerprint {
+		return page, model.ErrRedisScanCursorExpired
+	}
+	if index >= nodes {
 		return page, errors.New("Redis 游标或筛选条件无效")
 	}
 	page.index, page.position = index, position

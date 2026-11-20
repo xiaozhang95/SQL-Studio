@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -20,6 +21,10 @@ func registerRedis(api *gin.RouterGroup, service *redistools.Service) {
 	})
 	group.GET("/keys", func(c *gin.Context) {
 		page, err := service.Keys(c.Request.Context(), c.Param("id"), c.Query("database"), c.Query("cursor"), c.Query("pattern"))
+		if errors.Is(err, model.ErrRedisScanCursorExpired) {
+			respond(c, http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		redisResponse(c, page, err)
 	})
 	for _, route := range []string{"/key", "/key/ttl"} {

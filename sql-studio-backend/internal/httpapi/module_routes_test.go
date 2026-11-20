@@ -17,6 +17,7 @@ import (
 	"sql-studio-backend/internal/modules/connections"
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
+	"sql-studio-backend/internal/modules/redistools"
 )
 
 type routeDatabase struct {
@@ -67,6 +68,40 @@ func (d routeDatabase) SetSession(ctx context.Context, c model.Connection, datab
 
 func regressionServices(store *connection.Store, db routeDatabase) Services {
 	return Services{Connections: connections.New(store, db), Metadata: metadata.New(store, db), Queries: query.New(store, db)}
+}
+
+type redisScanRoute struct {
+	redistools.Engine
+	err error
+}
+
+func (r redisScanRoute) Keys(context.Context, model.Connection, int, string, string) (model.RedisKeyPage, error) {
+	return model.RedisKeyPage{}, r.err
+}
+
+func TestRedisScanRouteDistinguishesExpiredCursor(t *testing.T) {
+	store, err := connection.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := store.Save(model.Connection{Type: model.TypeRedis, RedisMode: model.RedisCluster, Name: "test", Host: "fixture", Port: 6379})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		err    error
+		status int
+	}{
+		{model.ErrRedisScanCursorExpired, http.StatusConflict},
+		{errors.New("Redis 游标或筛选条件无效"), http.StatusBadRequest},
+	} {
+		router := New(Services{Redis: redistools.New(store, redisScanRoute{err: test.err})})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "http://127.0.0.1:8080/api/connections/"+saved.ID+"/redis/keys?cursor=old:0:42", nil))
+		if rec.Code != test.status || !strings.Contains(rec.Body.String(), test.err.Error()) {
+			t.Fatalf("unexpected scan error: %d %s", rec.Code, rec.Body.String())
+		}
+	}
 }
 
 func TestModuleRoutesKeepExplicitScope(t *testing.T) {

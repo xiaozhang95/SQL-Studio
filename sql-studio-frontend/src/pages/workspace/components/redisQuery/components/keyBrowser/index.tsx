@@ -50,10 +50,12 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
   usePageError(error)
   usePageError(detailError)
   usePageError(lastChange === 'value' || lastChange === 'ttl' ? changeError : undefined)
-  const scanningMore = loading && request.cursor !== '0'
+  const scanningMore = loading && (request.cursor !== '0' || request.continuous === true)
   const scanningBatch = scanningMore && !request.continuous
   const scanningContinuously = scanningMore && Boolean(request.continuous)
-  const nextCursor = page?.pattern === request.pattern && page.cursor !== '0' ? page.cursor : undefined
+  const currentPage = page?.pattern === request.pattern ? page : undefined
+  const needsRestart = currentPage?.cursor === null
+  const nextCursor = currentPage?.cursor
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -81,7 +83,12 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
             <>
               <Flex align="center" gap="small" wrap>
                 <Typography.Text type="secondary">{t('已加载 {value1} 个键', { value1: page.keys.length })}</Typography.Text>
-                {nextCursor && (
+                {needsRestart && (
+                  <Button icon={<ReloadOutlined />} disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
+                    {t('重新扫描')}
+                  </Button>
+                )}
+                {nextCursor && nextCursor !== '0' && (
                   <>
                     <Button loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
                       {t('扫描下一批')}

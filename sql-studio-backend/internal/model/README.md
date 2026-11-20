@@ -46,6 +46,6 @@ database_sync.go 定义 同引擎同步的连接范围、选项、检查摘要�
 
 monitor.go 定义数据库监控采样和指标契约，数值使用十进制字符串。MonitorSnapshot.Redis 可选，RedisMonitor 提供版本/模式/角色/runId、白名单 MonitorSection 和 RedisKeyspace；键空间 keyspaces=null 表示未知，空数组表示无非空逻辑库，AverageTTLMS 为毫秒字符串。其他引擎不返回 redis。
 
-redis.go 定义二进制键引用、详情和键修改。RedisKeyDetail.editable 表示当前完整预览可按原类型修改；RedisKeyChange.valueType 缺省 string，集合类型支持 list/set/hash/zset，value 使用 JSON 字符串数组或二元字符串数组，before 携带原 preview。target 可与值同时变更，省略 ttl 保留原期限；格式、大小及并发边界由 Redis 工具服务和引擎校验。
+redis.go 定义二进制键引用、详情和键修改。`ErrRedisScanCursorExpired` 表示集群游标与当前扫描范围不匹配。RedisKeyDetail.editable 表示当前完整预览可按原类型修改；RedisKeyChange.valueType 缺省 string，集合类型支持 list/set/hash/zset，value 使用 JSON 字符串数组或二元字符串数组，before 携带原 preview。target 可与值同时变更，省略 ttl 保留原期限；格式、大小及并发边界由 Redis 工具服务和引擎校验。
 
 MonitorDetails 为非 Redis 引擎的可选扩展，包含 Version/Role/Identity、白名单 Sections 和可选 Warnings；数值指标留在 Metrics，文本字段仅在详情。SelectMonitorSection 按显式键序选择可用字段，不填充未知值，不修改原采样。

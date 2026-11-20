@@ -1,6 +1,11 @@
 package redis
 
-import "testing"
+import (
+	"errors"
+	"testing"
+
+	"sql-studio-backend/internal/model"
+)
 
 func TestClusterScanCursorVisitsEveryPrimary(t *testing.T) {
 	start, err := decodeClusterScanCursor("0", "topology", 2)
@@ -16,7 +21,10 @@ func TestClusterScanCursorVisitsEveryPrimary(t *testing.T) {
 	if err != nil || second.index != 1 || second.position != 0 || second.advance(0, 2) != "0" {
 		t.Fatalf("failed to finish both primaries: %+v %v", second, err)
 	}
-	if _, err := decodeClusterScanCursor(token, "changed", 2); err == nil {
-		t.Fatal("accepted cursor for a different scan scope")
+	if _, err := decodeClusterScanCursor(token, "changed", 1); !errors.Is(err, model.ErrRedisScanCursorExpired) {
+		t.Fatalf("changed scan scope must invalidate the cursor: %v", err)
+	}
+	if _, err := decodeClusterScanCursor("malformed", "topology", 2); err == nil || errors.Is(err, model.ErrRedisScanCursorExpired) {
+		t.Fatalf("malformed cursor must remain a validation error: %v", err)
 	}
 }

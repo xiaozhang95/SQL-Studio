@@ -8,6 +8,8 @@
 
 SQL 单条查询和 Redis 命令的已识别语句错误通过 HTTP 400 的 `statementError: true` 标记，SQL 批次在对应 NDJSON 语句事件中使用同一标记。原始错误及状态码沿用各接口约定。
 
+Redis 键扫描遇到已失效的集群游标时返回 HTTP 409，客户端可从游标 0 重启扫描。
+
 请求语言中间件在本机校验前解析 Accept-Language，支持 zh-CN/en-US 及权重，缺省简体中文；响应设置 Content-Language 和 Vary: Accept-Language。普通 JSON 错误通过 respond 统一翻译顶层 error，状态码与错误判定保持原有语义。导出 SSE 的 error、Agent 的 status/error/stopped、继续确认 detail 及工具系统告警也使用同一词典；会话历史读取在响应副本中转换系统事件，不改写磁盘记录或共享缓存。write_confirmation 的 ID、目标和 SQL 保持原值。未知的数据库/系统错误、查询数据、用户输入和模型回答原样返回。
 
 `NotFound(c *gin.Context)` 供 app 的 API 路由兜底使用，返回采用相同语言约定的 JSON 404；普通网页 404 保持静态路由行为。

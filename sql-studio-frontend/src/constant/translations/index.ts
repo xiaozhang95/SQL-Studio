@@ -947,6 +947,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   '请选择至少两条以 INSERT 开头的语句': 'Select at least two statements that start with INSERT',
   扫描下一批: 'Scan next batch',
   连续扫描: 'Scan continuously',
+  重新扫描: 'Restart scan',
   停止扫描: 'Stop scan',
   '已加载 {value1} 个键': '{value1} keys loaded',
   '共 {value1} 行': '{value1} rows total',

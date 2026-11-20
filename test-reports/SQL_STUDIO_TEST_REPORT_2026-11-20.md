@@ -400,13 +400,82 @@
 
 ### 5. 本轮发现
 
-- **连接级错误仍走顶部红色横幅**：连接失败、`invalid connection`、`unexpected EOF`、`context deadline exceeded` 在结果区只显示“语句 1 执行失败 <耗时>”，具体原因仅在可关闭的顶部横幅；横幅关闭后消息页找不到原因。这与 1.1.0“执行错误就地显示”的 SQL 错误路径不一致，建议把连接级失败原因同步写入消息项。截图：[MySQL 断线](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[网络超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)。
+- **连接级错误仍走顶部红色横幅**：连接失败、`invalid connection`、`unexpected EOF`、`context deadline exceeded` 在结果区只显示“语句 1 执行失败 <耗时>”，具体原因仅在可关闭的顶部横幅；横幅关闭后消息页找不到原因。这与 1.1.0“执行错误就地显示”的 SQL 错误路径不一致，建议把连接级失败原因同步写入消息项。截图：[MySQL 断线](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[网络超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)。该问题已在提交 `4ea8522` 修复并复测，见第 14 节。
 - 网络分区与容器停止表现不同：停止（端口拒绝）快速失败；断网/卡死会等待到 30s 超时，用户侧显示为长时间“执行中”。属 TCP/超时设计预期，现有“取消执行”可用。
 - 取消与超时后数据库侧未发现残留查询；批量中断后第二条语句未执行。
 - 本轮未重新发起 Agent 对话；Agent 的数据库工具失败语义已由第 9 节覆盖。
 
 本轮清理：删除 3 个测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-abn-mysql`、`sqldesk-abn-pg`、`sqldesk-abn-redis` 和临时脚本目录；17 张截图保留在 `test-reports/screenshots-1.1.0/abnormal/`。
 
-## 14. 未覆盖
+## 14. Codex 修复复测（提交 4ea8522，2026-11-20）
 
-- TLS/证书、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、MySQL/PostgreSQL 主从复制与切换、跨库分布式事务、Redis ACL 细粒度权限与 TLS、超过 30 秒的断网后恢复、本次断线环境中的 Agent 实时对话。
+复测对象：`fix: 优化 Redis 连接复用与键扫描，保留执行失败详情`（前端版本 1.1.1）。环境为 MySQL 8.4.10、Redis 7.4.12 单机 / 哨兵 / 三主三从集群，独立后端 `127.0.0.1:18089`。截图目录：[fix-verify](screenshots-1.1.0/fix-verify/)。
+
+### 1. Redis 连接复用
+
+- 新增共享连接池：可共享命令复用同一客户端（池大小 16、空闲 2 分钟回收、最多 32 个池）；事务、阻塞命令与发布订阅仍走独立会话。集群客户端的状态刷新间隔改为 3 秒。
+- 30 并发写入 20,000 个集群键：3.2s 完成，0 失败；期间 Windows `TIME_WAIT` 从 120 变为 116，未出现临时端口耗尽或 `Only one usage of each socket address`。
+- 单机/哨兵/集群各顺序执行 300 次 `GET`：0 失败，单模式约 4.2–4.3s，p50 15ms。
+- 每模式 100 并发：全部成功，约 34ms/34ms/28ms（单机/哨兵/集群），此前分别为 50/133/110ms。
+- 30 并发 60KB `SET/GET`：全部成功，读取长度 60000。
+
+### 2. 故障转移下的复用表现
+
+- 哨兵：20 个并发 worker，2.5s 时关闭主节点 16379；哨兵将 16380 提升为主，首次成功出现在 3.475s（此前约 25s）。故障窗口内 6837 次成功、2274 次瞬态 `EOF`；故障结束后 5s 压测 3187 次全部成功，`GET sentinel:before` 仍为 `failover-value`。
+- 集群：12 个并发 worker，2.5s 时关闭主节点 7000；7003 接管 0–5460 槽，`cluster_state:ok`。故障窗口内 4299 次成功、1160 次瞬态 `EOF`；结束后 5s 压测 1988 次全部成功，`SET/GET stress:after-fix2` 正常。截图：[故障后查询](screenshots-1.1.0/fix-verify/05-cluster-after-failover.png)。
+- 本轮失败仅为切换期 `EOF`，未再出现套接字/端口耗尽错误；故障结束后连接池稳定复用。故障窗口内的读请求不会自动重放（避免写命令重复执行），错误会在切换完成后停止。
+
+### 3. 键扫描
+
+- 后端全量集群扫描：201 页、20,030 个键、2.95s（与修复前基本一致）。
+- 内置键浏览新增“连续扫描”：一次点击完成 20,030 个键，耗时 9.2s；修复前需 20 次点击、约 71.85s。截图：[连续扫描](screenshots-1.1.0/fix-verify/03-cluster-continuous-scan.png)。
+- 在 200ms 网络延迟下启动连续扫描并点击“停止扫描”：保留已扫描的 401 个键，扫描按钮恢复可用，未清空已有结果。截图：[停止扫描](screenshots-1.1.0/fix-verify/04-cluster-scan-stopped.png)。
+
+### 4. 执行失败详情
+
+- MySQL 停机后关闭顶部红色横幅，展开“语句 1 执行失败”仍可看到 SQL 与完整原因 `dial tcp 127.0.0.1:13306 ... actively refused it`。截图：[MySQL 详情](screenshots-1.1.0/fix-verify/01-mysql-error-detail.png)。
+- Redis 停机后同样在消息项中保留 `read tcp ... wsarecv ... aborted` 详情。截图：[Redis 详情](screenshots-1.1.0/fix-verify/02-redis-error-detail.png)。
+- Redis 命令行模式展开“执行失败”可看到完整错误，重启 Redis 后同一命令恢复为 `"hello"`。截图：[命令行详情](screenshots-1.1.0/fix-verify/06-redis-console-error-detail.png)。
+- 第 13.5 节“关闭横幅后无法查看连接级失败原因”的问题已解决。
+
+### 5. 自动化与结论
+
+- 后端 `go test ./...` 全部通过，`go vet ./...` 通过；前端 `pnpm build`、`pnpm lint`（39 项测试）通过。
+- 三类修复均按预期生效：2 万键写入无端口耗尽、故障转移恢复从约 25–28s 缩短到哨兵约 3.5s 且随后稳定、全量键扫描从 20 次点击/71.85s 降至 1 次点击/9.2s、连接级失败详情关闭横幅后仍可查看。
+- 未发现新增功能性问题。故障切换期间仍会有瞬态 `EOF`，属切换窗口预期。
+
+本轮清理：删除 4 个测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-fix-mysql`、`sqldesk-fix-redis`、`sqldesk-fix-sentinel`、`sqldesk-fix-cluster` 和临时脚本目录；6 张截图保留在 `test-reports/screenshots-1.1.0/fix-verify/`。
+
+## 15. Codex 修复复测：集群扫描游标失效一键重扫（2026-11-20）
+
+复测对象：当前工作区未提交修复（前端版本 1.1.2），无新提交号。环境为 Redis 7.4.12 三主三从集群（7000–7005）、独立后端 `127.0.0.1:18089`。截图目录：[cursor-rescan](screenshots-1.1.0/cursor-rescan/)。
+
+### 1. 游标失效场景
+
+- 键浏览首次扫描加载 101 个键，游标指纹对应当时主节点 7000/7001/7002。
+- 关闭主节点 7000，7005 接管 0–5460 槽位，`cluster_state:ok`；等待后端集群拓扑刷新后点击“扫描下一批”。
+- 请求返回 409，页面提示“Redis 集群扫描范围已变化，请重新扫描”，保留已加载的 101 个键，并只显示“重新扫描”按钮。截图：[游标失效](screenshots-1.1.0/cursor-rescan/01-cursor-expired-rescan-button.png)。
+
+### 2. 一键重扫
+
+- 点击一次“重新扫描”，从新拓扑的 `cursor=0` 连续扫描；12.5s 完成 20,000 个键。
+- 重扫后数量与数据一致、无重复，顶部错误横幅自动清除，扫描按钮恢复为完成状态。截图：[重扫完成](screenshots-1.1.0/cursor-rescan/02-cursor-rescan-complete.png)。
+- 失效前的已加载结果保留可用；[初始页](screenshots-1.1.0/cursor-rescan/00-cursor-initial.png)。
+
+### 3. 接口语义
+
+- 伪造旧指纹游标：HTTP 409，`{"error":"Redis 集群扫描范围已变化，请重新扫描"}`。
+- 格式错误游标：HTTP 400，`{"error":"Redis 游标或筛选条件无效"}`，不会被误判为可重扫。
+- 新拓扑下使用有效游标继续翻页：HTTP 200，扫描正常。
+
+### 4. 自动化与结论
+
+- 后端 `go test ./...` 全部通过（含新增的游标失效路由测试 `TestRedisScanRouteDistinguishesExpiredCursor`），`go vet ./...` 通过。
+- 前端 `pnpm build`、`pnpm lint`（39 项测试）通过。
+- 一键重扫功能按预期生效，未发现新增功能性问题。
+
+本轮清理：删除测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-cur-cluster` 和临时脚本目录；3 张截图保留在 `test-reports/screenshots-1.1.0/cursor-rescan/`。
+
+## 16. 未覆盖
+
+- TLS/证书、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、MySQL/PostgreSQL 主从复制与切换、跨库分布式事务、Redis ACL 细粒度权限与 TLS、超过 30 秒的断网后恢复、本次断线环境中的 Agent 实时对话、Redis 在线扩缩容或槽迁移导致的游标失效。
