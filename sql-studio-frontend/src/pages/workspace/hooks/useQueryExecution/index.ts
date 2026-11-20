@@ -28,15 +28,16 @@ type Options = {
 }
 
 export function createQueryExecutor({ connections, objects, running, request, message, startRun, finishRun, publishResult, setTabs, setResultViews, appendHistory }: Options) {
-  async function executeSQL(statement: string, scope: QueryScope, tabId: string, kind: WorkspacePageKind = 'query') {
+  async function executeSQL(statement: string, scope: QueryScope, tabId: string, kind: WorkspacePageKind = 'query', singleStatement = false) {
     const target = connections.find((item) => item.id === scope.connectionId)
     if (!target || objects.snapshots[target.id]?.status !== 'connected' || running || request.current) return
     const redis = target.type === DatabaseEngine.Redis
+    const mysqlCompatible = target.type === DatabaseEngine.MySQL || target.type === DatabaseEngine.MariaDB
     if (redis && kind !== 'query') return
     const adapter = redis ? undefined : getDatabaseAdapter(target.type)
     let statements: string[]
     try {
-      statements = adapter ? adapter.splitStatements(statement) : splitRedisLines(statement)
+      statements = adapter ? (mysqlCompatible && singleStatement && statement.trim() ? [statement.trim()] : adapter.splitStatements(statement)) : splitRedisLines(statement)
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'SQL 解析失败')
       return
@@ -54,7 +55,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
     let executionDatabase = scope.database
     const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'cancelled' | 'durationMs'>, selectedDatabase?: string) => {
       const sql = statements[index]
-      const entry: StatementRun = { ...outcome, sql, database: executionDatabase, schema: scope.schema }
+      const entry: StatementRun = { ...outcome, sql, database: executionDatabase, schema: scope.schema, ...(mysqlCompatible ? { singleStatement: true } : {}) }
       if (selectedDatabase !== undefined) {
         executionDatabase = selectedDatabase
         setTabs((previous) =>
@@ -102,11 +103,18 @@ export function createQueryExecutor({ connections, objects, running, request, me
     let statementStart = batchStart
     try {
       if (adapter?.sessionBatch && kind === 'query' && statements.length > 1) {
-        await executeQueryBatch(target.id, executionDatabase, statements, controller.signal, (step) => {
-          const now = performance.now()
-          record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - statementStart) }, step.database)
-          statementStart = now
-        })
+        await executeQueryBatch(
+          target.id,
+          executionDatabase,
+          statements,
+          controller.signal,
+          (step) => {
+            const now = performance.now()
+            record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - statementStart) }, step.database)
+            statementStart = now
+          },
+          scope.schema || undefined
+        )
       } else {
         for (const [index, sql] of statements.entries()) {
           statementStart = performance.now()
@@ -185,5 +193,5 @@ export function useQueryExecution(options: Options) {
   useLayoutEffect(() => {
     latest.current = options
   })
-  return (sql: string, scope: QueryScope, id: string, kind: WorkspacePageKind = 'query') => createQueryExecutor(latest.current)(sql, scope, id, kind)
+  return (sql: string, scope: QueryScope, id: string, kind: WorkspacePageKind = 'query', singleStatement = false) => createQueryExecutor(latest.current)(sql, scope, id, kind, singleStatement)
 }

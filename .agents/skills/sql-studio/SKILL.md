@@ -11,7 +11,7 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 - 后端任务使用 [sql-studio-backend](../sql-studio-backend/SKILL.md)，遵守 [后端规范](../../../docs/BACKEND_STANDARDS.md)，从 [架构](../../../docs/BACKEND_ARCHITECTURE.md) 和 [包索引](../../../sql-studio-backend/internal/README.md) 进入实际模块。
 - 跨端功能同时维护 API、类型与公开行为，参见 [API 文档](../../../docs/API.md) 和 [开发约定](../../../docs/DEVELOPMENT.md)。当前连接类型包括 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、GreptimeDB 和 Redis，具体能力见 [数据库说明](../../../docs/DATABASES.md)。
 
-查询与结果始终归属发起页面和连接，旧请求取消或失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化、日志或工作区索引与分片。编辑时留空保留旧密码。工作区恢复不自动执行 SQL。单语句 API 默认只读，工作台显式允许写入。MySQL 和 MariaDB 的多语句脚本通过批次 API 在同一会话内逐条执行，其他 SQL 引擎按切分结果顺序发送单语句请求。取消后保留已收到的结果与已提交的写入。
+查询与结果始终归属发起页面和连接，旧请求取消或失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化、日志或工作区索引与分片。编辑时留空保留旧密码。工作区恢复不自动执行 SQL。单语句 API 默认只读，工作台显式允许写入。MySQL、MariaDB 和 PostgreSQL 的多语句脚本通过批次 API 在同一会话内逐条执行。取消后保留已收到的结果与已提交的写入。
 
 ## 文档维护
 

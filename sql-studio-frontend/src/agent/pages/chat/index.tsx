@@ -66,9 +66,9 @@ export function ChatPage({
         desktopTitle={t('AI 助手')}
         title={activeTitle}
         titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
-        errors={[chat.error, chat.loadError, chat.confirmWrite.error]}
+        errors={[chat.error, chat.loadError, chat.confirmWrite.error, ai.readError, ai.choiceError]}
         errorScope={workspace.state.activeId}
-        errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : undefined}
+        errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : ai.readError ? <Button onClick={ai.retry}>{t('重试')}</Button> : undefined}
         actions={<SystemSettings {...appearancePreferences} />}
       >
         {' '}
@@ -143,6 +143,7 @@ export function ChatPage({
                   form={chat.form}
                   busy={chat.busy}
                   settingsBusy={ai.busy}
+                  modelPlaceholder={ai.loading ? '正在加载模型…' : ai.readError ? '读取模型配置失败' : '请选择模型'}
                   aiStatus={ai.status}
                   onSend={chat.send}
                   onStop={chat.stop}

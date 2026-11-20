@@ -1,3 +1,3 @@
-# MySQL／MariaDB 批次请求
+# SQL 同会话批次请求
 
-`executeQueryBatch(id, database, statements, signal, onStep)` 显式提交 SQL 工作台已切分的语句，使用同一数据库会话。逐行读取并验证结果顺序，每条执行回执或错误调用一次 `onStep`。成功的 USE 事件可返回新库名。收到完整 `done` 后结束，网络、协议错误或取消会拒绝 Promise 并释放响应流。
+`executeQueryBatch(id, database, statements, signal, onStep, schema?)` 显式提交工作台的 MySQL、MariaDB 或 PostgreSQL 语句，使用同一会话。PostgreSQL 的可选 `schema` 指定初始搜索路径。逐行验证结果顺序，每条回执或语句错误调用一次 `onStep`。MySQL 和 MariaDB 的 USE 回执可返回新库名。收到完整 `done` 后结束，批次错误、网络或协议错误、取消均会释放响应流并拒绝 Promise。

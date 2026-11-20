@@ -30,6 +30,8 @@ Index.Primary 是可选 JSON primary 主键标志；PostgreSQL 保留实际索�
 
 QueryRequest.Schema 和 AIRequest.Schema 是可选 schema 字段，区别于物理数据库。旧客户端省略时兼容原范围。
 
+QueryError 为引擎识别的失败附加统一类别，Cause 保留原始错误，Error 和 Unwrap 延续原有文案及错误链。Agent 仅依据类别生成安全提示。
+
 workspace.go 定义v2 WorkspacePage/WorkspaceIndex/WorkspaceDocument/WorkspaceCommit：标签元数据与草稿/结果散列引用、布局、修订号及仅变化部分的提交。结果为不执行的JSON对象，草稿为文本；不包含连接密码。
 
 TypeMariaDB=mariadb，TypeGreptimeDB=greptimedb，各自保留独立连接身份。IsMySQLProtocol 描述三个引擎的线协议复用。GreptimeDB 的 Connection.Database 是维护库，缺省为 public。

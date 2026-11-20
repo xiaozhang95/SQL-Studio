@@ -3,7 +3,7 @@
   "info": {
     "title": "SQL Studio API",
     "version": "1.0.0",
-    "description": "本机单用户 API；仅允许本机 Host 与同源请求，无开放 CORS。成功直接返回 JSON；失败返回 {error:string}。所有 JSON 请求必须为单个对象，拒绝未知顶层字段。普通请求最多 1 MiB，配置写入例外。 请求通过 Accept-Language 选择 zh-CN/en-US（缺省 zh-CN，支持语言范围和权重），响应 Content-Language 标明使用的语言。仅翻译应用提示与错误，数据库原始错误、SQL、用户数据及模型回答保持原文。"
+    "description": "本机单用户 API；仅允许本机 Host 与同源请求，无开放 CORS。成功直接返回 JSON；失败返回 {error:string}。所有 JSON 请求必须为单个对象，拒绝未知顶层字段。普通请求最多 1 MiB，SQL 查询和批次最多 32 MiB，配置写入有独立上限。请求通过 Accept-Language 选择 zh-CN/en-US（缺省 zh-CN，支持语言范围和权重），响应 Content-Language 标明使用的语言。仅翻译应用提示与错误，数据库原始错误、SQL、用户数据及模型回答保持原文。"
   },
   "servers": [
     {
@@ -2424,7 +2424,7 @@
         "tags": [
           "查询"
         ],
-        "description": "最长 30 秒，全进程 4 并发；默认 1000 行、最多 5000 行、约 8 MiB 字段内容。截断时 truncated=true，保留重复列名和精确数值文本。 JSON 请求最多 1 MiB。",
+        "description": "最长 30 秒，全进程 4 并发；默认 1000 行、最多 5000 行、约 8 MiB 字段内容。截断时 truncated=true，首行超限时可返回单独的 rowPreview。保留重复列名和精确数值文本。JSON 请求最多 32 MiB。",
         "parameters": [
           {
             "name": "id",
@@ -2512,7 +2512,7 @@
         "tags": [
           "查询"
         ],
-        "description": "仅 MySQL 和 MariaDB 工作台。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，成功 USE 时附 database；随后发送 done。流开始后的会话错误发送 error 事件。取消不能撤销已提交写入。",
+        "description": "支持 MySQL、MariaDB 和 PostgreSQL，同批次使用一个物理会话。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，MySQL/MariaDB 成功 USE 时附 database；随后发送 done。流开始后的会话错误和 PostgreSQL 批次结束时未完成的事务通过 error 事件报告。取消不能撤销已提交写入。",
         "parameters": [
           {
             "name": "id",
@@ -2540,6 +2540,10 @@
                 "properties": {
                   "database": {
                     "type": "string"
+                  },
+                  "schema": {
+                    "type": "string",
+                    "description": "PostgreSQL 的初始查询 Schema"
                   },
                   "allowWrite": {
                     "type": "boolean",
@@ -4396,6 +4400,27 @@
           },
           "truncated": {
             "type": "boolean"
+          },
+          "truncatedBy": {
+            "type": "string",
+            "enum": ["row-limit", "byte-limit", "oversized-row"]
+          },
+          "rowPreview": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": ["value"],
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "shortened": {
+                  "type": "boolean"
+                }
+              }
+            }
           },
           "isQuery": {
             "type": "boolean"

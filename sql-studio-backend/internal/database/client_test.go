@@ -3,15 +3,18 @@ package database
 import (
 	"context"
 	"errors"
-	"sql-studio-backend/internal/model"
 	"testing"
+
+	"sql-studio-backend/internal/model"
 )
 
 type probe struct {
 	Engine
-	name     string
-	received model.Connection
-	input    model.QueryRequest
+	name           string
+	received       model.Connection
+	input          model.QueryRequest
+	queryError     error
+	queryErrorKind model.QueryErrorKind
 }
 
 func (p *probe) Test(_ context.Context, c model.Connection) (string, error) {
@@ -21,8 +24,24 @@ func (p *probe) Test(_ context.Context, c model.Connection) (string, error) {
 func (p *probe) Execute(ctx context.Context, c model.Connection, q model.QueryRequest) (model.QueryResult, error) {
 	p.received = c
 	p.input = q
+	if p.queryError != nil {
+		return model.QueryResult{}, p.queryError
+	}
 	return model.QueryResult{}, ctx.Err()
 }
+func (p *probe) ClassifyQueryError(error) model.QueryErrorKind { return p.queryErrorKind }
+
+func TestExecutePreservesOriginalErrorAndClassification(t *testing.T) {
+	cause := errors.New("driver detail")
+	engine := &probe{queryError: cause, queryErrorKind: model.QueryErrorCheck}
+	client := New(map[string]Engine{model.TypeMariaDB: engine})
+	_, err := client.Execute(context.Background(), model.Connection{Type: model.TypeMariaDB}, model.QueryRequest{SQL: "INSERT ..."})
+	var classified *model.QueryError
+	if !errors.As(err, &classified) || classified.Kind != model.QueryErrorCheck || !errors.Is(err, cause) || err.Error() != cause.Error() {
+		t.Fatalf("incomplete query error: %v", err)
+	}
+}
+
 func TestDispatchPreservesTargetAndRejectsUnknown(t *testing.T) {
 	mysql, maria, pg := &probe{name: "mysql"}, &probe{name: "mariadb"}, &probe{name: "postgresql"}
 	registry := map[string]Engine{model.TypeMySQL: mysql, model.TypeMariaDB: maria, model.TypePostgreSQL: pg}

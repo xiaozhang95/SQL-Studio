@@ -26,7 +26,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 选连接后提供当前连接的数据库补全；选库自动 loadTables 并共用对象缓存，补全表/视图及已加载字段，defaultSchema/defaultTable 与当前页一致。异步数据按连接隔离，范围变化只切换消费方；关闭/刷新取消旧代请求，迟到结果不能重新打开连接。数据库成功加载时只校验保存范围是否仍有效，不自动执行 SQL。
 
-完整草稿或选区由目标数据库适配器 splitStatements 完整扫描，MySQL 和 MariaDB 多语句通过同一会话批次接口执行，其他路径顺序调用单语句接口；表数据语句同样通过适配器 tableDataSQL 生成，工作区不维护具体引号规则。整批固定页 ID、连接、初始库、运行锁与 AbortController；每条即时更新结果，SQL 查询页逐条保存历史，表数据预览不写历史。语句失败停止后续执行并提示未执行数量。取消或连接中断保留已收到的回执；请求不传 limit；MySQL/PostgreSQL 查询窗口均显式传 allowWrite=true，不声称此前执行被回滚。
+普通运行的草稿或选区由目标适配器 splitStatements 扫描，MySQL、MariaDB 和 PostgreSQL 多语句使用同一会话批次。MySQL 和 MariaDB 还可显式以单条语句运行选区，或选中多条 INSERT 后加入事务控制，同批执行。表数据 SQL 通过适配器 tableDataSQL 生成。整批固定页 ID、连接、初始库、Schema、运行锁和 AbortController。语句结果即时发布，查询页逐条保存历史，查询窗口显式传 allowWrite=true。语句失败停止后续执行并提示未执行数量；取消或连接中断保留已收到的回执。
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选/分页。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 

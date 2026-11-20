@@ -4,12 +4,12 @@
 
 Engine 声明连接测试、会话、库表/字段/索引/DDL 与 Execute 的最小跨引擎集合。New(map[string]Engine) 复制注册表，app 注入实际实现；本包只依赖 model，不导入具体引擎。每次按 Connection.Type 选择实现，空类型兼容 MySQL，未知类型返回错误，绝不回退到其他引擎。
 
-Client 透传 connection ID、库表、请求限制、context 与原始返回值/错误；自身不拼 SQL、不管理密码、超时、并发预算或连接资源。各引擎管理自己的生命周期，业务模块继续声明并消费原有最小接口。测试用替身验证分派与取消，不访问网络或真实数据库。
+Client 透传 connection ID、库表、请求限制、context 与返回值。执行 SQL 和读取库、表、字段时，可通过引擎的 ClassifyQueryError 为已识别的失败附加 model.QueryError 类别，保留原始文案和错误链。客户端不拼 SQL，不管理密码、超时、并发预算或连接资源。各引擎管理自己的生命周期，业务模块继续消费自身的最小接口。
 
 Engine/Client.Schemas 透传显式连接和数据库到所属引擎；不推断 schema、不改写对象名称。
 
 StreamTableData 按连接类型分派可选流式引擎能力，缺少实现时拒绝，不跨引擎回退。
 
-ExecuteBatch 分派 MySQL 和 MariaDB 的同会话批次能力，传递逐条期限和结果回调。其他引擎继续使用 Execute。
+ExecuteBatch 分派 MySQL、MariaDB 和 PostgreSQL 的同会话批次能力，传递逐条期限和结果回调。其他 SQL 引擎继续使用 Execute。
 
 MariaDB 和 GreptimeDB 由 app 分别按 `mariadb` 和 `greptimedb` 注册，各自管理生命周期。两者共用 MySQL 线协议。GreptimeDB 提供 SQL、TQL 和对象元数据，流式转储能力由支持的引擎单独实现。

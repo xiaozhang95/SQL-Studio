@@ -32,7 +32,7 @@ DELETE /api/ai/config 接收{revision}移除AI配置，冲突409，不改其他�
 
 GET /api/openapi.json 返回编译内嵌的 OpenAPI 3.0 契约，不依赖运行目录。Swagger 页面位于前端独立入口 swagger.html，构建后由 Go 提供。openapi_test.go 使用真实 Gin 注册表核对契约与 Markdown 列表，防止漏记路由。
 
-JSON 解码统一使用 decodeLimit。普通请求上限为 1 MiB，MySQL／MariaDB 批次为 32 MiB，配置写入为 32 MiB + 1024 字节信封。请求体超限返回 413 和本地化大小。要求对象起始符，拒绝 null、数组、多 JSON 和未知顶层字段，保留流式解码与业务层 data 大小校验。
+JSON 解码统一使用 decodeLimit。普通请求上限为 1 MiB，SQL 单语句和批次为 32 MiB，配置写入为 32 MiB + 1024 字节信封。请求体超限返回 413 和本地化大小。要求对象起始符，拒绝 null、数组、多 JSON 和未知顶层字段，保留流式解码与业务层 data 大小校验。
 
 配置 PUT 与 AI 移除必须显式提供非 null 的 revision，首次写入可为 0；缺失字段不能以零值替代并触发写入。
 

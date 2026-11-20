@@ -4,9 +4,9 @@ import { fetchResponse, postWithinLimit, readJSON } from '../../utils/request/in
 
 type Step = { index: number; result?: QueryResult; error?: string; database?: string }
 
-export async function executeQueryBatch(id: string, database: string, statements: string[], signal: AbortSignal, onStep: (step: Step) => void) {
+export async function executeQueryBatch(id: string, database: string, statements: string[], signal: AbortSignal, onStep: (step: Step) => void, schema?: string) {
   const path = `/connections/${encodeURIComponent(id)}/query-batch`
-  const response = await fetchResponse(path, { ...postWithinLimit({ database, statements, allowWrite: true }, 32), headers: { 'Content-Type': 'application/json' }, signal })
+  const response = await fetchResponse(path, { ...postWithinLimit({ database, schema, statements, allowWrite: true }, 32), headers: { 'Content-Type': 'application/json' }, signal })
   if (!response.ok) await readJSON(response, signal)
   if (!response.body || !response.headers.get('Content-Type')?.includes('application/x-ndjson')) throw new Error('后端未返回有效的 SQL 批次结果')
 

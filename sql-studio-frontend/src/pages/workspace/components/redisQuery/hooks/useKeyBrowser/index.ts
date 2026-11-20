@@ -6,6 +6,7 @@ import type { RedisKey, RedisKeyChange, RedisKeyDetail, RedisKeyPage } from '@/s
 
 type Action = 'create'
 const ttlRefreshMs = 1000
+const subsequentScanPages = 10
 
 export function useKeyBrowser(id: string, database: number) {
   const { t } = useTranslation()
@@ -22,6 +23,7 @@ export function useKeyBrowser(id: string, database: number) {
   const [remainingTTL, setRemainingTTL] = useState(-1)
   const expiring = remainingTTL >= 0
   const detailRequest = useRef<AbortController | null>(null)
+  const scanRequest = useRef<AbortController | null>(null)
   const selectedRef = useRef<string | undefined>(undefined)
   const mutation = useRef<AbortController | null>(null)
   const [action, setAction] = useState<Action>()
@@ -43,11 +45,31 @@ export function useKeyBrowser(id: string, database: number) {
 
   useEffect(() => {
     const controller = new AbortController()
+    scanRequest.current = controller
     setLoading(true)
     setError('')
-    void scanKeys(id, database, request.pattern, request.cursor, controller.signal)
+    const scanBatch = async () => {
+      const pages = request.cursor === '0' ? 1 : subsequentScanPages
+      let cursor = request.cursor
+      const keys: RedisKey[] = []
+      for (let index = 0; index < pages; index++) {
+        const next = await scanKeys(id, database, request.pattern, cursor, controller.signal)
+        controller.signal.throwIfAborted()
+        keys.push(...next.keys)
+        cursor = next.cursor
+        if (cursor === '0') break
+      }
+      return { keys, cursor }
+    }
+    void scanBatch()
       .then((value) => {
-        if (!controller.signal.aborted) setPage((previous) => (request.cursor === '0' ? value : { ...value, keys: [...(previous?.keys ?? []), ...value.keys] }))
+        if (!controller.signal.aborted) {
+          setPage((previous) => {
+            const keys = new Map<string, RedisKey>((request.cursor === '0' ? [] : (previous?.keys ?? [])).map((key) => [key.ref, key]))
+            for (const key of value.keys) keys.set(key.ref, key)
+            return { cursor: value.cursor, keys: [...keys.values()] }
+          })
+        }
       })
       .catch((reason: Error) => {
         if (!controller.signal.aborted) setError(reason.message)
@@ -57,6 +79,11 @@ export function useKeyBrowser(id: string, database: number) {
       })
     return () => controller.abort()
   }, [id, database, request])
+
+  function stopScan() {
+    scanRequest.current?.abort()
+    setLoading(false)
+  }
 
   useEffect(
     () => () => {
@@ -206,6 +233,7 @@ export function useKeyBrowser(id: string, database: number) {
     expandedKeys,
     setExpandedKeys,
     scan,
+    stopScan,
     read,
     promptAction,
     save,

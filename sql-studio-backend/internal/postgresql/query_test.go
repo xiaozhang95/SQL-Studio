@@ -7,11 +7,21 @@ import (
 	"errors"
 	"io"
 	"reflect"
-	"sql-studio-backend/internal/model"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
+
+	"sql-studio-backend/internal/model"
 )
+
+func TestClassifyPostgreSQLCheckError(t *testing.T) {
+	err := &pgconn.PgError{Code: "23514", Message: "private constraint details"}
+	if kind := NewClient().ClassifyQueryError(err); kind != model.QueryErrorCheck {
+		t.Errorf("error %s classified as %q", err.Code, kind)
+	}
+}
 
 // 使用 database/sql 的真实扫描和事务流程，替换网络驱动，不访问 PostgreSQL 实例。
 type queryFixture struct {
@@ -183,6 +193,9 @@ func TestQueryResultBounds(t *testing.T) {
 			}
 			if result.RowCount != test.wantRows || result.Truncated != test.truncated {
 				t.Fatalf("unexpected bound: %+v", result)
+			}
+			if test.name == "byte limit" && (len(result.RowPreview) != 1 || !result.RowPreview[0].Shortened) {
+				t.Fatalf("oversized row has no bounded preview: %+v", result)
 			}
 			f.mu.Lock()
 			defer f.mu.Unlock()

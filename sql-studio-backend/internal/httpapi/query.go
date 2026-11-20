@@ -11,11 +11,11 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
-const maxQueryBatchRequestBytes = 32 * maxRequestBytes
+const maxSQLRequestBytes = 32 * maxRequestBytes
 
 func (h *handler) query(c *gin.Context) {
 	var input model.QueryRequest
-	if err := decode(c, &input); err != nil {
+	if err := decodeLimit(c, &input, maxSQLRequestBytes); err != nil {
 		fail(c, err)
 		return
 	}
@@ -34,7 +34,7 @@ type queryBatchEvent struct {
 
 func (h *handler) queryBatch(c *gin.Context) {
 	var input model.QueryBatchRequest
-	if err := decodeLimit(c, &input, maxQueryBatchRequestBytes); err != nil {
+	if err := decodeLimit(c, &input, maxSQLRequestBytes); err != nil {
 		fail(c, err)
 		return
 	}

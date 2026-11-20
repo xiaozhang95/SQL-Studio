@@ -54,6 +54,8 @@ export type QueryResult = {
   lastInsertId: string
   durationMs: number
   truncated: boolean
+  truncatedBy?: 'row-limit' | 'byte-limit' | 'oversized-row'
+  rowPreview?: { value: string | null; shortened?: boolean }[]
   isQuery: boolean
 }
 export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number }

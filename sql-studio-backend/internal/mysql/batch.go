@@ -12,6 +12,9 @@ import (
 // ExecuteBatch runs individually submitted statements on one private session.
 // The driver keeps protocol-level multi-statements disabled.
 func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, input model.QueryBatchRequest, timeout time.Duration, emit func(model.QueryBatchStep) error) error {
+	if input.Schema != "" {
+		return errors.New("MySQL 不使用独立 schema 范围")
+	}
 	if !input.AllowWrite {
 		return errors.New("批量 SQL 执行需要显式允许写入")
 	}

@@ -69,7 +69,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
   usePageError(batch && !executionCancelled(batch) ? batch.error : undefined, batch?.id ?? batch?.startedAt)
-  const editingBlocked = model.running || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
+  const editingBlocked = model.running || result?.truncatedBy === 'oversized-row' || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
   const editing = useDataEditing({
     tab,
     connection: model.connections.find((item) => item.id === tab.connectionId),
@@ -284,7 +284,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                   setTablePage(1)
                 }}
                 allowClear
-                disabled={!result}
+                disabled={!result || result.truncatedBy === 'oversized-row'}
               />
             )}
             <div role="group" aria-label={t('结果操作')} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
@@ -312,16 +312,35 @@ export default function QueryResults({ model, themeMode }: Props) {
                         key === 'selected' ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches)
                       )
                   }}
-                  disabled={!result?.isQuery || deferredSearch !== resultSearch}
+                  disabled={!result?.isQuery || result.truncatedBy === 'oversized-row' || deferredSearch !== resultSearch}
                 >
-                  <ToolbarButton label={t('导出 CSV')} icon={<DownloadOutlined />} disabled={!result?.isQuery || deferredSearch !== resultSearch} aria-haspopup="menu" />
+                  <ToolbarButton
+                    label={t('导出 CSV')}
+                    icon={<DownloadOutlined />}
+                    disabled={!result?.isQuery || result.truncatedBy === 'oversized-row' || deferredSearch !== resultSearch}
+                    aria-haspopup="menu"
+                  />
                 </Dropdown>
               )}
             </div>
           </div>
         </div>
       )}
-      {showingResult && !activeRunning && result?.truncated && <Alert type="warning" title={t('结果已达行数或大小上限，请收窄查询范围。')} banner />}
+      {showingResult && !activeRunning && result?.truncated && (
+        <Alert
+          type="warning"
+          banner
+          title={t(
+            result.truncatedBy === 'oversized-row'
+              ? '首行超过 8 MiB，仅提供只读预览。'
+              : result.truncatedBy === 'byte-limit'
+                ? '结果超过 8 MiB，仅显示已返回的完整行。'
+                : result.truncatedBy === 'row-limit'
+                  ? '结果已达行数上限，仅显示已返回的行。'
+                  : '结果已达行数或大小上限，请收窄查询范围。'
+          )}
+        />
+      )}
       <div
         ref={viewport}
         className="result-scroll"
@@ -337,6 +356,17 @@ export default function QueryResults({ model, themeMode }: Props) {
           <QuerySummary key={run.id} run={batch ?? run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
           <ContentLoading label={t('正在加载结果…')} />
+        ) : result?.rowPreview?.length ? (
+          <div style={{ padding: 'var(--workspace-inset)', overflow: 'auto', maxHeight: '100%' }}>
+            {result.rowPreview.map(({ value, shortened }, index) => (
+              <Typography.Paragraph key={index} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                <Typography.Text strong>{result.columns[index]?.name}</Typography.Text>
+                <br />
+                {value === null ? 'NULL' : value}
+                {shortened && '…'}
+              </Typography.Paragraph>
+            ))}
+          </div>
         ) : result ? (
           <>
             <Table
@@ -379,7 +409,9 @@ export default function QueryResults({ model, themeMode }: Props) {
           />
         )}
       </div>
-      {showingResult && !activeRunning && result && hasTable && <Pagination {...tablePagination} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />}
+      {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
+        <Pagination {...tablePagination} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />
+      )}
     </ResultsDock>
   )
 }

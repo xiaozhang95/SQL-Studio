@@ -10,7 +10,7 @@ import { DatabaseEngine } from '../src/databases/typings/index.ts'
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
 const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
 const implementation = executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL'))
-async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBatch = false) {
+async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBatch = false, singleStatement = false) {
   const controller = new AbortController()
   const calls = [],
     histories = [],
@@ -51,9 +51,17 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
     setResultViews() {}
   }
   const execute = new Function(...Object.keys(dependencies), stripTypeScriptTypes(implementation) + '; return executeSQL')(...Object.values(dependencies))
-  await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page', kind)
+  await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page', kind, singleStatement)
   return { calls, histories, results, pages }
 }
+
+test('MySQL selection can send a routine without splitting its inner semicolons', async () => {
+  const sql = 'CREATE PROCEDURE example() BEGIN SELECT 1; SELECT 2; END'
+  const output = await run(sql, undefined, undefined, undefined, 'query', true, true)
+  assert.equal(output.calls.length, 1)
+  assert.equal(output.calls[0].sql, sql)
+  assert.equal(output.results.at(-1).statements[0].singleStatement, true)
+})
 
 test('successful USE propagates to subsequent requests and only the originating page', async () => {
   const output = await run('USE first; SELECT 1; USE `second db`; SELECT 2;')

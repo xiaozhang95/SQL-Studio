@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"sql-studio-backend/internal/model"
 	agentmodel "sql-studio-backend/internal/model/agent"
 )
@@ -20,9 +21,14 @@ func (s *Service) AgentStatus(ctx context.Context) (agentmodel.AIStatus, error) 
 	}
 	models := []agentmodel.AIModel{}
 	for _, entry := range cfg.Configurations {
-		if entry.Model != "" && entry.APIKey != "" {
-			models = append(models, agentmodel.AIModel{ID: entry.ID, Name: entry.ModelName})
+		if entry.ID == "" || entry.Model == "" || entry.APIKey == "" {
+			continue
 		}
+		name := entry.ModelName
+		if name == "" {
+			name = entry.Model
+		}
+		models = append(models, agentmodel.AIModel{ID: entry.ID, Name: name})
 	}
 	selected, configured := cfg.SelectedConfiguration()
 	source := "none"

@@ -60,6 +60,13 @@ test('preserves comments and ignores their delimiters and quotes', () => {
   assert.deepEqual(splitSQLStatements('SELECT 1;-- comment\rSELECT 2;\nSELECT 3;'), ['SELECT 1;', '-- comment\rSELECT 2;\nSELECT 3;'])
 })
 
+test('MySQL client delimiters preserve complete routines and ignore directives inside SQL', () => {
+  const routine = "CREATE PROCEDURE example() BEGIN SELECT 'value;$$'; /* $$ */ SELECT 2; END"
+  const script = ['/*', 'DELIMITER ignored', '*/', '  DELIMITER $$', routine + '$$', 'DELIMITER ;', "SELECT 'DELIMITER //';"].join('\r\n')
+  assert.deepEqual(splitSQLStatements(script), [routine, "SELECT 'DELIMITER //';"])
+  assert.throws(() => splitSQLStatements('DELIMITER\nSELECT 1;'), /有效的 SQL 分隔符/)
+})
+
 test('does not execute whitespace or ordinary comments as statements', () => {
   for (const sql of ['', '  ; ; ', '-- comment ;', '# comment ;', '/* comment ; */; -- tail']) assert.deepEqual(splitSQLStatements(sql), [])
   assert.deepEqual(splitSQLStatements('/*!80000 SELECT 1 */;'), ['/*!80000 SELECT 1 */;'])

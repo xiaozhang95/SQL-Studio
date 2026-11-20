@@ -6,6 +6,7 @@ import { Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { usePageError } from '@/contexts/pageErrors'
+import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
@@ -64,6 +65,8 @@ export default function QueryEditor({ model, themeMode }: Props) {
   usePageError(objects.error, tab.connectionId)
   usePageError(objects.tableError, `${tab.connectionId}:${tab.database}`)
   const [contextSQL, setContextSQL] = useState('')
+  const engine = connections.find((connection) => connection.id === tab.connectionId)?.type
+  const mysqlCompatible = engine === DatabaseEngine.MySQL || engine === DatabaseEngine.MariaDB
   // UIW receives the initial document only; subsequent edits stay in CodeMirror.
   const [initialSQL] = useState(() => tab.sql)
   const [initialHistory] = useState(() => model.getEditorHistory(activeTab))
@@ -144,10 +147,18 @@ export default function QueryEditor({ model, themeMode }: Props) {
         menu={{
           items: [
             { key: 'run-selection', label: t('运行'), icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running },
+            ...(mysqlCompatible && contextSQL.trim()
+              ? [
+                  { key: 'run-single-statement', label: t('作为单条 SQL 运行'), disabled: !objects.connected || running },
+                  { key: 'run-insert-transaction', label: t('在事务中运行 INSERT'), disabled: !objects.connected || running }
+                ]
+              : []),
             ...(ai.configured && contextSQL.trim() ? [{ key: 'optimize-selection', label: t('优化'), icon: <BulbOutlined />, disabled: running }] : [])
           ],
           onClick: ({ key }) => {
             if (key === 'run-selection') model.runSelectedSQL(contextSQL)
+            if (key === 'run-single-statement') model.runSelectedSQL(contextSQL, 'single')
+            if (key === 'run-insert-transaction') model.runSelectedSQL(contextSQL, 'insertTransaction')
             if (key === 'optimize-selection') void ai.optimize(true, contextSQL)
           }
         }}

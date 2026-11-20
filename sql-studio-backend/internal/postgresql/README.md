@@ -10,7 +10,11 @@ metadata.go 从 pg_catalog 读取字段、主键、identity/generated、备注�
 
 Tables 通过 pg_depend 标记扩展拥有的表和视图，使用可选 extension 返回扩展名称。对象仍可浏览，库级和 Schema 级转储用该字段排除扩展自身管理的对象。
 
-query.go 默认只读事务、单语句（读路径使用 extended protocol，显式写入先 Prepare 后执行），query 业务模块仍管理 30 秒/4 并发/默认 1000 最大 5000 行，驱动管理约 8MiB 内容界限。INT8/NUMERIC 精度保留文本，BYTEA 使用 \x 十六进制、NULL 与重复列名保留。写入反馈用 affectedRows，PostgreSQL 不伪造 LastInsertID；返回生成值应显式使用 RETURNING。取消不等于写入回滚。事务、SET、临时表不跨请求继承。
+query.go 默认以只读事务执行单语句，读路径使用 extended protocol，显式写入先 Prepare 后执行。query 业务模块管理 30 秒/4 并发/默认 1000 最大 5000 行，驱动管理约 8 MiB 内容界限，首行超限时提供单独的文本预览。INT8/NUMERIC 精度保留文本，BYTEA 使用 \x 十六进制、NULL 与重复列名保留。写入反馈用 affectedRows，返回生成值应显式使用 RETURNING。
+
+ClassifyQueryError 根据 pgx 服务端错误的 SQLSTATE 返回 model.QueryErrorKind，供分派层附加统一错误类别。
+
+batch.go 使用同一物理会话逐条执行已切分的 SQL，共享显式事务、SET 和临时表。结束时关闭物理连接，事务控制与事务内 SQL 应放在同批执行。批次结束时若事务仍未关闭，返回错误并由连接关闭回滚未提交事务。结果截断时在语句超时内排空游标以保留批次会话。已提交写入在失败或取消后保留。
 
 测试以 database/sql 替身检查配置/TLS、结果精度与限制、游标取消、关闭和同名库隔离，不读取业务库。tests/integration/postgresql_test.go 可显式启用真实 PostgreSQL/PolarDB 测试；前端 tests/sql-window.integration.test.mjs 另验证实际 SQL 窗口编排与 HTTP 执行，仅操作随机临时 schema，配置见对应测试 README。
 

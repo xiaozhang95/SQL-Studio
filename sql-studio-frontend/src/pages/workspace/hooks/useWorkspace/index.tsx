@@ -911,7 +911,13 @@ export const useWorkspace = (active = true) => {
     if (running || !canRefreshResult || !refreshScope) return
     if (tab.kind === 'query') {
       if (statementRun?.sql)
-        void executeSQL(statementRun.sql, { ...refreshScope, database: statementRun.database ?? refreshScope.database, schema: statementRun.schema ?? refreshScope.schema }, tab.id)
+        void executeSQL(
+          statementRun.sql,
+          { ...refreshScope, database: statementRun.database ?? refreshScope.database, schema: statementRun.schema ?? refreshScope.schema },
+          tab.id,
+          'query',
+          statementRun.singleStatement
+        )
       return
     }
     if (tab.kind === 'data') {
@@ -921,24 +927,44 @@ export const useWorkspace = (active = true) => {
     if (tab.kind === 'ddl' || (tab.kind === 'structure' && tab.table)) void tableAction(tab.kind, tab.connectionId, tab.database, tab.table, tab.id)
     else if (tab.kind === 'structure') void databaseAction('tables', tab.connectionId, tab.database, tab.id, tab.schema, true)
   }
-  function executeCurrentSQL(statement: string) {
+  function executeCurrentSQL(statement: string, singleStatement = false) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id || !storage.pageReady) return
     if ((!connection && !redisConnection) || !objects.connected) {
       message.info(t('请先展开连接并加载数据库结构'))
       return
     }
     if (running || request.current) return
-    void executeSQL(statement, { connectionId, database: redisDatabase ?? database, schema: selectedSchema, table: selectedTable }, tab.id)
+    void executeSQL(statement, { connectionId, database: redisDatabase ?? database, schema: selectedSchema, table: selectedTable }, tab.id, 'query', singleStatement)
   }
   function getSelectedSQL() {
     const state = editor.current?.state
     const selection = state?.selection.main
     return state && selection && !selection.empty ? state.sliceDoc(selection.from, selection.to) : null
   }
-  function runSelectedSQL(statement: string) {
+  function runSelectedSQL(statement: string, mode: 'normal' | 'single' | 'insertTransaction' = 'normal') {
     // 菜单使用打开时的选区快照，避免菜单拿走焦点后误执行整个草稿。
     editorSession.flush()
-    if (statement.trim()) executeCurrentSQL(statement)
+    if (!statement.trim()) return
+    if (mode === 'normal') {
+      executeCurrentSQL(statement)
+      return
+    }
+    if (connection?.type !== DatabaseEngine.MySQL && connection?.type !== DatabaseEngine.MariaDB) return
+    if (mode === 'single') {
+      executeCurrentSQL(statement, true)
+      return
+    }
+    try {
+      const statements = adapter.splitStatements(statement)
+      if (statements.length < 2 || statements.some((sql) => !/^INSERT\b/i.test(sql))) {
+        message.error(t('请选择至少两条以 INSERT 开头的语句'))
+        return
+      }
+      const inserts = statements.map((sql) => (sql.endsWith(';') ? sql : sql + '\n;'))
+      executeCurrentSQL(['START TRANSACTION;', ...inserts, 'COMMIT;'].join('\n'))
+    } catch (error) {
+      message.error(t(error instanceof Error ? error.message : 'SQL 解析失败'))
+    }
   }
   function runSQL() {
     const sql = getSelectedSQL()

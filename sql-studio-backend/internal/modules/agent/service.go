@@ -18,8 +18,11 @@ func (s *Service) ChatMode(ctx context.Context, id, text, mode string, emit func
 	if mode != "readonly" && mode != "write" {
 		return errors.New("无效操作模式")
 	}
-	if strings.TrimSpace(text) == "" || len(text) > model.MessageMaxBytes {
-		return errors.New("消息不能为空且最多 256 KiB，较长内容请分段发送")
+	if strings.TrimSpace(text) == "" {
+		return errors.New("消息不能为空")
+	}
+	if len(text) > model.MessageMaxBytes {
+		return errors.New("消息超过 256 KiB，请分段发送")
 	}
 	lease := &turnLease{slots: s.slots}
 	select {

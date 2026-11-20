@@ -1,4 +1,4 @@
-/** MySQL 默认转义规则：仅在字符串、标识符与注释之外按分号切分，保留原 SQL。 */
+/** 按 MySQL 客户端分隔符切分，保留字符串、标识符和注释中的分隔符。 */
 export function splitSQLStatements(script: string, executableComments: readonly string[] = ['!'], { ansi = false } = {}): string[] {
   const statements: string[] = []
   let start = 0
@@ -7,8 +7,9 @@ export function splitSQLStatements(script: string, executableComments: readonly 
   let blockComment = false
   let hasSQL = false
   let lineStart = 0
+  let delimiter = ';'
   let commentGaps: number[] = []
-  const append = (end: number) => {
+  const append = (end: number, nextStart = end) => {
     if (hasSQL) {
       const parts: string[] = []
       let from = start
@@ -19,7 +20,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       parts.push(script.slice(from, end))
       statements.push(parts.join('').trim())
     }
-    start = end
+    start = nextStart
     hasSQL = false
     commentGaps = []
   }
@@ -46,6 +47,17 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       }
       continue
     }
+    if (!ansi && !hasSQL && (char === 'D' || char === 'd') && /^[\t ]*$/.test(script.slice(lineStart, i)) && /^delimiter(?:\s|$)/i.test(script.slice(i, i + 10))) {
+      const newline = script.indexOf('\n', i)
+      const lineEnd = newline === -1 ? script.length : newline
+      const value = script.slice(i + 'delimiter'.length, lineEnd).trim()
+      if (!value || /\s|["'`\\]|^(?:#|--|\/\*)/.test(value)) throw new Error('DELIMITER 需要有效的 SQL 分隔符')
+      delimiter = value
+      start = lineEnd
+      commentGaps = []
+      i = lineEnd - 1
+      continue
+    }
     const dashComment = char === '-' && next === '-'
     const leadingComment = dashComment && /^[\t ]*$/.test(script.slice(lineStart, i))
     const standardComment = i + 2 === script.length || script.charCodeAt(i + 2) <= 32
@@ -62,8 +74,11 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       i++
       continue
     }
-    if (char === ';') append(i + 1)
-    else if (!/\s/.test(char)) {
+    if (script.startsWith(delimiter, i)) {
+      const end = i + delimiter.length
+      append(delimiter === ';' ? end : i, end)
+      i = end - 1
+    } else if (!/\s/.test(char)) {
       hasSQL = true
       if (char === "'" || char === '"' || char === '`') quote = char
     }

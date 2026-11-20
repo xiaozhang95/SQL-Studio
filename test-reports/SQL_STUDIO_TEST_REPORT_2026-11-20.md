@@ -1,6 +1,6 @@
 # SQL Studio 多类型语句与压力测试报告
 
-- 日期：2026-11-19
+- 日期：2026-11-20
 - 代码基线：`99dd0cb`（包含修复提交 `a7170c9`）
 - 范围：多类型数据库语句执行、长 SQL/大批次、百万级数据、并发、取消、Redis 多数据结构与大键扫描
 - 方式：独立后端 + 独立临时状态目录 + Docker 隔离数据库 + API/UI 双层验证；未修改源码
@@ -256,6 +256,31 @@
 5. **观察：100 行限制是单次工具上限，不是回答上限。** Agent 可通过多次分页返回超过 100 行的汇总/数据；界面需明确这是多次只读查询。
 6. **观察：** 同轮三开时第 3 个会话以 `error + done` 结束，错误文案依赖前端展示；需确保 Agent 页能把该 error 呈现为可见提示，而不是空回答。
 
-## 10. 未覆盖
+## 10. Codex 修复复测（最新工作区）
+
+针对报告中问题逐项复测结果：
+
+| 修复项 | 复测结果 |
+| --- | --- |
+| 单条长 SQL 上限 | UI/API 执行 2MB 单语句成功（1 次 `/query`）；33MB 返回本地化 413（32 MiB 上限） |
+| PG 同会话批次 | UI 4 条 `BEGIN/INSERT/ROLLBACK/SELECT` 仅 1 次 `/query-batch`，回滚后计数 0；批次内临时表可见、批次后不可见；单请求 `BEGIN` 明确返回“请在同一个 SQL 批次中执行 PostgreSQL 事务及其语句” |
+| MySQL DELIMITER 存储程序 | UI `DELIMITER // CREATE PROCEDURE … BEGIN SELECT 42; END//` 成功，`fv_proc` 已创建；右键“作为单条 SQL 运行”成功创建 `fv_single` |
+| 事务中运行 INSERT | 右键菜单生成 `START TRANSACTION / INSERT / INSERT / COMMIT`，2 行落库，耗时约 119ms |
+| 超大行结果 | 9MB 单值返回 `truncatedBy=oversized-row`，提供 512 字节只读预览；UI 显示“首行超过 8 MiB，仅提供只读预览。” |
+| MariaDB packet 错误 | 20MB 语句连续 3 次均返回归一化 `max_allowed_packet` 错误，不再出现 `driver: bad connection` |
+| Agent 约束错误 | CHECK 约束拒绝写入时工具结果返回“数据库拒绝操作：CHECK 约束校验失败”，模型能准确总结；未插入数据 |
+| Agent 256KiB 文案 | 260KiB 消息返回“消息超过 256 KiB，请分段发送”（不再包含“不能为空”） |
+| Redis 键扫描 | 点击一次“扫描下一批”由 102 个键增至 1109 个键（每批 10 页），不再每次仅 100 个 |
+| 自动化 | 前端真实窗口集成 53/53；Node 测试 222 通过/3 跳过；后端集成通过；Vite 构建成功 |
+
+### 新增阻塞/需修复
+
+1. **前端生产构建与 lint 失败（TS1117）**：`translations/index.ts` 第 909 行重复定义 `结果已达行数或大小上限，请收窄查询范围。`（第 750 行已有），`pnpm build`、`pnpm lint` 均因 `tsc` 失败；本次 UI 功能验证改用 `vite build`（跳过类型检查）完成。需删除重复键并保留一份英文文案。
+2. **后端架构测试失败**：`go test ./...` 的 `TestInternalDependencyDirection` 报 `app\agent.go 不得跨引擎依赖 MySQL 驱动`。Agent 错误归一化直接在 app 层引入了 `github.com/go-sql-driver/mysql`，应下沉到 engine/database 层或通过抽象错误分类避免跨层依赖。
+3. **格式检查仍失败**：`pnpm format:check` 仍有 105 个文件不符合格式。
+
+本轮 4 个容器、`fv_*` 库/schema、连接和临时目录均已清理；验证过程未修改源码。
+
+## 11. 未覆盖
 
 - TLS/证书、完整 30 秒超时边界、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、复制/集群/故障切换、跨库分布式事务、Redis 集群模式与 ACL 细粒度权限。

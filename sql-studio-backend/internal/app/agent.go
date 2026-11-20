@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+
 	"sql-studio-backend/internal/model"
 	agentmodel "sql-studio-backend/internal/model/agent"
 	agent "sql-studio-backend/internal/modules/agent"
@@ -12,7 +14,6 @@ import (
 	"sql-studio-backend/internal/modules/metadata"
 	"sql-studio-backend/internal/modules/query"
 	"sql-studio-backend/internal/statefile"
-	"strings"
 )
 
 type agentDatabase struct {
@@ -87,6 +88,30 @@ func (d agentDatabase) Execute(ctx context.Context, target agentmodel.Target, na
 func agentDatabaseError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, query.ErrBusy) {
 		return err
+	}
+	var queryError *model.QueryError
+	var kind model.QueryErrorKind
+	if errors.As(err, &queryError) {
+		kind = queryError.Kind
+	}
+	// Only fixed messages cross the model boundary. Driver details can contain data values and connection information.
+	switch kind {
+	case model.QueryErrorCheck:
+		return errors.New("数据库拒绝操作：CHECK 约束校验失败")
+	case model.QueryErrorUnique:
+		return errors.New("数据库拒绝操作：主键或唯一约束冲突")
+	case model.QueryErrorForeignKey:
+		return errors.New("数据库拒绝操作：外键约束校验失败")
+	case model.QueryErrorRequired:
+		return errors.New("数据库拒绝操作：缺少必填值")
+	case model.QueryErrorValue:
+		return errors.New("数据库拒绝操作：值的类型、长度或范围不符合字段定义")
+	case model.QueryErrorPermission:
+		return errors.New("数据库拒绝操作：当前账号权限不足")
+	case model.QueryErrorSyntax:
+		return errors.New("数据库拒绝操作：SQL 语法错误")
+	case model.QueryErrorMissing:
+		return errors.New("数据库拒绝操作：查询引用了不存在的表或字段")
 	}
 	return errors.New("数据库操作失败，请检查连接状态、SQL、对象及数据库权限")
 }

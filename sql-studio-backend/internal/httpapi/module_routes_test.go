@@ -149,9 +149,9 @@ func TestQueryRequestValidation(t *testing.T) {
 	for _, input := range []struct {
 		route, body, language, want string
 	}{
-		{"query", `{"sql":"` + strings.Repeat("a", maxRequestBytes) + `"}`, "zh-CN", "请求体超过大小上限（1 MiB）。"},
-		{"query", `{"sql":"SELECT 1"}` + strings.Repeat(" ", maxRequestBytes), "en-US", "The request body exceeds the size limit (1 MiB)."},
-		{"query-batch", `{"allowWrite":true,"statements":["` + strings.Repeat("a", maxQueryBatchRequestBytes) + `"]}`, "en-US", "The request body exceeds the size limit (32 MiB)."},
+		{"query", `{"sql":"` + strings.Repeat("a", maxSQLRequestBytes) + `"}`, "zh-CN", "请求体超过大小上限（32 MiB）。"},
+		{"query", `{"sql":"SELECT 1"}` + strings.Repeat(" ", maxSQLRequestBytes), "en-US", "The request body exceeds the size limit (32 MiB)."},
+		{"query-batch", `{"allowWrite":true,"statements":["` + strings.Repeat("a", maxSQLRequestBytes) + `"]}`, "en-US", "The request body exceeds the size limit (32 MiB)."},
 	} {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/"+input.route, strings.NewReader(input.body))
@@ -162,7 +162,8 @@ func TestQueryRequestValidation(t *testing.T) {
 		}
 	}
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/query", strings.NewReader(`{"sql":"SELECT 1"}`)))
+	body := `{"sql":"SELECT '` + strings.Repeat("a", maxRequestBytes) + `'"}`
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/query", strings.NewReader(body)))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("missing connection: %d", rec.Code)
 	}

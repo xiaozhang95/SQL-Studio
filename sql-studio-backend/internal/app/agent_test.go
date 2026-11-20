@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"sql-studio-backend/internal/model"
-	agentmodel "sql-studio-backend/internal/model/agent"
-	"sql-studio-backend/internal/modules/query"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"sql-studio-backend/internal/model"
+	agentmodel "sql-studio-backend/internal/model/agent"
+	"sql-studio-backend/internal/modules/query"
 )
 
 type agentRepo struct{}
@@ -21,6 +22,14 @@ func (agentRepo) Get(id string) (model.Connection, error) {
 
 type agentExecutor struct {
 	call func(context.Context, model.QueryRequest) (model.QueryResult, error)
+}
+
+func TestAgentDatabaseErrorsReportConstraintWithoutDriverDetails(t *testing.T) {
+	err := &model.QueryError{Kind: model.QueryErrorCheck, Cause: errors.New("private fixture value")}
+	reason := agentDatabaseError(err).Error()
+	if reason != "数据库拒绝操作：CHECK 约束校验失败" {
+		t.Fatalf("unexpected public error: %s", reason)
+	}
 }
 
 func (e agentExecutor) Execute(ctx context.Context, _ model.Connection, q model.QueryRequest) (model.QueryResult, error) {

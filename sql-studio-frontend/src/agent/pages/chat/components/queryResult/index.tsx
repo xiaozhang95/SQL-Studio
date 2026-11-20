@@ -134,7 +134,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
           )
         }
       >
-        {result.truncated && <Alert type="warning" showIcon title={t('结果已截断，统计全量请使用聚合查询。')} banner />}
+        {result.truncated && <Alert type="warning" showIcon title={t('当前工具查询的结果已截断，每次最多返回 100 行。全量统计请使用聚合查询。')} banner />}
         <Table<Row>
           classNames={resultTableClassNames}
           styles={resultTableStyles}

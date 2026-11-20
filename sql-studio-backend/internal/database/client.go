@@ -55,21 +55,24 @@ func (c *Client) Databases(ctx context.Context, v model.Connection) ([]string, e
 	if err != nil {
 		return nil, err
 	}
-	return e.Databases(ctx, v)
+	result, err := e.Databases(ctx, v)
+	return result, classifyQueryError(e, err)
 }
 func (c *Client) Tables(ctx context.Context, v model.Connection, db string) ([]model.Table, error) {
 	e, err := c.engine(v)
 	if err != nil {
 		return nil, err
 	}
-	return e.Tables(ctx, v, db)
+	result, err := e.Tables(ctx, v, db)
+	return result, classifyQueryError(e, err)
 }
 func (c *Client) Columns(ctx context.Context, v model.Connection, ref model.TableRef) ([]model.Column, error) {
 	e, err := c.engine(v)
 	if err != nil {
 		return nil, err
 	}
-	return e.Columns(ctx, v, ref)
+	result, err := e.Columns(ctx, v, ref)
+	return result, classifyQueryError(e, err)
 }
 func (c *Client) Indexes(ctx context.Context, v model.Connection, ref model.TableRef) ([]model.Index, error) {
 	e, err := c.engine(v)
@@ -103,11 +106,26 @@ func (c *Client) Execute(ctx context.Context, v model.Connection, input model.Qu
 	if err != nil {
 		return model.QueryResult{}, err
 	}
-	return e.Execute(ctx, v, input)
+	result, err := e.Execute(ctx, v, input)
+	return result, classifyQueryError(e, err)
+}
+
+func classifyQueryError(engine Engine, err error) error {
+	if err == nil {
+		return nil
+	}
+	if classifier, ok := engine.(interface {
+		ClassifyQueryError(error) model.QueryErrorKind
+	}); ok {
+		if kind := classifier.ClassifyQueryError(err); kind != "" {
+			return &model.QueryError{Kind: kind, Cause: err}
+		}
+	}
+	return err
 }
 
 func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, input model.QueryBatchRequest, statementTimeout time.Duration, emit func(model.QueryBatchStep) error) error {
-	if kind := model.NormalizeDatabaseType(connection.Type); kind != model.TypeMySQL && kind != model.TypeMariaDB {
+	if kind := model.NormalizeDatabaseType(connection.Type); kind != model.TypeMySQL && kind != model.TypeMariaDB && kind != model.TypePostgreSQL {
 		return errors.New("该引擎不支持同一会话批量执行")
 	}
 	engine, err := c.engine(connection)

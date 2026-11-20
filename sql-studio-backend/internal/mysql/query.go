@@ -42,6 +42,32 @@ func queryError(err error) error {
 	return err
 }
 
+func (c *Client) ClassifyQueryError(err error) model.QueryErrorKind {
+	var serverError *driver.MySQLError
+	if !errors.As(err, &serverError) {
+		return ""
+	}
+	switch serverError.Number {
+	case 3819, 4025:
+		return model.QueryErrorCheck
+	case 1062:
+		return model.QueryErrorUnique
+	case 1451, 1452:
+		return model.QueryErrorForeignKey
+	case 1048, 1364:
+		return model.QueryErrorRequired
+	case 1264, 1292, 1366, 1406:
+		return model.QueryErrorValue
+	case 1044, 1142, 1143, 1227:
+		return model.QueryErrorPermission
+	case 1064:
+		return model.QueryErrorSyntax
+	case 1054, 1146:
+		return model.QueryErrorMissing
+	}
+	return ""
+}
+
 func execute(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite bool) (result model.QueryResult, err error) {
 	return executeResult(ctx, db, statement, limit, allowWrite, false)
 }
@@ -142,6 +168,7 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 	for rows.Next() {
 		if len(result.Rows) >= limit {
 			result.Truncated = true
+			result.TruncatedBy = model.QueryRowLimit
 			break
 		}
 		values := make([]any, len(types))
@@ -174,7 +201,7 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 			}
 		}
 		if size > maxResultBytes {
-			result.Truncated = true
+			result.OmitOversizedRow(values)
 			break
 		}
 		result.Rows = append(result.Rows, values)

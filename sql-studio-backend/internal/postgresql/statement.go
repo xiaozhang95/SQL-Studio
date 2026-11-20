@@ -12,6 +12,22 @@ func quoteIdentifier(value string) string { return `"` + strings.ReplaceAll(valu
 
 var dollarTag = regexp.MustCompile(`^\$(?:[\pL_][\pL\pN_]*)?\$`)
 
+func transactionControl(statement string) bool {
+	words := topLevelWords(statement)
+	if len(words) == 0 {
+		return false
+	}
+	switch words[0] {
+	case "BEGIN", "END", "ABORT", "SAVEPOINT", "RELEASE":
+		return true
+	case "START", "PREPARE", "SET":
+		return len(words) > 1 && words[1] == "TRANSACTION"
+	case "COMMIT", "ROLLBACK":
+		return len(words) < 2 || words[1] != "PREPARED"
+	}
+	return false
+}
+
 // Classification only chooses result vs command feedback; permissions are enforced by PostgreSQL.
 func isQuery(statement string) bool {
 	words := topLevelWords(statement)

@@ -42,7 +42,7 @@ sequenceDiagram
 | use_database | 复查访问能力并设置会话目标 |
 | list_tables | 列出目标中的表和视图 |
 | describe_table | 获取表字段及备注 |
-| query_readonly | 执行目标内的受限只读 SQL，最多 100 行 |
+| query_readonly | 执行目标内的受限只读 SQL，每次调用最多返回 100 行 |
 | execute_write | 校验目标与写入策略，经逐次确认后执行 |
 
 工具在同一个 Go 进程内调用业务模块，`use_database` 只设置会话目标。连接名、字段备注、数据库值和工具结果均按不可信内容处理，不能替代工具定义或执行策略。
@@ -78,7 +78,7 @@ POST /api/agent/chat 接收 mode（readonly默认，write为完全访问模式�
 
 写入工具通过 `write_confirmation` SSE 事件暂停。当前回复下方的确认卡片显示连接、数据库、涉及对象和完整 SQL。点击确认或取消时，前端向 `POST /api/agent/write-confirmation` 提交 `{approvalId,allow}`。后端将一次性 ID 绑定本次目标和 SQL，最多等待 5 分钟。等待期间暂停执行计时。拒绝、超时、断开或停止均结束确认，历史只恢复展示内容。
 
-Agent SQL防线：sqlpolicy.go在工具层及app进程适配层校验单语句、读取类型、普通表达式函数及目标范围；禁止USE/会话设置、锁/等待、文件操作、未知存储/UDF函数、删除性函数及管理账户/扩展/服务器配置。MySQL/MariaDB限定当前数据库，PostgreSQL保留当前物理库内schema限定名，跨库函数不允许。完全访问仍支持非删除DDL、表达式/子查询及PostgreSQL ON CONFLICT DO UPDATE/NOTHING。确认对象由同一词法扫描提取全部源/目标对象，不再仅正则提取首个名称。
+Agent SQL防线：sqlpolicy.go在工具层及app进程适配层校验单语句、读取类型、普通表达式函数及目标范围；禁止USE/会话设置、锁/等待、文件操作、未知存储/UDF函数、删除性函数及管理账户/扩展/服务器配置。MySQL/MariaDB限定当前数据库，PostgreSQL保留当前物理库内schema限定名，跨库函数不允许。完全访问仍支持非删除DDL、表达式/子查询及PostgreSQL ON CONFLICT DO UPDATE/NOTHING。确认对象由同一词法扫描提取全部源/目标对象。数据库引擎识别各自的错误码，Agent 根据统一类别显示约束、权限、语法等固定提示，避免把字段值或连接信息传给模型。
 
 此检查是保守的受支持SQL子集，不是完整SQL解析器或数据库权限沙箱；未知函数应改写或由用户自行审阅执行。既有触发器、外键级联、函数重载、运算符、视图规则、FDW与数据库权限配置仍可能影响实际行为，生产环境需使用最小权限并审查这些配置；不宣称静态规则能阻止所有数据库内间接副作用。普通SQL工作区继续沿用原有能力。
 

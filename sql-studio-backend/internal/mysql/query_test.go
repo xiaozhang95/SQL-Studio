@@ -9,7 +9,21 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+
+	mysqlDriver "github.com/go-sql-driver/mysql"
+
+	"sql-studio-backend/internal/model"
 )
+
+func TestClassifyMySQLAndMariaDBCheckErrors(t *testing.T) {
+	client := NewClient()
+	for _, number := range []uint16{3819, 4025} {
+		err := &mysqlDriver.MySQLError{Number: number, Message: "private constraint details"}
+		if kind := client.ClassifyQueryError(err); kind != model.QueryErrorCheck {
+			t.Errorf("error %d classified as %q", number, kind)
+		}
+	}
+}
 
 // 使用 database/sql 的真实扫描和事务流程，替换网络驱动，不访问 MySQL 实例。
 type queryFixture struct {
@@ -156,6 +170,9 @@ func TestQueryResultBounds(t *testing.T) {
 			}
 			if result.RowCount != test.wantRows || result.Truncated != test.truncated {
 				t.Fatalf("unexpected bound: %+v", result)
+			}
+			if test.name == "byte limit" && (len(result.RowPreview) != 1 || !result.RowPreview[0].Shortened) {
+				t.Fatalf("oversized row has no bounded preview: %+v", result)
 			}
 			f.mu.Lock()
 			defer f.mu.Unlock()

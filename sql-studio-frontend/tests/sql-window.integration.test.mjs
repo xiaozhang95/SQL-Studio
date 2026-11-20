@@ -28,7 +28,7 @@ function windowRunner(connection, scope) {
   const adapter =
     connection.type === 'mysql'
       ? { sessionBatch: true, splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL }
-      : { splitStatements: splitPostgreSQLStatements, useDatabase: () => undefined }
+      : { sessionBatch: true, splitStatements: splitPostgreSQLStatements, useDatabase: () => undefined }
   return async (script, cancelAfter) => {
     const calls = [],
       histories = [],
@@ -65,12 +65,12 @@ function windowRunner(connection, scope) {
         calls.push({ id, ...input })
         return api(`/connections/${id}/query`, input, signal)
       },
-      executeQueryBatch: async (id, database, statements, signal, onStep) => {
-        calls.push({ id, database, statements })
+      executeQueryBatch: async (id, database, statements, signal, onStep, schema) => {
+        calls.push({ id, database, statements, schema })
         const fetchOriginal = globalThis.fetch
         globalThis.fetch = (path, options) => fetchOriginal(base + path.slice('/api'.length), options)
         try {
-          await executeQueryBatch(id, database, statements, signal, onStep)
+          await executeQueryBatch(id, database, statements, signal, onStep, schema)
         } finally {
           globalThis.fetch = fetchOriginal
         }
@@ -120,7 +120,7 @@ for (const type of ['mysql', 'postgresql']) {
       const run = windowRunner(connection, scope)
       const success = async (script, count = 1) => {
         const output = await run(script)
-        assert.equal(output.calls.length, type === 'mysql' ? 1 : count)
+        assert.equal(output.calls.length, 1)
         assert.equal(output.histories.length, count)
         assert.equal(output.batch.statements.length, count)
         assert.ok(
@@ -180,7 +180,7 @@ for (const type of ['mysql', 'postgresql']) {
       })
       await step(t, 'SQL error stops later statements and retains the completed result', async () => {
         const output = await run('SELECT 11 AS kept; SELECT * FROM missing_window_table; SELECT 33 AS never_sent;')
-        assert.equal(output.calls.length, type === 'mysql' ? 1 : 2)
+        assert.equal(output.calls.length, 1)
         assert.equal(output.batch.statements[0].result.rows[0][0], '11')
         assert.match(output.batch.statements[1].error, /后续 1 条语句未执行/)
         assert.deepEqual(
@@ -351,7 +351,7 @@ for (const type of ['mysql', 'postgresql']) {
         })
         await step(t, 'committed writes before an error remain committed; later writes do not run', async () => {
           const output = await run("INSERT INTO flow VALUES (10,'kept'); INSERT INTO flow VALUES (10,'duplicate'); INSERT INTO flow VALUES (11,'never');")
-          assert.equal(output.calls.length, 2)
+          assert.equal(output.calls.length, 1)
           assert.match(output.batch.error, /后续 1 条语句未执行/)
           assert.deepEqual((await success('SELECT id,label FROM flow ORDER BY id'))[0].rows, [['10', 'kept']])
         })
@@ -360,6 +360,19 @@ for (const type of ['mysql', 'postgresql']) {
           assert.equal(r[0].isQuery, false)
           assert.equal(r[1].rows[0][0], 'a;b')
           assert.equal(r[2].rows[0][0], 'line\nnext;end')
+        })
+        await step(t, 'explicit rollback and temporary tables use the same PostgreSQL session', async () => {
+          const results = await success(
+            "BEGIN; CREATE TEMP TABLE window_tmp(id INT); INSERT INTO window_tmp VALUES (42); SELECT id FROM window_tmp; INSERT INTO flow VALUES (42,'rolled back'); ROLLBACK;",
+            6
+          )
+          assert.deepEqual(results[3].rows, [['42']])
+          assert.deepEqual((await success('SELECT id FROM flow WHERE id=42'))[0].rows, [])
+          assert.equal((await success("SELECT to_regclass('pg_temp.window_tmp')"))[0].rows[0][0], null)
+          await assert.rejects(query('BEGIN', { allowWrite: true }), /同一个 SQL 批次/)
+          const unclosed = await run("BEGIN; INSERT INTO flow VALUES (43,'rolled back');")
+          assert.match(unclosed.batch.error, /未提交的更改已回滚/)
+          assert.deepEqual((await success('SELECT id FROM flow WHERE id=43'))[0].rows, [])
         })
         await step(t, 'BYTEA, JSONB, booleans and schema search path', async () => {
           const [result] = await success("SELECT decode('00ff','hex'), '{\"a\":2}'::jsonb ->> 'a', true, current_schema()")

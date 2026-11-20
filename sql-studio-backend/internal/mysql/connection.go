@@ -66,6 +66,9 @@ func driverConfig(c model.Connection, schema string, matched ...bool) (*mysql.Co
 		return nil, errors.New("不支持的数据库类型")
 	}
 	cfg := mysql.NewConfig()
+	if c.Type == model.TypeMariaDB {
+		cfg.MaxAllowedPacket = 0 // Read the server limit when opening each MariaDB connection.
+	}
 	cfg.User = c.Username
 	cfg.Passwd = c.Password
 	cfg.Net = "tcp"

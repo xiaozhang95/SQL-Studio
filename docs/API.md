@@ -47,7 +47,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | POST   | `/database-sync/check`               | 同引擎同步的只读检查                                                   |
 | POST   | `/database-sync/run`                 | 创建目标库，流式返回同步进度                                           |
 | POST   | `/connections/{id}/query`            | 执行一条 SQL                                                           |
-| POST   | `/connections/{id}/query-batch`      | MySQL／MariaDB 同一会话逐条执行，NDJSON 返回回执                       |
+| POST   | `/connections/{id}/query-batch`      | MySQL／MariaDB／PostgreSQL 同一会话逐条执行，NDJSON 返回回执             |
 | GET    | `/state/{section}`                   | 读取配置分区                                                           |
 | PUT    | `/state/{section}`                   | 按修订号保存配置                                                       |
 | POST   | `/ai/assist`                         | SQL 续写或优化                                                         |
@@ -62,7 +62,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
-请求必须为单个 JSON 对象；null、未知顶层字段和多个 JSON 对象返回 400。普通 JSON 请求上限为 1 MiB，MySQL／MariaDB 批次为 32 MiB。超出相应路由的 JSON 请求体上限返回 413，`error` 包含本地化上限。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
+请求必须为单个 JSON 对象；null、未知顶层字段和多个 JSON 对象返回 400。普通 JSON 请求上限为 1 MiB，`query` 和 `query-batch` 均为 32 MiB。超出相应路由的 JSON 请求体上限返回 413，`error` 包含本地化上限。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
 
 ## 请求与行为边界
 
@@ -84,9 +84,9 @@ Redis 的逻辑库列表、监控和发布订阅使用实例范围，关闭整�
 
 PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。
 
-MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL 和 MariaDB 多语句走同一会话批次，其余引擎逐条独立请求。
+MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。这三个引擎的 SQL 多语句走同一会话批次。结果保留预算内的完整行，`truncatedBy` 可区分行数上限（`row-limit`）、内容上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出内容预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
-MySQL／MariaDB 批次接收 `{database, statements, allowWrite: true, limit?}`，JSON 上限 32 MiB，最多 10000 条；共享 4 个查询槽，每条 30 秒、整批 30 分钟。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，保存 SQL 模式、用户变量、外键检查和显式事务；断开后释放连接，已提交写入保留。
+批次接收 `{database, schema?, statements, allowWrite: true, limit?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 

@@ -19,6 +19,7 @@ interface Props {
   form: FormInstance<{ question: string }>
   busy: boolean
   settingsBusy: boolean
+  modelPlaceholder: string
   aiStatus: AIStatus | null
   onSend: (v: { question: string }) => Promise<void>
   onStop: () => void
@@ -26,7 +27,7 @@ interface Props {
   onDraftChange: (_: unknown, v: { question?: string }) => void
   usage: TokenUsage | null
 }
-export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatus, onSend, onStop, onModelChange, onDraftChange, usage }: Props) {
+export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPlaceholder, aiStatus, onSend, onStop, onModelChange, onDraftChange, usage }: Props) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -159,11 +160,11 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, aiStatu
                       type="text"
                       aria-label={t('当前模型')}
                       disabled={busy || settingsBusy || !aiStatus?.models.length}
-                      title={!aiStatus?.models.length ? t('请在右上角系统设置中添加模型') : undefined}
+                      title={aiStatus && !aiStatus.models.length ? t('请在右上角系统设置中添加模型') : undefined}
                       icon={selectedModel && <DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >
-                      {selectedModel?.name ?? t('请选择模型')}
+                      {selectedModel?.name ?? t(modelPlaceholder)}
                       <DropdownChevron disabled={busy || settingsBusy || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>

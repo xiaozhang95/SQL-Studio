@@ -12,6 +12,7 @@ import { cleanPostgreSQLHistory, splitPostgreSQLStatements } from './statements'
 import { tableDesign } from './tableDesign'
 
 const postgresql = {
+  sessionBatch: true,
   profile: postgresqlProfile,
   foreignKeys: true,
   dumpFile: {

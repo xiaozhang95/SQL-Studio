@@ -50,6 +50,10 @@ function runState(value: unknown): RunState {
     data.columns.every((col: unknown) => object(col) && typeof col.name === 'string' && typeof col.type === 'string') &&
     Array.isArray(data.rows) &&
     data.rows.every((row: unknown) => Array.isArray(row) && Array.isArray(data.columns) && row.length === data.columns.length) &&
+    (data.rowPreview === undefined ||
+      (Array.isArray(data.rowPreview) &&
+        data.rowPreview.length <= data.columns.length &&
+        data.rowPreview.every((cell: unknown) => object(cell) && (cell.value === null || typeof cell.value === 'string') && (cell.shortened === undefined || typeof cell.shortened === 'boolean')))) &&
     typeof data.isQuery === 'boolean'
   if (
     !object(value) ||
@@ -59,7 +63,12 @@ function runState(value: unknown): RunState {
     (value.statements !== undefined &&
       (!Array.isArray(value.statements) ||
         !value.statements.every(
-          (item: unknown) => object(item) && typeof item.sql === 'string' && (item.error === undefined || typeof item.error === 'string') && (item.result === undefined || result(item.result))
+          (item: unknown) =>
+            object(item) &&
+            typeof item.sql === 'string' &&
+            (item.error === undefined || typeof item.error === 'string') &&
+            (item.singleStatement === undefined || typeof item.singleStatement === 'boolean') &&
+            (item.result === undefined || result(item.result))
         )))
   )
     throw new Error('保存的查询结果损坏，已保留原内容')

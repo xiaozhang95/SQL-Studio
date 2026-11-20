@@ -41,6 +41,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
     expandedKeys,
     setExpandedKeys,
     scan,
+    stopScan,
     read,
     promptAction,
     save,
@@ -93,9 +94,12 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(page.cursor === '0' ? '没有匹配的键' : '当前扫描页没有匹配的键')} />
               )}
               {page.cursor !== '0' && (
-                <Button loading={loading} disabled={saving} onClick={() => scan(request.pattern, page.cursor)}>
-                  {t('扫描下一页')}
-                </Button>
+                <Flex gap="small" wrap>
+                  <Button loading={loading} disabled={saving} onClick={() => scan(request.pattern, page.cursor)}>
+                    {t('扫描下一批')}
+                  </Button>
+                  {loading && request.cursor !== '0' && <Button onClick={stopScan}>{t('停止扫描')}</Button>}
+                </Flex>
               )}
             </>
           )}
