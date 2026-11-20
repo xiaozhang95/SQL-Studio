@@ -25,6 +25,8 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 
 ## 交付与 Git 提交日志
 
+每次完成代码修改后评估本次改动是否适合发版。适合时，在交付前主动按变更幅度递增 [前端 package.json](../../../sql-studio-frontend/package.json) 的 `version`，并在最终回复中写明新版本号。Web 和 Electron 共用这个版本号。
+
 每次完成代码修改后，最终回复主动附上可直接复制的 Git commit 提交日志，包含简洁标题和必要的变更要点，以本次实际改动为准，无需用户另行索取。仅生成提交日志文本，不自动执行 git add、git commit 或 git push；用户另有明确要求时，以当前要求为准。
 
 ## Agent 操作模式（用户明确约定）
