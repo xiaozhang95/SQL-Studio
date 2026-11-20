@@ -11,9 +11,10 @@ export default function DataCellEditor({ editor, disabled }: { editor: ReturnTyp
 
   const { cell, saving, change, save, finish } = editor
   const container = useRef<HTMLDivElement>(null)
+  const popup = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const outside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !container.current?.contains(event.target)) finish()
+      if (event.target instanceof Node && !container.current?.contains(event.target) && !popup.current?.contains(event.target)) finish()
     }
     document.addEventListener('pointerdown', outside, true)
     return () => document.removeEventListener('pointerdown', outside, true)
@@ -36,6 +37,7 @@ export default function DataCellEditor({ editor, disabled }: { editor: ReturnTyp
           autoFocus
           value={cell.value}
           disabled={disabled || cell.isNull}
+          popupRef={popup}
           onChange={(value) => change({ value })}
         />
         <Space size={4} wrap>

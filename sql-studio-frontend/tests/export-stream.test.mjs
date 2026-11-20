@@ -136,7 +136,6 @@ test('deleting rows requires all compound primary keys and preserves explicit en
     { name: 'label', key: 'PRI', type: 'text' }
   ]
   for (const fn of [mysqlDelete, pgDelete]) {
-    assert.throws(() => fn('db', 't', [], result, result.rows[0]), /主键/)
     assert.throws(() => fn('db', 't', [...columns, { name: 'missing', key: 'PRI', type: 'int' }], result, result.rows[0]), /主键/)
     assert.throws(() => fn('db', 't', columns, result, [null, 'x']), /主键/)
   }
@@ -146,6 +145,39 @@ test('deleting rows requires all compound primary keys and preserves explicit en
   const pg = pgDelete('db', '"odd.schema"."table"', columns, result, result.rows[0])
   assert.ok(pg.startsWith('DELETE FROM "odd.schema"."table" WHERE'))
   assert.ok(pg.includes('9007199254740993'))
+})
+test('deleting without a primary key matches all original fields and limits each selection to one row', () => {
+  const row = ['9007199254740993', '中文', '2026-11-20 13:45:00.123456', null]
+  const snapshot = {
+    ...result,
+    columns: [...result.columns, { name: 'created_at', type: 'TIMESTAMP' }, { name: 'note', type: 'TEXT' }],
+    rows: [row]
+  }
+  const columns = snapshot.columns.map((field) => ({ ...field, key: '' }))
+  const mysql = mysqlDelete('db`', 'table`', columns, snapshot, row)
+  assert.ok(mysql.startsWith('DELETE FROM `db```.`table``` WHERE '))
+  assert.ok(mysql.includes('`id` <=> 9007199254740993'))
+  assert.ok(mysql.includes('CAST(CONVERT(`label` USING utf8mb4) AS BINARY)'))
+  assert.ok(mysql.includes("CONVERT(X'e4b8ade69687' USING utf8mb4)"))
+  assert.ok(mysql.includes('CAST(CONVERT(`created_at` USING utf8mb4) AS BINARY)'))
+  assert.ok(mysql.endsWith('AND `note` IS NULL LIMIT 1;'))
+
+  const pg = pgDelete('db', '"odd.schema"."table"', columns, snapshot, row)
+  assert.ok(pg.startsWith('DELETE FROM "odd.schema"."table" AS target USING (SELECT tableoid, ctid FROM "odd.schema"."table" WHERE '))
+  assert.ok(pg.includes(`pg_catalog.format('%s', "id") COLLATE pg_catalog."C" = E'9007199254740993'`))
+  assert.ok(pg.includes(`pg_catalog.format('%s', "label") COLLATE pg_catalog."C" = E'中文'`))
+  assert.ok(pg.includes(`"created_at" IS NOT DISTINCT FROM E'2026-11-20 13:45:00.123456'::pg_catalog.timestamp`))
+  assert.ok(pg.endsWith('AND "note" IS NULL LIMIT 1) AS matched WHERE target.tableoid = matched.tableoid AND target.ctid = matched.ctid;'))
+})
+test('deleting without a primary key requires a complete original row', () => {
+  const columns = result.columns.map((field) => ({ ...field, key: '' }))
+  for (const remove of [mysqlDelete, pgDelete]) {
+    assert.throws(() => remove('db', 't', [], result, result.rows[0]), /完整的原始行数据/)
+    assert.throws(() => remove('db', 't', [{ name: 'missing' }, columns[1]], result, result.rows[0]), /完整的原始行数据/)
+    assert.throws(() => remove('db', 't', columns, result, ['1', undefined]), /完整的原始行数据/)
+    assert.throws(() => remove('db', 't', columns, { ...result, truncatedBy: 'oversized-row' }, result.rows[0]), /完整的原始行数据/)
+    assert.throws(() => remove('db', 't', columns, result, [9007199254740992, 'x']), /无法准确匹配/)
+  }
 })
 test('PostgreSQL export defers foreign keys and keeps quoted expressions intact', () => {
   const columns = [

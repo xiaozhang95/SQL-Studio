@@ -1,16 +1,35 @@
 import type { Column, QueryResult } from '../../../typings/database/index.ts'
+import { originalRowFields } from '../../originalRow/index.ts'
 import { identifier, literal, relation } from '../query/index.ts'
 
 const unsupported = (column: Column) => /bytea|\[\]|geometry|geography|vector|range|record|^bit/i.test(column.type)
+
+function originalRowPredicates(columns: Column[], result: QueryResult, row: unknown[]) {
+  return originalRowFields(columns, result, row).map(({ column, type, value }) => {
+    const field = identifier(column.name)
+    if (value === null) return `${field} IS NULL`
+    if (/^(?:BOOL|DATE|TIMESTAMP|TIMESTAMPTZ|FLOAT4|FLOAT8|BYTEA)$/.test(type)) {
+      return `${field} IS NOT DISTINCT FROM ${literal(value)}::pg_catalog.${type.toLowerCase()}`
+    }
+    if (typeof value === 'number' && !Number.isSafeInteger(value)) throw new Error('原始行含有无法准确匹配的字段，无法删除')
+    return `pg_catalog.format('%s', ${field}) COLLATE pg_catalog."C" = ${literal(value)}`
+  })
+}
+
 export function deleteRowSQL(_database: string, table: string, columns: Column[], result: QueryResult, row: unknown[]) {
+  const target = relation(table)
   const keys = columns.filter((column) => column.key === 'PRI')
-  if (!keys.length) throw new Error('没有完整主键，无法安全删除这张表的数据')
+  if (!keys.length) {
+    const predicates = originalRowPredicates(columns, result, row).join(' AND ')
+    // tableoid distinguishes child tables whose physical row locations can coincide.
+    return `DELETE FROM ${target} AS target USING (SELECT tableoid, ctid FROM ${target} WHERE ${predicates} LIMIT 1) AS matched WHERE target.tableoid = matched.tableoid AND target.ctid = matched.ctid;`
+  }
   const predicates = keys.map((column) => {
     const index = result.columns.findIndex((field) => field.name === column.name)
     if (index < 0 || row[index] == null || unsupported(column)) throw new Error('结果缺少可用主键，请重新打开表')
     return `${identifier(column.name)} IS NOT DISTINCT FROM ${literal(row[index])}`
   })
-  return `DELETE FROM ${relation(table)} WHERE ${predicates.join(' AND ')};`
+  return `DELETE FROM ${target} WHERE ${predicates.join(' AND ')};`
 }
 export const canInsertColumn = (column: Column) => !unsupported(column) && !/GENERATED|IDENTITY/i.test(column.extra)
 export function updateCellSQL(_database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) {

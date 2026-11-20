@@ -259,7 +259,7 @@ export default function QueryResults({ model, themeMode }: Props) {
                 />
                 <DeleteConfirmation
                   title={deleteError ? t('删除结果') : t('删除选中的 {value1} 行数据？', { value1: (deletingRows ?? selectedRows).length })}
-                  description={deleteError ? <ErrorNotice error={deleteError} /> : t('将按完整主键逐行删除。成功的删除立即生效；中途失败会停止，已完成的删除不会回滚。')}
+                  description={deleteError ? <ErrorNotice error={deleteError} /> : t('有主键时按主键定位，无主键时按原始整行匹配。相同记录每选中一条删一条。删除立即生效，遇到失败会停止。')}
                   open={Boolean(deletingRows || deleteError)}
                   disabled={!deleteError && (editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving)}
                   onOpenChange={setDeleteOpen}

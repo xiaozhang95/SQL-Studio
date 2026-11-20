@@ -7,7 +7,7 @@ import { getDatabaseAdapter } from '@/databases'
 import { selectedRedisDatabase } from '@/databases/redis'
 import { DatabaseEngine } from '@/databases/typings'
 import { ObjectAction } from '@/databases/typings/objectManagement'
-import type { ObjectChange } from '@/databases/typings/objectManagement'
+import type { ObjectChange, ObjectTarget } from '@/databases/typings/objectManagement'
 import { useSidebarWidth } from '@/hooks/useSidebarWidth'
 import { useTranslation } from '@/hooks/useTranslation'
 import { deleteConnection as removeConnection } from '@/services/database'
@@ -23,7 +23,15 @@ import { canExportDatabase } from '../../utils/exportAvailability'
 import { objectNodeKey } from '../../utils/objectTree'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { reconcileWorkspacePages } from '../../utils/workspacePages'
-import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
+import {
+  explorerAfterChange,
+  explorerAfterDatabasesLoaded,
+  findExplorerPage,
+  pagesAfterSchemaChange,
+  pagesForObjectDrop,
+  queryScopesAfterChange,
+  upsertConnection
+} from '../../utils/workspaceTransitions'
 import { useConnectionGroups } from '../useConnectionGroups'
 import { useDatabaseObjects } from '../useDatabaseObjects'
 import { useDataExport } from '../useDataExport'
@@ -141,7 +149,7 @@ export const useWorkspace = (active = true) => {
   const foreignKeyConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).foreignKeys).map((connection) => connection.id), [connections])
   const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections, foreignKeyConnections)
   const dataExport = useDataExport((id, db) => canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db))
-  const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged })
+  const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged, beforeDrop: confirmObjectDrop })
   const setTableDesignerBusy = useCallback(
     (id: string, value: boolean) =>
       setDesignerBusy((previous) => {
@@ -554,6 +562,91 @@ export const useWorkspace = (active = true) => {
     await objects.refreshDatabases(id)
     if (db) await objects.refreshTables(db, id, true)
   }
+  function removePages(removed: ReadonlySet<string>, nextId: string) {
+    if (!removed.size) return
+    for (const id of removed) {
+      closedPages.current.add(id)
+      discardTerminal(id)
+      pendingDrafts.current.delete(id)
+    }
+    editorSession.discard(removed)
+    const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => !removed.has(id)))
+    setTabs((previous) => previous.filter((page) => !removed.has(page.id)))
+    setRuns(keep)
+    setResultViews(keep)
+    setEditorLayouts(keep)
+    setDesignerBusy(keep)
+    setDesignerDirty(keep)
+    if (removed.has(activeTabRef.current)) selectTab(nextId, true)
+  }
+  async function confirmPageClosure(pages: WorkspaceTab[], { db, dropping = false, signal }: { db?: string; dropping?: boolean; signal?: AbortSignal }) {
+    if (!pages.length) return true
+    editorSession.flush()
+    const scoped = pages.map((page) => (page.kind === 'query' ? { ...page, sql: editorSession.read(page.id, page.sql) } : page))
+    const affected = await storage.draftsFor(scoped, signal)
+    const sql = sqlForPages(affected)
+    const dirty = affected.filter((page) => designerDirty[page.id])
+    if (!sql && !dirty.length) return true
+    const titles = affected.map((page) => page.title).join('、')
+    return new Promise<boolean>((resolve) => {
+      function finish(proceed: boolean) {
+        signal?.removeEventListener('abort', abort)
+        resolve(proceed)
+      }
+      function abort() {
+        dialog.destroy()
+        finish(false)
+      }
+      const dialog = modal.confirm({
+        width: scopeCloseDialogLayout.width,
+        title: sql ? t(dropping ? '删除前是否保存关联查询？' : '关闭前是否保存查询？') : t('关闭前请确认未保存的修改'),
+        content: (
+          <>
+            <p>{dropping ? t('删除成功后将关闭 {value1}。', { value1: titles }) : titles + ' ' + t(' 将随') + (db ? t('数据库') : t('连接')) + t('一起关闭。')}</p>
+            {sql && <p>{t('查询内容将保存为一个 .sql 文件。')}</p>}
+            {dirty.length > 0 && (
+              <p>
+                {dirty.map((page) => page.title).join('、')} {t(' 的表结构或数据修改尚未提交，继续关闭将放弃这些修改；SQL 文件不包含这些修改。')}
+              </p>
+            )}
+          </>
+        ),
+        okText: sql ? t(dropping ? '保存并继续' : '保存并关闭') : t(dropping ? '放弃并继续' : '放弃并关闭'),
+        cancelText: t('取消'),
+        onCancel: () => finish(false),
+        onOk: async () => {
+          try {
+            if (sql) await saveSQL(sql, db || t('SQL Studio 查询'))
+            finish(true)
+          } catch (error) {
+            if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError(t('SQL 保存失败，窗口已保留'))
+            throw error
+          }
+        },
+        footer: (_, { OkBtn, CancelBtn }) => (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+            <CancelBtn />
+            {sql && (
+              <Button
+                onClick={() => {
+                  finish(true)
+                  dialog.destroy()
+                }}
+              >
+                {t('不保存')}
+              </Button>
+            )}
+            <OkBtn />
+          </div>
+        )
+      })
+      if (signal?.aborted) abort()
+      else signal?.addEventListener('abort', abort, { once: true })
+    })
+  }
+  function confirmObjectDrop(action: ObjectAction, target: ObjectTarget, signal: AbortSignal) {
+    return confirmPageClosure(pagesForObjectDrop(tabs, action, target), { db: target.database, dropping: true, signal })
+  }
   async function onObjectChanged({ action, target, name }: ObjectChange) {
     const change = { action, target, name }
     if ([ObjectAction.CreateSchema, ObjectAction.RenameSchema, ObjectAction.DropSchema].some((value) => value === action)) {
@@ -568,9 +661,12 @@ export const useWorkspace = (active = true) => {
       }
       return
     }
+    const removed = new Set(pagesForObjectDrop(tabs, action, target).map((page) => page.id))
+    const activeRemoved = removed.has(activeTabRef.current)
+    if (removed.size) removePages(removed, tabs.find((page) => !removed.has(page.id))?.id || '')
     setTabs((previous) => queryScopesAfterChange(previous, change))
     setExplorer((previous) => explorerAfterChange(previous, change))
-    if (connectionId === target.connectionId && database === target.database && (!target.table || selectedTable === target.table)) {
+    if (!activeRemoved && connectionId === target.connectionId && database === target.database && (!target.table || selectedTable === target.table)) {
       resetStructure()
       setRefresh((value) => value + 1)
     }
@@ -585,85 +681,17 @@ export const useWorkspace = (active = true) => {
     }
     closingScope.current = true
     setObjectBusy(true)
-    editorSession.flush()
-    const scoped = pagesForScope(tabs, id, db).map((page) => (page.id === activeTab && page.kind === 'query' && editor.current ? { ...page, sql: editor.current.state.doc.toString() } : page))
+    const scoped = pagesForScope(tabs, id, db)
     try {
-      const affected = await storage.draftsFor(scoped)
-      const sql = sqlForPages(affected)
-      const dirty = affected.filter((page) => designerDirty[page.id])
-      if (sql || dirty.length) {
-        const proceed = await new Promise<boolean>((resolve) => {
-          const dialog = modal.confirm({
-            width: scopeCloseDialogLayout.width,
-            title: sql ? t('关闭前是否保存查询？') : t('关闭前请确认未保存的修改'),
-            content: (
-              <>
-                <p>
-                  {affected.map((page) => page.title).join('、')} {t(' 将随')}
-                  {db ? t('数据库') : t('连接')}
-                  {t('一起关闭。')}
-                </p>
-                {sql && <p>{t('查询内容将保存为一个 .sql 文件。')}</p>}
-                {dirty.length > 0 && (
-                  <p>
-                    {dirty.map((page) => page.title).join('、')} {t(' 的表结构或数据修改尚未提交，继续关闭将放弃这些修改；SQL 文件不包含这些修改。')}
-                  </p>
-                )}
-              </>
-            ),
-            okText: sql ? t('保存并关闭') : t('放弃并关闭'),
-            cancelText: t('取消'),
-            onCancel: () => resolve(false),
-            onOk: async () => {
-              try {
-                if (sql) await saveSQL(sql, db || t('SQL Studio 查询'))
-                resolve(true)
-              } catch (error) {
-                if (!(error instanceof DOMException && error.name === 'AbortError')) setOperationError(t('SQL 保存失败，窗口已保留'))
-                throw error
-              }
-            },
-            footer: (_, { OkBtn, CancelBtn }) => (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                <CancelBtn />
-                {sql && (
-                  <Button
-                    onClick={() => {
-                      resolve(true)
-                      dialog.destroy()
-                    }}
-                  >
-                    {t('不保存')}
-                  </Button>
-                )}
-                <OkBtn />
-              </div>
-            )
-          })
-        })
-        if (!proceed) return false
-      }
+      if (!(await confirmPageClosure(scoped, { db }))) return false
       const activeScope = runs[runningTabId]?.scope || tabs.find((page) => page.id === runningTabId)
       if (activeScope?.connectionId === id && (db === undefined || activeScope.database === db)) request.current?.abort()
       if (dataExport.busy && dataExport.state?.connectionId === id && (db === undefined || dataExport.state.database === db)) dataExport.cancel()
       // 只有服务端确认驱动资源已释放后，才删除窗口和本地元数据。
       if (db === undefined) await objects.closeConnection(id)
       else await objects.closeDatabase(id, db)
-      const removed = new Set(affected.map((page) => page.id))
-      removed.forEach((page) => {
-        closedPages.current.add(page)
-        discardTerminal(page)
-      })
-      editorSession.discard(removed)
-      const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([key]) => !removed.has(key)))
-      const remaining = tabs.filter((page) => !removed.has(page.id))
-      setTabs((previous) => previous.filter((page) => !removed.has(page.id)))
-      setRuns(keep)
-      setResultViews(keep)
-      setEditorLayouts(keep)
-      setDesignerBusy(keep)
-      setDesignerDirty(keep)
-      if (removed.has(activeTabRef.current)) selectTab(remaining[0]?.id || '', true)
+      const removed = new Set(scoped.map((page) => page.id))
+      removePages(removed, tabs.find((page) => !removed.has(page.id))?.id || '')
       setExplorer((previous) => ({
         ...previous,
         expanded: previous.expanded.filter((key) => {
@@ -998,26 +1026,13 @@ export const useWorkspace = (active = true) => {
     const index = tabs.findIndex((item) => item.id === key)
     if (index < 0) return
     const remaining = tabs.filter((item, position) => (mode === 'others' ? item.id === key : mode === 'right' ? position <= index : item.id !== key))
+    const retained = new Set(remaining.map((page) => page.id))
+    const removed = new Set(tabs.filter((page) => !retained.has(page.id)).map((page) => page.id))
     const complete = () => {
       if (request.current) return
-      const retained = new Set(remaining.map((item) => item.id))
-      const keep = <T,>(records: Record<string, T>) => Object.fromEntries(Object.entries(records).filter(([id]) => retained.has(id)))
-      const removed = new Set(tabs.filter((page) => !retained.has(page.id)).map((page) => page.id))
-      removed.forEach((id) => {
-        closedPages.current.add(id)
-        discardTerminal(id)
-      })
-      editorSession.discard(removed)
-      setTabs((previous) => previous.filter((page) => retained.has(page.id)))
-      setRuns(keep)
-      setResultViews(keep)
-      setEditorLayouts(keep)
-      setDesignerBusy(keep)
-      setDesignerDirty(keep)
-      if (!retained.has(activeTab)) selectTab(remaining[Math.min(index, remaining.length - 1)]?.id || '', true)
+      removePages(removed, remaining[Math.min(index, remaining.length - 1)]?.id || '')
     }
-    const retained = new Set(remaining.map((page) => page.id))
-    const unsaved = tabs.filter((page) => !retained.has(page.id) && designerDirty[page.id])
+    const unsaved = tabs.filter((page) => removed.has(page.id) && designerDirty[page.id])
     if (unsaved.length)
       modal.confirm({
         title: t('关闭有未保存修改的页面？'),

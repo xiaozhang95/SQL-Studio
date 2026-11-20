@@ -13,6 +13,7 @@ type Options = {
   blocked: boolean
   onBusyChange: (busy: boolean) => void
   onChanged: (change: ObjectChange) => Promise<void>
+  beforeDrop?: (action: ObjectAction, target: ObjectTarget, signal: AbortSignal) => Promise<boolean>
   initial?: InitialOperation
   keepOpen?: boolean
   onDirtyChange?: (dirty: boolean) => void
@@ -32,7 +33,7 @@ const titles: Record<ObjectAction, string> = {
   renameTable: '重命名表'
 }
 /** 元数据、表单和写入均绑定打开菜单时的显式连接与对象；普通编辑器不获得写入权限。 */
-export function useObjectManagement({ connections, blocked, onBusyChange, onChanged, initial, keepOpen = false, onDirtyChange }: Options) {
+export function useObjectManagement({ connections, blocked, onBusyChange, onChanged, beforeDrop, initial, keepOpen = false, onDirtyChange }: Options) {
   const { message } = App.useApp()
   const [form] = Form.useForm<ObjectFormValues>()
   const [dialog, setDialog] = useState<Dialog>()
@@ -258,8 +259,10 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
     setRefreshError('')
     let reopen: ObjectTarget | undefined
     let refreshFailure = ''
+    let submitted = false
     try {
       const { action, target, connection } = built.dialog
+      if ((action === ObjectAction.DropDatabase || action === ObjectAction.DropTable) && beforeDrop && !(await beforeDrop(action, target, controller.signal))) return
       if (keepOpen && action === ObjectAction.EditTable) {
         const engine = getDatabaseAdapter(connection.type)
         const [latest, columns] = await Promise.all([
@@ -270,6 +273,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
         if (columns && JSON.stringify(engine.tableDesign?.fields(columns, latest.ddl)) !== JSON.stringify(original)) throw new Error('字段或注释已被其他操作修改，请重新加载后再编辑')
       }
       if (controller.signal.aborted || currentDialog.current !== built.dialog) return
+      submitted = true
       await executeObjectSQL(
         connection.id,
         action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase || action === ObjectAction.DropDatabase ? '' : target.database,
@@ -299,7 +303,10 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       if (keepOpen)
         reopen = { ...target, table: action === ObjectAction.CreateTable ? (getDatabaseAdapter(connection.type).tableDesign?.identity(target, built.values.name) ?? built.values.name) : target.table }
     } catch (reason) {
-      if (!controller.signal.aborted) setError((reason instanceof Error ? reason.message : '操作失败') + '；如连接在提交时断开，请刷新核对实际状态后再决定是否重试。')
+      if (!controller.signal.aborted) {
+        const error = reason instanceof Error ? reason.message : '操作失败'
+        setError(error + (submitted ? '；如连接在提交时断开，请刷新核对实际状态后再决定是否重试。' : ''))
+      }
     } finally {
       release(controller)
     }

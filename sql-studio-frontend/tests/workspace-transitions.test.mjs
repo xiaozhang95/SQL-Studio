@@ -9,6 +9,7 @@ import {
   explorerAfterDatabasesLoaded,
   findExplorerPage,
   pagesAfterSchemaChange,
+  pagesForObjectDrop,
   queryScopesAfterChange,
   upsertConnection
 } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
@@ -87,7 +88,7 @@ test('adding a connection appends quietly and creating objects preserves the com
     assert.equal(explorerAfterChange(layout, { action, target: { connectionId: 'a', database: 'same', table: '' }, name: 'new' }), layout)
 })
 
-test('dropping a database prunes only its own nodes and query scopes, preserving same names elsewhere', () => {
+test('dropping a database closes only its own tabs and prunes its tree nodes', () => {
   const expanded = [key('connection', 'a'), key('database', 'a', 'same'), key('table', 'a', 'same', 't'), key('database', 'a', 'other'), key('connection', 'b'), key('database', 'b', 'same')]
   const layout = { expanded, selected: [key('database', 'b', 'same')], search: 'kept', top: 350 }
   const change = { action: ObjectAction.DropDatabase, target: { connectionId: 'a', database: 'same', table: '' }, name: '' }
@@ -97,12 +98,28 @@ test('dropping a database prunes only its own nodes and query scopes, preserving
   assert.equal(next.top, 350)
   const tabs = [
     { kind: 'query', connectionId: 'a', database: 'same', table: 't', sql: 'SELECT 1' },
+    { kind: 'data', connectionId: 'a', database: 'same', table: 't' },
+    { kind: 'table-create', connectionId: 'a', database: 'same', table: '' },
     { kind: 'query', connectionId: 'b', database: 'same', table: 't', sql: 'SELECT 2' },
     { kind: 'query', connectionId: 'a', database: 'other', table: 't', sql: 'SELECT 3' }
   ]
-  const changed = queryScopesAfterChange(tabs, change)
-  assert.equal(changed[0].database, '')
-  assert.equal(changed[0].sql, 'SELECT 1')
-  assert.equal(changed[1], tabs[1])
-  assert.equal(changed[2], tabs[2])
+  assert.deepEqual(pagesForObjectDrop(tabs, change.action, change.target), tabs.slice(0, 3))
+})
+
+test('dropping a table keeps database-wide tabs, other schemas and same names on other connections', () => {
+  const target = { connectionId: 'a', database: 'db', schema: 's', table: '"s"."t"' }
+  const tabs = [
+    { ...target, kind: 'data' },
+    { ...target, kind: 'ddl' },
+    { ...target, kind: 'table-design' },
+    { ...target, kind: 'query', sql: 'SELECT * FROM "s"."t"' },
+    { ...target, kind: 'structure', table: '' },
+    { ...target, kind: 'data', schema: 'other', table: '"other"."t"' },
+    { ...target, kind: 'data', connectionId: 'b' }
+  ]
+  assert.deepEqual(pagesForObjectDrop(tabs, ObjectAction.DropTable, target), tabs.slice(0, 4))
+  assert.deepEqual(pagesForObjectDrop(tabs, ObjectAction.TruncateTable, target), [])
+  const renamed = queryScopesAfterChange(tabs, { action: ObjectAction.RenameTable, target, name: '"s"."renamed"' })
+  assert.equal(renamed[3].table, '"s"."renamed"')
+  assert.equal(renamed[3].sql, tabs[3].sql)
 })

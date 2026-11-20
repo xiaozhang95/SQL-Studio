@@ -6,7 +6,7 @@
 
 `findExplorerPage(tabs,kind,connectionId,database,table,schema?)` 按完整范围及页面类型查找已有对象页，不匹配 SQL 或设计页。
 
-`queryScopesAfterChange(tabs,change)` 只处理目标连接/库下的 SQL 页：删库清空库表，删表清空表名，重命名更新表名；其余页保留原对象。
+`queryScopesAfterChange(tabs,change)` 在表重命名时更新目标连接、库和表绑定的 SQL 页范围。`pagesForObjectDrop(tabs,action,target)` 返回对象树删库或删表所涉及的标签页。删库匹配连接和数据库，删表再匹配表身份及已记录的 Schema。调用方用同一范围处理删除前的草稿确认及成功后的页面移除。
 
 `pagesAfterSchemaChange(tabs,change,layout)` 将重命名 Schema 的页面范围和完整表身份更新，保留 SQL 原文与结果快照；删除 Schema 只清空相关查询范围。旧 Schema 树分支在刷新后清理，不影响其他连接和库。
 

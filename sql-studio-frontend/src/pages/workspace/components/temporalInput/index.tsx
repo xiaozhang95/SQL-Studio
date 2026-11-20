@@ -3,6 +3,7 @@ import { Button, DatePicker, Input, TimePicker } from 'antd'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import { useState } from 'react'
+import type { ReactNode, Ref } from 'react'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -15,10 +16,11 @@ type Props = {
   label?: string
   autoFocus?: boolean
   multiline?: boolean
+  popupRef?: Ref<HTMLDivElement>
 }
 
 /** One editable value; the suffix button opens an anchored calendar/time panel. */
-export default function TemporalInput({ value = '', onChange, fieldType = '', disabled, placeholder, label, autoFocus, multiline }: Props) {
+export default function TemporalInput({ value = '', onChange, fieldType = '', disabled, placeholder, label, autoFocus, multiline, popupRef }: Props) {
   const { t } = useTranslation()
 
   const [open, setOpen] = useState(false)
@@ -32,7 +34,6 @@ export default function TemporalInput({ value = '', onChange, fieldType = '', di
   const format = kind === 'date' ? 'YYYY-MM-DD' : kind === 'time' ? 'HH:mm:ss' : 'YYYY-MM-DD HH:mm:ss'
   const parsed = dayjs(kind === 'time' ? `2000-01-01 ${value}` : value)
   const selected = parsed.isValid() && parsed.format(format) === value ? parsed : null
-  const popupContainer = (trigger: HTMLElement) => trigger.parentElement ?? trigger
   const changed = (date: Dayjs | null) => {
     if (date) onChange?.(date.format(format))
   }
@@ -52,7 +53,7 @@ export default function TemporalInput({ value = '', onChange, fieldType = '', di
     onOpenChange: setOpen,
     onChange: changed,
     format,
-    getPopupContainer: popupContainer,
+    panelRender: popupRef ? (panel: ReactNode) => <div ref={popupRef}>{panel}</div> : undefined,
     allowClear: false,
     inputReadOnly: true,
     tabIndex: -1,

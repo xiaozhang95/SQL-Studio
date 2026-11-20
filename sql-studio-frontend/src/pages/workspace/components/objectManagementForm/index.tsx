@@ -43,6 +43,7 @@ export default function ObjectManagementForm({ manager, themeMode, showErrors = 
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
+          description={action === ObjectAction.DropDatabase || action === ObjectAction.DropTable ? t('删除成功后会关闭关联标签页。') : undefined}
           title={
             action === ObjectAction.TruncateTable
               ? t('清空表会删除所有数据，保留表结构。此操作不可撤销。')

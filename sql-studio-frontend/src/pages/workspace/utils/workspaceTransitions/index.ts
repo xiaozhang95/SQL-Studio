@@ -1,9 +1,10 @@
 import type { DatabaseExplorerAdapter } from '@/databases/typings'
-import type { ObjectChange } from '@/databases/typings/objectManagement'
+import type { ObjectChange, ObjectTarget } from '@/databases/typings/objectManagement'
 import type { Connection } from '@/typings/database'
 import type { ExplorerLayout, WorkspaceTab } from '@/typings/workspace'
 
 import { ObjectAction } from '../../../../databases/typings/objectManagement/index.ts'
+import { pagesForScope } from '../scopeClose/index.ts'
 
 /** 按连接、库、schema 和表身份查找对象结果页，SQL 与设计页不参与匹配。 */
 export function findExplorerPage(tabs: readonly WorkspaceTab[], kind: 'data' | 'structure', connectionId: string, database: string, table: string, schema?: string) {
@@ -27,14 +28,16 @@ export function explorerAfterDatabasesLoaded(layout: ExplorerLayout, connectionI
 }
 
 export function queryScopesAfterChange(tabs: WorkspaceTab[], { action, target, name }: ObjectChange): WorkspaceTab[] {
-  return tabs.map((tab) => {
-    if (tab.kind !== 'query' || tab.connectionId !== target.connectionId || tab.database !== target.database) return tab
-    if (action === ObjectAction.DropDatabase) return { ...tab, database: '', schema: '', table: '' }
-    if (tab.table !== target.table) return tab
-    if (action === ObjectAction.DropTable) return { ...tab, table: '' }
-    if (action === ObjectAction.RenameTable) return { ...tab, table: name }
-    return tab
-  })
+  if (action !== ObjectAction.RenameTable) return tabs
+  return tabs.map((tab) => (tab.kind === 'query' && tab.connectionId === target.connectionId && tab.database === target.database && tab.table === target.table ? { ...tab, table: name } : tab))
+}
+
+export function pagesForObjectDrop(tabs: readonly WorkspaceTab[], action: ObjectAction, target: ObjectTarget) {
+  if (!target.database || (action !== ObjectAction.DropDatabase && action !== ObjectAction.DropTable)) return []
+  const scoped = pagesForScope(tabs, target.connectionId, target.database)
+  if (action === ObjectAction.DropDatabase) return scoped
+  if (!target.table) return []
+  return scoped.filter((page) => page.table === target.table && (!target.schema || !page.schema || page.schema === target.schema))
 }
 
 /** SQL 文本及结果快照保留；更新重命名后的页面范围，删除时只清空查询范围。 */

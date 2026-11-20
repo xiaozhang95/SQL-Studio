@@ -212,12 +212,14 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     onBusyChange(tab.id, true)
     setDeletionError(undefined)
     const removed = new Set<number>()
+    let deletionStarted = false
     try {
       const [columns, tables] = await Promise.all([getColumns(tab.connectionId, tab.database, tab.table, controller.signal), getTables(tab.connectionId, tab.database, controller.signal)])
       const table = tables.find((item) => item.name === tab.table)
       if (!table || table.type.includes('VIEW')) throw new Error(t('视图不支持直接删除数据，请打开基础表'))
       const statements = selected.map((key) => ({ key, sql: dataEditing.deleteRowSQL(tab.database, tab.table, columns, result, result.rows[key]) }))
       for (const { key, sql } of statements) {
+        deletionStarted = true
         const deleted = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal)
         if (deleted.affectedRows !== 1) throw new Error(t('目标行已变化或不存在，请刷新后重试'))
         removed.add(key)
@@ -229,9 +231,10 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     } catch (error) {
       if (!controller.signal.aborted) {
         if (removed.size) onResult(tab.id, { ...result, rows: result.rows.filter((_, index) => !removed.has(index)), rowCount: result.rows.length - removed.size })
+        const reason = error instanceof Error && error.message ? t(error.message) : t('删除失败')
         setDeletionError({
           page: tab.id,
-          detail: [t('已确认删除 {value1} 行。', { value1: removed.size }), error instanceof Error ? error.message : t('删除失败'), t('请刷新核对实际数据后再重试。')].join('\n')
+          detail: deletionStarted ? [t('已确认删除 {value1} 行。', { value1: removed.size }), reason, t('请刷新核对实际数据后再重试。')].join('\n') : reason
         })
       }
       return false

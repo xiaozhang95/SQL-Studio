@@ -4,4 +4,4 @@ updateCellSQL(database, table, columns, result, row, columnIndex, value) 生成�
 
 insertRowSQL 生成显式列名 INSERT，未填写列省略以使用默认值/自增；必填字段校验，NULL 与空串区分，生成/特殊列禁止手填。canInsertColumn 判断新增可编辑字段。
 
-deleteRowSQL(database,table,columns,result,row) 要求完整可用主键，按精确字节文本比较并 LIMIT 1，不允许无 WHERE 的批量删除。
+`deleteRowSQL(database, table, columns, result, row)` 有主键时使用完整主键定位，无主键时匹配原始整行。无主键删除区分 NULL、精确数值和字符字节，所有列必须具有可准确比较的原值。每条语句使用 `LIMIT 1`，完全相同的记录每次只删一条。MariaDB 共用该实现。

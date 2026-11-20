@@ -28,7 +28,7 @@ QueryResults 接收 model（当前页 run/result、连接信息、运行状态�
 
 DDL 页和普通查询中的 SQL 定义/语句列通过 DatabaseAdapter.isSQLColumn 识别，统一使用 SQLPreview compact 高亮并提供同排复制图标，保留完整换行和定义，不进入普通单元格省略样式。覆盖 SHOW CREATE TABLE/VIEW/DATABASE/PROCEDURE/FUNCTION/TRIGGER/EVENT、SHOW TRIGGERS、information_schema 定义列及 SQL 语句记录列，具体列名见引擎 resultSQL 模块。普通查询 SQL 列宽 520px；所有 SQL 文本按内容完整展开并自动换行，不限高、不显示内部滚动条，长结果只由外层表体滚动。复制、筛选和 CSV 导出均使用完整原始值；NULL、空值和普通字段保留原展示，数据页仍可双击编辑。
 
-data 页面支持双击单元格，由 [useDataEditing](../../hooks/useDataEditing/README.md) 加载元数据并使用 [dataCellEditor](../dataCellEditor/README.md) 编辑。保存显式写入且重读结果；普通 SQL 结果、视图、无主键表以及不支持字段保持只读。
+数据页由 [useDataEditing](../../hooks/useDataEditing/README.md) 加载元数据，支持在具有可用主键的基础表上双击单元格，使用 [dataCellEditor](../dataCellEditor/README.md) 编辑支持的字段。保存时显式写入并重读结果。
 
 结果加载和保存刷新提示均使用 ContentLoading。保存刷新期间通过 app.scss 的结果区遮罩盖住旧表格，保留滚动布局。
 
@@ -44,7 +44,7 @@ data 页面支持双击单元格，由 [useDataEditing](../../hooks/useDataEditi
 
 没有结果列的成功响应在消息/摘要显示实际影响行数，不增加结果标签或结果工具栏。摘要每页 50 条且保留全部记录。以 columns.length 判断展示，兼容旧 isQuery=true 但无列的记录；SELECT 有列但零行仍保留表头和查询空态。
 
-所有结果页提供行复选框，数据页可跨分页选择同一结果的现有行。结果版本变化立即清空选择，存在暂存时禁用删除。删除气泡绑定当前页面、结果版本和所选行，确认后由 useDataEditing 按完整主键定位。结果变化使旧删除目标失效。删除中途失败时，气泡转为只读结果，展示已确认删除的行数和失败原因，并提示刷新核对数据。
+所有结果页提供行复选框，数据页可跨分页选择同一结果的现有行。结果版本变化立即清空选择，存在暂存时禁用删除。删除气泡绑定当前页面、结果版本和所选行。确认后按完整主键定位，无主键时匹配原始整行。完全相同的记录每选中一条删除一条。提交前失败时，气泡显示具体原因。已提交删除请求后失败时，气泡附带已确认删除的行数及刷新核对提示。
 
 缓存当前结果行及筛选结果，输入SQL、滚动和保存状态变化不重复复制所有单元格；筛选使用延后更新避免阻塞输入。查询消息/摘要视图不构建数据行。CSV仍导出全部筛选结果，行序号、跨页勾选和暂存值语义保留。
 
