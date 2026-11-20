@@ -1,4 +1,5 @@
-import { Button, Flex, Progress, Typography } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons'
+import { Button, Flex, Progress, theme, Typography } from 'antd'
 
 import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -8,9 +9,12 @@ import { useDesktopUpdates } from '../../hooks/useDesktopUpdates'
 
 export default function About({ disabled }: { disabled: boolean }) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
   const { desktop, result, pending, progress, downloadFailed, error, run } = useDesktopUpdates()
   const desktopConsole = useDesktopConsole()
   const busy = disabled || Boolean(pending) || desktopConsole.opening
+  const downloading = pending === 'download'
+  const showDownloadProgress = downloading || (downloadFailed && Boolean(progress))
   const status = {
     upToDate: '当前已是最新版本',
     available: '发现新版本 {version}',
@@ -33,21 +37,27 @@ export default function About({ disabled }: { disabled: boolean }) {
               {t('查看控制台')}
             </Button>
             {result?.status === 'available' && result.canDownload && (
-              <Flex gap="small" align="center">
-                <Button disabled={busy} onClick={() => void run('download')}>
-                  {t('下载更新')}
-                </Button>
-                {progress && (pending === 'download' || downloadFailed) && (
-                  <Progress
-                    type="circle"
-                    size={32}
-                    percent={Math.floor(progress.percent)}
-                    showInfo={progress.total > 0 || progress.percent > 0 || downloadFailed}
-                    status={downloadFailed ? 'exception' : 'active'}
-                    aria-label={t('更新下载进度')}
-                  />
-                )}
-              </Flex>
+              <Button
+                disabled={busy}
+                onClick={() => void run('download')}
+                icon={
+                  showDownloadProgress ? (
+                    <Progress
+                      type="circle"
+                      size={token.fontSize}
+                      strokeWidth={12}
+                      percent={Math.floor((downloading && downloadFailed ? 0 : progress?.percent) ?? 0)}
+                      showInfo={false}
+                      status={downloading ? 'active' : 'exception'}
+                      aria-label={t('更新下载进度')}
+                    />
+                  ) : (
+                    <DownloadOutlined />
+                  )
+                }
+              >
+                {t('下载更新')}
+              </Button>
             )}
             {result?.status === 'available' && (
               <Button disabled={busy} onClick={() => void run('openRelease')}>
@@ -62,7 +72,7 @@ export default function About({ disabled }: { disabled: boolean }) {
           </Flex>
           <Typography.Text type="secondary" role="status">
             {pending === 'check' && t('正在检查更新')}
-            {pending === 'download' && t(!progress?.total ? '正在准备下载更新' : progress.percent >= 100 ? '正在校验更新' : '正在下载更新')}
+            {downloading && t(!progress?.total ? '正在准备下载更新' : progress.percent >= 100 ? '正在校验更新' : '正在下载更新')}
             {!pending && result && t(status[result.status], result.status === 'upToDate' ? undefined : { version: result.version })}
           </Typography.Text>
           <ErrorNotice errors={[error, desktopConsole.error]} />
