@@ -156,7 +156,7 @@
 
 - Agent 仅配置全局模型后，助手页仍显示“请选择模型”，需通过 Agent 设置/模型选择绑定 `configId`；建议确认是否应自动继承全局默认模型。
 - 同步页在隐藏内置浏览器中出现源/目标下拉错位，属合成事件/无可见表面限制；同后端 API 同步通过，未按产品缺陷计。
-- 内置浏览器仍无可见表面，无法真实指针/截图；错误详情需手动展开、动画冻结等问题仍属环境限制。
+- 内置浏览器仍无可见表面，无法真实指针输入；错误详情需手动展开、动画冻结等问题仍属环境限制。
 
 ## 8. 跨版本 SQL 兼容性（补充）
 
@@ -284,41 +284,41 @@
 
 ## 11. SQL Studio 1.1.0 新功能验证
 
-环境：MySQL 8.4、Redis 7.4 单主+哨兵、Redis 7.4 三主分片集群；Chrome 无头 CDP（内置浏览器无可见表面，截图由本机 Chromium 保存）。截图目录：[screenshots-1.1.0](screenshots-1.1.0/)。
+环境：MySQL 8.4、Redis 7.4 单主+哨兵、Redis 7.4 三主分片集群；Chrome 无头 CDP（内置浏览器无可见表面）。
 
 ### 1. Redis 哨兵与集群
 
-- 新建连接表单可选 **单机 / 哨兵 / 集群**；哨兵显示哨兵主机、其他哨兵和主节点名称，集群显示种子节点列表。截图：[01](screenshots-1.1.0/01-redis-sentinel-connection.png)、[02](screenshots-1.1.0/02-redis-cluster-connection.png)。
-- 哨兵：通过 `127.0.0.1:26379` 发现主节点 `mymaster`，查询 `GET sentinel:key` 返回 `hello`，工具栏显示“哨兵”。截图：[03](screenshots-1.1.0/03-redis-sentinel-query.png)。
-- 集群：逻辑库固定为 DB 0，`GET cluster:key:1` 返回 `1`，工具栏显示“集群”。截图：[04](screenshots-1.1.0/04-redis-cluster-query.png)。
-- 集群键浏览逐个主分片扫描：首次 68 个键，点击一次“扫描下一批”后为 200 个键。截图：[05](screenshots-1.1.0/05-redis-cluster-key-browser.png)。
-- 集群监控标明采样节点 `127.0.0.1:7000 / master`，指标为该节点数据，并显示“集群”标签。截图：[06](screenshots-1.1.0/06-redis-cluster-monitor.png)。
+- 新建连接表单可选 **单机 / 哨兵 / 集群**；哨兵显示哨兵主机、其他哨兵和主节点名称，集群显示种子节点列表。
+- 哨兵：通过 `127.0.0.1:26379` 发现主节点 `mymaster`，查询 `GET sentinel:key` 返回 `hello`，工具栏显示“哨兵”。
+- 集群：逻辑库固定为 DB 0，`GET cluster:key:1` 返回 `1`，工具栏显示“集群”。
+- 集群键浏览逐个主分片扫描：首次 68 个键，点击一次“扫描下一批”后为 200 个键。
+- 集群监控标明采样节点 `127.0.0.1:7000 / master`，指标为该节点数据，并显示“集群”标签。
 - 未覆盖：哨兵主从切换、哨兵/集群 ACL 与 TLS、集群跨槽多键命令。
 
 ### 2. 查询收藏
 
 - 工具栏“收藏查询”支持收藏选区、整段草稿；执行历史行也可收藏。
 - 收藏抽屉支持搜索、重命名、删除、打开；打开收藏会新建页签并载入 SQL，**不自动执行**（打开前后 query 请求增量为 0）。
-- 收藏持久化在 `query-favorites` 状态分区；截图：[06b](screenshots-1.1.0/06b-query-favorites-drawer.png)、[07](screenshots-1.1.0/07-favorites-search.png)、[08](screenshots-1.1.0/08-favorites-renamed-deleted.png)、[09](screenshots-1.1.0/09-favorite-open-new-tab.png)、[10](screenshots-1.1.0/10-favorites-history.png)。
+- 收藏持久化在 `query-favorites` 状态分区。
 
 ### 3. 结果导出 CSV / Excel / JSON
 
-- 1500 行查询返回 1000 行并提示“结果已达行数上限”，导出菜单提供 CSV/Excel/JSON 及“导出已加载结果 / 导出选中”。截图：[11](screenshots-1.1.0/11-result-truncated.png)、[12](screenshots-1.1.0/12-export-menu.png)、[12b](screenshots-1.1.0/12b-export-submenu.png)、[13](screenshots-1.1.0/13-export-selected-menu.png)。
+- 1500 行查询返回 1000 行并提示“结果已达行数上限”，导出菜单提供 CSV/Excel/JSON 及“导出已加载结果 / 导出选中”。
 - CSV：1001 行（含表头）。
 - Excel：`查询结果` 工作表 1001 行；原结果截断时附加 `导出说明` 工作表，文案“原查询结果已截断，文件仅包含已返回的数据。”
 - JSON：1000 行，`truncated=true`、`truncatedBy=row-limit`；选中一行后导出 JSON 为 1 行。
-- 网络下载在无头 Chrome 未落盘，测试通过拦截 Blob 校验内容；样本保存在 [exports](screenshots-1.1.0/exports/)。未单独测试 Excel/CSV 的选中行导出（与 JSON 共用 rows(scope) 路径）。
+- 网络下载在无头 Chrome 未落盘，测试通过拦截 Blob 校验内容；未单独测试 Excel/CSV 的选中行导出（与 JSON 共用 rows(scope) 路径）。
 
 ### 4. 执行错误就地显示
 
-- SQL 查询不存在表：错误 `Error 1146 ... doesn't exist` 直接显示在“消息”页签，无顶部错误条。截图：[14](screenshots-1.1.0/14-sql-inline-error.png)。
-- Redis 非法命令：`ERR unknown command` 直接显示在消息/命令输出，无顶部错误条。截图：[15](screenshots-1.1.0/15-redis-inline-error.png)。
+- SQL 查询不存在表：错误 `Error 1146 ... doesn't exist` 直接显示在“消息”页签，无顶部错误条。
+- Redis 非法命令：`ERR unknown command` 直接显示在消息/命令输出，无顶部错误条。
 - 未单独复测连接失败/请求超限的顶部错误路径。
 
 ### 5. 更新下载进度
 
-- 通过桌面桥接模拟 `available + pending=download + 42%`，设置“关于软件”显示圆形 42% 进度环，界面不再显示速度与文件大小；状态文案“正在下载更新”。截图：[16](screenshots-1.1.0/16-update-progress.png)。
-- 切换为 `downloaded` 后进度环让位给“重启并安装”。截图：[17](screenshots-1.1.0/17-update-install.png)。
+- 通过桌面桥接模拟 `available + pending=download + 42%`，设置“关于软件”显示圆形 42% 进度环，界面不再显示速度与文件大小；状态文案“正在下载更新”。
+- 切换为 `downloaded` 后进度环让位给“重启并安装”。
 - Electron 更新模块 12 项测试全部通过（清单校验、进度广播、失败保留、重复检查、安全错误码、preload 订阅）。
 - 未执行真实 GitHub 下载与安装（通过 mock 状态验证 UI、通过单测验证主进程协议）。
 
@@ -328,11 +328,11 @@
 - 后端 `go test ./...`、`go vet ./...`、`go build ./...` 全部通过。
 - Electron `tests/updates.test.mjs` 12/12 通过。
 
-第 11 节验证结束后清理了 3 个容器（MySQL、Redis 哨兵、Redis 集群）、`v110` 库、Redis 数据、连接和临时目录；Chrome 进程与测试端口已关闭。新增截图与导出样本保留在 `test-reports/screenshots-1.1.0/`。第 12 节重新搭建的 Redis 压测环境也已单独清理。
+第 11 节验证结束后清理了 3 个容器（MySQL、Redis 哨兵、Redis 集群）、`v110` 库、Redis 数据、连接和临时目录；Chrome 进程与测试端口已关闭。第 12 节重新搭建的 Redis 压测环境也已单独清理。
 
 ## 12. Redis 哨兵/集群压力与故障转移（2026-11-20 补充）
 
-环境：Redis 7.4.12；哨兵 26379 管理主 16379 / 从 16380（主节点名 `mymaster`）；集群 7000–7005 三主三从。独立实例 `127.0.0.1:18089`；压测通过真实 HTTP 接口执行，交互与结果核验主要用内置浏览器，截图由本机 Chrome CDP 保存（内置浏览器无可见表面）。截图目录：[stress](screenshots-1.1.0/stress/)。
+环境：Redis 7.4.12；哨兵 26379 管理主 16379 / 从 16380（主节点名 `mymaster`）；集群 7000–7005 三主三从。独立实例 `127.0.0.1:18089`；压测通过真实 HTTP 接口执行，交互与结果核验主要用内置浏览器。
 
 ### 1. 常规压力
 
@@ -342,7 +342,7 @@
 - 集群跨槽 `MSET` 返回 400 `CROSSSLOT Keys in request don't hash to the same slot`（预期行为）。
 - 集群 API 键扫描：204 页、20,180 键、2997ms；内置浏览器键浏览 2 万键耗时 71.85s，需点击 20 次“扫描下一批”（每批约 1000 键），属可用但偏慢的交互。
 - 内置浏览器在集群窗口连续执行 400 条命令：24.2s 完成，返回结果正常。
-- 后台负载约 102 命令/秒时，集群监控正常采样节点 `127.0.0.1:7001`。截图：[01](screenshots-1.1.0/stress/01-cluster-monitor-under-load.png)。
+- 后台负载约 102 命令/秒时，集群监控正常采样节点 `127.0.0.1:7001`。
 
 ### 2. 故障转移
 
@@ -350,13 +350,13 @@
 
 - 20 个并发 worker 持续 `GET`，2.5s 时停止主节点 16379。
 - 哨兵将 16380 提升为主；期间 3257 次请求中 2117 次失败（切换窗口叠加 Windows 临时端口耗尽）。
-- 约 25s 后 `GET/SET/GET` 恢复；内置浏览器查询 `GET sentinel:before` 返回 `failover-value`。截图：[02](screenshots-1.1.0/stress/02-sentinel-after-failover.png)。
+- 约 25s 后 `GET/SET/GET` 恢复；内置浏览器查询 `GET sentinel:before` 返回 `failover-value`。
 
 集群：
 
 - 8 个并发 worker，2s 时停止主节点 7000。
 - 7003 接管 0–5460 槽，`cluster_state:ok`；916 次请求中 293 次失败。
-- 约 28s 后 `GET/SET stress:key:3` 返回 `after-failover`。截图：[03](screenshots-1.1.0/stress/03-cluster-after-failover.png)。
+- 约 28s 后 `GET/SET stress:key:3` 返回 `after-failover`。
 
 ### 3. 发现
 
@@ -365,17 +365,16 @@
 - 切换后原主 16379 未自动恢复；直接指向该端口的“单机”连接保持不可用（复测 805/805 失败），而哨兵 668/668、集群 640/640 成功。该差异由拓扑决定，不是模式缺陷。
 - 集群 UI 键浏览单次约 1000 键、2 万键需 20 次手动点击，且耗时 71.85s；功能可用，但在大数据量下交互成本较高。
 
-本轮清理：删除 3 个 Redis 测试连接；停止压测用 Chrome 与独立前后端进程；删除容器 `sqldesk-rs-sentinel`、`sqldesk-rs-cluster` 和临时脚本目录；三张压测截图保留在 `test-reports/screenshots-1.1.0/stress/`。
+本轮清理：删除 3 个 Redis 测试连接；停止压测用 Chrome 与独立前后端进程；删除容器 `sqldesk-rs-sentinel`、`sqldesk-rs-cluster` 和临时脚本目录。
 
 ## 13. 异常中断与恢复（2026-11-20 补充）
 
-环境：MySQL 8.4.10（13306）、PostgreSQL 16（15432）、Redis 7.4.12（16381），独立后端 `127.0.0.1:18089`；页面操作使用内置浏览器，落盘截图由本机 Chrome CDP 保存（内置浏览器截图不保存文件）。截图目录：[abnormal](screenshots-1.1.0/abnormal/)。
+环境：MySQL 8.4.10（13306）、PostgreSQL 16（15432）、Redis 7.4.12（16381），独立后端 `127.0.0.1:18089`；页面操作使用内置浏览器。
 
 ### 1. 连接突然不可用与恢复
 
 - MySQL、PostgreSQL、Redis 分别停止容器后：查询在 3–28ms 内返回连接失败（`actively refused it`），顶部横幅显示原因，结果区显示“语句 1 执行失败”；应用、其他连接与其他查询不受影响。
 - 重启容器后直接重试即可成功（MySQL 8.4.10 / PostgreSQL 16 / Redis 7.4.12），无需重建连接或重启应用；顶部横幅随成功查询消失。
-- 截图：MySQL [断开](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[恢复](screenshots-1.1.0/abnormal/03-mysql-recovered.png)；Redis [断开](screenshots-1.1.0/abnormal/10-redis-connection-lost.png)、[恢复](screenshots-1.1.0/abnormal/11-redis-recovered.png)。
 
 ### 2. 执行中强制终止
 
@@ -383,33 +382,32 @@
 - PostgreSQL：`SELECT pg_sleep(20)` 执行 2s 后 kill，1.07s 返回 400 `unexpected EOF`；重启后恢复。
 - Redis：`BLPOP ... 0` 阻塞中 kill，1.10s 返回 400 `EOF`；重启后 `GET abn:key` 成功。
 - 批量：`query-batch` 第一条 `SLEEP(10)` 中断后流式返回 index 0 错误 `invalid connection` 和 done，第二条未执行；重启后恢复。
-- 截图：[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[恢复](screenshots-1.1.0/abnormal/08-postgres-recovered.png)。
 
 ### 3. 数据库卡死：暂停、超时与取消
 
 - `docker pause` 2s 后恢复：`SELECT SLEEP(6)` 最终成功（总耗时约 6.0s），连接可继续使用。
-- 暂停期间点击“取消执行”：页面显示“语句 1 执行已取消 2075 ms”，恢复容器后取消查询未残留（processlist 无 `SELECT SLEEP%`）。截图：[执行中](screenshots-1.1.0/abnormal/04-mysql-paused-running.png)、[取消](screenshots-1.1.0/abnormal/05-mysql-paused-cancel.png)、[恢复](screenshots-1.1.0/abnormal/06-mysql-after-cancel-recovered.png)。
+- 暂停期间点击“取消执行”：页面显示“语句 1 执行已取消 2075 ms”，恢复容器后取消查询未残留（processlist 无 `SELECT SLEEP%`）。
 - 暂停至 30s：请求在 30003ms 返回 `context deadline exceeded`，无残留连接；恢复容器后新查询成功。
-- `docker network disconnect` 模拟网络分区（端口仍映射）：查询不会立即失败，而是挂起并在 30s 返回 `context deadline exceeded`；重新连接网络后查询恢复（首次约 2.4s）。截图：[超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)、[恢复](screenshots-1.1.0/abnormal/17-mysql-network-recovered.png)。
+- `docker network disconnect` 模拟网络分区（端口仍映射）：查询不会立即失败，而是挂起并在 30s 返回 `context deadline exceeded`；重新连接网络后查询恢复（首次约 2.4s）。
 - 容器 `stop` 会等待正在执行的语句结束（`SLEEP(20)` 最终 6.2s 成功返回），因此“突然中断”需用 `kill` 或断网模拟。
 
 ### 4. 连接测试与监控
 
-- MySQL 停机时“编辑连接 → 测试连接”返回“连接失败”并附 `actively refused it`；恢复后显示“连接成功：8.4.10”。截图：[失败](screenshots-1.1.0/abnormal/14-connection-test-down.png)、[成功](screenshots-1.1.0/abnormal/15-connection-test-recovered.png)。
-- Redis 停机时监控页显示顶部连接错误，指标区为空；重启后刷新恢复实例概览（v7.4.12、运行时间 1s、键总数 2）。截图：[监控失败](screenshots-1.1.0/abnormal/12-redis-monitor-down.png)、[监控恢复](screenshots-1.1.0/abnormal/13-redis-monitor-recovered.png)。
+- MySQL 停机时“编辑连接 → 测试连接”返回“连接失败”并附 `actively refused it`；恢复后显示“连接成功：8.4.10”。
+- Redis 停机时监控页显示顶部连接错误，指标区为空；重启后刷新恢复实例概览（v7.4.12、运行时间 1s、键总数 2）。
 
 ### 5. 本轮发现
 
-- **连接级错误仍走顶部红色横幅**：连接失败、`invalid connection`、`unexpected EOF`、`context deadline exceeded` 在结果区只显示“语句 1 执行失败 <耗时>”，具体原因仅在可关闭的顶部横幅；横幅关闭后消息页找不到原因。这与 1.1.0“执行错误就地显示”的 SQL 错误路径不一致，建议把连接级失败原因同步写入消息项。截图：[MySQL 断线](screenshots-1.1.0/abnormal/02-mysql-connection-lost.png)、[PostgreSQL 中断](screenshots-1.1.0/abnormal/07-postgres-midquery-killed.png)、[网络超时](screenshots-1.1.0/abnormal/16-mysql-network-partition-timeout.png)。该问题已在提交 `4ea8522` 修复并复测，见第 14 节。
+- **连接级错误仍走顶部红色横幅**：连接失败、`invalid connection`、`unexpected EOF`、`context deadline exceeded` 在结果区只显示“语句 1 执行失败 <耗时>”，具体原因仅在可关闭的顶部横幅；横幅关闭后消息页找不到原因。这与 1.1.0“执行错误就地显示”的 SQL 错误路径不一致，建议把连接级失败原因同步写入消息项。该问题已在提交 `4ea8522` 修复并复测，见第 14 节。
 - 网络分区与容器停止表现不同：停止（端口拒绝）快速失败；断网/卡死会等待到 30s 超时，用户侧显示为长时间“执行中”。属 TCP/超时设计预期，现有“取消执行”可用。
 - 取消与超时后数据库侧未发现残留查询；批量中断后第二条语句未执行。
 - 本轮未重新发起 Agent 对话；Agent 的数据库工具失败语义已由第 9 节覆盖。
 
-本轮清理：删除 3 个测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-abn-mysql`、`sqldesk-abn-pg`、`sqldesk-abn-redis` 和临时脚本目录；17 张截图保留在 `test-reports/screenshots-1.1.0/abnormal/`。
+本轮清理：删除 3 个测试连接；停止独立后端与 Chrome；删除容器 `sqldesk-abn-mysql`、`sqldesk-abn-pg`、`sqldesk-abn-redis` 和临时脚本目录。
 
 ## 14. Codex 修复复测（提交 4ea8522，2026-11-20）
 
-复测对象：`fix: 优化 Redis 连接复用与键扫描，保留执行失败详情`（前端版本 1.1.1）。环境为 MySQL 8.4.10、Redis 7.4.12 单机 / 哨兵 / 三主三从集群，独立后端 `127.0.0.1:18089`。截图目录：[fix-verify](screenshots-1.1.0/fix-verify/)。
+复测对象：`fix: 优化 Redis 连接复用与键扫描，保留执行失败详情`（前端版本 1.1.1）。环境为 MySQL 8.4.10、Redis 7.4.12 单机 / 哨兵 / 三主三从集群，独立后端 `127.0.0.1:18089`。
 
 ### 1. Redis 连接复用
 
@@ -422,20 +420,20 @@
 ### 2. 故障转移下的复用表现
 
 - 哨兵：20 个并发 worker，2.5s 时关闭主节点 16379；哨兵将 16380 提升为主，首次成功出现在 3.475s（此前约 25s）。故障窗口内 6837 次成功、2274 次瞬态 `EOF`；故障结束后 5s 压测 3187 次全部成功，`GET sentinel:before` 仍为 `failover-value`。
-- 集群：12 个并发 worker，2.5s 时关闭主节点 7000；7003 接管 0–5460 槽，`cluster_state:ok`。故障窗口内 4299 次成功、1160 次瞬态 `EOF`；结束后 5s 压测 1988 次全部成功，`SET/GET stress:after-fix2` 正常。截图：[故障后查询](screenshots-1.1.0/fix-verify/05-cluster-after-failover.png)。
+- 集群：12 个并发 worker，2.5s 时关闭主节点 7000；7003 接管 0–5460 槽，`cluster_state:ok`。故障窗口内 4299 次成功、1160 次瞬态 `EOF`；结束后 5s 压测 1988 次全部成功，`SET/GET stress:after-fix2` 正常。
 - 本轮失败仅为切换期 `EOF`，未再出现套接字/端口耗尽错误；故障结束后连接池稳定复用。故障窗口内的读请求不会自动重放（避免写命令重复执行），错误会在切换完成后停止。
 
 ### 3. 键扫描
 
 - 后端全量集群扫描：201 页、20,030 个键、2.95s（与修复前基本一致）。
-- 内置键浏览新增“连续扫描”：一次点击完成 20,030 个键，耗时 9.2s；修复前需 20 次点击、约 71.85s。截图：[连续扫描](screenshots-1.1.0/fix-verify/03-cluster-continuous-scan.png)。
-- 在 200ms 网络延迟下启动连续扫描并点击“停止扫描”：保留已扫描的 401 个键，扫描按钮恢复可用，未清空已有结果。截图：[停止扫描](screenshots-1.1.0/fix-verify/04-cluster-scan-stopped.png)。
+- 内置键浏览新增“连续扫描”：一次点击完成 20,030 个键，耗时 9.2s；修复前需 20 次点击、约 71.85s。
+- 在 200ms 网络延迟下启动连续扫描并点击“停止扫描”：保留已扫描的 401 个键，扫描按钮恢复可用，未清空已有结果。
 
 ### 4. 执行失败详情
 
-- MySQL 停机后关闭顶部红色横幅，展开“语句 1 执行失败”仍可看到 SQL 与完整原因 `dial tcp 127.0.0.1:13306 ... actively refused it`。截图：[MySQL 详情](screenshots-1.1.0/fix-verify/01-mysql-error-detail.png)。
-- Redis 停机后同样在消息项中保留 `read tcp ... wsarecv ... aborted` 详情。截图：[Redis 详情](screenshots-1.1.0/fix-verify/02-redis-error-detail.png)。
-- Redis 命令行模式展开“执行失败”可看到完整错误，重启 Redis 后同一命令恢复为 `"hello"`。截图：[命令行详情](screenshots-1.1.0/fix-verify/06-redis-console-error-detail.png)。
+- MySQL 停机后关闭顶部红色横幅，展开“语句 1 执行失败”仍可看到 SQL 与完整原因 `dial tcp 127.0.0.1:13306 ... actively refused it`。
+- Redis 停机后同样在消息项中保留 `read tcp ... wsarecv ... aborted` 详情。
+- Redis 命令行模式展开“执行失败”可看到完整错误，重启 Redis 后同一命令恢复为 `"hello"`。
 - 第 13.5 节“关闭横幅后无法查看连接级失败原因”的问题已解决。
 
 ### 5. 自动化与结论
@@ -444,23 +442,23 @@
 - 三类修复均按预期生效：2 万键写入无端口耗尽、故障转移恢复从约 25–28s 缩短到哨兵约 3.5s 且随后稳定、全量键扫描从 20 次点击/71.85s 降至 1 次点击/9.2s、连接级失败详情关闭横幅后仍可查看。
 - 未发现新增功能性问题。故障切换期间仍会有瞬态 `EOF`，属切换窗口预期。
 
-本轮清理：删除 4 个测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-fix-mysql`、`sqldesk-fix-redis`、`sqldesk-fix-sentinel`、`sqldesk-fix-cluster` 和临时脚本目录；6 张截图保留在 `test-reports/screenshots-1.1.0/fix-verify/`。
+本轮清理：删除 4 个测试连接；停止独立后端与 Chrome；删除容器 `sqldesk-fix-mysql`、`sqldesk-fix-redis`、`sqldesk-fix-sentinel`、`sqldesk-fix-cluster` 和临时脚本目录。
 
 ## 15. Codex 修复复测：集群扫描游标失效一键重扫（2026-11-20）
 
-复测对象：当前工作区未提交修复（前端版本 1.1.2），无新提交号。环境为 Redis 7.4.12 三主三从集群（7000–7005）、独立后端 `127.0.0.1:18089`。截图目录：[cursor-rescan](screenshots-1.1.0/cursor-rescan/)。
+复测对象：当前工作区未提交修复（前端版本 1.1.2），无新提交号。环境为 Redis 7.4.12 三主三从集群（7000–7005）、独立后端 `127.0.0.1:18089`。
 
 ### 1. 游标失效场景
 
 - 键浏览首次扫描加载 101 个键，游标指纹对应当时主节点 7000/7001/7002。
 - 关闭主节点 7000，7005 接管 0–5460 槽位，`cluster_state:ok`；等待后端集群拓扑刷新后点击“扫描下一批”。
-- 请求返回 409，页面提示“Redis 集群扫描范围已变化，请重新扫描”，保留已加载的 101 个键，并只显示“重新扫描”按钮。截图：[游标失效](screenshots-1.1.0/cursor-rescan/01-cursor-expired-rescan-button.png)。
+- 请求返回 409，页面提示“Redis 集群扫描范围已变化，请重新扫描”，保留已加载的 101 个键，并只显示“重新扫描”按钮。
 
 ### 2. 一键重扫
 
 - 点击一次“重新扫描”，从新拓扑的 `cursor=0` 连续扫描；12.5s 完成 20,000 个键。
-- 重扫后数量与数据一致、无重复，顶部错误横幅自动清除，扫描按钮恢复为完成状态。截图：[重扫完成](screenshots-1.1.0/cursor-rescan/02-cursor-rescan-complete.png)。
-- 失效前的已加载结果保留可用；[初始页](screenshots-1.1.0/cursor-rescan/00-cursor-initial.png)。
+- 重扫后数量与数据一致、无重复，顶部错误横幅自动清除，扫描按钮恢复为完成状态。
+- 失效前的已加载结果保留可用。
 
 ### 3. 接口语义
 
@@ -474,11 +472,11 @@
 - 前端 `pnpm build`、`pnpm lint`（39 项测试）通过。
 - 一键重扫功能按预期生效，未发现新增功能性问题。
 
-本轮清理：删除测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-cur-cluster` 和临时脚本目录；3 张截图保留在 `test-reports/screenshots-1.1.0/cursor-rescan/`。
+本轮清理：删除测试连接；停止独立后端与 Chrome；删除容器 `sqldesk-cur-cluster` 和临时脚本目录。
 
 ## 16. 异常修复复测：无主键删除、日期弹层与关联页签（2026-11-20）
 
-复测提交：`16c7d5b fix: 修正行删除提示、日期弹层和关联页签清理`。环境为 MySQL 8.4.10、独立后端 `127.0.0.1:18089`；主要交互使用内置浏览器多轮执行，落盘截图由本机 Chrome 保存。截图目录：[tabfix-verify](screenshots-1.1.0/tabfix-verify/)。
+复测提交：`16c7d5b fix: 修正行删除提示、日期弹层和关联页签清理`。环境为 MySQL 8.4.10、独立后端 `127.0.0.1:18089`；主要交互使用内置浏览器多轮执行。
 
 ### 1. 无主键数据删除（多轮）
 
@@ -488,13 +486,13 @@
 - 第 3 轮多选中文行与普通行：一次删除 2 行，3→1。
 - 第 4 轮补入两条完全相同的行并同时选中删除：两条各删一次，剩余 2 行，无重复残留。
 - 第 5 轮全选剩余行删除：0 行；“查询成功，没有匹配的数据”，表 `no_pk_rows` 仍然存在并可刷新，未误删表。
-- 补充截图轮：重新写入 3 行（含一行重复），选中一行删除后 3→2，数据库中 `id=11` 只剩一条。截图：[删除确认](screenshots-1.1.0/tabfix-verify/01-no-pk-delete-confirm.png)、[删除成功](screenshots-1.1.0/tabfix-verify/02-no-pk-delete-success.png)。
+- 补充验证轮：重新写入 3 行（含一行重复），选中一行删除后 3→2，数据库中 `id=11` 只剩一条。
 - 确认框文案已更新为“有主键时按主键定位，无主键时按原始整行匹配。相同记录每选中一条删一条。删除立即生效，遇到失败会停止。”
 
 ### 2. 空表日期弹层
 
 - `no_pk_empty` 为 0 行，点击“新增行”打开 DATE 面板：面板挂在 body 级浮层，边界 top 276 / bottom 624，内置浏览器视口 785，未被表格容器裁切；TIME 面板 top 276 / bottom 547。
-- 选择 `2026-11-20` 后编辑框保持打开，输入值正确；保存成功，数据库该行 `due_date=2026-11-20`。截图：[空表日期弹层](screenshots-1.1.0/tabfix-verify/03-empty-table-date-popup.png)。
+- 选择 `2026-11-20` 后编辑框保持打开，输入值正确；保存成功，数据库该行 `due_date=2026-11-20`。
 - 未再出现日期/时间面板被下方遮挡，或点击面板导致单元格编辑结束的问题。
 
 ### 3. 删表/删库关联页签
@@ -509,8 +507,52 @@
 - 三个问题均按预期修复，未发现新增功能性异常。
 - 未覆盖：包含 BLOB/空间类型等特殊列的整行匹配删除、删除前他处并发修改同一行的提示路径、PostgreSQL 对应界面回归。
 
-本轮清理：删除测试连接；停止独立后端与截图 Chrome；删除容器 `sqldesk-tabfix-mysql` 和临时脚本目录；3 张截图保留在 `test-reports/screenshots-1.1.0/tabfix-verify/`。
+本轮清理：删除测试连接；停止独立后端与 Chrome；删除容器 `sqldesk-tabfix-mysql` 和临时脚本目录。
 
-## 17. 未覆盖
+## 17. 工作区查询与数据操作复测（提交 f9f041f，2026-11-20）
 
-- TLS/证书、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、MySQL/PostgreSQL 主从复制与切换、跨库分布式事务、Redis ACL 细粒度权限与 TLS、超过 30 秒的断网后恢复、本次断线环境中的 Agent 实时对话、Redis 在线扩缩容或槽迁移导致的游标失效、无主键表含 BLOB/空间类型等特殊列的整行匹配删除。
+环境：MySQL 8.4.10、MariaDB 10.11、PostgreSQL 16、Redis 7.4；独立后端 `127.0.0.1:18089`。主要交互使用内置浏览器。
+
+### 1. 查询行数限制
+
+- 表数据预览保持 1000 行上限：`many_rows` 共 1500 行，数据页显示“共 1000 条”。
+- 右键表选择“新建查询”生成 `SELECT * FROM \`sqlstudio_edit\`.\`many_rows\`;`，不含 `LIMIT`。
+- 单条查询返回 1500 行，无行数截断；两条语句的批量执行生成“结果 1、结果 2”，两侧均为 1500 行；点击“重新执行”仍为 1500 行。
+
+### 2. 无主键表编辑
+
+- MySQL、MariaDB、PostgreSQL 的 `no_pk_edit` 均在同一行修改两个字段后一次保存，提示“已保存 2 处修改”。
+- 数据库核对：MySQL `alpha-2/11`、MariaDB `alpha-maria/12`、PostgreSQL `alpha-pg/13`，两个字段同时生效。
+- 无主键行删除中途失败：选中 2 行后从数据库修改第二行，删除时第一行成功、第二行提示“目标行已变化或不存在”；弹框显示“已确认删除 1 行”及原因，数据库中仅删除第一行。
+
+### 3. 确认弹框
+
+- 数据行删除：标题“删除选中的 2 行数据？”，显示范围 `sqlstudio_edit.no_pk_edit`；中途失败后切换为“删除结果”，只保留“关闭”。
+- Redis 键删除：弹框显示“删除键”和“确定删除 Redis 键「delete:key」？”，确认后仅删除该键，`keep:key` 保留。
+- 清空执行历史：显示连接名、总数 4 及“包括筛选未显示的记录”；确认后历史清空、按钮禁用。
+- AI 会话删除：显示会话名 `Delete Session Test` 和删除范围“本机保存的消息和查询结果”；确认后会话从接口列表移除。
+- 内置浏览器隐藏表面会暂停弹框离场动画，但弹框已是 `ant-zoom-leave` 关闭状态，功能不受影响。
+
+### 4. 导出弹框
+
+- 导出改为弹框，格式 CSV/Excel/JSON 与范围“已加载的筛选结果/选中行”均为横排圆点单选。
+- 未选中行时“选中行（0）”禁用；选中 1 行后启用并可选。
+- 模拟导出失败（`URL.createObjectURL` 抛错）：弹框保持打开，格式与范围选项保留，顶部显示“导出测试失败”。
+
+### 5. Redis 双击与查询收藏
+
+- 双击 Redis 连接节点只展开/收起，不再新建查询页；双击 Redis 数据库节点仍正常打开查询。
+- 查询收藏打开动作的无障碍名称为“在新标签页打开”，点击后新建带 SQL 的查询页。
+- 删除收藏确认显示收藏名称：“删除收藏「Delete Me Favorite」？”。
+
+### 6. 自动化与结论
+
+- 后端 `go test ./...`、`go vet ./...` 通过；前端 `pnpm build`、`pnpm lint` 39 项通过。
+- 本轮五项修改均按预期生效，未发现新增功能性问题。
+- 未覆盖：导出成功后的文件落盘与 1500 行文件内容校验、AI 会话在真实模型流式对话中的删除、特殊二进制列的整行编辑。
+
+本轮清理：删除 4 个测试连接；停止独立后端与 Chrome；删除 MySQL、MariaDB、PostgreSQL、Redis 容器和临时脚本目录。
+
+## 18. 未覆盖
+
+- TLS/证书、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针输入、MySQL/PostgreSQL 主从复制与切换、跨库分布式事务、Redis ACL 细粒度权限与 TLS、超过 30 秒的断网后恢复、本次断线环境中的 Agent 实时对话、Redis 在线扩缩容或槽迁移导致的游标失效、无主键表含 BLOB/空间类型等特殊列的整行匹配删除、导出成功后的实际文件落盘校验。
