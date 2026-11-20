@@ -75,7 +75,9 @@ func (c *Client) batchStep(ctx context.Context, conn *sql.Conn, lease *requestLe
 	}
 	result.DurationMS = time.Since(started).Milliseconds()
 	if err != nil {
-		step.Error = queryError(err).Error()
+		err = queryError(err)
+		step.Error = err.Error()
+		step.StatementError = model.IsStatementError(err)
 		return step
 	}
 	step.Result = &result

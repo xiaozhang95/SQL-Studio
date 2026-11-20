@@ -41,6 +41,27 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 	}
 }
 
+func TestRedisModeValidatesMasterNameAndClusterDatabase(t *testing.T) {
+	repo, err := connection.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := connections.New(repo, &stubDatabase{})
+	input := model.Connection{Type: model.TypeRedis, RedisMode: model.RedisSentinel, Name: "fixture", Host: "localhost", Port: 26379}
+	if _, err := service.SaveConnection(input); err == nil {
+		t.Fatal("accepted a Sentinel connection without its primary name")
+	}
+	input.RedisMode, input.Database, input.Port = model.RedisCluster, "2", 6379
+	if _, err := service.SaveConnection(input); err == nil {
+		t.Fatal("accepted a cluster database other than 0")
+	}
+	input.Database = ""
+	cluster, err := service.SaveConnection(input)
+	if err != nil || cluster.RedisMode != model.RedisCluster || cluster.Database != "0" {
+		t.Fatal("cluster was not saved with DB 0", err)
+	}
+}
+
 // 收敛支持范围不能删除磁盘中的旧连接，也不能把它冒充 MySQL 返回。
 func TestListConnectionsKeepsUnsupportedRecordsOnDisk(t *testing.T) {
 	repo, err := connection.Open(t.TempDir())

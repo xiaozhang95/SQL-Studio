@@ -43,7 +43,7 @@ Windows 在 `release/` 下生成两份分发产物。
 
 主进程记录详细异常，更新 IPC 仅返回固定错误码，preload 解包为原有 Promise 接口。界面区分限流、HTTP 403 拒绝、无公开正式版、超时、网络、服务故障、响应格式与清单不匹配，不把所有失败归为无法访问 GitHub。共享检查/下载任务与退出后安装流程保持不变。
 
-应用内下载通过 electron-updater 的 `download-progress` 事件展示真实百分比、已下载/总大小和速度。准备传输与校验阶段分别显示状态；仅安装包下载及校验成功后显示 100% 完成和“重启并安装”。主进程保留递增 revision 的状态快照，`getState`/`onState` 桥接仅供同源工作台读取和订阅，页面关闭或重开不影响下载并能恢复进度。失败保留最后进度与安全错误码，重试清零；绿色版等手动下载不提供应用内进度。
+应用内下载通过 electron-updater 的 `download-progress` 事件在下载按钮旁显示圆形进度。准备传输与校验阶段分别显示状态，安装包校验成功后显示“重启并安装”。主进程保留递增 revision 的状态快照，`getState`/`onState` 桥接仅供同源工作台读取和订阅。重新打开页面可以恢复进度，失败保留最后进度与安全错误码，重试清零。应用内进度适用于支持自动下载的安装版。
 
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。

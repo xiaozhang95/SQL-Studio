@@ -12,7 +12,7 @@ Groups/CreateGroup/RenameGroup/MoveGroup 管理独立分组及成员归属。con
 
 ## 约束与调用
 
-List 移除密码，hasPassword 表示已保存凭据。新建免密连接时密码字段留空，已设置的密码加密落盘。编辑留空保留原值，密钥丢失时拒绝覆盖已有配置。
+公开连接删除密码字段，hasPassword 与 hasRedisSentinelPassword 分别标识 Redis 数据节点密钥和哨兵密钥是否已保存。两项独立 AES-GCM 加密。编辑留空保留适用的原值，密钥丢失时拒绝覆盖已有配置。
 
 连接文档必须明确保存 type/group；新建连接的空分组输入初始化为当前默认分组。读取不补旧字段，不解析连接数组格式。
 

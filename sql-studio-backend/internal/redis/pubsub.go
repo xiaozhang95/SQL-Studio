@@ -23,13 +23,36 @@ func (c *Client) Channels(ctx context.Context, connection model.Connection, patt
 	if pattern == "" {
 		pattern = "*"
 	}
-	names, err := client.PubSubChannels(ctx, pattern).Result()
-	if err != nil {
-		return model.RedisChannels{}, err
+	sources := []driver.Cmdable{client}
+	if cluster, ok := client.(*driver.ClusterClient); ok {
+		nodes, err := clusterNodes(ctx, cluster, true)
+		if err != nil {
+			return model.RedisChannels{}, err
+		}
+		sources = make([]driver.Cmdable, 0, len(nodes))
+		for _, node := range nodes {
+			sources = append(sources, node)
+		}
 	}
-	patterns, err := client.PubSubNumPat(ctx).Result()
-	if err != nil {
-		return model.RedisChannels{}, err
+	namesByKey := make(map[string]struct{})
+	var patterns int64
+	for _, source := range sources {
+		names, err := source.PubSubChannels(ctx, pattern).Result()
+		if err != nil {
+			return model.RedisChannels{}, err
+		}
+		for _, name := range names {
+			namesByKey[name] = struct{}{}
+		}
+		count, err := source.PubSubNumPat(ctx).Result()
+		if err != nil {
+			return model.RedisChannels{}, err
+		}
+		patterns += count
+	}
+	names := make([]string, 0, len(namesByKey))
+	for name := range namesByKey {
+		names = append(names, name)
 	}
 	sort.Strings(names)
 	result := model.RedisChannels{Patterns: patterns, Truncated: len(names) > 200, Channels: []model.RedisChannel{}}
@@ -37,9 +60,15 @@ func (c *Client) Channels(ctx context.Context, connection model.Connection, patt
 	if len(names) == 0 {
 		return result, nil
 	}
-	counts, err := client.PubSubNumSub(ctx, names...).Result()
-	if err != nil {
-		return model.RedisChannels{}, err
+	counts := make(map[string]int64)
+	for _, source := range sources {
+		nodeCounts, err := source.PubSubNumSub(ctx, names...).Result()
+		if err != nil {
+			return model.RedisChannels{}, err
+		}
+		for name, count := range nodeCounts {
+			counts[name] += count
+		}
 	}
 	for _, name := range names {
 		label, cut := clip(display(name), 1024)

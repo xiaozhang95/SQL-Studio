@@ -1075,7 +1075,7 @@
           {
             "name": "cursor",
             "in": "query",
-            "description": "无符号十进制游标，初次为 0",
+            "description": "初次为 0，其后原样传回服务器返回的游标。集群游标绑定主节点列表和筛选条件。",
             "schema": {
               "type": "string"
             }
@@ -1827,6 +1827,10 @@
                         "mode": {
                           "type": "string"
                         },
+                        "node": {
+                          "type": "string",
+                          "description": "集群监控本次采样的主节点地址。"
+                        },
                         "role": {
                           "type": "string"
                         },
@@ -2512,7 +2516,7 @@
         "tags": [
           "查询"
         ],
-        "description": "支持 MySQL、MariaDB 和 PostgreSQL，同批次使用一个物理会话。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，MySQL/MariaDB 成功 USE 时附 database；随后发送 done。流开始后的会话错误和 PostgreSQL 批次结束时未完成的事务通过 error 事件报告。取消不能撤销已提交写入。",
+        "description": "支持 MySQL、MariaDB 和 PostgreSQL，同批次使用一个物理会话。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，已识别的语句错误附 statementError=true，MySQL/MariaDB 成功 USE 时附 database；随后发送 done。流开始后的会话错误和 PostgreSQL 批次结束时未完成的事务通过 error 事件报告。取消不能撤销已提交写入。",
         "parameters": [
           {
             "name": "id",
@@ -2604,7 +2608,7 @@
         "tags": [
           "配置"
         ],
-        "description": "history、appearance、ai-models 等独立分区；工作区索引使用 /workspace；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
+        "description": "history、query-favorites、appearance、ai-models 等独立分区；工作区索引使用 /workspace；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
         "parameters": [
           {
             "name": "section",
@@ -4140,6 +4144,10 @@
         "properties": {
           "error": {
             "type": "string"
+          },
+          "statementError": {
+            "type": "boolean",
+            "description": "为 true 时，错误可归属于单条 SQL 或 Redis 命令。"
           }
         },
         "required": [
@@ -4219,7 +4227,7 @@
           },
           "username": {
             "type": "string",
-            "description": "GreptimeDB 未启用鉴权时可留空，其他引擎需要用户名。"
+            "description": "Redis 及未启用鉴权的 GreptimeDB 可留空。"
           },
           "password": {
             "type": "string",
@@ -4227,6 +4235,33 @@
             "description": "更新时留空保留原密码；任何响应都省略本字段。"
           },
           "hasPassword": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "redisMode": {
+            "type": "string",
+            "enum": ["standalone", "sentinel", "cluster"],
+            "default": "standalone",
+            "description": "Redis 专用。主机和端口分别为单机地址、首个哨兵地址或首个种子节点。集群逻辑库固定为 0。"
+          },
+          "redisNodes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "额外哨兵或集群种子节点地址，格式为 host:port，IPv6 使用方括号。"
+          },
+          "redisMasterName": {
+            "type": "string",
+            "description": "哨兵监控的主节点服务名称。"
+          },
+          "redisSentinelUsername": {
+            "type": "string"
+          },
+          "redisSentinelPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "独立的哨兵密码。同为哨兵模式的连接编辑时留空沿用已保存值。"
+          },
+          "hasRedisSentinelPassword": {
             "type": "boolean",
             "readOnly": true
           }

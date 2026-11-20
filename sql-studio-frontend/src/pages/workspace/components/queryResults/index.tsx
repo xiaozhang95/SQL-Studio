@@ -1,5 +1,5 @@
-import { CloseOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
-import { Alert, Dropdown, Empty, Input, Pagination, Table, Typography } from 'antd'
+import { CloseOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
+import { Alert, Empty, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -12,20 +12,20 @@ import { DatabaseEngine } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
-import { exportCSV } from '@/utils/csv'
 
 import { resultSQLLayout, resultTableLayout } from '../../constant/layout'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import { defaultOutputView, executionCancelled } from '../../utils/queryOutput'
+import { defaultOutputView, pageExecutionError } from '../../utils/queryOutput'
 import { exportResultRows, matchResultRows, pageResultRows, selectedResultRows, sortResultRows } from '../../utils/resultRows'
 import type { ResultSort } from '../../utils/resultRows'
 import DataCellEditor from '../dataCellEditor'
 import NewRowCell from '../newRowCell'
 import QueryMessages from '../queryMessages'
 import QuerySummary from '../querySummary'
+import ResultExport from '../resultExport'
 import ResultsDock from '../resultsDock'
 import ResultTabs from '../resultTabs'
 import SQLPreview from '../sqlPreview'
@@ -68,7 +68,7 @@ export default function QueryResults({ model, themeMode }: Props) {
 
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
-  usePageError(batch && !executionCancelled(batch) ? batch.error : undefined, batch?.id ?? batch?.startedAt)
+  usePageError(pageExecutionError(batch), batch?.id ?? batch?.startedAt)
   const editingBlocked = model.running || result?.truncatedBy === 'oversized-row' || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
   const editing = useDataEditing({
     tab,
@@ -298,29 +298,12 @@ export default function QueryResults({ model, themeMode }: Props) {
               />
               {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
               {showingResult && (
-                <Dropdown
-                  trigger={['click']}
-                  menu={{
-                    items: [
-                      { key: 'all', label: t('导出全部') },
-                      { key: 'selected', label: t('导出选中（{value1}）', { value1: selectedRows.length }), disabled: !selectedRows.length }
-                    ],
-                    onClick: ({ key }) =>
-                      result &&
-                      exportCSV(
-                        result.columns.map((column) => column.name),
-                        key === 'selected' ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches)
-                      )
-                  }}
-                  disabled={!result?.isQuery || result.truncatedBy === 'oversized-row' || deferredSearch !== resultSearch}
-                >
-                  <ToolbarButton
-                    label={t('导出 CSV')}
-                    icon={<DownloadOutlined />}
-                    disabled={!result?.isQuery || result.truncatedBy === 'oversized-row' || deferredSearch !== resultSearch}
-                    aria-haspopup="menu"
-                  />
-                </Dropdown>
+                <ResultExport
+                  result={result}
+                  selectedCount={selectedRows.length}
+                  disabled={deferredSearch !== resultSearch}
+                  rows={(selected) => (selected ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result?.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches))}
+                />
               )}
             </div>
           </div>

@@ -5,12 +5,14 @@ import test from 'node:test'
 
 import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/statements/index.ts'
 import { DatabaseEngine } from '../src/databases/typings/index.ts'
+import { pageExecutionError, statementErrorDetail } from '../src/pages/workspace/utils/queryOutput/index.ts'
+import { RequestError } from '../src/utils/request/index.ts'
 
 // 执行真实工作区编排函数，替换请求与 React 状态；不连接业务数据库。
 const source = readFileSync(new URL('../src/pages/workspace/hooks/useWorkspace/index.tsx', import.meta.url), 'utf8')
 const executionSource = readFileSync(new URL('../src/pages/workspace/hooks/useQueryExecution/index.ts', import.meta.url), 'utf8')
 const implementation = executionSource.slice(executionSource.indexOf('  async function executeSQL('), executionSource.indexOf('  return executeSQL'))
-async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBatch = false, singleStatement = false) {
+async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBatch = false, singleStatement = false, failure = new Error('denied')) {
   const controller = new AbortController()
   const calls = [],
     histories = [],
@@ -21,6 +23,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
   ]
   const dependencies = {
     DatabaseEngine,
+    RequestError,
     connections: [{ id: 'a', name: 'fixture', type: schema ? 'postgresql' : 'mysql' }],
     objects: { snapshots: { a: { status: 'connected' } } },
     running: false,
@@ -32,7 +35,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
     executeQuery: async (id, input) => {
       calls.push({ id, ...input })
       if (input.sql === cancelSQL) controller.abort()
-      if (input.sql === failSQL) throw new Error('denied')
+      if (input.sql === failSQL) throw failure
       return { isQuery: true, durationMs: 1 }
     },
     executeQueryBatch: async (id, database, statements, signal, onStep) => {
@@ -40,6 +43,10 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
         calls.push({ id, database, sql })
         if (sql === cancelSQL) controller.abort()
         signal.throwIfAborted()
+        if (sql === failSQL) {
+          onStep({ index, error: failure.message, statementError: failure.statementError })
+          break
+        }
         onStep({ index, result: { columns: [{ name: 'n' }], rows: [['1']], durationMs: 1 } })
       }
     },
@@ -54,6 +61,22 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
   await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page', kind, singleStatement)
   return { calls, histories, results, pages }
 }
+
+test('statement errors stay in the output; request failures stay in the top banner', async () => {
+  const missingTable = new RequestError('table does not exist', 400, true)
+  for (const sessionBatch of [false, true]) {
+    const output = await run('SELECT 1; SELECT missing;', 'SELECT missing;', undefined, undefined, 'query', sessionBatch, false, missingTable)
+    const result = output.results.at(-1)
+    assert.equal(pageExecutionError(result), undefined)
+    assert.equal(statementErrorDetail(result.statements[1]), missingTable.message)
+    assert.equal(output.histories[1].error, missingTable.message)
+  }
+  const tooLarge = new RequestError('request body too large', 413)
+  const output = await run('SELECT 1;', 'SELECT 1;', undefined, undefined, 'query', false, false, tooLarge)
+  const result = output.results.at(-1)
+  assert.equal(pageExecutionError(result), tooLarge.message)
+  assert.equal(statementErrorDetail(result.statements[0]), undefined)
+})
 
 test('MySQL selection can send a routine without splitting its inner semicolons', async () => {
   const sql = 'CREATE PROCEDURE example() BEGIN SELECT 1; SELECT 2; END'

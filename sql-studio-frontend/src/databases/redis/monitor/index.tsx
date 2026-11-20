@@ -1,6 +1,7 @@
 import { Card, Flex, Progress, Statistic, Tabs, Tag, theme, Typography } from 'antd'
 
 import TrendChart from '@/components/monitorTrendChart'
+import { redisModeLabel } from '@/databases/redis'
 import type { DatabaseMonitorPanelProps } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import { formatMetric, metricValue } from '@/utils/monitorMetrics'
@@ -41,11 +42,12 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
     <Flex vertical gap="middle">
       <Card
         size="small"
-        title={t('实例概览')}
+        title={t(detail?.node ? '主节点概览' : '实例概览')}
         extra={
           <Flex gap="small" wrap>
             {detail?.version && <Tag>{`v${detail.version}`}</Tag>}
-            {detail?.mode && <Tag>{detail.mode}</Tag>}
+            {detail?.mode && <Tag>{t(redisModeLabel(detail.mode))}</Tag>}
+            {detail?.node && <Tag title={t('采样主节点')}>{detail.node}</Tag>}
             {detail?.role && <Tag>{detail.role}</Tag>}
           </Flex>
         }

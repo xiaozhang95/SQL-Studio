@@ -70,7 +70,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         loading={snapshot?.status === 'loading'}
         placeholder={t('选择数据库')}
         value={database}
-        disabled={disabled || !connected}
+        disabled={disabled || !connected || (redis && current.redisMode === 'cluster')}
         onChange={(value) => onSelect(value || '')}
         options={databases.map((name) => ({
           value: name,

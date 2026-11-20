@@ -4,7 +4,23 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"sql-studio-backend/internal/model"
 )
+
+type commandReplyError string
+
+func (e commandReplyError) Error() string { return string(e) }
+func (commandReplyError) RedisError()     {}
+
+func TestCommandErrorScope(t *testing.T) {
+	if !model.IsStatementError(markCommandError(commandReplyError("WRONGTYPE incompatible type"))) {
+		t.Fatal("Redis command failure should stay with its result")
+	}
+	if model.IsStatementError(markCommandError(commandReplyError("NOAUTH Authentication required."))) {
+		t.Fatal("Redis connection failure should stay a request error")
+	}
+}
 
 func TestCommandResultPreservesRedisValues(t *testing.T) {
 	tests := []struct {

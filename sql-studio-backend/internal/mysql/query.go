@@ -39,7 +39,23 @@ func queryError(err error) error {
 	if errors.Is(err, driver.ErrPktTooLarge) || (errors.As(err, &serverError) && serverError.Number == 1153) {
 		return fmt.Errorf("SQL 数据包超过 MySQL/MariaDB 的 max_allowed_packet 限制：%w", err)
 	}
-	return err
+	return markStatementError(err)
+}
+
+func markStatementError(err error) error {
+	var serverError *driver.MySQLError
+	if !errors.As(err, &serverError) {
+		return err
+	}
+	switch string(serverError.SQLState[:2]) {
+	case "08", "28":
+		return err
+	}
+	switch serverError.Number {
+	case 1040, 1042, 1043, 1044, 1045, 1049, 1053, 1129, 1130, 1153:
+		return err
+	}
+	return &model.StatementError{Cause: err}
 }
 
 func (c *Client) ClassifyQueryError(err error) model.QueryErrorKind {
@@ -80,7 +96,8 @@ func (c *Client) ExecuteStatement(ctx context.Context, connection model.Connecti
 		return model.QueryResult{}, err
 	}
 	defer release()
-	return executeAutocommit(ctx, db, input.SQL, input.Limit, returnsRows)
+	result, err := executeAutocommit(ctx, db, input.SQL, input.Limit, returnsRows)
+	return result, markStatementError(err)
 }
 
 func executeResult(ctx context.Context, db *sql.DB, statement string, limit int, allowWrite, returning bool) (result model.QueryResult, err error) {

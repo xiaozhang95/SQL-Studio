@@ -1,4 +1,5 @@
 import redisIcon from '@/assets/databases/redis.svg'
+import type { RedisConnectionMode } from '@/typings/database'
 
 import { DatabaseEngine } from '../typings'
 import type { DatabaseProfile } from '../typings'
@@ -13,6 +14,14 @@ export const redisProfile = {
   optionalUsername: true,
   icon: redisIcon
 } as const satisfies DatabaseProfile
+
+export const redisModeLabels = { standalone: '单机', sentinel: '哨兵', cluster: '集群' } as const satisfies Record<RedisConnectionMode, string>
+
+export function redisModeLabel(mode?: string) {
+  if (mode === 'sentinel' || mode === 'cluster') return redisModeLabels[mode]
+  return redisModeLabels.standalone
+}
+
 /** Return a logical database only after metadata has confirmed it is available. */
 export function selectedRedisDatabase(names: readonly string[], current?: string, preferred?: string) {
   return [current, preferred].find((name) => name !== undefined && names.includes(name)) ?? names[0]

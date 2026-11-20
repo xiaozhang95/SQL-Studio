@@ -67,6 +67,7 @@ function runState(value: unknown): RunState {
             object(item) &&
             typeof item.sql === 'string' &&
             (item.error === undefined || typeof item.error === 'string') &&
+            (item.statementError === undefined || typeof item.statementError === 'boolean') &&
             (item.singleStatement === undefined || typeof item.singleStatement === 'boolean') &&
             (item.result === undefined || result(item.result))
         )))

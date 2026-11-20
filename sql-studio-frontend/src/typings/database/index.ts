@@ -1,5 +1,7 @@
 import type { DatabaseType } from '@/databases/typings'
 
+export type RedisConnectionMode = 'standalone' | 'sentinel' | 'cluster'
+
 export type Connection = {
   database?: string
   type?: DatabaseType
@@ -12,10 +14,16 @@ export type Connection = {
   username: string
   hasPassword: boolean
   password?: string
+  redisMode?: RedisConnectionMode
+  redisNodes?: string[]
+  redisMasterName?: string
+  redisSentinelUsername?: string
+  redisSentinelPassword?: string
+  hasRedisSentinelPassword?: boolean
 }
 
 /** 与后端 model 保持一致的数据库类型与 API 契约。 */
-export type ConnectionInput = Omit<Connection, 'id' | 'hasPassword'> & {
+export type ConnectionInput = Omit<Connection, 'id' | 'hasPassword' | 'hasRedisSentinelPassword'> & {
   id?: string
 }
 export type DBTable = { name: string; type: string; comment: string; viewDependencies?: string[]; extension?: string }
@@ -77,6 +85,7 @@ export type MonitorSnapshot = {
   redis?: {
     version: string
     mode: string
+    node?: string
     role: string
     runId: string
     sections: MonitorSection[]

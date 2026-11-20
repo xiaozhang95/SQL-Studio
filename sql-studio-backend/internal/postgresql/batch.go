@@ -45,6 +45,7 @@ func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, 
 		step := model.QueryBatchStep{Index: index}
 		if err != nil {
 			step.Error = err.Error()
+			step.StatementError = model.IsStatementError(markStatementError(err))
 		} else {
 			step.Result = &result
 		}

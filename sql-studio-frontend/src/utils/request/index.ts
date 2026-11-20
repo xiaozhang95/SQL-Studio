@@ -3,9 +3,11 @@ import { translate } from '../translate/index.ts'
 
 export class RequestError extends Error {
   readonly status: number
-  constructor(message: string, status: number) {
+  readonly statementError: boolean
+  constructor(message: string, status: number, statementError = false) {
     super(message)
     this.status = status
+    this.statementError = statementError
   }
 }
 
@@ -46,7 +48,8 @@ export async function readJSON<T>(response: Response, signal?: AbortSignal): Pro
         : response.status === 413
           ? translate('请求体超过服务器大小上限。', language)
           : translate('请求失败（HTTP {status}）', language, { status: response.status })
-    throw new RequestError(message, response.status)
+    const statementError = response.status === 400 && data !== null && typeof data === 'object' && 'statementError' in data && data.statementError === true
+    throw new RequestError(message, response.status, statementError)
   }
   return data as T
 }

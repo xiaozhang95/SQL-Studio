@@ -1,4 +1,4 @@
-import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
@@ -23,6 +23,7 @@ import ToolbarButton from '../toolbarButton'
 
 type Props = {
   themeMode: ThemeMode
+  onFavorite: (sql: string) => void
   model: Pick<
     WorkspaceModel,
     | 'activeTab'
@@ -52,7 +53,7 @@ type Props = {
 }
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
-export default function QueryEditor({ model, themeMode }: Props) {
+export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
   const { t } = useTranslation()
 
   const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, connections, onEditorReady, columns } = model
@@ -139,6 +140,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
           <ToolbarButton label={t('导入')} icon={<UploadOutlined />} loading={importing} disabled={running} />
         </Upload>
         <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
+        <ToolbarButton label={t('收藏查询')} icon={<StarOutlined />} disabled={!hasSQL} onClick={() => onFavorite(model.getSelectedSQL() ?? model.getCurrentSQL())} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
       </QueryToolbar>
       <SQLOptimization model={ai} themeMode={themeMode} />

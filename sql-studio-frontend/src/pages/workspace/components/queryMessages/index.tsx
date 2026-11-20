@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, CloseCircleOutlined, StopOutlined } from '@ant-design/icons'
-import { Collapse, Empty, Pagination, Space, Typography } from 'antd'
+import { Collapse, Empty, Flex, Pagination, Space, Typography } from 'antd'
 import { useState } from 'react'
 
 import type { DatabaseType } from '@/databases/typings'
@@ -9,7 +9,7 @@ import type { ThemeMode } from '@/typings/theme'
 import type { RunState } from '@/typings/workspace'
 
 import { useQueryMessageScroll } from '../../hooks/useQueryMessageScroll'
-import { executionCancelled, statementDuration, statementOutputs } from '../../utils/queryOutput'
+import { executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
@@ -42,19 +42,27 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
         items={visible.map((item, position) => {
           const index = position + offset
           const cancelled = executionCancelled(item)
+          const detail = run.kind === 'query' ? statementErrorDetail(item) : undefined
           return {
             key: String(index),
             label: (
-              <Space wrap>
-                <Typography.Text>
-                  {t('语句 ')}
-                  {index + 1}
-                </Typography.Text>
-                <Typography.Text type={cancelled ? 'secondary' : item.error ? 'danger' : 'success'}>
-                  {cancelled ? <StopOutlined /> : item.error ? <CloseCircleOutlined /> : <CheckCircleOutlined />} {t(cancelled ? '执行已取消' : item.error ? '执行失败' : '执行成功')}
-                </Typography.Text>
-                <Typography.Text type="secondary">{statementDuration(item) === undefined ? t('耗时未记录') : `${statementDuration(item)} ms`}</Typography.Text>
-              </Space>
+              <Flex vertical gap={4} style={{ minWidth: 0 }}>
+                <Space wrap>
+                  <Typography.Text>
+                    {t('语句 ')}
+                    {index + 1}
+                  </Typography.Text>
+                  <Typography.Text type={cancelled ? 'secondary' : item.error ? 'danger' : 'success'}>
+                    {cancelled ? <StopOutlined /> : item.error ? <CloseCircleOutlined /> : <CheckCircleOutlined />} {t(cancelled ? '执行已取消' : item.error ? '执行失败' : '执行成功')}
+                  </Typography.Text>
+                  <Typography.Text type="secondary">{statementDuration(item) === undefined ? t('耗时未记录') : `${statementDuration(item)} ms`}</Typography.Text>
+                </Space>
+                {detail && (
+                  <Typography.Text type="danger" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                    {t(detail)}
+                  </Typography.Text>
+                )}
+              </Flex>
             ),
             children: (
               <section aria-label={t('语句 {value1} 执行消息', { value1: index + 1 })}>

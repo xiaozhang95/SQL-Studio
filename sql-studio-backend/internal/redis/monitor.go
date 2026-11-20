@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	driver "github.com/redis/go-redis/v9"
+
 	"sql-studio-backend/internal/model"
 )
 
@@ -21,7 +23,17 @@ func (c *Client) Monitor(ctx context.Context, connection model.Connection, _ str
 	defer release()
 	client, closeClient := open(ctx, connection, 0)
 	defer closeClient()
-	info, err := client.Info(ctx).Result()
+	var source driver.Cmdable = client
+	var node string
+	if cluster, ok := client.(*driver.ClusterClient); ok {
+		primaries, err := clusterNodes(ctx, cluster, false)
+		if err != nil {
+			return model.MonitorSnapshot{}, err
+		}
+		source = primaries[0]
+		node = primaries[0].Options().Addr
+	}
+	info, err := source.Info(ctx).Result()
 	if err != nil {
 		return model.MonitorSnapshot{}, err
 	}
@@ -73,6 +85,8 @@ func (c *Client) Monitor(ctx context.Context, connection model.Connection, _ str
 		metrics = append(metrics, model.MonitorMetric{Key: "cache_hit_percent", Value: strconv.FormatFloat(100*hits/(hits+misses), 'f', 1, 64)})
 	}
 	detail := redisMonitorDetails(values)
+	detail.Mode = connection.RedisModeValue()
+	detail.Node = node
 	// An absent keyspace section is unknown, while a present empty section is zero.
 	if strings.Contains("\n"+info, "\n# Keyspace") {
 		detail.Keyspaces = redisMonitorKeyspaces(values)

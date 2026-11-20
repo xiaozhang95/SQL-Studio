@@ -8,6 +8,7 @@ import { splitSQLStatements, useDatabaseSQL } from '../src/databases/mysql/state
 import { splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
 import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { executeQueryBatch } from '../src/services/queryBatch/index.ts'
+import { RequestError } from '../src/utils/request/index.ts'
 import { step } from './integration-steps.mjs'
 
 // Opt in against an isolated SQL Studio backend. Credentials only come from the environment.
@@ -20,7 +21,7 @@ const implementation = stripTypeScriptTypes(executionSource.slice(executionSourc
 async function api(path, body, signal, method = body === undefined ? 'GET' : 'POST') {
   const response = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body), signal })
   const result = await response.json()
-  if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`)
+  if (!response.ok) throw new RequestError(result.error || `HTTP ${response.status}`, response.status, result.statementError === true)
   return result
 }
 
@@ -43,6 +44,7 @@ function windowRunner(connection, scope) {
       finished = false
     const dependencies = {
       DatabaseEngine,
+      RequestError,
       connections: [connection],
       objects: { snapshots: { [connection.id]: { status: 'connected' } } },
       running: false,
@@ -183,6 +185,7 @@ for (const type of ['mysql', 'postgresql']) {
         assert.equal(output.calls.length, 1)
         assert.equal(output.batch.statements[0].result.rows[0][0], '11')
         assert.match(output.batch.statements[1].error, /后续 1 条语句未执行/)
+        assert.equal(output.batch.statements[1].statementError, true)
         assert.deepEqual(
           output.histories.map((h) => h.ok),
           [true, false]

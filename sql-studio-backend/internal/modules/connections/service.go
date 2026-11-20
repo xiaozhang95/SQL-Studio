@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"errors"
+	"net"
 	"strconv"
 	"strings"
 
@@ -24,7 +25,7 @@ func (s *Service) ListConnections() []model.Connection {
 func (s *Service) SaveConnection(c model.Connection) (model.Connection, error) {
 	c.Type = model.NormalizeDatabaseType(c.Type)
 	c.Group = model.NormalizeConnectionGroup(c.Group)
-	if err := validateConnection(c); err != nil {
+	if err := validateConnection(&c); err != nil {
 		return model.Connection{}, err
 	}
 	return s.connections.Save(c)
@@ -48,22 +49,30 @@ func (s *Service) SetSession(ctx context.Context, id string, database *string, o
 // TestConnection 支持编辑时密码留空复用旧密码，但不向客户端返回已保存密码。
 func (s *Service) TestConnection(ctx context.Context, c model.Connection) (string, error) {
 	c.Type = model.NormalizeDatabaseType(c.Type)
-	if err := validateConnection(c); err != nil {
+	if err := validateConnection(&c); err != nil {
 		return "", err
 	}
-	if c.ID != "" && c.Password == "" {
+	if c.ID != "" && (c.Password == "" || (c.RedisMode == model.RedisSentinel && c.RedisSentinelPassword == "")) {
 		old, err := s.connections.Get(c.ID)
 		if err != nil {
 			return "", err
 		}
-		c.Password = old.Password
+		if c.Password == "" {
+			c.Password = old.Password
+		}
+		if c.RedisMode == model.RedisSentinel && old.RedisMode == model.RedisSentinel && c.RedisSentinelPassword == "" {
+			c.RedisSentinelPassword = old.RedisSentinelPassword
+		}
+	}
+	if err := c.ValidateRedisCredentials(); err != nil {
+		return "", err
 	}
 	ctx, cancel := context.WithTimeout(ctx, connectionTimeout)
 	defer cancel()
 	return s.database.Test(ctx, c)
 }
 
-func validateConnection(c model.Connection) error {
+func validateConnection(c *model.Connection) error {
 	if !model.SupportedDatabaseType(c.Type) {
 		return errors.New("不支持的数据库类型")
 	}
@@ -82,5 +91,48 @@ func validateConnection(c model.Connection) error {
 			return errors.New("Redis 逻辑库编号无效")
 		}
 	}
+	if c.Type == model.TypeRedis {
+		return validateRedisConnection(c)
+	}
+	c.RedisMode, c.RedisNodes = "", nil
+	c.RedisMasterName, c.RedisSentinelUsername, c.RedisSentinelPassword = "", "", ""
+	c.HasRedisSentinelPassword = false
+	return nil
+}
+
+func validateRedisConnection(c *model.Connection) error {
+	c.RedisMode = c.RedisModeValue()
+	switch c.RedisMode {
+	case model.RedisStandalone:
+		c.RedisNodes = nil
+	case model.RedisSentinel:
+		c.RedisMasterName = strings.TrimSpace(c.RedisMasterName)
+		c.RedisSentinelUsername = strings.TrimSpace(c.RedisSentinelUsername)
+		if c.RedisMasterName == "" {
+			return errors.New("请输入 Redis 哨兵监控的主节点名称")
+		}
+	case model.RedisCluster:
+		if db := strings.TrimLeft(c.Database, "0"); db != "" {
+			return errors.New("Redis 集群仅支持 DB 0")
+		}
+		c.Database = "0"
+	default:
+		return errors.New("Redis 连接模式无效")
+	}
+	if c.RedisMode != model.RedisSentinel {
+		c.RedisMasterName, c.RedisSentinelUsername, c.RedisSentinelPassword = "", "", ""
+	}
+	c.HasRedisSentinelPassword = false
+	nodes := make([]string, 0, len(c.RedisNodes))
+	for _, address := range c.RedisNodes {
+		host, port, err := net.SplitHostPort(strings.TrimSpace(address))
+		number, parseErr := strconv.Atoi(port)
+		if err != nil || host == "" || strings.ContainsAny(host, " \t\r\n/@") || parseErr != nil || number < 1 || number > 65535 {
+			return errors.New("Redis 节点地址必须为主机:端口")
+		}
+		address = net.JoinHostPort(host, strconv.Itoa(number))
+		nodes = append(nodes, address)
+	}
+	c.RedisNodes = nodes
 	return nil
 }

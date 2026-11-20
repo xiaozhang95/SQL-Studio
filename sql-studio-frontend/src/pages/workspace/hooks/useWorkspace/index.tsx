@@ -957,13 +957,13 @@ export const useWorkspace = (active = true) => {
     try {
       const statements = adapter.splitStatements(statement)
       if (statements.length < 2 || statements.some((sql) => !/^INSERT\b/i.test(sql))) {
-        message.error(t('请选择至少两条以 INSERT 开头的语句'))
+        setOperationError(t('请选择至少两条以 INSERT 开头的语句'))
         return
       }
       const inserts = statements.map((sql) => (sql.endsWith(';') ? sql : sql + '\n;'))
       executeCurrentSQL(['START TRANSACTION;', ...inserts, 'COMMIT;'].join('\n'))
     } catch (error) {
-      message.error(t(error instanceof Error ? error.message : 'SQL 解析失败'))
+      setOperationError(t(error instanceof Error ? error.message : 'SQL 解析失败'))
     }
   }
   function runSQL() {

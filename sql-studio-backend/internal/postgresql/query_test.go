@@ -23,6 +23,21 @@ func TestClassifyPostgreSQLCheckError(t *testing.T) {
 	}
 }
 
+func TestStatementErrorScope(t *testing.T) {
+	for _, example := range []struct {
+		code      string
+		statement bool
+	}{
+		{"42P01", true}, {"23505", true}, {"3D000", false}, {"08006", false}, {"57P01", false},
+	} {
+		err := &pgconn.PgError{Code: example.code, Message: "driver failure"}
+		result := markStatementError(err)
+		if !errors.Is(result, err) || model.IsStatementError(result) != example.statement {
+			t.Errorf("SQLSTATE %s classified incorrectly: %v", example.code, result)
+		}
+	}
+}
+
 // 使用 database/sql 的真实扫描和事务流程，替换网络驱动，不访问 PostgreSQL 实例。
 type queryFixture struct {
 	columns, types   []string

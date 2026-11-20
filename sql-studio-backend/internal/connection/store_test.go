@@ -10,6 +10,36 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
+func TestRedisSentinelPasswordsAreSavedAndRedactedIndependently(t *testing.T) {
+	dir := t.TempDir()
+	store, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := store.Save(model.Connection{
+		Type: model.TypeRedis, RedisMode: model.RedisSentinel, Name: "sentinel", Host: "localhost", Port: 26379, RedisMasterName: "fixture",
+		Username: "node-user", Password: "node-secret", RedisSentinelUsername: "sentinel-user", RedisSentinelPassword: "sentinel-secret",
+		RedisNodes: []string{"localhost:26380"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if saved.Password != "" || saved.RedisSentinelPassword != "" || !saved.HasPassword || !saved.HasRedisSentinelPassword {
+		t.Fatal("a credential leaked or its saved flag is missing")
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "connections.json"))
+	if err != nil || bytes.Contains(data, []byte("node-secret")) || bytes.Contains(data, []byte("sentinel-secret")) {
+		t.Fatal("Redis credentials were not encrypted", err)
+	}
+	if _, err = store.Save(saved); err != nil {
+		t.Fatal(err)
+	}
+	record, err := store.Get(saved.ID)
+	if err != nil || record.Password != "node-secret" || record.RedisSentinelPassword != "sentinel-secret" || len(record.RedisNodes) != 1 {
+		t.Fatal("edit with empty passwords did not preserve the saved connection", err)
+	}
+}
+
 func TestEncryptedStoreRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	store, err := Open(dir)

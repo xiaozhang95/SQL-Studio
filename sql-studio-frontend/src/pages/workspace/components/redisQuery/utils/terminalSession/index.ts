@@ -1,9 +1,9 @@
 export const terminalHistoryLimit = 50
 export const terminalCommandLimit = 64 * 1024
 
-type Entry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; truncated?: boolean }
+export type TerminalEntry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; statementError?: boolean; truncated?: boolean }
 export type TerminalSelection = Readonly<{ anchor: number; head: number }>
-type Session = { command: string; selection: TerminalSelection; history: string[]; entries: Entry[] }
+type Session = { command: string; selection: TerminalSelection; history: string[]; entries: TerminalEntry[] }
 export type RedisTool = 'editor' | 'console' | 'pubsub' | 'keys'
 
 const prefix = 'sql-studio:redis-terminal:'
@@ -27,7 +27,7 @@ export function saveRedisTool(page: string, tool: RedisTool) {
   }
 }
 
-function isEntry(value: unknown): value is Entry {
+function isEntry(value: unknown): value is TerminalEntry {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -38,6 +38,7 @@ function isEntry(value: unknown): value is Entry {
     'command' in value &&
     typeof value.command === 'string' &&
     value.command.length <= terminalCommandLimit &&
+    (!('statementError' in value) || typeof value.statementError === 'boolean') &&
     'answer' in value &&
     typeof value.answer === 'string'
   )

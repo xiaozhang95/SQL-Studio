@@ -7,11 +7,10 @@ import { useDesktopConsole } from '../../hooks/useDesktopConsole'
 import { useDesktopUpdates } from '../../hooks/useDesktopUpdates'
 
 export default function About({ disabled }: { disabled: boolean }) {
-  const { t, language } = useTranslation()
+  const { t } = useTranslation()
   const { desktop, result, pending, progress, downloadFailed, error, run } = useDesktopUpdates()
   const desktopConsole = useDesktopConsole()
   const busy = disabled || Boolean(pending) || desktopConsole.opening
-  const formatSize = (bytes: number) => `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)} MiB`
   const status = {
     upToDate: '当前已是最新版本',
     available: '发现新版本 {version}',
@@ -26,7 +25,7 @@ export default function About({ disabled }: { disabled: boolean }) {
       </Flex>
       {desktop && (
         <>
-          <Flex gap="small" wrap>
+          <Flex gap="small" align="center" wrap>
             <Button disabled={busy && pending !== 'check'} loading={pending === 'check'} onClick={() => void run('check')}>
               {t('检查更新')}
             </Button>
@@ -34,9 +33,21 @@ export default function About({ disabled }: { disabled: boolean }) {
               {t('查看控制台')}
             </Button>
             {result?.status === 'available' && result.canDownload && (
-              <Button disabled={busy && pending !== 'download'} loading={pending === 'download'} onClick={() => void run('download')}>
-                {t('下载更新')}
-              </Button>
+              <Flex gap="small" align="center">
+                <Button disabled={busy} onClick={() => void run('download')}>
+                  {t('下载更新')}
+                </Button>
+                {progress && (pending === 'download' || downloadFailed) && (
+                  <Progress
+                    type="circle"
+                    size={32}
+                    percent={Math.floor(progress.percent)}
+                    showInfo={progress.total > 0 || progress.percent > 0 || downloadFailed}
+                    status={downloadFailed ? 'exception' : 'active'}
+                    aria-label={t('更新下载进度')}
+                  />
+                )}
+              </Flex>
             )}
             {result?.status === 'available' && (
               <Button disabled={busy} onClick={() => void run('openRelease')}>
@@ -54,22 +65,6 @@ export default function About({ disabled }: { disabled: boolean }) {
             {pending === 'download' && t(!progress?.total ? '正在准备下载更新' : progress.percent >= 100 ? '正在校验更新' : '正在下载更新')}
             {!pending && result && t(status[result.status], result.status === 'upToDate' ? undefined : { version: result.version })}
           </Typography.Text>
-          {progress && (
-            <Flex vertical gap="small">
-              <Progress
-                percent={Math.floor(progress.percent)}
-                showInfo={progress.total > 0 || result?.status === 'downloaded'}
-                status={downloadFailed ? 'exception' : result?.status === 'downloaded' ? 'success' : 'active'}
-                aria-label={t('更新下载进度')}
-              />
-              {progress.total > 0 && (
-                <Typography.Text type="secondary">
-                  {t('已下载 {transferred} / {total}', { transferred: formatSize(progress.transferred), total: formatSize(progress.total) })}
-                  {pending === 'download' && progress.percent < 100 && progress.bytesPerSecond > 0 && ` · ${formatSize(progress.bytesPerSecond)}/s`}
-                </Typography.Text>
-              )}
-            </Flex>
-          )}
           <ErrorNotice errors={[error, desktopConsole.error]} />
         </>
       )}

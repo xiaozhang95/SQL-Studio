@@ -9,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
-import { executionCancelled, statementDuration, statementOutputs } from '../../utils/queryOutput'
+import { executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
@@ -37,7 +37,9 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
         executionCancelled(item) ? (
           <Typography.Text type="secondary">{t('执行已取消')}</Typography.Text>
         ) : item.error ? (
-          <Typography.Text type="danger">{t('执行失败')}</Typography.Text>
+          <Typography.Text type="danger" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+            {t((run.kind === 'query' ? statementErrorDetail(item) : undefined) ?? '执行失败')}
+          </Typography.Text>
         ) : (
           <Typography.Text type="success" style={{ whiteSpace: 'pre-wrap' }}>
             {item.result && !item.result.columns.length ? t('OK，影响 {value1} 行', { value1: item.result.affectedRows }) : 'OK'}

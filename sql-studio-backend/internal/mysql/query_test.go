@@ -25,6 +25,21 @@ func TestClassifyMySQLAndMariaDBCheckErrors(t *testing.T) {
 	}
 }
 
+func TestStatementErrorScope(t *testing.T) {
+	for _, example := range []struct {
+		number    uint16
+		statement bool
+	}{
+		{1146, true}, {1064, true}, {1062, true}, {1049, false}, {1045, false}, {1153, false},
+	} {
+		err := &mysqlDriver.MySQLError{Number: example.number, Message: "driver failure"}
+		result := queryError(err)
+		if !errors.Is(result, err) || model.IsStatementError(result) != example.statement {
+			t.Errorf("error %d classified incorrectly: %v", example.number, result)
+		}
+	}
+}
+
 // 使用 database/sql 的真实扫描和事务流程，替换网络驱动，不访问 MySQL 实例。
 type queryFixture struct {
 	columns, types   []string

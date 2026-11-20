@@ -6,8 +6,8 @@ const documents = new Map<string, Document<unknown>>()
 const generations = new Map<string, number>()
 const writes = new Map<string, Promise<void>>()
 /** Go 是唯一持久化目标；缺失分区才使用调用方默认值，读取失败不回退并覆盖配置。 */
-export async function readState<T>(section: string, defaults: () => Promise<T>): Promise<T> {
-  const doc = documents.get(section) ?? (await readDocument(section))
+export async function readState<T>(section: string, defaults: () => Promise<T>, refresh = false): Promise<T> {
+  const doc = (refresh ? undefined : documents.get(section)) ?? (await readDocument(section))
   return doc.data === null ? defaults() : (doc.data as T)
 }
 

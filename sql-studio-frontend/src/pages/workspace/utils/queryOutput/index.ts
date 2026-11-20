@@ -6,6 +6,16 @@ export const statementDuration = (item: StatementRun) => item.result?.durationMs
 
 export const executionCancelled = ({ cancelled, error }: { cancelled?: boolean; error?: string }) => Boolean(cancelled || /^(?:请求已取消|Request cancelled)[。.]?(?:\n|$)/.test(error ?? ''))
 
+/** Older snapshots stored individual failures without their classification. */
+export const statementErrorDetail = (item: StatementRun) => ((item.statementError ?? Boolean(item.sql)) && !executionCancelled(item) ? item.error : undefined)
+
+export function pageExecutionError(run?: RunState) {
+  if (!run?.error || executionCancelled(run)) return
+  const statement = run.statements?.at(-1)
+  if (run.kind === 'query' && statement && statementErrorDetail(statement) === run.error) return
+  return run.error
+}
+
 /** 导航只展示返回数据列的结果，保留原语句索引用于选择、刷新与恢复。 */
 export const resultOutputs = (run: RunState) => statementOutputs(run).flatMap((item, index) => (item.result?.columns.length ? [{ item, index }] : []))
 

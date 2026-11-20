@@ -1,4 +1,4 @@
-import { CodeOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons'
+import { CodeOutlined, PlusOutlined, StarOutlined, StopOutlined } from '@ant-design/icons'
 import { Button, Empty } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
@@ -18,11 +18,13 @@ import ConnectionSidebar from './components/connectionSidebar'
 import DataExport from './components/dataExport'
 import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
+import QueryFavorites from './components/queryFavorites'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
 import RedisQuery from './components/redisQuery'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
+import { useQueryFavorites } from './hooks/useQueryFavorites'
 import type { WorkspaceModel } from './hooks/useWorkspace'
 import { selectedConnectionScope } from './utils/explorerTree'
 import { workspacePageTitle } from './utils/pageTitle'
@@ -39,6 +41,7 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
   const { t } = useTranslation()
 
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
+  const favorites = useQueryFavorites()
   return (
     <div
       className="app-shell"
@@ -83,6 +86,9 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
           </Button>
           <Button type="text" icon={<CodeOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
             {t('新建查询')}
+          </Button>
+          <Button type="text" icon={<StarOutlined />} onClick={favorites.show}>
+            {t('查询收藏')}
           </Button>
         </div>
         <SectionNavigation destination="sync" onSwitch={() => onOpenDatabaseSection('sync')} />
@@ -136,7 +142,14 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
                       </div>
                     ) : (
                       <>
-                        {model.tab.kind === 'query' && <QueryEditor key={model.activeTab} model={model} themeMode={themeMode} />}
+                        {model.tab.kind === 'query' && (
+                          <QueryEditor
+                            key={model.activeTab}
+                            model={model}
+                            themeMode={themeMode}
+                            onFavorite={(sql) => favorites.edit({ sql, connectionId: model.tab.connectionId, database: model.tab.database, schema: model.tab.schema })}
+                          />
+                        )}
                         <QueryResults model={model} themeMode={themeMode} />
                       </>
                     )}
@@ -162,8 +175,19 @@ export default function Workspace({ model, active, onOpenAgent, onOpenDatabaseSe
         onSaved={model.onConnectionSaved}
       />
       {!model.savedConnections.some((connection) => connection.id === model.connectionId && connection.type === DatabaseEngine.Redis) && (
-        <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
+        <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} onFavorite={({ sql, connectionId, database, schema }) => favorites.edit({ sql, connectionId, database, schema })} />
       )}
+      <QueryFavorites
+        favorites={favorites}
+        connections={model.connections}
+        themeMode={themeMode}
+        canOpen={model.workspaceReady && !model.running}
+        onOpen={(item) => {
+          const connection = model.connections.find(({ id }) => id === item.connectionId)
+          const scope = connection ? { connectionId: connection.id, database: item.database, schema: item.schema, table: '' } : undefined
+          if (model.addTab(item.sql, scope, item.title)) favorites.setOpen(false)
+        }}
+      />
     </div>
   )
 }

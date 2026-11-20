@@ -130,11 +130,7 @@ func (s *Store) MoveGroup(id, group string) (model.Connection, error) {
 		if err = s.persist(items); err != nil {
 			return model.Connection{}, err
 		}
-		result := items[i]
-		result.Type = model.NormalizeDatabaseType(result.Type)
-		result.HasPassword = result.Password != ""
-		result.Password = ""
-		return result, nil
+		return publicConnection(items[i]), nil
 	}
 	return model.Connection{}, os.ErrNotExist
 }

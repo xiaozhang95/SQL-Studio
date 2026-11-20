@@ -20,10 +20,16 @@ func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]
 	defer release()
 	client, closeClient := open(ctx, connection, 0)
 	defer closeClient()
+	if connection.RedisModeValue() == model.RedisCluster {
+		if err := client.Ping(ctx).Err(); err != nil {
+			return nil, err
+		}
+		return []string{"0"}, nil
+	}
 	config, err := client.ConfigGet(ctx, "databases").Result()
 	count, parseErr := strconv.Atoi(config["databases"])
 	if err != nil || parseErr != nil || count < 1 {
-		conn := client.Conn()
+		conn := client.(*driver.Client).Conn()
 		defer conn.Close()
 		count, err = countSelectableDatabases(ctx, conn)
 		if err != nil {

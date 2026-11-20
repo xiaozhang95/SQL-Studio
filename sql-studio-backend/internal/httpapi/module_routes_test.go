@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -166,6 +167,40 @@ func TestQueryRequestValidation(t *testing.T) {
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/missing/query", strings.NewReader(body)))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("missing connection: %d", rec.Code)
+	}
+}
+
+func TestQueryResponseDistinguishesStatementAndConnectionErrors(t *testing.T) {
+	store, err := connection.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := store.Save(model.Connection{Name: "test", Host: "fixture", Port: 3306, Username: "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := New(regressionServices(store, routeDatabase{execute: func(_ context.Context, _ model.Connection, input model.QueryRequest) (model.QueryResult, error) {
+		if input.SQL == "SELECT missing" {
+			return model.QueryResult{}, &model.StatementError{Cause: errors.New("missing column")}
+		}
+		return model.QueryResult{}, errors.New("dial failed")
+	}}))
+	for _, example := range []struct {
+		sql, reason    string
+		statementError bool
+	}{
+		{"SELECT missing", "missing column", true},
+		{"SELECT 1", "dial failed", false},
+	} {
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/connections/"+saved.ID+"/query", strings.NewReader(`{"sql":"`+example.sql+`"}`)))
+		var body struct {
+			Error          string `json:"error"`
+			StatementError bool   `json:"statementError"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || rec.Code != http.StatusBadRequest || body.Error != example.reason || body.StatementError != example.statementError {
+			t.Fatalf("unexpected query error: %d %s (%v)", rec.Code, rec.Body.String(), err)
+		}
 	}
 }
 

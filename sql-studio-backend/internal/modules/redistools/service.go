@@ -16,7 +16,7 @@ type Repository interface {
 }
 
 type Engine interface {
-	Keys(context.Context, model.Connection, int, uint64, string) (model.RedisKeyPage, error)
+	Keys(context.Context, model.Connection, int, string, string) (model.RedisKeyPage, error)
 	Key(context.Context, model.Connection, int, string) (model.RedisKeyDetail, error)
 	KeyTTL(context.Context, model.Connection, int, string) (model.RedisKeyTTL, error)
 	ChangeKey(context.Context, model.Connection, int, string, model.RedisKeyChange) error
@@ -55,6 +55,9 @@ func databaseIndex(c model.Connection, value string) (int, error) {
 	if err != nil {
 		return 0, errors.New("Redis 逻辑库编号无效")
 	}
+	if c.RedisModeValue() == model.RedisCluster && number != 0 {
+		return 0, errors.New("Redis 集群仅支持 DB 0")
+	}
 	return int(number), nil
 }
 
@@ -70,13 +73,12 @@ func (s *Service) Keys(ctx context.Context, id, database, cursor, pattern string
 	if cursor == "" {
 		cursor = "0"
 	}
-	position, err := strconv.ParseUint(cursor, 10, 64)
-	if err != nil || len(pattern) > 1024 {
+	if len(cursor) > 128 || len(pattern) > 1024 {
 		return model.RedisKeyPage{}, errors.New("Redis 游标或筛选条件无效")
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	return s.engine.Keys(ctx, c, db, position, pattern)
+	return s.engine.Keys(ctx, c, db, cursor, pattern)
 }
 
 func (s *Service) Key(ctx context.Context, id, database, ref string) (model.RedisKeyDetail, error) {
@@ -198,6 +200,9 @@ func (s *Service) Run(ctx context.Context, id, database, command string) (model.
 	}
 	args, err := splitCommand(command)
 	if err != nil {
+		if errors.Is(err, invalidCommand) {
+			err = &model.StatementError{Cause: err}
+		}
 		return model.RedisReply{}, err
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)

@@ -2,7 +2,7 @@ import type { QueryResult } from '@/typings/database'
 
 import { fetchResponse, postWithinLimit, readJSON } from '../../utils/request/index.ts'
 
-type Step = { index: number; result?: QueryResult; error?: string; database?: string }
+type Step = { index: number; result?: QueryResult; error?: string; statementError?: boolean; database?: string }
 
 export async function executeQueryBatch(id: string, database: string, statements: string[], signal: AbortSignal, onStep: (step: Step) => void, schema?: string) {
   const path = `/connections/${encodeURIComponent(id)}/query-batch`

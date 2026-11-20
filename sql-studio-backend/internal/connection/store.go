@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 
 	"sql-studio-backend/internal/model"
@@ -120,10 +121,7 @@ func (s *Store) List() []model.Connection {
 	defer s.mu.RUnlock()
 	out := make([]model.Connection, 0, len(s.items))
 	for _, c := range s.items {
-		c.Type = model.NormalizeDatabaseType(c.Type)
-		c.HasPassword = c.Password != ""
-		c.Password = ""
-		out = append(out, c)
+		out = append(out, publicConnection(c))
 	}
 	return out
 }
@@ -136,8 +134,16 @@ func (s *Store) Get(id string) (model.Connection, error) {
 		if c.ID == id {
 			c.Type = model.NormalizeDatabaseType(c.Type)
 			p, err := s.decrypt(c.Password)
-			c.Password = p
-			return c, err
+			if err != nil {
+				return model.Connection{}, err
+			}
+			sentinel, err := s.decrypt(c.RedisSentinelPassword)
+			if err != nil {
+				return model.Connection{}, err
+			}
+			c.Password, c.RedisSentinelPassword = p, sentinel
+			c.RedisNodes = slices.Clone(c.RedisNodes)
+			return c, nil
 		}
 	}
 	return model.Connection{}, os.ErrNotExist
@@ -191,6 +197,12 @@ func (s *Store) Save(c model.Connection) (model.Connection, error) {
 					}
 					c.Password = p
 				}
+				if c.RedisMode == model.RedisSentinel && old.RedisMode == model.RedisSentinel && c.RedisSentinelPassword == "" {
+					c.RedisSentinelPassword, err = s.decrypt(old.RedisSentinelPassword)
+					if err != nil {
+						return model.Connection{}, err
+					}
+				}
 				break
 			}
 		}
@@ -200,11 +212,19 @@ func (s *Store) Save(c model.Connection) (model.Connection, error) {
 	} else {
 		c.ID = newID()
 	}
+	if err := c.ValidateRedisCredentials(); err != nil {
+		return model.Connection{}, err
+	}
 	encrypted, err := s.encrypt(c.Password)
 	if err != nil {
 		return c, err
 	}
 	c.Password = encrypted
+	c.RedisSentinelPassword, err = s.encrypt(c.RedisSentinelPassword)
+	if err != nil {
+		return model.Connection{}, err
+	}
+	c.RedisNodes = slices.Clone(c.RedisNodes)
 	if idx < 0 {
 		items = append(items, c)
 	} else {
@@ -213,9 +233,15 @@ func (s *Store) Save(c model.Connection) (model.Connection, error) {
 	if err = s.persist(items); err != nil {
 		return c, err
 	}
-	c.Password = ""
-	c.HasPassword = encrypted != ""
-	return c, nil
+	return publicConnection(c), nil
+}
+
+func publicConnection(c model.Connection) model.Connection {
+	c.Type = model.NormalizeDatabaseType(c.Type)
+	c.HasPassword, c.HasRedisSentinelPassword = c.Password != "", c.RedisSentinelPassword != ""
+	c.Password, c.RedisSentinelPassword = "", ""
+	c.RedisNodes = slices.Clone(c.RedisNodes)
+	return c
 }
 
 func (s *Store) Delete(id string) error {

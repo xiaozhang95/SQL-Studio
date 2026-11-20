@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -37,6 +38,17 @@ type QueryError struct {
 func (e *QueryError) Error() string { return e.Cause.Error() }
 func (e *QueryError) Unwrap() error { return e.Cause }
 
+// StatementError identifies an operation-specific database or command rejection.
+type StatementError struct{ Cause error }
+
+func (e *StatementError) Error() string { return e.Cause.Error() }
+func (e *StatementError) Unwrap() error { return e.Cause }
+
+func IsStatementError(err error) bool {
+	var statement *StatementError
+	return errors.As(err, &statement)
+}
+
 type QueryBatchRequest struct {
 	Schema     string   `json:"schema,omitempty"`
 	Database   string   `json:"database"`
@@ -46,10 +58,11 @@ type QueryBatchRequest struct {
 }
 
 type QueryBatchStep struct {
-	Index    int          `json:"index"`
-	Result   *QueryResult `json:"result,omitempty"`
-	Error    string       `json:"error,omitempty"`
-	Database *string      `json:"database,omitempty"` // New scope after a successful USE.
+	Index          int          `json:"index"`
+	Result         *QueryResult `json:"result,omitempty"`
+	Error          string       `json:"error,omitempty"`
+	StatementError bool         `json:"statementError,omitempty"`
+	Database       *string      `json:"database,omitempty"` // New scope after a successful USE.
 }
 
 type ResultColumn struct {

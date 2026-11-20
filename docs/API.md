@@ -60,7 +60,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 `appearance` 分区的 data 为 `{theme, fontSize, language}`，theme 支持 system/light/dark，fontSize 支持 small/standard/large，language 支持 zh-CN/en-US。前端只应用包含三个有效值的当前格式；主题、字号和语言通过同一次显式保存提交。状态接口保持原有版本化信封和修订冲突约定，存储说明见 [用户状态配置](USER_STATE.md)。
 
-成功直接返回 JSON，错误为 `{"error":"原因"}`。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
+成功直接返回 JSON，错误为 `{"error":"原因"}`。已识别的 SQL 语句或 Redis 命令错误附加 `statementError: true`，供工作台在本次回执中展示。输入/数据库/AI 上游错误 400，跨站或非本机 Host 403，连接不存在 404，配置修订冲突 409，并发超限 429，模块未装配 503。仅面向本机单用户，不提供开放 CORS。
 
 请求必须为单个 JSON 对象；null、未知顶层字段和多个 JSON 对象返回 400。普通 JSON 请求上限为 1 MiB，`query` 和 `query-batch` 均为 32 MiB。超出相应路由的 JSON 请求体上限返回 413，`error` 包含本地化上限。配置 PUT 的 HTTP 信封上限为 32 MiB + 1024 字节，data 对象最多 32 MiB。
 
@@ -73,6 +73,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 - **外键**按显式 `database`、`table` 读取，返回 `name`、`referencedSchema`、`referencedTable`、`onUpdate`、`onDelete` 和按定义顺序排列的 `columns`（`{name,referencedName}`）。MySQL、MariaDB 和 PostgreSQL／PolarDB 支持外键读取；无外键及 GreptimeDB 返回空数组。
 - **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
+- **查询收藏**：`query-favorites` 分区使用 `{items:[{id,title,sql,connectionId,database,schema?}]}`。工作区对收藏进行查询、命名、重命名和删除，使用通用配置修订号保存。
 - **AI 配置**：ai-models 分区使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}`，最多 64 条。model 是实际调用 ID，modelName 为显示名称。相同供应商与模型 ID 不得重复。编辑空 Key 保留该行原值，完整列表一次 CAS 保存，空数组清空。仅支持列表格式。activeId 是 SQL 工具栏与 AI 助手共享的默认记录 ID，可从系统设置模型列表或 AI 助手切换。列表非空且 activeId 为空时，读取和调用使用首条可用记录，保存时写入该 ID。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
 - **AI 调用**：assist 的 action 为 complete/optimize，分别使用 prefix/suffix 或 sql，可附 document、database、table、tables。SQL 三字段合计最多 48000 字节，document 最多 64000 字节，最多 12 表/每表 128 字段。提供 connectionId 时后端解析名称与引擎，忽略客户端伪造的 connection。续写 12 秒，优化 30 秒，模型发现 10 秒，共享 4 并发。不执行生成 SQL，不发送数据库密码或查询结果。模型发现使用本次 Key，或在空 Key 时以 configId 精确指定记录，未知记录拒绝。发现列表在前端无已有选择时默认选中第一项，由用户确认并保存为记录。SQL 和 AI 助手调用当前默认记录。
 
@@ -86,7 +87,7 @@ PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参�
 
 MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。这三个引擎的 SQL 多语句走同一会话批次。结果保留预算内的完整行，`truncatedBy` 可区分行数上限（`row-limit`）、内容上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出内容预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
-批次接收 `{database, schema?, statements, allowWrite: true, limit?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
+批次接收 `{database, schema?, statements, allowWrite: true, limit?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
@@ -101,6 +102,8 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 `GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。MySQL/MariaDB、PostgreSQL/PolarDB、GreptimeDB 可附带 details:{version,role,identity,sections:[{key,fields:[{key,value}]}],warnings?}，身份和状态字段保持文本，不含凭据。可选服务器变量或扩展目录失败保留基础 metrics，并返回提示；基础采样失败仍返回错误。MySQL/MariaDB 从全局状态/变量读取语句、连接、网络、InnoDB 和配置；PostgreSQL 增加会话可见性、锁、扫描、维护与统计重置；GreptimeDB 扩展构建和主分片存储/累计活动，缺失统计保持未知。前端按实际间隔计算累计计数速率，首点与重置断开，不新增采样或写入接口。
 
 ## Redis 查询
+
+`redisMode` 可为 `standalone`、`sentinel` 或 `cluster`，省略按单机。哨兵模式的 `host` 和 `port` 指首个哨兵，设置 `redisMasterName`，可传独立的 `redisSentinelUsername` 和 `redisSentinelPassword`。集群模式的 `host` 和 `port` 指首个种子节点，逻辑库固定为 0。两种模式均可在 `redisNodes` 中附加 `host:port` 地址。哨兵密码独立加密，响应以 `hasRedisSentinelPassword` 标识。键扫描的 cursor 原样回传，集群游标绑定主节点拓扑和筛选条件。集群监控用 `redis.node` 标识采样主节点。
 
 所有 Redis 路由使用已保存的 Redis 连接。键和命令接口接受十进制字符串 `database`，省略时使用保存的初始编号。频道、订阅与监控使用实例范围。
 

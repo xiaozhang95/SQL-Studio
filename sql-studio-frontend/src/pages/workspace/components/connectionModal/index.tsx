@@ -1,10 +1,11 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Switch, Tabs, Tag, Tooltip } from 'antd'
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip } from 'antd'
 
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { connectionGroupLabel, connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
+import { redisModeLabels } from '@/databases/redis'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -21,7 +22,9 @@ type Props = {
 export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
   const { t } = useTranslation()
 
-  const { form, selectEngine, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
+  const { form, selectEngine, selectRedisMode, redisMode, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
+  const redis = engine.value === DatabaseEngine.Redis
+  const sentinel = redis && redisMode === 'sentinel'
   return (
     <Modal
       forceRender
@@ -110,7 +113,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <Tag>
                   {t('默认端口 ')}
-                  {engine.port}
+                  {sentinel ? 26379 : engine.port}
                 </Tag>
                 <Tooltip title={t('连接凭据仅加密保存在当前电脑')}>
                   <Tag color="success" icon={<SafetyCertificateOutlined />}>
@@ -153,12 +156,35 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                             allowClear
                           />
                         </Form.Item>
-                        <Form.Item name="host" label={t('主机地址')} rules={[{ required: true, whitespace: true, message: t('主机地址不能为空，请输入 IP 或域名') }]}>
+                        {redis && (
+                          <Form.Item name="redisMode" label={t('连接模式')}>
+                            <Select options={Object.entries(redisModeLabels).map(([value, label]) => ({ value, label: t(label) }))} onChange={selectRedisMode} />
+                          </Form.Item>
+                        )}
+                        <Form.Item name="host" label={t(sentinel ? '哨兵主机' : '主机地址')} rules={[{ required: true, whitespace: true, message: t('主机地址不能为空，请输入 IP 或域名') }]}>
                           <Input placeholder="127.0.0.1" />
                         </Form.Item>
                         <Form.Item name="port" label={t('端口')} rules={[{ required: true, message: t('请输入端口') }]}>
                           <InputNumber placeholder={t('端口')} min={1} max={65535} style={{ width: '100%' }} />
                         </Form.Item>
+                        {redis && redisMode !== 'standalone' && (
+                          <Form.Item name="redisNodesText" label={t(sentinel ? '其他哨兵' : '其他集群节点')} extra={t('每行一个地址，格式为主机:端口')}>
+                            <Input.TextArea rows={2} placeholder={sentinel ? '127.0.0.1:26380' : '127.0.0.1:6380'} />
+                          </Form.Item>
+                        )}
+                        {sentinel && (
+                          <>
+                            <Form.Item name="redisMasterName" label={t('主节点名称')} rules={[{ required: true, whitespace: true, message: t('请输入 Redis 哨兵监控的主节点名称') }]}>
+                              <Input placeholder="mymaster" />
+                            </Form.Item>
+                            <Form.Item name="redisSentinelUsername" label={t('哨兵用户名')}>
+                              <Input autoComplete="off" placeholder={t('可留空，使用 default 用户')} />
+                            </Form.Item>
+                            <Form.Item name="redisSentinelPassword" label={t('哨兵密码')} extra={connection?.hasRedisSentinelPassword ? t('留空保留原密码') : undefined}>
+                              <Input.Password autoComplete="new-password" />
+                            </Form.Item>
+                          </>
+                        )}
                         {engine.database !== undefined && engine.value !== DatabaseEngine.Redis && (
                           <Form.Item
                             name="database"
@@ -169,10 +195,14 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                             <Input placeholder={engine.database} />
                           </Form.Item>
                         )}
-                        <Form.Item name="username" label={t('用户名')} rules={engine.optionalUsername ? [] : [{ required: true, whitespace: true, message: t('请输入用户名') }]}>
+                        <Form.Item
+                          name="username"
+                          label={t(sentinel ? 'Redis 用户名' : '用户名')}
+                          rules={engine.optionalUsername ? [] : [{ required: true, whitespace: true, message: t('请输入用户名') }]}
+                        >
                           <Input autoComplete="username" placeholder={t(engine.value === DatabaseEngine.Redis ? '可留空，使用 default 用户' : '请输入数据库用户名')} />
                         </Form.Item>
-                        <Form.Item name="password" label={t('密码')} extra={connection?.hasPassword ? t('留空保留原密码') : undefined}>
+                        <Form.Item name="password" label={t(sentinel ? 'Redis 密码' : '密码')} extra={connection?.hasPassword ? t('留空保留原密码') : undefined}>
                           <Input.Password autoComplete="new-password" placeholder={connection?.hasPassword ? t('已保存，留空不修改') : t('数据库密码')} />
                         </Form.Item>
                       </div>

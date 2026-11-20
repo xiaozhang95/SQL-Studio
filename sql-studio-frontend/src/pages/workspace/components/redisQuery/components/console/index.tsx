@@ -9,11 +9,11 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { runCommand } from '@/services/redis'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
+import { RequestError } from '@/utils/request'
 
 import { readTerminal, saveTerminal, terminalHistoryLimit } from '../../utils/terminalSession'
+import type { TerminalEntry } from '../../utils/terminalSession'
 import ConsoleInput from '../consoleInput'
-
-type Entry = { index: number; prompt: string; command: string; answer?: string; error?: boolean; truncated?: boolean }
 
 type Props = {
   page: string
@@ -40,9 +40,9 @@ export default function Console({ page, id, database, databases, visible, themeM
   const [command, setCommand] = useState(initial.command)
   const [selection, setSelection] = useState(initial.selection)
   const [pending, setPending] = useState(false)
-  const [entries, setEntries] = useState<Entry[]>(initial.entries)
+  const [entries, setEntries] = useState<TerminalEntry[]>(initial.entries)
   const latest = entries.at(-1)
-  usePageError(visible && latest?.error ? latest.answer : undefined, latest ? String(latest.index) : undefined)
+  usePageError(visible && latest?.error && latest.statementError === false ? latest.answer : undefined, latest ? String(latest.index) : undefined)
   const request = useRef<AbortController | null>(null)
   const counter = useRef(initial.entries.at(-1)?.index ?? 0)
   const history = useRef(initial.history)
@@ -120,7 +120,7 @@ export default function Console({ page, id, database, databases, visible, themeM
         ok: !error,
         error
       })
-    const complete = (update: Partial<Entry>) => setEntries((previous) => previous.map((item) => (item.index === entry.index ? { ...item, ...update } : item)))
+    const complete = (update: Partial<TerminalEntry>) => setEntries((previous) => previous.map((item) => (item.index === entry.index ? { ...item, ...update } : item)))
     try {
       const result = await runCommand(id, database, value, controller.signal)
       controller.signal.throwIfAborted()
@@ -130,7 +130,7 @@ export default function Console({ page, id, database, databases, visible, themeM
     } catch (error) {
       if (!controller.signal.aborted) {
         const reason = error instanceof Error ? error.message : String(error)
-        complete({ answer: reason, error: true })
+        complete({ answer: reason, error: true, statementError: error instanceof RequestError && error.statementError })
         saveHistory(Math.round(performance.now() - started), reason)
       }
     } finally {
@@ -171,7 +171,7 @@ export default function Console({ page, id, database, databases, visible, themeM
             </div>
             {entry.command.trim() && (
               <div style={{ color: entry.error ? token.colorErrorText : token.colorText }}>
-                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t('执行失败') : entry.answer || '""'}
+                {entry.answer === undefined ? <LoadingOutlined spin aria-label={t('执行中')} /> : entry.error ? t(entry.statementError === false ? '执行失败' : entry.answer) : entry.answer || '""'}
               </div>
             )}
             {entry.truncated && <div style={{ color: token.colorTextSecondary }}>{t('仅显示部分内容')}</div>}

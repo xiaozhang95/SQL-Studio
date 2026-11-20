@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"unicode/utf8"
 
+	driver "github.com/redis/go-redis/v9"
+
 	"sql-studio-backend/internal/model"
 )
 
@@ -50,7 +52,7 @@ func clipStringPreview(value string, limit int) string {
 	return value[:limit]
 }
 
-func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, cursor uint64, pattern string) (model.RedisKeyPage, error) {
+func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, cursor string, pattern string) (model.RedisKeyPage, error) {
 	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
 	if err != nil {
 		return model.RedisKeyPage{}, err
@@ -58,11 +60,11 @@ func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, 
 	defer release()
 	client, closeClient := open(ctx, connection, db)
 	defer closeClient()
-	names, next, err := client.Scan(ctx, cursor, pattern, 100).Result()
+	names, next, err := scanPage(ctx, client, cursor, pattern)
 	if err != nil {
 		return model.RedisKeyPage{}, err
 	}
-	page := model.RedisKeyPage{Cursor: strconv.FormatUint(next, 10), Keys: make([]model.RedisKey, 0, len(names))}
+	page := model.RedisKeyPage{Cursor: next, Keys: make([]model.RedisKey, 0, len(names))}
 	bytes := 0
 	for _, name := range names {
 		label, shortened := clip(display(name), 256)
@@ -79,6 +81,18 @@ func (c *Client) Keys(ctx context.Context, connection model.Connection, db int, 
 	return page, nil
 }
 
+func scanPage(ctx context.Context, client driver.UniversalClient, cursor, pattern string) ([]string, string, error) {
+	if cluster, ok := client.(*driver.ClusterClient); ok {
+		return scanCluster(ctx, cluster, cursor, pattern)
+	}
+	position, err := strconv.ParseUint(cursor, 10, 64)
+	if err != nil {
+		return nil, "", errors.New("Redis 游标或筛选条件无效")
+	}
+	names, next, err := client.Scan(ctx, position, pattern, 100).Result()
+	return names, strconv.FormatUint(next, 10), err
+}
+
 func (c *Client) Key(ctx context.Context, connection model.Connection, db int, name string) (model.RedisKeyDetail, error) {
 	ctx, release, err := c.beginRequest(ctx, connection.ID, db)
 	if err != nil {
@@ -91,7 +105,7 @@ func (c *Client) Key(ctx context.Context, connection model.Connection, db int, n
 	if err != nil {
 		return model.RedisKeyDetail{}, err
 	}
-	ttl, err := client.Do(ctx, "PTTL", name).Int64()
+	ttl, err := keyedCommand(ctx, client, "PTTL", name).Int64()
 	if err != nil {
 		return model.RedisKeyDetail{}, err
 	}
@@ -121,7 +135,7 @@ func (c *Client) Key(ctx context.Context, connection model.Connection, db int, n
 	case "stream":
 		detail.Size, err = client.XLen(ctx, name).Result()
 		if err == nil {
-			nested, err = client.Do(ctx, "XRANGE", name, "-", "+", "COUNT", previewItems).Result()
+			nested, err = keyedCommand(ctx, client, "XRANGE", name, "-", "+", "COUNT", previewItems).Result()
 		}
 		detail.Truncated = detail.Size > previewItems
 	}
@@ -146,7 +160,7 @@ func (c *Client) KeyTTL(ctx context.Context, connection model.Connection, db int
 	defer release()
 	client, closeClient := open(ctx, connection, db)
 	defer closeClient()
-	ttl, err := client.Do(ctx, "PTTL", name).Int64()
+	ttl, err := keyedCommand(ctx, client, "PTTL", name).Int64()
 	return model.RedisKeyTTL{TTLMillis: ttl}, err
 }
 

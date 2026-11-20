@@ -39,7 +39,7 @@ func (c *Client) ChangeKey(ctx context.Context, connection model.Connection, db 
 		}
 		return err
 	case "copy":
-		changed, err := client.Do(ctx, "COPY", name, *change.Target).Int64()
+		changed, err := keyedCommand(ctx, client, "COPY", name, *change.Target).Int64()
 		if err == nil && changed == 0 {
 			return errors.New("Redis 源键已不存在或目标键已存在")
 		}
@@ -75,7 +75,7 @@ func (c *Client) ChangeKey(ctx context.Context, connection model.Connection, db 
 }
 
 // 改名与过期时间一起提交，监视两个键以保留目标已存在时的拒绝覆盖语义。
-func renameKeyWithTTL(ctx context.Context, client *driver.Client, name, target string, ttl int64) error {
+func renameKeyWithTTL(ctx context.Context, client driver.UniversalClient, name, target string, ttl int64) error {
 	err := client.Watch(ctx, func(tx *driver.Tx) error {
 		exists, err := tx.Exists(ctx, name).Result()
 		if err != nil {
@@ -108,7 +108,7 @@ func renameKeyWithTTL(ctx context.Context, client *driver.Client, name, target s
 	return err
 }
 
-func editKeyValue(ctx context.Context, client *driver.Client, name string, change model.RedisKeyChange) error {
+func editKeyValue(ctx context.Context, client driver.UniversalClient, name string, change model.RedisKeyChange) error {
 	valueType := change.ValueType
 	if valueType == "" {
 		valueType = "string"

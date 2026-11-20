@@ -43,6 +43,7 @@ type MonitorMetric struct {
 type RedisMonitor struct {
 	Version   string           `json:"version"`
 	Mode      string           `json:"mode"`
+	Node      string           `json:"node,omitempty"`
 	Role      string           `json:"role"`
 	RunID     string           `json:"runId"`
 	Sections  []MonitorSection `json:"sections"`

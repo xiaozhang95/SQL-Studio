@@ -13,8 +13,10 @@
 - [工具栏图标按钮](toolbarButton/README.md)：查询、结果、表设计、历史和 SQL 预览等操作共用，仅图标并保留悬停说明和可访问名称。
 - [主区域页面标签](workspaceTabs/README.md)统一切换查询、对象和设计页。
 - [结果、字段与 DDL](queryResults/README.md)
+- [查询结果导出](resultExport/README.md)
 - [结果视图标签](resultTabs/README.md)使用线形 Tabs 切换消息、摘要和数据结果。
 - [执行历史抽屉](queryHistory/README.md)
+- [查询收藏抽屉与命名弹窗](queryFavorites/README.md)
 - [底部可伸缩面板](resultsDock/README.md)
 
 - [逐条执行消息](queryMessages/README.md)

@@ -1,5 +1,5 @@
-import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons'
-import { Drawer, Empty, Input, Table, Tag } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StarOutlined, StopOutlined } from '@ant-design/icons'
+import { Drawer, Empty, Input, Space, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -30,10 +30,11 @@ type Props = {
   >
   terminal?: boolean
   onLoad?: (item: HistoryItem) => void
+  onFavorite?: (item: HistoryItem) => void
   onClosed?: () => void
 }
 /** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
-export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onClosed }: Props) {
+export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onFavorite, onClosed }: Props) {
   const tablePagination = useTablePagination()
 
   const { t, language } = useTranslation()
@@ -88,19 +89,22 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
     {
       title: t('操作'),
       key: 'actions',
-      width: 64,
+      width: onFavorite ? 92 : 64,
       fixed: 'right',
       render: (_, item) => {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
         return (
-          <ToolbarButton
-            label={t(terminal ? '载入命令行' : '载入编辑器')}
-            hint={missing ? t('原连接已删除') : undefined}
-            icon={<ImportOutlined />}
-            size={ComponentSize.Small}
-            disabled={running || missing}
-            onClick={() => (onLoad ?? loadHistory)(item)}
-          />
+          <Space size={2}>
+            <ToolbarButton
+              label={t(terminal ? '载入命令行' : '载入编辑器')}
+              hint={missing ? t('原连接已删除') : undefined}
+              icon={<ImportOutlined />}
+              size={ComponentSize.Small}
+              disabled={running || missing}
+              onClick={() => (onLoad ?? loadHistory)(item)}
+            />
+            {onFavorite && <ToolbarButton label={t('收藏查询')} icon={<StarOutlined />} size={ComponentSize.Small} onClick={() => onFavorite(item)} />}
+          </Space>
         )
       }
     }

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"sql-studio-backend/internal/localization"
+	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/query"
 )
 
@@ -57,7 +58,11 @@ func fail(c *gin.Context, err error) {
 	case errors.Is(err, query.ErrBusy):
 		status = http.StatusTooManyRequests
 	}
-	respond(c, status, gin.H{"error": message})
+	body := gin.H{"error": message}
+	if status == http.StatusBadRequest && model.IsStatementError(err) {
+		body["statementError"] = true
+	}
+	respond(c, status, body)
 }
 func decode(c *gin.Context, value any) error {
 	return decodeLimit(c, value, maxRequestBytes)

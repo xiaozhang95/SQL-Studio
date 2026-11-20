@@ -282,6 +282,54 @@
 
 两轮复测共 7 个容器、`fv_*` 库/schema、连接和临时目录均已清理；验证过程未修改源码。
 
-## 11. 未覆盖
+## 11. SQL Studio 1.1.0 新功能验证
+
+环境：MySQL 8.4、Redis 7.4 单主+哨兵、Redis 7.4 三主分片集群；Chrome 无头 CDP（内置浏览器无可见表面，截图由本机 Chromium 保存）。截图目录：[screenshots-1.1.0](screenshots-1.1.0/)。
+
+### 1. Redis 哨兵与集群
+
+- 新建连接表单可选 **单机 / 哨兵 / 集群**；哨兵显示哨兵主机、其他哨兵和主节点名称，集群显示种子节点列表。截图：[01](screenshots-1.1.0/01-redis-sentinel-connection.png)、[02](screenshots-1.1.0/02-redis-cluster-connection.png)。
+- 哨兵：通过 `127.0.0.1:26379` 发现主节点 `mymaster`，查询 `GET sentinel:key` 返回 `hello`，工具栏显示“哨兵”。截图：[03](screenshots-1.1.0/03-redis-sentinel-query.png)。
+- 集群：逻辑库固定为 DB 0，`GET cluster:key:1` 返回 `1`，工具栏显示“集群”。截图：[04](screenshots-1.1.0/04-redis-cluster-query.png)。
+- 集群键浏览逐个主分片扫描：首次 68 个键，点击一次“扫描下一批”后为 200 个键。截图：[05](screenshots-1.1.0/05-redis-cluster-key-browser.png)。
+- 集群监控标明采样节点 `127.0.0.1:7000 / master`，指标为该节点数据，并显示“集群”标签。截图：[06](screenshots-1.1.0/06-redis-cluster-monitor.png)。
+- 未覆盖：哨兵主从切换、哨兵/集群 ACL 与 TLS、集群跨槽多键命令。
+
+### 2. 查询收藏
+
+- 工具栏“收藏查询”支持收藏选区、整段草稿；执行历史行也可收藏。
+- 收藏抽屉支持搜索、重命名、删除、打开；打开收藏会新建页签并载入 SQL，**不自动执行**（打开前后 query 请求增量为 0）。
+- 收藏持久化在 `query-favorites` 状态分区；截图：[06b](screenshots-1.1.0/06b-query-favorites-drawer.png)、[07](screenshots-1.1.0/07-favorites-search.png)、[08](screenshots-1.1.0/08-favorites-renamed-deleted.png)、[09](screenshots-1.1.0/09-favorite-open-new-tab.png)、[10](screenshots-1.1.0/10-favorites-history.png)。
+
+### 3. 结果导出 CSV / Excel / JSON
+
+- 1500 行查询返回 1000 行并提示“结果已达行数上限”，导出菜单提供 CSV/Excel/JSON 及“导出已加载结果 / 导出选中”。截图：[11](screenshots-1.1.0/11-result-truncated.png)、[12](screenshots-1.1.0/12-export-menu.png)、[12b](screenshots-1.1.0/12b-export-submenu.png)、[13](screenshots-1.1.0/13-export-selected-menu.png)。
+- CSV：1001 行（含表头）。
+- Excel：`查询结果` 工作表 1001 行；原结果截断时附加 `导出说明` 工作表，文案“原查询结果已截断，文件仅包含已返回的数据。”
+- JSON：1000 行，`truncated=true`、`truncatedBy=row-limit`；选中一行后导出 JSON 为 1 行。
+- 网络下载在无头 Chrome 未落盘，测试通过拦截 Blob 校验内容；样本保存在 [exports](screenshots-1.1.0/exports/)。未单独测试 Excel/CSV 的选中行导出（与 JSON 共用 rows(scope) 路径）。
+
+### 4. 执行错误就地显示
+
+- SQL 查询不存在表：错误 `Error 1146 ... doesn't exist` 直接显示在“消息”页签，无顶部错误条。截图：[14](screenshots-1.1.0/14-sql-inline-error.png)。
+- Redis 非法命令：`ERR unknown command` 直接显示在消息/命令输出，无顶部错误条。截图：[15](screenshots-1.1.0/15-redis-inline-error.png)。
+- 未单独复测连接失败/请求超限的顶部错误路径。
+
+### 5. 更新下载进度
+
+- 通过桌面桥接模拟 `available + pending=download + 42%`，设置“关于软件”显示圆形 42% 进度环，界面不再显示速度与文件大小；状态文案“正在下载更新”。截图：[16](screenshots-1.1.0/16-update-progress.png)。
+- 切换为 `downloaded` 后进度环让位给“重启并安装”。截图：[17](screenshots-1.1.0/17-update-install.png)。
+- Electron 更新模块 12 项测试全部通过（清单校验、进度广播、失败保留、重复检查、安全错误码、preload 订阅）。
+- 未执行真实 GitHub 下载与安装（通过 mock 状态验证 UI、通过单测验证主进程协议）。
+
+### 自动化
+
+- 前端 `pnpm build` 成功；lint 39 项通过；Node 测试 223 通过/3 跳过；`format:check` 仍有 100 个既有文件未格式化。
+- 后端 `go test ./...`、`go vet ./...`、`go build ./...` 全部通过。
+- Electron `tests/updates.test.mjs` 12/12 通过。
+
+本轮清理：3 个容器（MySQL、Redis 哨兵、Redis 集群）、`v110` 库、Redis 数据、连接和临时目录均已删除；Chrome 进程与测试端口已关闭。新增截图与导出样本保留在 `test-reports/screenshots-1.1.0/`。
+
+## 12. 未覆盖
 
 - TLS/证书、完整 30 秒超时边界、超过 8MiB 的导出停止、导入 >1MiB 文件、macOS Command 快捷键、真实指针/截图、复制/集群/故障切换、跨库分布式事务、Redis 集群模式与 ACL 细粒度权限。

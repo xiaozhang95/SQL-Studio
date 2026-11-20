@@ -58,6 +58,9 @@ func (c *Client) SetSession(ctx context.Context, connection model.Connection, da
 		if err != nil {
 			return errors.New("Redis 逻辑库编号无效")
 		}
+		if connection.RedisModeValue() == model.RedisCluster && db != 0 {
+			return errors.New("Redis 集群仅支持 DB 0")
+		}
 		scope.db = int(db)
 		connection.Database = strconv.Itoa(scope.db)
 	}

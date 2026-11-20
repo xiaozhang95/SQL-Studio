@@ -6,7 +6,17 @@ import type { QueryResult } from '../database'
 export type QueryScope = { connectionId: string; database: string; schema?: string; table: string }
 export type WorkspacePageKind = 'query' | 'data' | 'structure' | 'ddl' | 'table-create' | 'table-design'
 export type WorkspaceTab = QueryScope & { id: string; title: string; kind: WorkspacePageKind; sql: string; resultStatus?: 'success' | 'error'; resultSource?: string }
-export type StatementRun = { sql: string; database?: string; schema?: string; singleStatement?: boolean; result?: QueryResult; error?: string; cancelled?: boolean; durationMs?: number }
+export type StatementRun = {
+  sql: string
+  database?: string
+  schema?: string
+  singleStatement?: boolean
+  result?: QueryResult
+  error?: string
+  statementError?: boolean
+  cancelled?: boolean
+  durationMs?: number
+}
 export type RunState = {
   scope?: QueryScope
   id?: string
@@ -52,4 +62,13 @@ export type HistoryItem = {
   ok: boolean
   error?: string
   cancelled?: boolean
+}
+
+export type QueryFavorite = {
+  id: string
+  title: string
+  sql: string
+  connectionId: string
+  database: string
+  schema?: string
 }

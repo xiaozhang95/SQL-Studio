@@ -1,10 +1,10 @@
 import { CodeOutlined, DownloadOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import { Upload } from 'antd'
+import { Tag, Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import { usePageError } from '@/contexts/pageErrors'
-import { selectedRedisDatabase } from '@/databases/redis'
+import { redisModeLabel, selectedRedisDatabase } from '@/databases/redis'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { ThemeMode } from '@/typings/theme'
@@ -64,6 +64,9 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           </>
         }
       >
+        <Tag title={t('连接模式')} style={{ marginInlineEnd: 4 }}>
+          {t(redisModeLabel(connection.redisMode))}
+        </Tag>
         <div className="query-toolbar-group" role="group" aria-label={t('Redis 查询工具')}>
           {tools.map(({ id, label, icon }) => (
             <ToolbarButton

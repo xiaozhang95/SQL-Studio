@@ -92,7 +92,23 @@ type queryConnection interface {
 }
 
 func execute(ctx context.Context, db queryConnection, statement string, limit int, allowWrite bool) (model.QueryResult, error) {
-	return executeQuery(ctx, db, statement, limit, allowWrite, false)
+	result, err := executeQuery(ctx, db, statement, limit, allowWrite, false)
+	return result, markStatementError(err)
+}
+
+func markStatementError(err error) error {
+	var serverError *pgconn.PgError
+	if !errors.As(err, &serverError) || len(serverError.Code) < 2 {
+		return err
+	}
+	if serverError.Severity == "FATAL" || serverError.SeverityUnlocalized == "FATAL" || serverError.Code == "3D000" {
+		return err
+	}
+	switch serverError.Code[:2] {
+	case "08", "28", "53", "57", "58", "XX":
+		return err
+	}
+	return &model.StatementError{Cause: err}
 }
 
 func executeQuery(ctx context.Context, db queryConnection, statement string, limit int, allowWrite, keepSession bool) (result model.QueryResult, err error) {

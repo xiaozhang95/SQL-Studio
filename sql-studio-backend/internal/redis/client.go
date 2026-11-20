@@ -25,16 +25,27 @@ func NewClient() *Client {
 	return &Client{control: make(chan struct{}, 1), closed: make(map[redisScope]bool), active: make(map[*requestLease]struct{})}
 }
 
-func open(ctx context.Context, connection model.Connection, db int) (*driver.Client, func()) {
+func open(ctx context.Context, connection model.Connection, db int) (driver.UniversalClient, func()) {
 	host := strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(connection.Host), "]"), "[")
-	options := &driver.Options{
-		Addr:     net.JoinHostPort(host, strconv.Itoa(connection.Port)),
+	mode := connection.RedisModeValue()
+	addr := net.JoinHostPort(host, strconv.Itoa(connection.Port))
+	options := &driver.UniversalOptions{
+		Addrs:    []string{addr},
 		Username: connection.Username, Password: connection.Password, DB: db,
 		Protocol: 2, DisableIdentity: true, ContextTimeoutEnabled: true,
 		MaxRetries: -1, DialerRetries: 1, PoolSize: 1,
 		DialTimeout: 4 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second,
 	}
-	if connection.Username != "" && connection.Password == "" {
+	switch mode {
+	case model.RedisSentinel:
+		options.MasterName = connection.RedisMasterName
+		options.SentinelUsername, options.SentinelPassword = connection.RedisSentinelUsername, connection.RedisSentinelPassword
+		options.Addrs = append(options.Addrs, connection.RedisNodes...)
+		options.DialTimeout = time.Second
+	case model.RedisCluster:
+		options.Addrs = append(options.Addrs, connection.RedisNodes...)
+	}
+	if mode != model.RedisSentinel && connection.Username != "" && connection.Password == "" {
 		// Explicitly select an ACL user even when it was configured with nopass.
 		options.DB = 0
 		options.OnConnect = func(ctx context.Context, conn *driver.Conn) error {
@@ -48,9 +59,20 @@ func open(ctx context.Context, connection model.Connection, db int) (*driver.Cli
 		}
 	}
 	if connection.TLS {
-		options.TLSConfig = &tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}
+		options.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+		if mode == model.RedisStandalone {
+			options.TLSConfig.ServerName = host
+		}
 	}
-	client := driver.NewClient(options)
+	var client driver.UniversalClient
+	switch mode {
+	case model.RedisSentinel:
+		client = driver.NewFailoverClient(options.Failover())
+	case model.RedisCluster:
+		client = driver.NewClusterClient(options.Cluster())
+	default:
+		client = driver.NewClient(options.Simple())
+	}
 	var once sync.Once
 	closeClient := func() {
 		once.Do(func() { _ = client.Close() })
@@ -64,6 +86,13 @@ func open(ctx context.Context, connection model.Connection, db int) (*driver.Cli
 	}
 }
 
+func keyedCommand(ctx context.Context, client driver.UniversalClient, command, key string, args ...any) *driver.Cmd {
+	cmd := driver.NewCmd(ctx, append([]any{command, key}, args...)...)
+	cmd.SetFirstKeyPos(1)
+	_ = client.Process(ctx, cmd)
+	return cmd
+}
+
 func (*Client) Test(ctx context.Context, connection model.Connection) (string, error) {
 	db := 0
 	if connection.Database != "" {
@@ -72,6 +101,9 @@ func (*Client) Test(ctx context.Context, connection model.Connection) (string, e
 			return "", errors.New("Redis 逻辑库编号无效")
 		}
 		db = int(number)
+	}
+	if connection.RedisModeValue() == model.RedisCluster && db != 0 {
+		return "", errors.New("Redis 集群仅支持 DB 0")
 	}
 	client, closeClient := open(ctx, connection, db)
 	defer closeClient()

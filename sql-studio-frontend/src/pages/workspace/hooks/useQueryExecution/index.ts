@@ -10,6 +10,7 @@ import { executeQueryBatch } from '@/services/queryBatch'
 import { runCommand } from '@/services/redis'
 import type { Connection } from '@/typings/database'
 import type { HistoryItem, QueryScope, ResultView, RunState, StatementRun, WorkspacePageKind, WorkspaceTab } from '@/typings/workspace'
+import { RequestError } from '@/utils/request'
 
 import type { useDatabaseObjects } from '../useDatabaseObjects'
 
@@ -53,7 +54,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
     const controller = startRun(tabId, { scope: { ...scope }, source, kind, title, statementCount: statements.length, startedAt, durationMs: 0 })
     const completed: StatementRun[] = []
     let executionDatabase = scope.database
-    const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'cancelled' | 'durationMs'>, selectedDatabase?: string) => {
+    const record = (index: number, outcome: Pick<StatementRun, 'result' | 'error' | 'statementError' | 'cancelled' | 'durationMs'>, selectedDatabase?: string) => {
       const sql = statements[index]
       const entry: StatementRun = { ...outcome, sql, database: executionDatabase, schema: scope.schema, ...(mysqlCompatible ? { singleStatement: true } : {}) }
       if (selectedDatabase !== undefined) {
@@ -110,7 +111,16 @@ export function createQueryExecutor({ connections, objects, running, request, me
           controller.signal,
           (step) => {
             const now = performance.now()
-            record(step.index, { result: step.result, error: step.error, durationMs: step.result?.durationMs ?? Math.round(now - statementStart) }, step.database)
+            record(
+              step.index,
+              {
+                result: step.result,
+                error: step.error,
+                ...(step.error ? { statementError: step.statementError === true } : {}),
+                durationMs: step.result?.durationMs ?? Math.round(now - statementStart)
+              },
+              step.database
+            )
             statementStart = now
           },
           scope.schema || undefined
@@ -147,7 +157,8 @@ export function createQueryExecutor({ connections, objects, running, request, me
           } catch (error) {
             controller.signal.throwIfAborted()
             const reason = error instanceof Error ? error.message : '查询失败'
-            record(index, { error: reason, durationMs: Math.round(performance.now() - statementStart) })
+            const statementError = kind === 'query' && error instanceof RequestError && error.statementError
+            record(index, { error: reason, statementError, durationMs: Math.round(performance.now() - statementStart) })
             break
           }
         }

@@ -29,12 +29,15 @@ func (c *Client) Run(ctx context.Context, connection model.Connection, db int, a
 	}()
 	switch cmd {
 	case "SELECT":
+		if connection.RedisModeValue() == model.RedisCluster {
+			return reply, &model.StatementError{Cause: errors.New("Redis 集群仅支持 DB 0，不能执行 SELECT 切库")}
+		}
 		if len(args) != 2 {
-			return reply, errors.New("用法：SELECT <逻辑库编号>")
+			return reply, &model.StatementError{Cause: errors.New("用法：SELECT <逻辑库编号>")}
 		}
 		selected, err := strconv.ParseUint(args[1], 10, 31)
 		if err != nil {
-			return reply, errors.New("Redis 逻辑库编号无效")
+			return reply, &model.StatementError{Cause: errors.New("Redis 逻辑库编号无效")}
 		}
 		targetCtx, releaseTarget, err := c.beginRequest(ctx, connection.ID, int(selected))
 		if err != nil {
@@ -44,13 +47,13 @@ func (c *Client) Run(ctx context.Context, connection model.Connection, db int, a
 		client, closeClient := open(targetCtx, connection, 0)
 		defer closeClient()
 		if err := client.Do(targetCtx, "SELECT", selected).Err(); err != nil {
-			return reply, err
+			return reply, markCommandError(err)
 		}
 		value = "OK"
 		return model.RedisReply{Database: int(selected), Output: "OK"}, nil
 	case "AUTH", "HELLO", "QUIT", "RESET", "MONITOR", "SUBSCRIBE", "PSUBSCRIBE", "SSUBSCRIBE", "UNSUBSCRIBE", "PUNSUBSCRIBE", "SUNSUBSCRIBE",
 		"MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH", "READONLY", "READWRITE", "ASKING", "CLIENT":
-		return reply, errors.New("该命令需要独立会话，请使用连接设置、逻辑库切换或发布订阅页面")
+		return reply, &model.StatementError{Cause: errors.New("该命令需要独立会话，请使用连接设置、逻辑库切换或发布订阅页面")}
 	}
 	client, closeClient := open(ctx, connection, db)
 	defer closeClient()
@@ -65,8 +68,21 @@ func (c *Client) Run(ctx context.Context, connection model.Connection, db int, a
 		return reply, nil
 	}
 	if err != nil {
-		return reply, err
+		return reply, markCommandError(err)
 	}
 	reply.Output, reply.Truncated = preview(value, 128*1024)
 	return reply, nil
+}
+
+func markCommandError(err error) error {
+	var serverError driver.Error
+	if !errors.As(err, &serverError) {
+		return err
+	}
+	code, _, _ := strings.Cut(serverError.Error(), " ")
+	switch code {
+	case "NOAUTH", "WRONGPASS", "LOADING", "MASTERDOWN", "CLUSTERDOWN", "TRYAGAIN":
+		return err
+	}
+	return &model.StatementError{Cause: err}
 }
