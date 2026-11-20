@@ -30,6 +30,8 @@ Index.Primary 是可选 JSON primary 主键标志；PostgreSQL 保留实际索�
 
 QueryRequest.Schema 和 AIRequest.Schema 是可选 schema 字段，区别于物理数据库。旧客户端省略时兼容原范围。
 
+`QueryRequest.UnlimitedRows` 和 `QueryBatchRequest.UnlimitedRows` 默认关闭。查询模块在显式开启时将 `Limit` 规范化为 `UnlimitedQueryRows`，驱动跳过行数判断，仍控制结果大小。
+
 QueryError 为引擎识别的失败附加统一类别，Cause 保留原始错误，Error 和 Unwrap 延续原有文案及错误链。Agent 仅依据类别生成安全提示。
 
 StatementError 为特定 SQL 或 Redis 命令的失败保留错误归属与原始错误链。JSON 错误和 QueryBatchStep 可用 statementError 标记给工作台。

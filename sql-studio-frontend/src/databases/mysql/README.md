@@ -8,7 +8,7 @@
 
 - [对象管理](objectManagement/README.md)：MySQL 库表元数据、差异 DDL 和结构转储。
 
-- [数据编辑](dataEditing/README.md)支持单元格更新、新增以及按主键或原始整行删除。
+- [数据编辑](dataEditing/README.md)支持新增，以及按主键或原始整行更新和删除。
 
 - [数据转储](dataDump/README.md)：生成精确值 INSERT。
 

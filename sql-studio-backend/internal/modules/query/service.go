@@ -13,7 +13,7 @@ func (s *Service) Query(ctx context.Context, id string, input model.QueryRequest
 	if strings.TrimSpace(input.SQL) == "" {
 		return model.QueryResult{}, errors.New("SQL 不能为空")
 	}
-	input.Limit = rowLimit(input.Limit)
+	input.Limit = rowLimit(input.Limit, input.UnlimitedRows)
 	select {
 	case s.querySlots <- struct{}{}:
 		defer func() { <-s.querySlots }()
@@ -29,7 +29,10 @@ func (s *Service) Query(ctx context.Context, id string, input model.QueryRequest
 	return s.database.Execute(ctx, c, input)
 }
 
-func rowLimit(limit int) int {
+func rowLimit(limit int, unlimited bool) int {
+	if unlimited {
+		return model.UnlimitedQueryRows
+	}
 	if limit <= 0 {
 		return defaultRowLimit
 	}
@@ -64,7 +67,7 @@ func (s *Service) Batch(ctx context.Context, id string, input model.QueryBatchRe
 	if err != nil {
 		return err
 	}
-	input.Limit = rowLimit(input.Limit)
+	input.Limit = rowLimit(input.Limit, input.UnlimitedRows)
 	ctx, cancel := context.WithTimeout(ctx, batchTimeout)
 	defer cancel()
 	return executor.ExecuteBatch(ctx, connection, input, queryTimeout, emit)

@@ -22,7 +22,7 @@ README 说明职责、公开入口、参数类型与默认值、返回值、错�
 
 MySQL 的连接、TLS、SQL 识别、元数据与执行放 internal/mysql；HTTP/业务模块不导入驱动、拼数据库协议 SQL 或读取环境变量。MariaDB 和 PostgreSQL 专属实现分别放 internal/mariadb 和 internal/postgresql。MariaDB 组合 MySQL 协议能力，internal/database 只负责分派，app 注册实际实现；不预建未支持引擎的空实现。连接配置与 AES-GCM 落盘由 internal/connection 负责，环境变量由 internal/config 读取。
 
-context 从 HTTP 一直传到驱动，不丢失取消和超时。app 创建共享资源并确定生命周期，SQL 并发预算属于 query 模块，不能每次请求重建或交由 handler 管理。每次操作携带明确连接 ID 与对象范围，保留默认只读、单语句、行数/字节限制、精确数值文本和游标/连接释放行为。
+context 从 HTTP 一直传到驱动，不丢失取消和超时。app 创建共享资源并确定生命周期，SQL 并发预算属于 query 模块，不能每次请求重建或交由 handler 管理。每次操作携带明确连接 ID 与对象范围，保留默认只读、单语句约束、结果大小预算、精确数值文本和游标与连接释放行为。行数上限由 query 模块根据请求选项处理。
 
 密码不进入日志或 API 返回；编辑空密码保留旧密码，密钥丢失不得覆盖已有数据。取消不能被描述为事务已回滚。全局配置只使用当前格式，不提供旧格式读取、字段回退或迁移；不修改实际业务数据或凭据文件。
 

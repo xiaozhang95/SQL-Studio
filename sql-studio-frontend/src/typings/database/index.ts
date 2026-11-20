@@ -66,7 +66,7 @@ export type QueryResult = {
   rowPreview?: { value: string | null; shortened?: boolean }[]
   isQuery: boolean
 }
-export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number }
+export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number; unlimitedRows?: boolean }
 
 export type MonitorMetric = { key: string; value: string }
 export type MonitorSection = { key: string; fields: MonitorMetric[] }

@@ -1,5 +1,5 @@
-# 删除键气泡确认
+# 删除键确认弹框
 
-`KeyDelete({item,saving,disabled?,error,onDelete,onClearError,children})` 组合全局 [DeleteConfirmation](../../../../../../components/deleteConfirmation/README.md)，供 Redis 详情删除按钮使用。item 绑定完整键名及原始引用，onDelete 返回异步成功标记；失败保留气泡和错误，成功关闭，children 是确认锚点。
+`KeyDelete({ item?, saving, disabled?, error, onConfirm, onCancel })` 复用 [DeleteDialog](../../../../../../components/deleteDialog/README.md)，供键树菜单和键详情的删除按钮共用。`item` 包含完整键名和原始引用，有目标时打开。`saving` 锁定提交和关闭，`disabled` 由父级指定。失败时通过 `error` 显示原因。
 
-点击锚点打开并清除旧错误，saving 时锁定确认和取消，disabled 默认 false。不访问 Redis、不持久化状态。键树右键删除由 [KeyTree](../keyTree/README.md) 的 Modal 确认，不使用气泡或隐藏坐标锚点。
+父级通过 `onConfirm` 提交指定键，成功后清除目标，通过 `onCancel` 关闭弹框。新建确认时清除上次错误。

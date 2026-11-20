@@ -1,8 +1,8 @@
 import { DownloadOutlined } from '@ant-design/icons'
-import { Dropdown } from 'antd'
+import { Form, Modal, Radio } from 'antd'
 import { useRef, useState } from 'react'
 
-import { usePageError } from '@/contexts/pageErrors'
+import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { QueryResult } from '@/typings/database'
 import { exportCSV } from '@/utils/csv'
@@ -12,6 +12,8 @@ import { exportXlsx } from '@/utils/xlsx'
 import ToolbarButton from '../toolbarButton'
 
 const formats = ['CSV', 'Excel', 'JSON'] as const
+type Format = (typeof formats)[number]
+type Scope = 'loaded' | 'selected'
 
 type Props = {
   result?: QueryResult
@@ -22,19 +24,29 @@ type Props = {
 
 export default function ResultExport({ result, selectedCount, rows, disabled }: Props) {
   const { t } = useTranslation()
+  const [target, setTarget] = useState<QueryResult>()
+  const [format, setFormat] = useState<Format>('CSV')
+  const [scope, setScope] = useState<Scope>('loaded')
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
-  const [error, setError] = useState<{ result: QueryResult; message: string }>()
-  usePageError(error && error.result === result ? error.message : undefined)
+  const [error, setError] = useState('')
+  const open = Boolean(target && target === result)
   const blocked = disabled || busy || !result?.isQuery || result.truncatedBy === 'oversized-row'
+  const cannotExport = blocked || (scope === 'selected' && !selectedCount)
 
-  async function save(key: string) {
+  function show() {
     if (blocked || !result || lock.current) return
-    const [format, scope] = key.split('/')
-    if (scope === 'selected' && !selectedCount) return
+    setFormat('CSV')
+    setScope('loaded')
+    setError('')
+    setTarget(result)
+  }
+
+  async function save() {
+    if (!open || cannotExport || !result || lock.current) return
     lock.current = true
     setBusy(true)
-    setError(undefined)
+    setError('')
     try {
       const cells = rows(scope === 'selected')
       const headers = result.columns.map((column) => column.name)
@@ -50,8 +62,9 @@ export default function ResultExport({ result, selectedCount, rows, disabled }: 
         const note = result.truncated ? { sheet: t('导出说明'), text: t('原查询结果已截断，文件仅包含已返回的数据。') } : undefined
         await exportXlsx(headers, cells, `query-${Date.now()}.xlsx`, t('查询结果'), note)
       }
+      setTarget(undefined)
     } catch (reason) {
-      setError({ result, message: reason instanceof Error ? reason.message : t('导出失败') })
+      setError(reason instanceof Error ? reason.message : t('导出失败'))
     } finally {
       lock.current = false
       setBusy(false)
@@ -59,22 +72,44 @@ export default function ResultExport({ result, selectedCount, rows, disabled }: 
   }
 
   return (
-    <Dropdown
-      disabled={blocked}
-      trigger={['click']}
-      menu={{
-        items: formats.map((format) => ({
-          key: format,
-          label: format,
-          children: [
-            { key: format + '/loaded', label: t('导出已加载结果') },
-            { key: format + '/selected', label: t('导出选中（{value1}）', { value1: selectedCount }), disabled: !selectedCount }
-          ]
-        })),
-        onClick: ({ key }) => void save(key)
-      }}
-    >
-      <ToolbarButton label={t('导出查询结果')} icon={<DownloadOutlined />} disabled={blocked} loading={busy} aria-haspopup="menu" />
-    </Dropdown>
+    <>
+      <ToolbarButton label={t('导出查询结果')} icon={<DownloadOutlined />} disabled={blocked} loading={busy} aria-haspopup="dialog" aria-expanded={open} onClick={show} />
+      <Modal
+        title={t('导出查询结果')}
+        open={open}
+        afterClose={() => setTarget((current) => (current === result ? current : undefined))}
+        onOk={() => void save()}
+        onCancel={() => {
+          if (!lock.current) setTarget(undefined)
+        }}
+        okText={t('导出')}
+        cancelText={t('取消')}
+        confirmLoading={busy}
+        okButtonProps={{ disabled: cannotExport }}
+        cancelButtonProps={{ disabled: busy }}
+        closable={!busy}
+        mask={{ closable: !busy }}
+        keyboard={!busy}
+      >
+        <ErrorNotice error={error} onClose={() => setError('')} style={{ marginBottom: 16 }} />
+        <Form layout="horizontal" disabled={busy} labelCol={{ flex: '104px' }} wrapperCol={{ flex: '1 1 0' }}>
+          <Form.Item label={t('导出格式')}>
+            <Radio.Group aria-label={t('导出格式')} value={format} onChange={(event) => setFormat(event.target.value)} orientation="horizontal" options={[...formats]} />
+          </Form.Item>
+          <Form.Item label={t('导出范围')} extra={result?.truncated ? t('原查询结果已截断，文件仅包含已返回的数据。') : undefined} style={{ marginBottom: 0 }}>
+            <Radio.Group
+              aria-label={t('导出范围')}
+              value={scope}
+              onChange={(event) => setScope(event.target.value)}
+              orientation="horizontal"
+              options={[
+                { value: 'loaded', label: t('已加载的筛选结果') },
+                { value: 'selected', label: t('选中行（{value1}）', { value1: selectedCount }), disabled: !selectedCount }
+              ]}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
   )
 }

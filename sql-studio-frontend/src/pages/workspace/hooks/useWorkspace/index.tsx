@@ -888,19 +888,19 @@ export const useWorkspace = (active = true) => {
       }
       return
     }
-    const statement = getDatabaseAdapter(target.type).tableDataSQL(db, table)
+    const adapter = getDatabaseAdapter(target.type)
     if (action === 'new') {
-      addTab(statement, scope)
+      addTab(adapter.tableDataSQL(db, table, { preview: false }), scope)
       return
     }
     if (action !== 'data' && action !== 'structure' && action !== 'ddl') return
-    const title = `${getDatabaseAdapter(target.type).tableLabel(table)} · ${t(action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构')}`
+    const title = `${adapter.tableLabel(table)} · ${t(action === 'data' ? '数据' : action === 'ddl' ? 'DDL' : '结构')}`
     const tabId = reuseTabId || createPage(action, scope, title, '', discard)
     if (action === 'data') {
-      void executeSQL(statement, scope, tabId, 'data')
+      void executeSQL(adapter.tableDataSQL(db, table), scope, tabId, 'data')
       return
     }
-    const source = `${target.name} / ${db} / ${getDatabaseAdapter(target.type).tableLabel(table)}`
+    const source = `${target.name} / ${db} / ${adapter.tableLabel(table)}`
     const controller = startRun(tabId, { kind: action, title, source })
     try {
       const structure = await objects.loadStructure(db, table, targetConnectionId)

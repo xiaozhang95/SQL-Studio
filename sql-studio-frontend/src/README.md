@@ -19,7 +19,7 @@ App 先读取界面偏好再挂载业务页面，确保业务请求携带已恢�
 
 Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。确认按钮使用统一的普通按钮配置。
 
-右键删除统一使用业务 Modal；直接点击删除或清空按钮统一复用 [DeleteConfirmation](components/deleteConfirmation/README.md)，沿用会话列表的气泡确认，保留目标范围及风险说明。
+删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](components/deleteDialog/README.md) 确认目标与范围。库表对象使用业务弹框，单条查询收藏及模型和字段草稿使用 [DeleteConfirmation](components/deleteConfirmation/README.md) 气泡。
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型和 NULL 使用普通文字，状态/耗时不使用 Tag，不展示连接来源标签。
 

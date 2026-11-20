@@ -213,14 +213,23 @@ for (const type of ['mysql', 'postgresql']) {
         )
         assert.equal((await success('SELECT 55'))[0].rows[0][0], '55')
       })
-      await step(t, 'default and explicit row limits', async () => {
+      await step(t, 'manual SQL keeps returned rows and respects explicit limits', async () => {
         const sql =
           type === 'postgresql'
-            ? 'SELECT generate_series(1,1500) AS n'
-            : 'WITH d AS (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) SELECT a.n FROM d a CROSS JOIN d b CROSS JOIN d c CROSS JOIN d e LIMIT 1500'
+            ? 'SELECT generate_series(1,10000) AS n'
+            : 'WITH d AS (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) SELECT a.n FROM d a CROSS JOIN d b CROSS JOIN d c CROSS JOIN d e'
         const [result] = await success(sql)
-        assert.equal(result.rowCount, 1000)
-        assert.equal(result.truncated, true)
+        assert.equal(result.rowCount, 10000)
+        assert.equal(result.truncated, false)
+        const [batchResult] = await success(`${sql}; SELECT 1`, 2)
+        assert.equal(batchResult.rowCount, 10000)
+        assert.equal(batchResult.truncated, false)
+        const [limitedSQL] = await success(`${sql} LIMIT 5`)
+        assert.equal(limitedSQL.rowCount, 5)
+        assert.equal(limitedSQL.truncated, false)
+        const defaultAPI = await query(sql)
+        assert.equal(defaultAPI.rowCount, 1000)
+        assert.equal(defaultAPI.truncatedBy, 'row-limit')
         const small = await query(sql, { limit: 5 })
         assert.equal(small.rowCount, 5)
         assert.equal(small.truncated, true)

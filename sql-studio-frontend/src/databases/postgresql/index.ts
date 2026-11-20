@@ -4,7 +4,7 @@ import { referencedTables } from './context'
 import { sql as databaseSQL, definition, metadataSQL } from './databaseProperties'
 import DatabasePropertiesForm from './databaseProperties/components/form'
 import { dataDump, prepareDump } from './dataDump'
-import { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL } from './dataEditing'
+import { canInsertColumn, deleteRowSQL, insertRowSQL, updateRowSQL } from './dataEditing'
 import { simpleObjects } from './objectManagement'
 import { postgresqlProfile } from './profile'
 import { explorerTableIdentity, exportDDL, schemaListResult, tableDataSQL, tableInSchema, tableLabel, tableListResult } from './query'
@@ -32,7 +32,7 @@ const postgresql = {
   dataDump,
   simpleObjects,
   tableDesign,
-  dataEditing: { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL },
+  dataEditing: { canInsertColumn, deleteRowSQL, insertRowSQL, updateRowSQL },
   isSQLColumn: (name: string) => /^(?:DDL|SQL|Statement|Query|pg_get_viewdef|pg_get_indexdef)$/i.test(name.trim()),
   splitStatements: splitPostgreSQLStatements,
   cleanHistory: cleanPostgreSQLHistory,

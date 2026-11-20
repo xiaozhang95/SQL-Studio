@@ -110,10 +110,10 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
       width: 112,
       render: (_, item) => (
         <Space size={2}>
-          <ToolbarButton label={t('打开收藏查询')} icon={<ImportOutlined />} size={ComponentSize.Small} disabled={!canOpen} onClick={() => onOpen(item)} />
+          <ToolbarButton label={t('在新标签页打开')} icon={<ImportOutlined />} size={ComponentSize.Small} disabled={!canOpen} onClick={() => onOpen(item)} />
           <ToolbarButton label={t('重命名收藏')} icon={<EditOutlined />} size={ComponentSize.Small} disabled={Boolean(busy)} onClick={() => edit(item)} />
           <DeleteConfirmation
-            title={t('删除此查询收藏？')}
+            title={<span style={{ overflowWrap: 'anywhere' }}>{t('删除收藏「{value1}」？', { value1: item.title })}</span>}
             description={deleting === item.id && deleteError ? <ErrorNotice error={deleteError} /> : undefined}
             open={open && deleting === item.id}
             disabled={Boolean(busy) && deleting !== item.id}

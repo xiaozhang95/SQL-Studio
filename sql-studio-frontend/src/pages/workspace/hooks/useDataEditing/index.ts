@@ -17,7 +17,7 @@ type Options = {
   onResult: (id: string, result: QueryResult) => void
 }
 type Cell = { row: number; column: number; type: string; value: string; isNull: boolean; nullable: boolean; columns: Column[] }
-/** 仅对象数据页显式保存；每次打开编辑重新检查主键与对象类型，写入后读取服务端真实值。 */
+/** 对象数据页显式保存，编辑前核对对象和原始值，写入后重读数据。 */
 export function useDataEditing({ tab, connection, result, blocked, onBusyChange, onDirtyChange, onResult }: Options) {
   const { t } = useTranslation()
   const adapter = getDatabaseAdapter(connection?.type)
@@ -78,7 +78,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
       if (added) {
         const field = columns.find((item) => item.name === result.columns[column].name)
         if (!field || !dataEditing.canInsertColumn(field)) throw new Error(t('该字段由数据库生成或暂不支持编辑'))
-      } else dataEditing.updateCellSQL(tab.database, tab.table, columns, result, result.rows[row], column, original === null ? null : String(original))
+      } else dataEditing.updateRowSQL(tab.database, tab.table, columns, result, result.rows[row], [{ columnIndex: column, value: original === null ? null : String(original) }])
       setCell({
         type: columns.find((item) => item.name === result.columns[column].name)?.type ?? '',
         row,
@@ -89,7 +89,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
         columns
       })
     } catch (error) {
-      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? error.message : t('无法编辑单元格') })
+      if (!controller.signal.aborted) setOperationError({ page: tab.id, detail: error instanceof Error ? t(error.message) : t('无法编辑单元格') })
     } finally {
       if (request.current === controller) {
         request.current = null
@@ -131,18 +131,31 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
     try {
       const columns = await getColumns(tab.connectionId, tab.database, tab.table, controller.signal)
       if ([...Object.values(pending), ...pendingNew].some((draft) => JSON.stringify(draft.columns) !== JSON.stringify(columns))) throw new Error(t('表结构已变化，请放弃修改并重新打开表'))
-      // 主键修改最后执行；每次成功后使用最新主键定位同一行的后续修改。
-      const entries = Object.entries(pending).sort(
-        ([, a], [, b]) => Number(columns.find((c) => c.name === result.columns[a.column].name)?.key === 'PRI') - Number(columns.find((c) => c.name === result.columns[b.column].name)?.key === 'PRI')
-      )
-      for (const [key, draft] of entries) {
-        const value = draft.isNull ? null : draft.value
-        const sql = dataEditing.updateCellSQL(tab.database, tab.table, columns, working, working.rows[draft.row], draft.column, value)
+      const primaryKeyFields = new Set(columns.filter((column) => column.key === 'PRI').map((column) => column.name))
+      const hasPrimaryKey = primaryKeyFields.size > 0
+      const entries = Object.entries(pending)
+      if (hasPrimaryKey) {
+        // Preserve the original key until every other change has been saved.
+        entries.sort(([, a], [, b]) => Number(primaryKeyFields.has(result.columns[a.column].name)) - Number(primaryKeyFields.has(result.columns[b.column].name)))
+      }
+      const groups = new Map<string, typeof entries>()
+      for (const entry of entries) {
+        const [key, draft] = entry
+        // Rows without a key must apply all edits at once before their original values change.
+        const groupKey = hasPrimaryKey ? key : String(draft.row)
+        const group = groups.get(groupKey)
+        if (group) group.push(entry)
+        else groups.set(groupKey, [entry])
+      }
+      for (const group of groups.values()) {
+        const row = working.rows[group[0][1].row]
+        const changes = group.map(([, draft]) => ({ columnIndex: draft.column, value: draft.isNull ? null : draft.value }))
+        const sql = dataEditing.updateRowSQL(tab.database, tab.table, columns, working, row, changes)
         const updated = await executeObjectSQL(tab.connectionId, tab.database, sql, controller.signal, true)
         if (updated.affectedRows !== 1) throw new Error(t('目标行或原值已变化，请重新打开表确认'))
-        working.rows[draft.row][draft.column] = value
-        delete pending[key]
-        saved++
+        for (const change of changes) row[change.columnIndex] = change.value
+        for (const [key] of group) delete pending[key]
+        saved += group.length
         setDrafts({ ...pending })
       }
       for (const row of [...pendingNew]) {
@@ -169,7 +182,7 @@ export function useDataEditing({ tab, connection, result, blocked, onBusyChange,
           page: tab.id,
           detail:
             (saved ? t('已有 {saved} 处保存成功，剩余 {remaining} 处未保存。', { saved, remaining: Object.keys(pending).length + pendingNew.length }) : '') +
-            (error instanceof Error ? error.message : t('保存失败'))
+            (error instanceof Error ? t(error.message) : t('保存失败'))
         })
       }
     } finally {

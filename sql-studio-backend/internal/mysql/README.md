@@ -12,7 +12,7 @@ GreptimeDB 通过 `NewClientWithDefaultDatabase` 指定维护库，沿用连接�
 
 ## 约束与调用
 
-SQL 默认只读事务，单语句执行。结果按行数和约 8 MiB 字段内容限制，保留预算内的完整行、BIGINT/DECIMAL 精度与 NULL。首行超限时提供单独的文本预览。标识符严格转义。MariaDB 连接读取服务器实际 max_allowed_packet。明确的服务器错误 1153 或驱动包大小错误会提示 max_allowed_packet，其他连接错误按原原因返回。
+SQL 默认只读事务，单语句执行。查询结果保留预算内的完整行、BIGINT/DECIMAL 精度与 NULL。显式跳过行数限制时，将每行及字段槽的保留开销计入约 8 MiB 结果预算。首行超限时提供单独的文本预览。标识符严格转义。MariaDB 连接读取服务器实际 max_allowed_packet。明确的服务器错误 1153 或驱动包大小错误会提示 max_allowed_packet，其他连接错误按原原因返回。
 
 ClassifyQueryError 将 MySQL 和 MariaDB 的已知服务端错误编号映射为 model.QueryErrorKind，供分派层保留分类。其他错误交由调用方按原错误处理。
 

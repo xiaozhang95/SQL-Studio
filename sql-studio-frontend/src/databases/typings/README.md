@@ -12,13 +12,15 @@ DatabaseProfile 约束只读类型、标签、说明、样式类、端口、图�
 
 databaseEditor? 独立声明 metadataSQL/definition/sql/Form：只读加载、运行时解码、基于原值生成单语句修改及引擎所属表单。dataDump? 声明 querySQL、可选 metadataSQL 和 dump；外层只负责显式目标读取、取消和下载，菜单按这两项能力展示编辑数据库/结构和数据，不再把它们绑定到 objects。
 
-DatabaseAdapter.updateCellSQL 根据显式库表、字段元数据和原结果生成单行更新，拒绝不完整主键或不支持字段。
+`DatabaseAdapter.dataEditing.updateRowSQL` 根据显式库表、字段元数据、原始结果行与 `RowCellChange[]` 生成单行更新。每项修改提供查询结果中的列索引和新值（字符串或 NULL）。有主键时附带完整主键及被修改字段的原值条件，无主键时校验原始整行。
 
 DatabaseAdapter.insertRowSQL/canInsertColumn 提供新增行的引擎实现。
 
 DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承载 SQL；结果 UI 据此复用只读高亮与复制，具体列名由引擎维护。
 
 DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句；仅在请求成功后应用返回库名。
+
+`DatabaseAdapter.tableDataSQL` 默认生成带 `LIMIT 1000` 的表预览 SQL，传 `{ preview: false }` 时生成查询编辑器的普通 SELECT 草稿。
 
 DatabaseProfile.database 为可选维护库默认值，PostgreSQL 为 `postgres`，GreptimeDB 为 `public`。optionalUsername 表示连接表单允许省略用户名。适配器以 objects、dataEditing 和 dumpFile 声明可视化对象管理、网格行编辑及 SQL 转储能力。exportDDL 提供结构定义文本。
 

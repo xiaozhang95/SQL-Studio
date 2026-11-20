@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { referencedTables } from '../src/databases/postgresql/context/index.ts'
-import { insertRowSQL, updateCellSQL } from '../src/databases/postgresql/dataEditing/index.ts'
+import { insertRowSQL, updateRowSQL } from '../src/databases/postgresql/dataEditing/index.ts'
 import { simpleObjects } from '../src/databases/postgresql/objectManagement/index.ts'
 import { explorerTableIdentity, exportDDL, literal, relation, schemaListResult, tableDataSQL, tableIdentity, tableLabel, tableListResult } from '../src/databases/postgresql/query/index.ts'
 import { cleanPostgreSQLHistory, splitPostgreSQLStatements } from '../src/databases/postgresql/statements/index.ts'
@@ -109,11 +109,31 @@ const columns = [
 ]
 const result = { columns: [{ name: 'id' }, { name: 'value' }] }
 test('PostgreSQL data editing uses explicit schema and complete primary key with optimistic value check', () => {
-  const sql = updateCellSQL('db', '"a"."t"', columns, result, ['9007199254740993', null], 1, "x'y")
+  const sql = updateRowSQL('db', '"a"."t"', columns, result, ['9007199254740993', null], [{ columnIndex: 1, value: "x'y" }])
   assert.equal(sql, `UPDATE "a"."t" SET "value" = E'x''y' WHERE "id" IS NOT DISTINCT FROM E'9007199254740993' AND "value" IS NOT DISTINCT FROM NULL;`)
-  assert.throws(() => updateCellSQL('db', 't', columns, { columns: [{ name: 'value' }] }, ['v'], 0, 'new'))
+  assert.throws(() => updateRowSQL('db', 't', columns, { columns: [{ name: 'value' }] }, ['v'], [{ columnIndex: 0, value: 'new' }]))
   assert.equal(insertRowSQL('db', '"a"."t"', columns, result, ['1', null]), `INSERT INTO "a"."t" ("id", "value") VALUES (E'1', NULL);`)
   assert.throws(() => insertRowSQL('db', 't', columns, result, [undefined, 'v']))
+})
+test('PostgreSQL locks at most one matching row before applying multiple changes without a primary key', () => {
+  const fields = [{ ...columns[0], key: '' }, columns[1], { name: 'note', type: 'text', nullable: 'YES', extra: '', key: '' }]
+  const snapshot = {
+    columns: [
+      { name: 'id', type: 'INT8' },
+      { name: 'value', type: 'TEXT' },
+      { name: 'note', type: 'TEXT' }
+    ]
+  }
+  const original = ['9007199254740993', null, '原值']
+  const changes = [
+    { columnIndex: 1, value: "x'y" },
+    { columnIndex: 2, value: null }
+  ]
+  const sql = updateRowSQL('db', '"a"."t"', fields, snapshot, original, changes)
+  assert.ok(sql.startsWith(`UPDATE "a"."t" AS target SET "value" = E'x''y', "note" = NULL FROM (SELECT tableoid, ctid FROM "a"."t" WHERE `))
+  assert.ok(sql.includes(`pg_catalog.format('%s', "id") COLLATE pg_catalog."C" = E'9007199254740993' AND "value" IS NULL AND pg_catalog.format('%s', "note") COLLATE pg_catalog."C" = E'原值'`))
+  assert.ok(sql.endsWith('LIMIT 1 FOR UPDATE) AS matched WHERE target.tableoid = matched.tableoid AND target.ctid = matched.ctid;'))
+  assert.throws(() => updateRowSQL('db', 't', fields, snapshot, [original[0], null, undefined], changes), /完整的原始行数据/)
 })
 
 test('PostgreSQL primary index uses the explicit flag instead of its actual name', () => {

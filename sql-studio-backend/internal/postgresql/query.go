@@ -165,11 +165,16 @@ func readRows(ctx context.Context, q querier, statement string, limit int, start
 		result.Columns = append(result.Columns, model.ResultColumn{Name: column.Name(), Type: column.DatabaseTypeName()})
 	}
 	size := 0
+	unlimitedRows := limit == model.UnlimitedQueryRows
 	for rows.Next() {
-		if len(result.Rows) >= limit {
+		if !unlimitedRows && len(result.Rows) >= limit {
 			result.Truncated = true
 			result.TruncatedBy = model.QueryRowLimit
 			break
+		}
+		if unlimitedRows {
+			// Charge for the retained row and value slots, even when the values are empty.
+			size += 24 + 16*len(types)
 		}
 		values := make([]any, len(types))
 		pointers := make([]any, len(types))

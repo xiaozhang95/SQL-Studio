@@ -4,7 +4,7 @@
 
 `WithExecutor(executor Executor) *Service` 在启动装配时创建独立执行范围，替换该范围的引擎实例，保留同一凭据读取接口、4个并发槽位及原有超时/限制；不修改原Service。Agent使用此方法隔离工作台连接开关、取消与请求生命周期，不能通过独立范围扩增并发预算。
 
-`Query(ctx context.Context, id string, input model.QueryRequest) (model.QueryResult, error)` 校验非空 SQL，按显式 ID 读取连接；行数默认 1000，最大 5000，超时 30 秒，继承请求取消。超出并发返回 `ErrBusy`，HTTP 将其映射为 429；结束或失败均释放槽位。
+`Query(ctx context.Context, id string, input model.QueryRequest) (model.QueryResult, error)` 校验非空 SQL，按显式 ID 读取连接。行数默认 1000，显式行数最多 5000。单条和批次可传 `unlimitedRows` 跳过行数限制，驱动仍控制结果大小。单条超时 30 秒，继承请求取消。超出并发返回 `ErrBusy`，HTTP 映射为 429。结束或失败均释放槽位。
 
 单语句请求的默认只读和驱动约束保持有效。批次路径要求显式允许写入，最多 10000 条，共用查询槽，整批 30 分钟且每条 30 秒。驱动在同一个会话逐条执行并逐条回传，出错或取消时关闭该会话。`AllowWrite` 保持现有 API 契约，前端不提供开关；取消不表示写入已回滚。结果保留 model 契约和精确数值文本。
 

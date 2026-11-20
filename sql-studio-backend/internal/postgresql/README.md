@@ -10,7 +10,7 @@ metadata.go 从 pg_catalog 读取字段、主键、identity/generated、备注�
 
 Tables 通过 pg_depend 标记扩展拥有的表和视图，使用可选 extension 返回扩展名称。对象仍可浏览，库级和 Schema 级转储用该字段排除扩展自身管理的对象。
 
-query.go 默认以只读事务执行单语句，读路径使用 extended protocol，显式写入先 Prepare 后执行。query 业务模块管理 30 秒/4 并发/默认 1000 最大 5000 行，驱动管理约 8 MiB 内容界限，首行超限时提供单独的文本预览。INT8/NUMERIC 精度保留文本，BYTEA 使用 \x 十六进制、NULL 与重复列名保留。写入反馈用 affectedRows，返回生成值应显式使用 RETURNING。
+query.go 默认以只读事务执行单语句，读路径使用 extended protocol，显式写入先 Prepare 后执行。query 业务模块管理 30 秒、4 个并发槽及默认 1000 行。驱动管理约 8 MiB 结果预算，显式跳过行数限制时把每行及字段槽的保留开销计入预算。首行超限时提供单独的文本预览。INT8/NUMERIC 精度保留文本，BYTEA 使用 \x 十六进制，保留 NULL 与重复列名。写入反馈用 affectedRows，返回生成值应显式使用 RETURNING。
 
 ClassifyQueryError 根据 pgx 服务端错误的 SQLSTATE 返回 model.QueryErrorKind，供分派层附加统一错误类别。
 

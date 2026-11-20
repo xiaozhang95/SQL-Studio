@@ -21,7 +21,7 @@ function harness(type, view) {
   const adapter = {
     objects: {},
     explorer: type === 'postgresql' ? { tableIdentity: () => ({ schema: 'public', name: 'fixture' }) } : undefined,
-    tableDataSQL: () => 'SELECT * FROM fixture',
+    tableDataSQL: (_database, _table, { preview = true } = {}) => (preview ? 'SELECT * FROM fixture LIMIT 1000;' : 'SELECT * FROM fixture;'),
     tableLabel: (name) => name
   }
   const dependencies = {
@@ -64,6 +64,7 @@ test('double-clicking tables and views creates a persistable page and a clean ex
         f.model.openExplorerPage('data', 'target', 'db', f.table, type === 'postgresql' ? 'public' : undefined)
         assert.equal(f.tabs().length, 1)
         assert.equal(f.executions.length, 1)
+        assert.equal(f.executions[0].sql, 'SELECT * FROM fixture LIMIT 1000;')
         assert.equal(Object.hasOwn(f.tabs()[0], 'view'), false)
         assert.equal(Object.hasOwn(f.executions[0].scope, 'view'), false)
         f.model.sync()
@@ -114,6 +115,7 @@ test('query, structure, DDL and designer pages exclude object-management metadat
       assert.equal(f.tabs().length, 1)
       assert.equal(Object.hasOwn(f.tabs()[0], 'view'), false)
       assert.equal(f.tabs()[0].connectionId, 'target')
+      if (action === 'new') assert.equal(f.tabs()[0].sql, 'SELECT * FROM fixture;')
     }
 })
 

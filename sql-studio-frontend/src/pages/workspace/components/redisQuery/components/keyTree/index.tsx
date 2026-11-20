@@ -1,9 +1,8 @@
 import { DeleteOutlined, EyeOutlined, FileOutlined, FolderOpenOutlined, FolderOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Dropdown, Modal, theme, Tree } from 'antd'
+import { Dropdown, theme, Tree } from 'antd'
 import type { MenuProps, TreeDataNode } from 'antd'
 import { useMemo, useState } from 'react'
 
-import ErrorNotice from '@/components/errorNotice'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey } from '@/services/redis'
 
@@ -16,13 +15,10 @@ type Props = {
   expandedKeys: string[]
   onExpand: (keys: string[]) => void
   onSelect: (key: RedisKey, refresh?: boolean) => void
-  onDelete: (key: RedisKey) => Promise<boolean>
+  onRequestDelete: (key: RedisKey) => void
   onCreate: () => void
   onRefresh: () => void
   disabled: boolean
-  saving: boolean
-  error: string
-  clearError: () => void
 }
 
 function buildTree(keys: Props['keys']) {
@@ -61,12 +57,11 @@ function visibleCount(nodes: readonly Node[], expanded: ReadonlySet<string>): nu
 }
 
 /** 冒号分层只影响展示，读写始终使用完整原始键引用。 */
-export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSelect, onDelete, onCreate, onRefresh, disabled, saving, error, clearError }: Props) {
+export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSelect, onRequestDelete, onCreate, onRefresh, disabled }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [menuOpen, setMenuOpen] = useState(false)
   const [context, setContext] = useState<Node>()
-  const [deleting, setDeleting] = useState<RedisKey>()
   const expanded = useMemo(() => new Set(expandedKeys), [expandedKeys])
   const nodes = useMemo(() => buildTree(keys), [keys])
   const menu: MenuProps = {
@@ -86,10 +81,8 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
       setMenuOpen(false)
       if (disabled || !context) return
       const item = context.item
-      if (key === 'delete' && item) {
-        clearError()
-        setDeleting(item)
-      } else if ((key === 'open' || key === 'read') && item) onSelect(item, key === 'read')
+      if (key === 'delete' && item) onRequestDelete(item)
+      else if ((key === 'open' || key === 'read') && item) onSelect(item, key === 'read')
       else if (key === 'create') onCreate()
       else if (key === 'refresh') onRefresh()
       else if (key === 'toggle') {
@@ -99,67 +92,44 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
     }
   }
   return (
-    <>
-      <Dropdown trigger={['contextMenu']} open={menuOpen && !disabled && !deleting} onOpenChange={setMenuOpen} menu={menu}>
-        <div className="object-tree" style={{ minWidth: 0, userSelect: 'none' }}>
-          <Tree<Node>
-            aria-label={t('Redis 键列表')}
-            showIcon={false}
-            blockNode
-            expandAction="doubleClick"
-            autoExpandParent={false}
-            expandedKeys={expandedKeys}
-            onExpand={(next) => onExpand(next.map(String))}
-            onRightClick={({ node }) => {
-              if (disabled || deleting) return
-              setContext(node)
-            }}
-            motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
-            virtual
-            itemHeight={objectTreeLayout.rowHeight}
-            height={Math.min(450, visibleCount(nodes, expanded) * objectTreeLayout.rowHeight)}
-            styles={{
-              root: { background: 'transparent' },
-              itemSwitcher: { width: objectTreeLayout.switcherWidth, flexBasis: objectTreeLayout.switcherWidth },
-              itemTitle: { display: 'block', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
-            }}
-            treeData={nodes}
-            titleRender={(node) => (
-              <span title={node.item?.name ?? node.label} style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, minWidth: 0 }}>
-                <span aria-hidden="true" style={{ display: 'flex', flex: 'none' }}>
-                  {node.item ? <FileOutlined /> : expanded.has(String(node.key)) ? <FolderOpenOutlined /> : <FolderOutlined />}
-                </span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.title}</span>
+    <Dropdown trigger={['contextMenu']} open={menuOpen && !disabled} onOpenChange={setMenuOpen} menu={menu}>
+      <div className="object-tree" style={{ minWidth: 0, userSelect: 'none' }}>
+        <Tree<Node>
+          aria-label={t('Redis 键列表')}
+          showIcon={false}
+          blockNode
+          expandAction="doubleClick"
+          autoExpandParent={false}
+          expandedKeys={expandedKeys}
+          onExpand={(next) => onExpand(next.map(String))}
+          onRightClick={({ node }) => {
+            if (disabled) return
+            setContext(node)
+          }}
+          motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
+          virtual
+          itemHeight={objectTreeLayout.rowHeight}
+          height={Math.min(450, visibleCount(nodes, expanded) * objectTreeLayout.rowHeight)}
+          styles={{
+            root: { background: 'transparent' },
+            itemSwitcher: { width: objectTreeLayout.switcherWidth, flexBasis: objectTreeLayout.switcherWidth },
+            itemTitle: { display: 'block', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
+          }}
+          treeData={nodes}
+          titleRender={(node) => (
+            <span title={node.item?.name ?? node.label} style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, minWidth: 0 }}>
+              <span aria-hidden="true" style={{ display: 'flex', flex: 'none' }}>
+                {node.item ? <FileOutlined /> : expanded.has(String(node.key)) ? <FolderOpenOutlined /> : <FolderOutlined />}
               </span>
-            )}
-            selectedKeys={selected ? ['key:' + selected] : []}
-            onSelect={(_, { node }) => {
-              if (!disabled && !deleting && node.item) onSelect(node.item)
-            }}
-          />
-        </div>
-      </Dropdown>
-      <Modal
-        title={t('删除键')}
-        open={Boolean(deleting)}
-        onCancel={() => {
-          if (!saving) setDeleting(undefined)
-        }}
-        onOk={async () => {
-          if (deleting && (await onDelete(deleting))) setDeleting(undefined)
-        }}
-        confirmLoading={saving}
-        closable={!saving}
-        mask={{ closable: !saving }}
-        keyboard={!saving}
-        okText={t('删除')}
-        cancelText={t('取消')}
-        okButtonProps={{ danger: true, disabled: disabled && !saving }}
-        cancelButtonProps={{ disabled: saving }}
-      >
-        <p style={{ overflowWrap: 'anywhere' }}>{t('确定删除 Redis 键「{value1}」？', { value1: deleting?.name ?? '' })}</p>
-        <ErrorNotice error={error ? t(error) : undefined} />
-      </Modal>
-    </>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.title}</span>
+            </span>
+          )}
+          selectedKeys={selected ? ['key:' + selected] : []}
+          onSelect={(_, { node }) => {
+            if (!disabled && node.item) onSelect(node.item)
+          }}
+        />
+      </div>
+    </Dropdown>
   )
 }

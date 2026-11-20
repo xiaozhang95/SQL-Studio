@@ -8,7 +8,7 @@
 
 model 提供当前连接 history、clearHistory、historyOpen/setHistoryOpen、搜索值、connections、connectionId、connection、running、loadHistory。useQueryHistory 按当前 SQL 页面的 connectionId 读取独立存储，每连接最多 50 条；左侧树选择不影响历史。
 
-仅 SQL 查询页工具栏提供入口，独立结果页不展示。连接变化时按 key 重挂载，隔离分页、筛选和详情展开；打开时清空搜索。同一连接跨库记录均可见，不按显示名称筛选。清空按钮通过全局 DeleteConfirmation 气泡确认后调用 clearHistory(connectionId)，只清空此连接。
+查询编辑器和 Redis 命令行工具栏提供入口。连接变化时按 key 重挂载，隔离分页、筛选和详情展开。打开时清空搜索。同一连接跨库记录均可见。清空弹框显示当前连接及全部记录数，确认后调用 `clearHistory(connectionId)`。搜索和表格筛选只影响显示，清空范围为该连接的全部历史。
 
 抽屉首次打开前不预渲染历史编辑器；只读 SQLPreview 复用相同内容，避免历史高亮随查询输入反复重配。
 

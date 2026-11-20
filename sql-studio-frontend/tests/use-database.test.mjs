@@ -164,17 +164,18 @@ test('refresh reuses the executed statement schema instead of the current select
   assert.equal(calls[0][1].schema, 'executed-schema')
 })
 
-test('both SQL windows explicitly enable DDL and DML execution', async () => {
+test('both SQL windows explicitly enable writes and skip the result row cap', async () => {
   const pg = await run('CREATE SCHEMA sample; INSERT INTO sample.t VALUES (1);', undefined, undefined, 'public')
-  assert.ok(pg.calls.every((call) => call.allowWrite === true))
+  assert.ok(pg.calls.every((call) => call.allowWrite === true && call.unlimitedRows === true))
   const mysql = await run('SET NAMES utf8mb4; CREATE TABLE sample(id INT); INSERT INTO sample VALUES(1);')
   assert.equal(mysql.calls.length, 3)
-  assert.ok(mysql.calls.every((call) => call.allowWrite === true))
+  assert.ok(mysql.calls.every((call) => call.allowWrite === true && call.unlimitedRows === true))
 })
 
 test('table data previews retain the default read request', async () => {
   const output = await run('SELECT * FROM sample;', undefined, undefined, undefined, 'data')
   assert.equal(output.calls.length, 1)
   assert.equal(output.calls[0].allowWrite, undefined)
+  assert.equal(output.calls[0].unlimitedRows, undefined)
   assert.equal(output.histories.length, 0)
 })

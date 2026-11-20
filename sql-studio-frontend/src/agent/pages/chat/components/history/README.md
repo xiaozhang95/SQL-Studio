@@ -4,7 +4,7 @@
 
 重命名失败在当前弹窗内使用共享 ErrorNotice 展示。
 
-History受控items/activeId/busy/loading/open及onSelect/onRefresh/onDelete/onRename。桌面侧栏宽度由共享 layout 提供，和手机Drawer共用Ant Design X Conversations，空列表初始化显示等待。长标题省略，编辑按钮打开横向名称表单，红色删除按钮复用全局 DeleteConfirmation 气泡确认。操作按钮停止冒泡，防止同时切换会话。新建会话由页面顶栏处理。
+History 受控 items/activeId/busy/loading/open 及 onSelect/onRefresh/onDelete/onRename。桌面侧栏宽度由共享 layout 提供，和手机 Drawer 共用 Ant Design X Conversations。编辑按钮打开横向名称表单。删除弹框显示目标会话名称，并说明会一并删除本机保存的消息和查询结果。提交期间锁定确认，删除失败时在弹框内显示原因。操作按钮停止冒泡，防止同时切换会话。新建会话由页面顶栏处理。
 
 历史列表上方提供可清空的搜索框，桌面侧栏与窄屏 Drawer 共用关键词。按页面传入的显示标题即时过滤，忽略首尾空白和大小写。默认会话可按当前语言搜索，手动名称按原文搜索。搜索为空时显示全部，无匹配时显示「没有匹配的会话」。过滤保留当前会话选择，关键词仅保存在当前页面。
 

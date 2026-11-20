@@ -149,7 +149,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
             }
             const result = await executeQuery(
               target.id,
-              { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true } : {}) },
+              { database: executionDatabase, ...(scope.schema ? { schema: scope.schema } : {}), sql, ...(kind === 'query' ? { allowWrite: true, unlimitedRows: true } : {}) },
               controller.signal
             )
             controller.signal.throwIfAborted()

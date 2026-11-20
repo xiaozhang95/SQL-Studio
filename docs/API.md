@@ -71,7 +71,7 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**返回 `name`、`unique`、`type`、可选的 `primary` 及 `columns`。列项为 `{name,position,prefixLength,order}`，位置从 1 开始，顺序为 `A`、`D` 或空字符串。MySQL 和 MariaDB 的主键索引名为 `PRIMARY`，表达式字段的 `name` 为空。PostgreSQL 保留实际索引名，以 `primary` 标记主键，`name` 保存索引列定义（含表达式），`prefixLength` 为 `null`。无索引返回空数组。
 - **外键**按显式 `database`、`table` 读取，返回 `name`、`referencedSchema`、`referencedTable`、`onUpdate`、`onDelete` 和按定义顺序排列的 `columns`（`{name,referencedName}`）。MySQL、MariaDB 和 PostgreSQL／PolarDB 支持外键读取；无外键及 GreptimeDB 返回空数组。
-- **查询**：`{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读；limit<=0 使用 1000，超过 5000 限制为 5000。约 8 MiB 字段内容、30 秒、4 并发。rows 为二维数组，整数/DECIMAL 使用文本，保留 NULL 和重复列名。truncated 表示截断。显式写入自动提交，失败或取消不等于回滚。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
+- **查询** `{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读。`limit <= 0` 时默认返回 1000 行，显式行数最多 5000。`unlimitedRows: true` 跳过应用行数上限，优先于 `limit`，保留原 SQL 和约 8 MiB 结果预算。每条 30 秒，共享 4 个并发槽。`rows` 为二维数组，整数和 DECIMAL 使用文本，保留 NULL 和重复列名。`truncated` 表示截断。显式写入自动提交，取消后已提交的写入保留。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
 - **查询收藏**：`query-favorites` 分区使用 `{items:[{id,title,sql,connectionId,database,schema?}]}`。工作区对收藏进行查询、命名、重命名和删除，使用通用配置修订号保存。
 - **AI 配置**：ai-models 分区使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}`，最多 64 条。model 是实际调用 ID，modelName 为显示名称。相同供应商与模型 ID 不得重复。编辑空 Key 保留该行原值，完整列表一次 CAS 保存，空数组清空。仅支持列表格式。activeId 是 SQL 工具栏与 AI 助手共享的默认记录 ID，可从系统设置模型列表或 AI 助手切换。列表非空且 activeId 为空时，读取和调用使用首条可用记录，保存时写入该 ID。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
@@ -85,9 +85,9 @@ Redis 的逻辑库列表、监控和发布订阅使用实例范围，关闭整�
 
 PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。
 
-MySQL、MariaDB 和 PostgreSQL 工作台手动执行及查询结果刷新均传 `allowWrite: true`，支持 DDL/DML。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。这三个引擎的 SQL 多语句走同一会话批次。结果保留预算内的完整行，`truncatedBy` 可区分行数上限（`row-limit`）、内容上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出内容预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
+SQL 编辑器运行及重新执行传 `allowWrite: true` 和 `unlimitedRows: true`，按原 SQL 执行，包括语句自带的 `LIMIT`。打开或刷新表数据使用带 `LIMIT 1000` 的只读预览。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL、MariaDB 和 PostgreSQL 多语句走同一会话批次。`truncatedBy` 可区分行数上限（`row-limit`）、结果大小上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
-批次接收 `{database, schema?, statements, allowWrite: true, limit?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
+批次接收 `{database, schema?, statements, allowWrite: true, limit?, unlimitedRows?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。`unlimitedRows` 的默认值及行数策略与单语句一致，作用于批次中的每条语句。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 
@@ -95,7 +95,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 流式 SQL 转储适用于 MySQL、MariaDB 和 PostgreSQL。
 
-`GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功；约每10秒发送注释心跳。断开取消、后端独立2并发/30分钟限制、单行8MiB限制，不改变普通查询1000/5000行限制。客户端分批写入文件，失败/取消不提交文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
+`GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功，约每 10 秒发送注释心跳。断开取消，后端独立限制 2 路并发、30 分钟和单行 8 MiB。客户端分批写入文件，失败或取消时放弃文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
 
 ## 数据库监控
 

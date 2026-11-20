@@ -1,9 +1,11 @@
 import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Button, Card, Empty, Flex, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
+import { useState } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
+import type { RedisKey } from '@/services/redis'
 
 import ToolbarButton from '../../../toolbarButton'
 import { useKeyBrowser } from '../../hooks/useKeyBrowser'
@@ -14,6 +16,7 @@ import KeyTree from '../keyTree'
 export default function KeyBrowser({ id, database }: { id: string; database: number }) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
+  const [deleteTarget, setDeleteTarget] = useState<RedisKey>()
   const {
     filter,
     setFilter,
@@ -56,6 +59,17 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
   const currentPage = page?.pattern === request.pattern ? page : undefined
   const needsRestart = currentPage?.cursor === null
   const nextCursor = currentPage?.cursor
+
+  function requestDelete(item: RedisKey) {
+    if (saving || loading) return
+    setChangeError('')
+    setDeleteTarget(item)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || saving || loading) return
+    if (await commit({ action: 'delete' }, deleteTarget)) setDeleteTarget(undefined)
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -107,13 +121,10 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                   keys={page.keys}
                   selected={selected?.ref}
                   onSelect={read}
-                  onDelete={(item) => commit({ action: 'delete' }, item)}
+                  onRequestDelete={requestDelete}
                   onCreate={() => promptAction('create')}
                   onRefresh={() => scan(request.pattern)}
-                  disabled={loading || saving}
-                  saving={saving}
-                  error={lastChange === 'delete' ? changeError : ''}
-                  clearError={() => setChangeError('')}
+                  disabled={loading || saving || Boolean(deleteTarget)}
                 />
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(page.cursor === '0' ? '没有匹配的键' : '当前扫描页没有匹配的键')} />
@@ -130,17 +141,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
         extra={
           selected && (
             <Flex gap={2}>
-              <KeyDelete
-                key={selected.ref}
-                item={selected}
-                saving={saving}
-                disabled={!detail || loading}
-                error={lastChange === 'delete' ? changeError : ''}
-                onDelete={(item) => commit({ action: 'delete' }, item)}
-                onClearError={() => setChangeError('')}
-              >
-                <ToolbarButton size="small" icon={<DeleteOutlined />} label={t('删除键')} danger disabled={!detail || loading || saving} />
-              </KeyDelete>
+              <ToolbarButton size="small" icon={<DeleteOutlined />} label={t('删除键')} danger aria-haspopup="dialog" disabled={!detail || loading || saving} onClick={() => requestDelete(selected)} />
               <ToolbarButton size="small" icon={<ReloadOutlined />} label={t('刷新键详情')} disabled={saving} onClick={() => read(selected, true)} />
             </Flex>
           )
@@ -160,6 +161,16 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
           />
         )}
       </Card>
+      <KeyDelete
+        item={deleteTarget}
+        saving={saving}
+        disabled={loading}
+        error={lastChange === 'delete' ? changeError : ''}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!saving) setDeleteTarget(undefined)
+        }}
+      />
       <Modal
         title={t('新增键')}
         open={Boolean(action)}

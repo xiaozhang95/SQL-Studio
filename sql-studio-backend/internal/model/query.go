@@ -8,13 +8,17 @@ import (
 )
 
 type QueryRequest struct {
-	Schema     string `json:"schema,omitempty"`
-	Database   string `json:"database"`
-	SQL        string `json:"sql"`
-	Limit      int    `json:"limit"`
-	AllowWrite bool   `json:"allowWrite"`
-	MatchRows  bool   `json:"matchRows,omitempty"`
+	Schema        string `json:"schema,omitempty"`
+	Database      string `json:"database"`
+	SQL           string `json:"sql"`
+	Limit         int    `json:"limit"`
+	UnlimitedRows bool   `json:"unlimitedRows,omitempty"`
+	AllowWrite    bool   `json:"allowWrite"`
+	MatchRows     bool   `json:"matchRows,omitempty"`
 }
+
+// UnlimitedQueryRows is the driver row-limit value for explicitly uncapped requests.
+const UnlimitedQueryRows = -1
 
 type QueryErrorKind string
 
@@ -50,11 +54,12 @@ func IsStatementError(err error) bool {
 }
 
 type QueryBatchRequest struct {
-	Schema     string   `json:"schema,omitempty"`
-	Database   string   `json:"database"`
-	Statements []string `json:"statements"`
-	AllowWrite bool     `json:"allowWrite"`
-	Limit      int      `json:"limit"`
+	Schema        string   `json:"schema,omitempty"`
+	Database      string   `json:"database"`
+	Statements    []string `json:"statements"`
+	AllowWrite    bool     `json:"allowWrite"`
+	Limit         int      `json:"limit"`
+	UnlimitedRows bool     `json:"unlimitedRows,omitempty"`
 }
 
 type QueryBatchStep struct {

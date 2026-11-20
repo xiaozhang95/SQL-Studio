@@ -33,7 +33,7 @@ query-output.test.mjs 验证 104 条批量执行回执不生成数据结果导�
 
 - `pnpm test:objects`：库表操作 SQL 目标转义、默认值/SQL mode、类型与表达式注入拒绝、特殊字段保护及差异 ALTER；无数据库访问。
 
-数据编辑回归：`node --test tests/data-editing.test.mjs`，覆盖精确主键、联合主键、NULL/空字符串、标识符/值注入边界及生成列限制，不访问真实数据库。
+数据编辑回归使用 `node --test tests/data-editing.test.mjs`，覆盖精确主键、联合主键、NULL 与空字符串、标识符和值转义、生成列限制，以及无主键的单行多字段更新。使用固定数据构造 SQL。
 
 用户配置回归：node --test tests/user-state.test.mjs，覆盖服务端优先、当前格式读写、串行修订及冲突，不访问真实用户文件。
 
@@ -51,7 +51,7 @@ history-completion.test.mjs 覆盖旧历史每连接截取最新 50 条、删除
 
 切库回归：`node --test tests/use-database.test.mjs` 执行实际 executeSQL 编排、替换请求和状态，验证多次 USE 的后续请求/历史/结果范围、页面隔离、失败停止和取消不切库；不连接业务数据库。
 
-PostgreSQL 回归：`node --test tests/postgresql.test.mjs` 检查美元引号/E 字符串/嵌套注释、历史保护、schema 同名表身份、SQL 注入边界、精确主键与 NULL 数据编辑；不访问网络。
+PostgreSQL 回归使用 `node --test tests/postgresql.test.mjs`，覆盖美元引号、E 字符串、嵌套注释、历史保护、schema 同名表、SQL 转义、精确主键与 NULL 数据编辑，以及无主键的单行多字段更新。使用固定数据构造 SQL。
 
 PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test.mjs` 覆盖元数据解码、属性范围/原值核对/注入拒绝、序列精度、IDENTITY、生成列、BYTEA及截断拒绝。`postgresql-management.integration.test.mjs` 复用 SQLDESK_SQL_WINDOW_INTEGRATION/SQLDESK_TEST_API/SQLDESK_PG_PASSWORD 开关，建立两个随机 sqldesk_feature_ 临时库，真实执行属性修改与跨库还原、对比数据并检查后续自增；finally删除临时库和连接。浏览器另验证实际编辑入口、预览/保存、下载内容及亮暗主题。
 

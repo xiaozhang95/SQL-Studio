@@ -150,7 +150,7 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
     }
   }
   async function deleteHistory(id: string) {
-    if (active.current || loading || mutation.current) return
+    if (active.current || loading || mutation.current) throw new Error('请等待当前操作完成')
     mutation.current = true
     historyVersion.current++
     setManaging(true)
@@ -167,9 +167,6 @@ export function useChat(workspace: WorkspaceController, mode: 'readonly' | 'writ
         setHistory(items)
         await activate(selected, next.events)
       } else updateHistory(items)
-    } catch (cause) {
-      if (mounted.current) setError(cause instanceof Error ? cause.message : '删除会话失败')
-      throw cause
     } finally {
       mutation.current = false
       if (mounted.current) setManaging(false)

@@ -188,6 +188,10 @@ func TestQueryResultFidelity(t *testing.T) {
 }
 
 func TestQueryResultBounds(t *testing.T) {
+	manyRows := make([][]driver.Value, 5001)
+	for i := range manyRows {
+		manyRows[i] = []driver.Value{""}
+	}
 	for _, test := range []struct {
 		name            string
 		rows            [][]driver.Value
@@ -196,7 +200,9 @@ func TestQueryResultBounds(t *testing.T) {
 	}{
 		{"row limit", [][]driver.Value{{[]byte("a")}, {[]byte("b")}}, 1, 1, true},
 		{"exact limit", [][]driver.Value{{[]byte("a")}}, 1, 1, false},
+		{"no row limit", manyRows, model.UnlimitedQueryRows, len(manyRows), false},
 		{"byte limit", [][]driver.Value{{make([]byte, maxResultBytes+1)}}, 1000, 0, true},
+		{"byte limit without row limit", [][]driver.Value{{[]byte("kept")}, {make([]byte, maxResultBytes)}}, model.UnlimitedQueryRows, 1, true},
 		{"retain complete rows within byte limit", [][]driver.Value{{[]byte("kept")}, {make([]byte, maxResultBytes)}}, 1000, 1, true},
 		{"empty", nil, 1000, 0, false},
 	} {

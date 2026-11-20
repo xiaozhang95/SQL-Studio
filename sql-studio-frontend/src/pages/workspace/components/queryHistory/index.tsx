@@ -4,7 +4,7 @@ import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
-import DeleteConfirmation from '@/components/deleteConfirmation'
+import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
@@ -46,6 +46,7 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
   const connectionHistory = history
   const [page, setPage] = useState(1)
   const [drawerReady, setDrawerReady] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${drawerReady}:${connectionId}:${connectionHistory.length}:${historySearch}`)
   const columns: TableColumnsType<HistoryItem> = [
     {
@@ -127,26 +128,21 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
         </span>
       }
       open={historyOpen}
-      onClose={() => setHistoryOpen(false)}
+      onClose={() => {
+        setConfirmClear(false)
+        setHistoryOpen(false)
+      }}
       focusable={terminal ? { focusTriggerAfterClose: false } : undefined}
       afterOpenChange={(open) => {
         setDrawerReady(open)
-        if (!open) onClosed?.()
+        if (!open) {
+          setConfirmClear(false)
+          onClosed?.()
+        }
       }}
       size="min(1080px, 100vw)"
       styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
-      extra={
-        <DeleteConfirmation
-          title={t('清空连接「{value1}」的执行历史？', { value1: connection?.name || '' })}
-          disabled={!connectionHistory.length}
-          onConfirm={() => {
-            clearHistory(connectionId)
-            setPage(1)
-          }}
-        >
-          <ToolbarButton label={t('清空执行历史')} icon={<DeleteOutlined />} danger disabled={!connectionHistory.length} />
-        </DeleteConfirmation>
-      }
+      extra={<ToolbarButton label={t('清空执行历史')} icon={<DeleteOutlined />} danger aria-haspopup="dialog" disabled={!connectionHistory.length} onClick={() => setConfirmClear(true)} />}
     >
       <Input
         style={{ flexShrink: 0 }}
@@ -198,6 +194,21 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
           }}
         />
       </div>
+      <DeleteDialog
+        title={t('清空连接「{value1}」的执行历史？', { value1: connection?.name || '' })}
+        open={historyOpen && confirmClear}
+        confirmText={t('清空')}
+        disabled={!connectionHistory.length}
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => {
+          if (!historyOpen || !confirmClear || !connectionHistory.length) return
+          clearHistory(connectionId)
+          setPage(1)
+          setConfirmClear(false)
+        }}
+      >
+        {t('将清空该连接的全部 {value1} 条执行历史，包括筛选未显示的记录。', { value1: connectionHistory.length })}
+      </DeleteDialog>
     </Drawer>
   )
 }

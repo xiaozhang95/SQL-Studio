@@ -9,7 +9,7 @@ export function tableIdentity(table: string): [string, string] {
   return ['public', table]
 }
 export const relation = (table: string) => tableIdentity(table).map(identifier).join('.')
-export const tableDataSQL = (_database: string, table: string) => `SELECT * FROM ${relation(table)} LIMIT 1000;`
+export const tableDataSQL = (_database: string, table: string, { preview = true } = {}) => `SELECT * FROM ${relation(table)}${preview ? ' LIMIT 1000' : ''};`
 export const literal = (value: unknown): string => {
   if (value === null) return 'NULL'
   if (!['string', 'number', 'boolean'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value))) throw new Error('该值暂不支持编辑')

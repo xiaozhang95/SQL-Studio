@@ -8,7 +8,7 @@
 - [脚本与历史](statements/README.md)：美元引号、E 字符串和嵌套注释。
 - [查询](query/README.md)：schema/table 身份与结构导出。
 - [补全](completion/README.md)：当前数据库的 schema 范围。
-- [数据编辑](dataEditing/README.md)支持单元格更新、新增以及按主键或原始整行删除。
+- [数据编辑](dataEditing/README.md)支持新增，以及按主键或原始整行更新和删除。
 - [数据库属性](databaseProperties/README.md)：读取并编辑所有者、连接数上限和注释。
 - [结构和数据](dataDump/README.md)：单表精确值导出、SERIAL/IDENTITY 序列恢复。
 

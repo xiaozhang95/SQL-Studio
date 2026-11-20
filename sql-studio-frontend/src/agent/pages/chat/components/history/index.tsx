@@ -1,10 +1,10 @@
 import { DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import DeleteConfirmation from '@/components/deleteConfirmation'
+import DeleteDialog from '@/components/deleteDialog'
 import ErrorNotice from '@/components/errorNotice'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -36,9 +36,38 @@ export function History(props: Props) {
   const { open, onClose, mobile } = props
   const rename = useSessionRename(props.onRename)
   const [search, setSearch] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ConversationInfo>()
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const deletePending = useRef(false)
+  const deletionDisabled = props.busy || props.selecting
+  const canDeleteTarget = !deletionDisabled && props.items.some((item) => item.id === deleteTarget?.id)
+
+  function requestDelete(item: ConversationInfo) {
+    if (deletionDisabled || deletePending.current) return
+    setDeleteError('')
+    setDeleteTarget(item)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || !canDeleteTarget || deletePending.current) return
+    deletePending.current = true
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await props.onDelete(deleteTarget.id)
+      setDeleteTarget(undefined)
+    } catch (reason) {
+      setDeleteError(reason instanceof Error ? reason.message : t('删除会话失败'))
+    } finally {
+      deletePending.current = false
+      setDeleting(false)
+    }
+  }
+
   const keyword = search.trim().toLowerCase()
   const items = keyword ? props.items.filter(({ title }) => title.toLowerCase().includes(keyword)) : props.items
-  const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show }
+  const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show, onDeleteOpen: requestDelete }
   const refreshAction = (
     <Tooltip title={t('刷新历史')}>
       <Button type="text" size="small" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
@@ -83,6 +112,20 @@ export function History(props: Props) {
       <Drawer title={t('历史会话')} extra={refreshAction} placement="left" size={280} open={mobile && open} onClose={onClose} styles={{ body: { padding: 0 } }}>
         <HistoryContents {...contentsProps} />
       </Drawer>
+      <DeleteDialog
+        title={t('删除这条会话？')}
+        open={Boolean(deleteTarget)}
+        busy={deleting}
+        disabled={!canDeleteTarget}
+        onCancel={() => {
+          if (!deletePending.current) setDeleteTarget(undefined)
+        }}
+        onConfirm={() => void confirmDelete()}
+      >
+        <Typography.Paragraph strong>{deleteTarget?.title}</Typography.Paragraph>
+        <Typography.Paragraph>{t('将删除本机保存的消息和查询结果。')}</Typography.Paragraph>
+        <ErrorNotice error={deleteError} />
+      </DeleteDialog>
       <Modal
         forceRender
         title={t('重命名会话')}
@@ -129,12 +172,12 @@ function HistoryContents({
   selecting,
   loading,
   onSelect,
-  onDelete,
+  onDeleteOpen,
   onRenameOpen,
   search,
   onSearchChange,
   header
-}: Props & { onRenameOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
+}: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -174,9 +217,16 @@ function HistoryContents({
                     </Typography.Text>
                     <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                      <DeleteConfirmation title={t('删除这条会话？')} description={t('将删除本机保存的消息和查询结果。')} onConfirm={() => onDelete(i.id)} disabled={busy || selecting}>
-                        <Button danger type="text" size="small" aria-label={t('删除会话 ') + i.title} disabled={busy || selecting} icon={<DeleteOutlined />} />
-                      </DeleteConfirmation>
+                      <Button
+                        danger
+                        type="text"
+                        size="small"
+                        aria-label={t('删除会话 ') + i.title}
+                        aria-haspopup="dialog"
+                        disabled={busy || selecting}
+                        icon={<DeleteOutlined />}
+                        onClick={() => onDeleteOpen(i)}
+                      />
                     </span>
                   </Flex>
                 )

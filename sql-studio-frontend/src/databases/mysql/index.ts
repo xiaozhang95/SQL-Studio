@@ -1,7 +1,7 @@
 import type { DatabaseAdapter } from '../typings'
 import { mysqlCompletion } from './completion'
 import { dumpData, viewStandIn } from './dataDump'
-import { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL } from './dataEditing'
+import { canInsertColumn, deleteRowSQL, insertRowSQL, updateRowSQL } from './dataEditing'
 import { stripHistoryMarkers } from './history'
 import { mysqlObjects } from './objectManagement'
 import { mysqlProfile } from './profile'
@@ -39,7 +39,7 @@ const mysql = {
   objects: mysqlObjects,
   dataDump: { querySQL: mysqlObjects.dumpQuerySQL, dump: mysqlObjects.dumpWithData },
   exportDDL: mysqlObjects.dump,
-  dataEditing: { canInsertColumn, deleteRowSQL, insertRowSQL, updateCellSQL },
+  dataEditing: { canInsertColumn, deleteRowSQL, insertRowSQL, updateRowSQL },
   profile: mysqlProfile,
   foreignKeys: true,
   splitStatements: splitSQLStatements,

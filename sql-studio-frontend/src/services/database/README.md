@@ -8,7 +8,7 @@ getConnectionGroups(signal?) 返回含默认和空分组的 string[]；createCon
 
 导入使用 `@/services/database`，不追加 /index 或扩展名；改契约时同步调用方及本说明。
 
-executeObjectSQL(id, database, sql, signal?) 仅供对象管理确认提交，使用已有 query API 显式 allowWrite:true；普通 executeQuery 不设置该值时保持只读。QueryRequest 也允许元数据请求设置 limit（服务端仍限制最高 5000）。
+executeObjectSQL(id, database, sql, signal?) 用于对象管理或数据页确认提交，使用 query API 显式传 `allowWrite: true`。`executeQuery` 默认只读。元数据读取可指定 `limit`，服务端最多接受 5000 行。SQL 编辑器传 `unlimitedRows: true` 跳过行数上限。
 
 executeObjectSQL 也供表数据单元格点击保存使用，传递显式连接、库和限定目标的单行更新；普通 executeQuery 默认只读。
 
@@ -20,7 +20,7 @@ getSchemas(id,database,signal?) 调用 /connections/{id}/schemas，返回可访�
 
 deleteConnectionGroup(name) DELETE /connection-groups，返回 groups 与脱敏 connections；删除组内连接移入默认分组，不删除连接。
 
-executeObjectSQL(id,database,sql,signal?,matchRows=false) 的 matchRows 仅由单元格 UPDATE 显式开启；普通 SQL 和其他对象操作保持默认影响行数语义。
+`executeObjectSQL(id, database, sql, signal?, matchRows=false)` 的 `matchRows` 由数据页 UPDATE 显式开启。普通 SQL 和其他对象操作使用默认影响行数语义。
 
 getDatabaseMonitor(id,database,signal?) 读取已保存连接的监控采样，支持取消。
 

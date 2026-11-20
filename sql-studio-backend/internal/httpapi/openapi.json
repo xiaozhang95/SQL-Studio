@@ -2567,7 +2567,13 @@
                   },
                   "limit": {
                     "type": "integer",
-                    "default": 1000
+                    "default": 1000,
+                    "description": "仅在 unlimitedRows 为 false 时使用。"
+                  },
+                  "unlimitedRows": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "为 true 时每条语句按原 SQL 返回结果，保留约 8 MiB 结果预算，跳过应用行数上限。"
                   },
                   "statements": {
                     "type": "array",
@@ -4385,7 +4391,12 @@
           "limit": {
             "type": "integer",
             "default": 1000,
-            "description": "小于等于 0 使用 1000，大于 5000 限制为 5000。"
+            "description": "unlimitedRows 为 false 时，小于等于 0 使用 1000，大于 5000 限制为 5000。"
+          },
+          "unlimitedRows": {
+            "type": "boolean",
+            "default": false,
+            "description": "为 true 时跳过应用行数上限，仍按原 SQL 执行并保留约 8 MiB 结果预算。"
           },
           "allowWrite": {
             "type": "boolean",

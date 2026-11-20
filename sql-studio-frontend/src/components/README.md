@@ -6,7 +6,8 @@
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
 - [errorNotice](errorNotice/README.md)：页面顶栏和弹框共用的错误提示。
 - [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面顶栏。
-- [deleteConfirmation](deleteConfirmation/README.md)：直接点击删除按钮的会话列表同款气泡确认；右键删除使用业务弹窗。
+- [deleteDialog](deleteDialog/README.md) 为数据行、Redis 键、执行历史及 AI 会话提供带目标范围的确认弹框。
+- [deleteConfirmation](deleteConfirmation/README.md) 为查询收藏、模型和表字段草稿提供按钮旁的确认气泡。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
 

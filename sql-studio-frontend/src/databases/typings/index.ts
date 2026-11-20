@@ -50,6 +50,8 @@ export interface DumpPlan {
   data: (result: QueryResult) => string
 }
 
+export type RowCellChange = { columnIndex: number; value: string | null }
+
 export interface DatabaseAdapter {
   readonly sessionBatch?: boolean
   readonly foreignKeys?: boolean
@@ -66,7 +68,7 @@ export interface DatabaseAdapter {
     canInsertColumn: (column: Column) => boolean
     insertRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, values: unknown[]) => string
     deleteRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[]) => string
-    updateCellSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], columnIndex: number, value: string | null) => string
+    updateRowSQL: (database: string, table: string, columns: Column[], result: QueryResult, row: unknown[], changes: readonly RowCellChange[]) => string
   }
   readonly profile: DatabaseProfile
   readonly objects: DatabaseObjectAdapter | undefined
@@ -94,6 +96,6 @@ export interface DatabaseAdapter {
   exportDDL: (database: string, table: string, ddl: string) => string
   tableLabel: (table: string) => string
   tableListResult: (tables: readonly DBTable[], schema?: string) => Pick<QueryResult, 'columns' | 'rows'>
-  tableDataSQL: (database: string, table: string) => string
+  tableDataSQL: (database: string, table: string, options?: { preview?: boolean }) => string
   completion: (context: SQLCompletionContext) => ReturnType<typeof sql>
 }

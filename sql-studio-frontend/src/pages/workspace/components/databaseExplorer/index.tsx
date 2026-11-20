@@ -475,11 +475,11 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
                 onDoubleClick={(event, value) => {
                   if (running) return
                   const node = data.byKey.get(String(value.key))
-                  if (node?.kind === 'redis-database' || (node?.connection?.type === DatabaseEngine.Redis && !value.expanded)) {
-                    model.openRedisQuery(node.owner, node.database || undefined)
+                  if (node?.kind === 'redis-database') {
+                    model.openRedisQuery(node.owner, node.database)
                     return
                   }
-                  // 数据库和分类节点只处理展开/折叠，不进入页面操作。
+                  // 连接、数据库和分类节点由树本身处理展开与收起。
                   if (!node || !['schema', 'table'].includes(node.kind)) return
                   // Tree 的双击回调携带操作前的展开状态；折叠不应新建页面。
                   if (!value.isLeaf && (value.expanded || event.shiftKey || event.metaKey || event.ctrlKey)) return

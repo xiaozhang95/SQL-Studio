@@ -3,7 +3,7 @@ import { Alert, Empty, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
-import DeleteConfirmation from '@/components/deleteConfirmation'
+import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { appearance } from '@/constant/appearance'
@@ -83,25 +83,21 @@ export default function QueryResults({ model, themeMode }: Props) {
   usePageError(editing.operationError, tab.id)
   const [selection, setSelection] = useState<{ result?: typeof result; keys: number[] }>({ keys: [] })
   const selectedRows = selection.result === result ? selection.keys : []
-  const [deleteTarget, setDeleteTarget] = useState<{ result: typeof result; pageId: string; rows: number[] }>()
+  const [deleteTarget, setDeleteTarget] = useState<{ result: typeof result; pageId: string; rows: number[]; table: string }>()
   const deletionPending = useRef(false)
   const currentDelete = deleteTarget?.pageId === tab.id ? deleteTarget : undefined
   const deletingRows = currentDelete && currentDelete.result === result ? currentDelete.rows : undefined
   const deleteError = currentDelete ? editing.deletionError : ''
+  const rowDeletionDisabled = editingBlocked || Boolean(editing.dirty) || editing.saving
 
   function setDeleteOpen(open: boolean) {
-    // 确认按钮触发的自动关闭由受控气泡忽略，等请求结果再决定是否关闭。
     if (deletionPending.current) return
     editing.clearDeletionError()
-    setDeleteTarget(open ? { result, pageId: tab.id, rows: [...selectedRows] } : undefined)
+    setDeleteTarget(open ? { result, pageId: tab.id, rows: [...selectedRows], table: `${tab.database}.${adapter?.tableLabel(tab.table) ?? tab.table}` } : undefined)
   }
 
   async function confirmDelete() {
-    if (deleteError) {
-      setDeleteOpen(false)
-      return
-    }
-    if (!deletingRows || editingBlocked || editing.dirty || deletionPending.current) return
+    if (!deletingRows?.length || rowDeletionDisabled || deletionPending.current) return
     deletionPending.current = true
     try {
       if (await editing.deleteRows(deletingRows, () => setSelection({ keys: [] }))) setDeleteTarget(undefined)
@@ -257,26 +253,15 @@ export default function QueryResults({ model, themeMode }: Props) {
                     void editing.addRow()
                   }}
                 />
-                <DeleteConfirmation
-                  title={deleteError ? t('删除结果') : t('删除选中的 {value1} 行数据？', { value1: (deletingRows ?? selectedRows).length })}
-                  description={deleteError ? <ErrorNotice error={deleteError} /> : t('有主键时按主键定位，无主键时按原始整行匹配。相同记录每选中一条删一条。删除立即生效，遇到失败会停止。')}
-                  open={Boolean(deletingRows || deleteError)}
-                  disabled={!deleteError && (editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving)}
-                  onOpenChange={setDeleteOpen}
-                  showCancel={!deleteError}
-                  okText={deleteError ? t('关闭') : undefined}
-                  okButtonProps={{ danger: !deleteError, loading: editing.saving }}
-                  cancelButtonProps={{ disabled: editing.saving }}
-                  onConfirm={() => void confirmDelete()}
-                >
-                  <ToolbarButton
-                    label={t('删除行')}
-                    icon={<DeleteOutlined />}
-                    danger
-                    disabled={editingBlocked || Boolean(editing.dirty) || !selectedRows.length || editing.saving}
-                    hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
-                  />
-                </DeleteConfirmation>
+                <ToolbarButton
+                  label={t('删除行')}
+                  icon={<DeleteOutlined />}
+                  danger
+                  disabled={rowDeletionDisabled || !selectedRows.length}
+                  hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
+                  aria-haspopup="dialog"
+                  onClick={() => setDeleteOpen(true)}
+                />
                 <ToolbarButton
                   label={t('保存')}
                   icon={<SaveOutlined />}
@@ -319,6 +304,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
               {showingResult && (
                 <ResultExport
+                  key={tab.id}
                   result={result}
                   selectedCount={selectedRows.length}
                   disabled={deferredSearch !== resultSearch}
@@ -415,6 +401,25 @@ export default function QueryResults({ model, themeMode }: Props) {
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
         <Pagination {...tablePagination} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />
       )}
+      <DeleteDialog
+        title={deleteError ? t('删除结果') : t('删除选中的 {value1} 行数据？', { value1: currentDelete?.rows.length ?? 0 })}
+        open={Boolean(deletingRows?.length || deleteError)}
+        busy={editing.saving}
+        disabled={rowDeletionDisabled || !deletingRows?.length}
+        resultOnly={Boolean(deleteError)}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => void confirmDelete()}
+      >
+        <Typography.Paragraph strong>{currentDelete?.table}</Typography.Paragraph>
+        {deleteError ? (
+          <ErrorNotice error={deleteError} />
+        ) : (
+          <>
+            <Typography.Paragraph>{t('删除立即生效，遇到失败会停止。')}</Typography.Paragraph>
+            <Typography.Text type="secondary">{t('无主键时按原始整行匹配。完全相同的记录每选中一条只删除一条。')}</Typography.Text>
+          </>
+        )}
+      </DeleteDialog>
     </ResultsDock>
   )
 }
