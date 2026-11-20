@@ -90,7 +90,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       ),
     [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups, t]
   )
-  const failures = useMemo(() => Array.from(data.byKey.values()).filter((node) => node.retry), [data])
+  const failures = useMemo(() => Array.from(data.byKey.values()).filter((node) => node.retry && node.retry !== 'connection'), [data])
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
 
@@ -360,30 +360,35 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     else if (node.retry === 'table') void objects.loadTableDetails(node.database, node.table, node.owner).catch(() => {})
   }
   function renderTitle(node: ExplorerNode) {
+    const connectionFailure = node.retry === 'connection'
     const generated = node.kind.startsWith('empty-') || ['tables', 'views', 'columns', 'indexes', 'foreign-keys', 'error', 'detail-error', 'foreign-keys-error'].includes(node.kind)
-    const title = node.retry ? t('加载失败') : node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
+    const title = node.retry && !connectionFailure ? t('加载失败') : node.kind === 'group' ? connectionGroupLabel(node.title, t) : generated ? t(node.title) : node.title
     // 折叠动画仍持有旧节点，此时当前 byKey 已裁剪子项；展示使用节点自身数据。
     return (
       <span
         className={node.connection ? `connection-tree-label object-context-target ${node.status}` : 'object-context-target'}
-        title={node.kind === 'group' ? title : generated && node.tooltip ? t(node.tooltip) : node.tooltip}
+        title={connectionFailure ? undefined : node.kind === 'group' ? title : generated && node.tooltip ? t(node.tooltip) : node.tooltip}
         style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden', color: node.retry ? 'var(--ant-color-error-text)' : 'inherit' }}
       >
         <span className={node.connection ? `connection-tree-icon ${node.status}` : undefined} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
           {icon(node)}
         </span>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+        <span title={connectionFailure ? title : undefined} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {title}
+        </span>
         {node.retry && (
-          <ToolbarButton
-            label={t('重试加载')}
-            icon={<ReloadOutlined />}
-            size="small"
-            disabled={running}
-            onClick={(event) => {
-              event.stopPropagation()
-              retry(node)
-            }}
-          />
+          <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+            <ToolbarButton
+              label={t(connectionFailure ? '重试连接' : '重试加载')}
+              icon={<ReloadOutlined />}
+              size="small"
+              disabled={running}
+              onClick={(event) => {
+                event.stopPropagation()
+                retry(node)
+              }}
+            />
+          </span>
         )}
       </span>
     )

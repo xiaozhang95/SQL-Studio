@@ -47,7 +47,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const editorMode = tool === 'editor'
   const consoleMode = tool === 'console'
   const { beforeImport, importing, error: importError } = useSQLImport((script, title) => model.addTab(script, { connectionId: connection.id, database: database ?? '', table: '' }, title))
-  usePageError(active ? snapshot?.error : undefined)
   usePageError(active ? importError : undefined)
 
   return (
@@ -60,7 +59,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           <>
             {editorMode && <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={model.runSQL} disabled={blocked || database === undefined} />}
             {model.activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={model.cancelQuery} />}
-            {status === 'error' && <ToolbarButton label={t('重试')} icon={<ReloadOutlined />} onClick={() => void model.openConnection(connection.id).catch(() => {})} />}
+            {status === 'error' && <ToolbarButton label={t('重试连接')} hint={snapshot?.error} icon={<ReloadOutlined />} onClick={() => model.connectionAction('open', connection.id)} />}
           </>
         }
       >

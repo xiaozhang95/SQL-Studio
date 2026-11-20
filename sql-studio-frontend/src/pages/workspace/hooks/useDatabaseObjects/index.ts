@@ -111,7 +111,10 @@ export function useDatabaseObjects(
           return databases
         })
         .catch((error) => {
-          if (valid()) setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], status: 'error', error: error instanceof Error ? error.message : '连接失败' } }))
+          if (valid()) {
+            const reason = error instanceof Error && error.message.trim() ? error.message : '连接失败'
+            setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], status: 'error', error: reason } }))
+          }
           throw error
         })
         .finally(() => {

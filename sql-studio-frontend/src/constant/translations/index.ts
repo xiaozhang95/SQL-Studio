@@ -622,6 +622,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   数据库打开失败: 'Failed to open database',
   数据库未打开: 'Database closed',
   重试加载: 'Retry loading',
+  重试连接: 'Retry connection',
   '搜索连接 / 库 / 表': 'Search connections / databases / tables',
   搜索数据库对象: 'Search database objects',
   暂无连接: 'No connections',

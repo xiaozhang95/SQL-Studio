@@ -13,7 +13,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases`
 
 连接和加密密码保存在本地 connections.json，密钥位于 master.key。当前连接文件必须明确保存 type/group；未支持类型留在磁盘但不返回可用列表，不自动转换类型。
 
-每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。单语句与批次的 JSON 请求均可达 32 MiB，每条语句最长 30 秒。MySQL、MariaDB 和 PostgreSQL 默认返回 1000 行，最多 5000 行及约 8 MiB 字段内容，首行超限时改为单独的只读预览。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。语句错误在发起页的消息和摘要中显示具体原因。连接、请求和对象加载错误显示在顶部，执行请求的失败原因也可展开对应消息查看。主动取消在消息、摘要和历史中显示为「执行已取消」。失败或取消停止后续语句，保留已完成结果及已提交写入。
+每个查询页独立保存连接、数据库、表和 SQL。SQL 窗口显式允许查询、DDL 和 DML，API 未指定 allowWrite 时默认只读。单语句与批次的 JSON 请求均可达 32 MiB，每条语句最长 30 秒。MySQL、MariaDB 和 PostgreSQL 默认返回 1000 行，最多 5000 行及约 8 MiB 字段内容，首行超限时改为单独的只读预览。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。语句错误在发起页的消息和摘要中显示具体原因。执行请求和对象加载错误显示在顶部，执行请求的失败原因也可展开对应消息查看。打开已保存连接失败时，具体原因显示在左侧对应连接下方，可就地重试。主动取消在消息、摘要和历史中显示为「执行已取消」。失败或取消停止后续语句，保留已完成结果及已提交写入。
 
 MySQL、MariaDB 和 PostgreSQL 的每个多语句批次使用独立会话，批次内共享会话设置、临时表及事务。PostgreSQL 的 `BEGIN`、事务内容、`COMMIT` 或 `ROLLBACK` 在同一次运行中提交。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。普通运行仍遵循数据库的提交方式。
 

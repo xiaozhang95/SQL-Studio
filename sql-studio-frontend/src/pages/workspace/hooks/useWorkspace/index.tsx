@@ -20,6 +20,7 @@ import { discardTerminal } from '../../components/redisQuery/utils/terminalSessi
 import { resultPanelLayout, scopeCloseDialogLayout } from '../../constant/layout'
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
+import { objectNodeKey } from '../../utils/objectTree'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import { explorerAfterChange, explorerAfterDatabasesLoaded, findExplorerPage, pagesAfterSchemaChange, queryScopesAfterChange, upsertConnection } from '../../utils/workspaceTransitions'
@@ -689,8 +690,14 @@ export const useWorkspace = (active = true) => {
     const target = savedConnections.find((item) => item.id === id)
     if (!target) return
     if (action === 'create-database') void objectManagement.open(ObjectAction.CreateDatabase, { connectionId: id, database: '', table: '' })
-    else if (action === 'open') void openConnection(id).catch((error) => setOperationError(error instanceof Error ? error.message : t('连接加载失败')))
-    else if (action === 'refresh') refreshSchema(id)
+    else if (action === 'open') {
+      const group = objectNodeKey('group', connectionGroupName(target.group))
+      const connection = objectNodeKey('connection', id)
+      setExplorer((previous) =>
+        previous.expanded.includes(group) && previous.expanded.includes(connection) ? previous : { ...previous, expanded: [...new Set([...previous.expanded, group, connection])] }
+      )
+      void openConnection(id).catch(() => {})
+    } else if (action === 'refresh') refreshSchema(id)
     else if (action === 'edit') {
       setEditing(target)
       setConnectionModal(true)

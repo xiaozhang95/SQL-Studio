@@ -21,7 +21,7 @@
 
 独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
 
-错误提示统一复用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md)，使用 Ant Design 默认外观与关闭按钮。页面及子区域的操作错误统一由 PageHeader 在顶栏下方以左右贴边的通栏展示，重复原因合并。弹框和抽屉在所属区域展示。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
+页面操作错误由 PageHeader 使用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md) 在顶栏下方以左右贴边的通栏展示，重复原因合并。弹框和抽屉在所属区域展示。打开已保存的数据库连接失败时，对象树在该连接下方展示具体原因和重试入口。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
 
 组件、hooks、常量/枚举、类型/接口、服务方法和工具按功能独立组织。每个实际功能使用一个目录，`index.ts` 或 `index.tsx` 为实现入口，旁边必须有 `README.md`，而非把多个无关功能堆进一个文件。
 
