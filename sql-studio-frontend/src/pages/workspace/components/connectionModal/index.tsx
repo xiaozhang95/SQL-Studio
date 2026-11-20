@@ -181,7 +181,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                               <Input autoComplete="off" placeholder={t('可留空，使用 default 用户')} />
                             </Form.Item>
                             <Form.Item name="redisSentinelPassword" label={t('哨兵密码')} extra={connection?.hasRedisSentinelPassword ? t('留空保留原密码') : undefined}>
-                              <Input.Password autoComplete="new-password" />
+                              <Input.Password autoComplete="new-password" placeholder={t(connection?.hasRedisSentinelPassword ? '已保存，留空不修改' : '未启用认证时可留空')} />
                             </Form.Item>
                           </>
                         )}

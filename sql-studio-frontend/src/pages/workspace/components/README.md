@@ -16,12 +16,12 @@
 - [查询结果导出](resultExport/README.md)
 - [结果视图标签](resultTabs/README.md)使用线形 Tabs 切换消息、摘要和数据结果。
 - [执行历史抽屉](queryHistory/README.md)
-- [查询收藏抽屉与命名弹窗](queryFavorites/README.md)
+- [查询收藏抽屉与命名弹窗](queryFavorites/README.md)，列表 SQL 与执行历史共用只读预览。
 - [底部可伸缩面板](resultsDock/README.md)
 
 - [逐条执行消息](queryMessages/README.md)
 - [批次执行摘要](querySummary/README.md)
-- [只读 SQL 高亮与复制](sqlPreview/README.md)：桌面使用原生文本复制，复制失败静默处理。
+- [只读 SQL 高亮与复制](sqlPreview/README.md)，复制成功后按钮短暂显示绿色对勾。
 
 - [库表管理弹窗](objectManagementModal/README.md)：可视化库表编辑、名称确认与 SQL 预览。
 

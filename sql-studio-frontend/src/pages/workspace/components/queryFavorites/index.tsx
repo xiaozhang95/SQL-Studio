@@ -14,6 +14,7 @@ import type { ThemeMode } from '@/typings/theme'
 import type { QueryFavorite } from '@/typings/workspace'
 
 import type { useQueryFavorites } from '../../hooks/useQueryFavorites'
+import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import SQLPreview from '../sqlPreview'
 import ToolbarButton from '../toolbarButton'
 
@@ -72,10 +73,13 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
   usePageError(open ? error : undefined)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [drawerReady, setDrawerReady] = useState(false)
   const needle = search.trim().toLowerCase()
   const shown = useMemo(() => (needle ? items.filter((item) => [item.title, item.sql, item.database, item.schema].some((value) => value?.toLowerCase().includes(needle))) : items), [items, needle])
   const pageSize = 10
   const current = Math.min(page, Math.max(1, Math.ceil(shown.length / pageSize)))
+  const { viewport, bodyHeight } = useTableViewportLayout(`${open}:${drawerReady}:${shown.length}`)
+  const renderSQL = (item: QueryFavorite) => <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find(({ id }) => id === item.connectionId)?.type} />
   const columns: TableColumnsType<QueryFavorite> = [
     {
       title: t('名称'),
@@ -99,8 +103,8 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
       title: 'SQL',
       key: 'sql',
       dataIndex: 'sql',
-      ellipsis: { showTitle: false },
-      render: (sql: string) => sql.slice(0, 160).replace(/\s+/g, ' ') + (sql.length > 160 ? '…' : '')
+      width: 280,
+      render: (_, item) => renderSQL(item)
     },
     {
       title: t('操作'),
@@ -134,7 +138,9 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
         }
         open={open}
         onClose={() => setOpen(false)}
+        afterOpenChange={setDrawerReady}
         size="min(860px, 100vw)"
+        styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
         extra={
           error ? (
             <Button size="small" loading={busy === 'read'} onClick={() => void reload()}>
@@ -144,6 +150,7 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
         }
       >
         <Input
+          style={{ flexShrink: 0 }}
           value={search}
           prefix={<SearchOutlined />}
           aria-label={t('搜索查询收藏')}
@@ -154,21 +161,19 @@ export default function QueryFavorites({ favorites, connections, themeMode, canO
             setPage(1)
           }}
         />
-        <Table<QueryFavorite>
-          style={{ marginTop: 16 }}
-          size={appearance.tableSize}
-          rowKey="id"
-          columns={columns}
-          dataSource={shown}
-          loading={busy === 'read'}
-          scroll={{ x: 640 }}
-          expandable={{
-            columnWidth: 48,
-            expandedRowRender: (item) => <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find(({ id }) => id === item.connectionId)?.type} />
-          }}
-          pagination={{ ...pagination, current, pageSize, onChange: setPage }}
-          locale={{ emptyText: t(needle ? '没有匹配的查询收藏' : '暂无查询收藏') }}
-        />
+        <div ref={viewport} style={{ flex: 1, minHeight: 0, minWidth: 0, marginTop: 16, overflow: 'hidden' }}>
+          <Table<QueryFavorite>
+            size={appearance.tableSize}
+            rowKey="id"
+            columns={columns}
+            dataSource={shown}
+            loading={busy === 'read'}
+            scroll={{ x: 800, y: bodyHeight || 24 }}
+            expandable={{ columnWidth: 48, expandedRowRender: renderSQL }}
+            pagination={{ ...pagination, current, pageSize, onChange: setPage }}
+            locale={{ emptyText: t(needle ? '没有匹配的查询收藏' : '暂无查询收藏') }}
+          />
+        </div>
       </Drawer>
       {draft && <FavoriteNameDialog key={draft.id ?? 'new'} favorites={favorites} title={draft.title} />}
     </>

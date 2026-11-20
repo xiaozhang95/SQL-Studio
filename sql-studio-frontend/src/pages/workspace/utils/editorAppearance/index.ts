@@ -1,5 +1,7 @@
 import { EditorView } from '@codemirror/view'
 
+export const sqlPreviewLayout = { lineHeight: 1.4, paddingBlock: 4 } as const
+
 // CodeMirror 提供原生样式扩展；编辑器内部外观不进入全局 Ant Design 覆盖文件。
 export const sqlEditorAppearance = EditorView.theme({
   '&.cm-editor': { height: '100%', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 'inherit' },
@@ -13,6 +15,6 @@ export const sqlEditorAppearance = EditorView.theme({
 export const sqlPreviewAppearance = EditorView.theme({
   '&.cm-editor': { background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 'inherit' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'inherit', fontSize: 'inherit', overflow: 'visible' },
-  '.cm-content': { paddingBlock: '4px' }
+  '.cm-scroller': { fontFamily: 'inherit', fontSize: 'inherit', lineHeight: sqlPreviewLayout.lineHeight, overflow: 'visible' },
+  '.cm-content': { paddingBlock: `${sqlPreviewLayout.paddingBlock}px` }
 })
