@@ -20,11 +20,13 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        padding: 'var(--workspace-inset)',
+        minHeight: 44,
+        padding: '0 12px',
         borderBottom: '1px solid var(--border)',
+        background: 'var(--surface)',
         userSelect: 'none'
       }}
     >

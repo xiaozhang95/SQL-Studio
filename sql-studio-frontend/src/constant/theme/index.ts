@@ -2,27 +2,111 @@ import { theme as antdTheme, type ThemeConfig } from 'antd'
 
 import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 
-/** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
-export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
-  const textColor = themeMode === 'dark' ? '#fff' : '#000'
-  const primaryColor = antdTheme.defaultSeed.colorSuccess
-  const selectedBackground = themeMode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)'
+type Palette = {
+  primary: string
+  success: string
+  warning: string
+  error: string
+  text: string
+  textSecondary: string
+  textTertiary: string
+  textQuaternary: string
+  canvas: string
+  surface: string
+  elevated: string
+  border: string
+  borderStrong: string
+  fill: string
+  fillSecondary: string
+  fillTertiary: string
+  fillQuaternary: string
+  hover: string
+  active: string
+}
 
+/** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
+const palettes: Record<ThemeMode, Palette> = {
+  light: {
+    primary: '#15803d',
+    success: '#16a34a',
+    warning: '#b45309',
+    error: '#dc2626',
+    text: '#161a16',
+    textSecondary: '#556055',
+    textTertiary: '#7d887d',
+    textQuaternary: '#aab3aa',
+    canvas: '#f4f6f2',
+    surface: '#ffffff',
+    elevated: '#ffffff',
+    border: '#e2e7df',
+    borderStrong: '#cfd7cd',
+    fill: '#eef1ec',
+    fillSecondary: '#f0f3ee',
+    fillTertiary: '#e9ede6',
+    fillQuaternary: '#f0f3ee',
+    hover: '#f0f3ee',
+    active: '#f0f3ee'
+  },
+  dark: {
+    primary: '#42d47c',
+    success: '#42d47c',
+    warning: '#fbbf24',
+    error: '#f87171',
+    text: '#f2f5f1',
+    textSecondary: '#a9b1a7',
+    textTertiary: '#7e877d',
+    textQuaternary: '#586157',
+    canvas: '#0a0c0a',
+    surface: '#121512',
+    elevated: '#181c18',
+    border: '#262c26',
+    borderStrong: '#364036',
+    fill: '#1e231e',
+    fillSecondary: '#191d19',
+    fillTertiary: '#202520',
+    fillQuaternary: '#1e231e',
+    hover: '#1e231e',
+    active: '#1e231e'
+  }
+}
+
+const baseFontSize = { small: 12, standard: 13, large: 15 } as const satisfies Record<FontSizePreference, number>
+
+export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
+  const palette = palettes[themeMode]
   return {
     algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
-      ...(fontSizeMode === 'small' ? { fontSize: 12 } : fontSizeMode === 'large' ? { fontSize: 16 } : {}),
+      fontSize: baseFontSize[fontSizeMode],
+      controlHeight: 30,
       // 主色与信息色共用绿色，亮暗及交互色由算法派生。
-      colorPrimary: primaryColor,
-      colorInfo: primaryColor,
-      colorTextBase: textColor,
-      colorText: textColor,
-      colorTextHeading: textColor,
-      colorTextLabel: textColor,
-      colorBgLayout: themeMode === 'dark' ? '#000' : '#ececec',
+      colorPrimary: palette.primary,
+      colorInfo: palette.primary,
+      colorSuccess: palette.success,
+      colorWarning: palette.warning,
+      colorError: palette.error,
+      colorTextBase: palette.text,
+      colorText: palette.text,
+      colorTextHeading: palette.text,
+      colorTextLabel: palette.text,
+      colorTextSecondary: palette.textSecondary,
+      colorTextTertiary: palette.textTertiary,
+      colorTextQuaternary: palette.textQuaternary,
+      colorTextLightSolid: themeMode === 'dark' ? '#06170c' : '#ffffff',
+      colorBgLayout: palette.canvas,
+      colorBgContainer: palette.surface,
+      colorBgElevated: palette.elevated,
+      colorBorder: palette.border,
+      colorBorderSecondary: palette.border,
+      colorFill: palette.fill,
+      colorFillSecondary: palette.fillSecondary,
+      colorFillTertiary: palette.fillTertiary,
+      colorFillQuaternary: palette.fillQuaternary,
+      colorFillAlter: palette.fillQuaternary,
       // 已选项在静止、悬停和聚焦时保持同一填充。
-      controlItemBgActive: selectedBackground,
-      controlItemBgActiveHover: selectedBackground
+      controlItemBgActive: palette.active,
+      controlItemBgActiveHover: palette.active,
+      controlItemBgHover: palette.hover
     },
     cssVar: { key: 'sql-studio-theme' }
   }

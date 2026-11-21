@@ -67,11 +67,12 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
       <Form form={form} component={false} onValuesChange={onDraftChange}>
         <Form.Item name="question" noStyle>
           <Sender
+            className="agent-composer"
             styles={{
               root: { height, display: 'flex', flexDirection: 'column' },
-              content: { padding: token.padding, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
+              content: { padding: token.paddingSM, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
               input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
-              footer: { paddingInline: token.padding, paddingBlockEnd: token.padding }
+              footer: { paddingInline: token.paddingSM, paddingBlockEnd: token.paddingSM }
             }}
             aria-label={t('消息')}
             onSubmit={submit}
@@ -179,7 +180,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                       />
                     </Tooltip>
                   ) : (
-                    <Button {...CHAT.iconButton} onClick={() => submit(question)} aria-label={t('发送消息')} icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured || tooLong} />
+                    <Button {...CHAT.iconButton} type="primary" onClick={() => submit(question)} aria-label={t('发送消息')} icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured || tooLong} />
                   )}
                 </Flex>
               </Flex>

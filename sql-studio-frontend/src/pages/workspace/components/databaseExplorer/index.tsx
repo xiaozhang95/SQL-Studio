@@ -3,15 +3,12 @@ import {
   CloseOutlined,
   CodeOutlined,
   DashboardOutlined,
-  DatabaseFilled,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
   ExportOutlined,
-  EyeOutlined,
   FileTextOutlined,
   FolderOutlined,
-  KeyOutlined,
   LinkOutlined,
   PlusOutlined,
   ProfileOutlined,
@@ -27,6 +24,7 @@ import { useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
+import StudioIcon from '@/components/studioIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
@@ -309,21 +307,31 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
   }
   function icon(node: ExplorerNode) {
     if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} size={20} />
-    if (node.primary) return <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} />
+    if (node.primary)
+      return (
+        <span style={{ display: 'inline-flex', color: 'var(--ant-color-warning)' }}>
+          <StudioIcon name="key" size={15} />
+        </span>
+      )
     switch (node.kind) {
       case 'group':
-        return <FolderOutlined />
       case 'schema':
-        return <FolderOutlined />
+        return <StudioIcon name="folder" size={15} />
       case 'redis-database':
-        return <DatabaseFilled style={{ color: 'var(--inactive-icon)' }} />
+        return (
+          <span style={{ display: 'inline-flex', color: 'var(--inactive-icon)' }}>
+            <StudioIcon name="database" size={15} />
+          </span>
+        )
       case 'database':
         return (
-          <DatabaseFilled
+          <span
+            role="img"
             aria-label={
               node.databaseState === 'open' ? t('数据库已打开') : node.databaseState === 'opening' ? t('数据库正在打开') : node.databaseState === 'error' ? t('数据库打开失败') : t('数据库未打开')
             }
             style={{
+              display: 'inline-flex',
               color:
                 node.databaseState === 'open'
                   ? 'var(--ant-color-success)'
@@ -333,14 +341,16 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
                       ? 'var(--ant-color-error)'
                       : 'var(--inactive-icon)'
             }}
-          />
+          >
+            <StudioIcon name="database" size={15} />
+          </span>
         )
       case 'tables':
-        return <TableOutlined />
+        return <StudioIcon name="table" size={15} />
       case 'views':
-        return <EyeOutlined />
+        return <StudioIcon name="eye" size={15} />
       case 'table':
-        return node.view ? <EyeOutlined /> : <TableOutlined />
+        return node.view ? <StudioIcon name="eye" size={15} /> : <StudioIcon name="table" size={15} />
       case 'columns':
       case 'column':
         return <ProfileOutlined />
@@ -394,23 +404,23 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     )
   }
   return (
-    <div
-      className="explorer connection-explorer"
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: 'var(--workspace-inset) var(--workspace-inset) 0', paddingTop: 16 }}
-    >
+    <div className="explorer connection-explorer" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {failures.map((node) => (
         <ExplorerError key={node.key} error={node.title} />
       ))}
-      <Input
-        style={{ flex: 'none' }}
-        prefix={<SearchOutlined />}
-        value={search}
-        onChange={(event) => updateExplorer({ search: event.target.value })}
-        placeholder={t('搜索连接 / 库 / 表')}
-        allowClear
-        aria-label={t('搜索数据库对象')}
-      />
-      <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', marginTop: 12, userSelect: 'none' }}>
+      <div className="object-sidebar-search">
+        <Input
+          className="object-search-input"
+          variant="filled"
+          prefix={<SearchOutlined />}
+          value={search}
+          onChange={(event) => updateExplorer({ search: event.target.value })}
+          placeholder={t('搜索连接 / 库 / 表')}
+          allowClear
+          aria-label={t('搜索数据库对象')}
+        />
+      </div>
+      <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', userSelect: 'none' }}>
         <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
           <div
             style={{ height: '100%' }}

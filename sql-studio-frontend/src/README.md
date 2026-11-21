@@ -11,7 +11,7 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；其余实际模块使用独立目录和 README。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。普通标签使用中性色，信息提示跟随主题绿色，Button 保留组件默认样式；表操作位于对象树右键菜单，主区域统一按页面标签切换。
+App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器通过 EditorView.theme 继承系统字体。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域统一按页面标签切换。
 
 工作台、AI 助手、监控和同步的页面错误集中显示在共享 PageHeader 下方，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
@@ -23,9 +23,9 @@ Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗�
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型和 NULL 使用普通文字，状态/耗时不使用 Tag，不展示连接来源标签。
 
-顶栏、侧栏搜索与工作区工具栏左右统一使用 workspace-inset=12px；树使用 28px 内容行与 2px 行间距，结果和执行历史采用原生 small Table，保持原字号。
+上下文 Header、侧栏搜索与工作区工具栏左右统一使用 workspace-inset=12px；对象栏顶部为标题、连接数与新建入口，底部显示连接状态。树使用 28px 内容行与 2px 行间距；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
 
-查询结果与执行历史统一使用 tablePagination 的默认尺寸和底栏样式，页码 32px、右对齐且固定在表体滚动区外。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
+查询结果与执行历史统一使用 tablePagination 的底栏样式，页码 24px、右对齐且固定在表体滚动区外。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
 
 连接 Select 使用原生默认尺寸、220px 标准宽度；连接图标为 20px，避免撑高控件。输出区由 resultTabs 展示数据结果标签，无列执行回执归入消息/摘要，超过 8 个结果集时用下拉切换，SQL 在消息/摘要中高亮并支持复制。连接表单支持输入或选择分组，新建预选“默认分组”，留空时使用默认分组；分组随连接配置保存，左侧树以文件夹整理，组内连接可右键编辑更换分组。
 
@@ -42,26 +42,26 @@ MySQL 和 MariaDB 对象树按“数据库 → 表 → 表名 → 字段/索引�
 - [数据库Agent](agent/README.md)：Ant Design X 聊天、工具调用及逐次写入确认。
 - [公共组件](components/README.md)：工作区和Agent共用的展示能力。
 
-公共 PageHeader 统一工作区、AI 助手、监控和同步的顶栏布局。各功能页提供返回工作区的入口。
+公共 [PageHeader](components/pageHeader/README.md) 统一工作区、AI 助手、监控和同步的上下文 Header 布局；全局 [AppRail](components/appRail/README.md) 提供页面切换、主题切换与系统设置入口。监控、同步和 AI 页的会话加载/执行通过 [navigationLock](contexts/navigationLock/README.md) 暂停 Rail 页面切换。
 
 Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任一功能页回到工作区，按当前标签逐项处理。非空查询分别提示“取消 / 不保存 / 保存”，空白查询直接关闭，每次仅保存该页内容，关闭后切到下一页；未提交对象修改按页确认。准备阶段暂停自动保存并通过 inert 锁定工作区交互，标签保持可见；全部标签处理完后，App 使用统一 ContentLoading 挂起页面并释放全部连接，提交空工作区。取消或失败保留当前和未处理标签，已关闭项不恢复。默认及自定义连接分组保留原展开/收起状态，只收起连接、数据库及后代。普通 Web 不增加退出确认或清理逻辑。
 
-顶栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design 默认 colorBorderSecondary（`--border`），不单独加深布局边框；页签保留组件默认边框颜色。
+上下文 Header 下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design 默认 colorBorderSecondary（`--border`），不单独加深布局边框；页签使用中性底、细边框和绿色活动线。
 
 页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`，监控指标使用 `/monitor`，同步数据库使用 `/sync`。pushState 切换不刷新整页，popstate 同步前进、后退，工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这些页面路径，资源缺失及未知 API 仍返回各自的 404。
 
-系统设置弹框采用左侧图文导航，包含「模型配置」「外观设置」「语言设置」「关于软件」。右侧模型配置展示已添加模型列表及默认模型单选项。添加/编辑子弹框依次选择供应商、输入 Key 自动加载模型，未选择时默认选中列表第一项，用户可另选；编辑和刷新保留已有选择。同供应商可添加不同模型，相同供应商与模型不得重复。外观页在同一菜单下展示主题和字号卡片；语言页展示简体中文与 English 卡片。关于页显示当前版本，检查更新仅在 Electron 中显示。设置草稿由底部统一保存，取消或关闭放弃未提交修改。偏好保存成功后才应用全局主题、字号和语言。App 使用 LanguageContext 与 XProvider 同步业务文案、Ant Design 和 Ant Design X 控件语言，日期语言同步 dayjs；SQL、数据库内容和模型回答保留原文。英文案集中在 constant/translations，组件与 hooks 经 useTranslation 订阅已应用语言，未知错误原因保留原文。
+系统设置入口固定在全局 Rail 底部，弹框采用左侧图文导航（208px），包含「模型配置」「外观设置」「语言设置」「关于软件」，宽 920px、内容高度上限 532px。右侧模型配置展示模型卡片、默认模型单选项和整宽添加按钮。添加/编辑子弹框依次选择供应商、输入 Key 自动加载模型，未选择时默认选中列表第一项，用户可另选；编辑和刷新保留已有选择。同供应商可添加不同模型，相同供应商与模型不得重复。外观页在同一菜单下展示主题和字号卡片；语言页展示简体中文与 English 卡片。关于页显示当前版本，检查更新仅在 Electron 中显示。设置草稿由底部统一保存，取消或关闭放弃未提交修改。偏好保存成功后才应用全局主题、字号和语言。App 使用 LanguageContext 与 XProvider 同步业务文案、Ant Design 和 Ant Design X 控件语言，日期语言同步 dayjs；SQL、数据库内容和模型回答保留原文。英文案集中在 constant/translations，组件与 hooks 经 useTranslation 订阅已应用语言，未知错误原因保留原文。
 
 所有业务Modal与确认框使用Ant Design默认位置，不设置centered或自定义位置偏移。
 
-主题集中由 constant/theme 的 createThemeConfig 提供，参照 ghspace 的纯黑/纯白文案与 #ececec/#000 布局底色，保留小/标准/大字号；普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
+主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用近黑 `#161a16`、`#f4f6f2` 画布和 `#15803d` 主色；暗色使用近白 `#f2f5f1`、`#0a0c0a` 画布和 `#42d47c` 主色。字号 small/standard/large 为 12/13/15px；普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
 
 滚动条沿用 ghspace：横纵统一 6px、圆角滑块、透明轨道；亮色灰色滑块、暗色半透明白色滑块，悬停加深。原生滚动条及虚拟表格、对象树的模拟滚动条在 app.scss 统一适配。
 
 内容卡片（Agent 的代码、过程、确认、回执，以及 SQL 预览面板）和 Agent 结果表格复用 ghspace 的亮暗轻微阴影，分别通过 ContentCard.style 和 Table.styles.section 应用；不添加悬停上移，主工作区编辑器与结果面板继续保持平面布局。
 
-连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用灰色底。主页面使用 Ant Design 圆角卡片页签，选中页签使用内容区底色和主题指示线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题和字号卡片通过 Radio 表示选中。
+连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 绿色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题和字号卡片使用主题色边框、浅色底和右上角勾选标记。
 
-全局主题主色使用 Ant Design 默认 success 绿色，由 constant/theme 的 colorPrimary 统一配置，Radio、Switch 等主色元素自动跟随亮暗算法；导航选中背景使用中性灰，常规操作按钮使用原生 default 类型及默认交互。
+全局主色由 constant/theme 的 colorPrimary 统一配置（亮色 `#15803d`、暗色 `#42d47c`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
-常规操作按钮统一使用 Ant Design default，原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置；不再通过 Button token 或 primary CSS 覆盖悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。
+原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置为 default；写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。

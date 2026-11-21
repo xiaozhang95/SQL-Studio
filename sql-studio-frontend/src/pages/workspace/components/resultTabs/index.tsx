@@ -1,5 +1,6 @@
 import { LoadingOutlined } from '@ant-design/icons'
 import { Select, Tabs } from 'antd'
+import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -12,10 +13,11 @@ type Props = {
   run: RunState
   running: boolean
   activeKey: string
+  status?: ReactNode
   onChange: (key: string) => void
 }
 /** 消息、摘要与逐条结果共用一层受控导航。 */
-export default function ResultTabs({ run, running, activeKey, onChange }: Props) {
+export default function ResultTabs({ run, running, activeKey, status, onChange }: Props) {
   const { t } = useTranslation()
 
   const results = resultOutputs(run)
@@ -33,18 +35,21 @@ export default function ResultTabs({ run, running, activeKey, onChange }: Props)
       activeKey={activeKey}
       onChange={onChange}
       tabBarExtraContent={
-        compact ? (
-          <Select
-            aria-label={t('选择结果集')}
-            size={appearance.navigationSize}
-            style={{ width: appearance.selectWidth }}
-            disabled={running}
-            placeholder={t('选择结果集（共 {value1} 个）', { value1: results.length })}
-            value={results.some(({ index }) => String(index) === activeKey) ? activeKey : undefined}
-            options={indexedResults.map(({ index, resultIndex }) => ({ value: String(index), label: t('结果 {value1}（语句 {value2}）', { value1: resultIndex + 1, value2: index + 1 }) }))}
-            onChange={onChange}
-          />
-        ) : undefined
+        <div className="result-tab-extra">
+          {status}
+          {compact && (
+            <Select
+              aria-label={t('选择结果集')}
+              size={appearance.navigationSize}
+              style={{ width: appearance.selectWidth }}
+              disabled={running}
+              placeholder={t('选择结果集（共 {value1} 个）', { value1: results.length })}
+              value={results.some(({ index }) => String(index) === activeKey) ? activeKey : undefined}
+              options={indexedResults.map(({ index, resultIndex }) => ({ value: String(index), label: t('结果 {value1}（语句 {value2}）', { value1: resultIndex + 1, value2: index + 1 }) }))}
+              onChange={onChange}
+            />
+          )}
+        </div>
       }
       items={[
         { key: 'messages', label: t('消息'), icon: running ? <LoadingOutlined spin /> : undefined },

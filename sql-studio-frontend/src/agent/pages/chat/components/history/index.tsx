@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, LockOutlined, MessageOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
 import { useRef, useState } from 'react'
@@ -24,6 +24,7 @@ interface Props {
   loading: boolean
   onClose: () => void
   onSelect: (id: string) => Promise<void>
+  onNew: () => void
   onRefresh: () => Promise<void>
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
@@ -73,6 +74,11 @@ export function History(props: Props) {
       <Button type="text" size="small" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
     </Tooltip>
   )
+  const newAction = (
+    <Tooltip title={t('新建会话')}>
+      <Button type="text" size="small" aria-label={t('新建会话')} icon={<PlusOutlined />} onClick={props.onNew} disabled={props.busy || props.loading} />
+    </Tooltip>
+  )
   return (
     <>
       <aside
@@ -90,9 +96,15 @@ export function History(props: Props) {
         <HistoryContents
           {...contentsProps}
           header={
-            <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXS }}>
-              <Typography.Text type="secondary">{t('历史会话')}</Typography.Text>
-              {refreshAction}
+            <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXXS }}>
+              <Flex align="center" gap={6}>
+                <Typography.Text strong>{t('会话')}</Typography.Text>
+                <span className="object-sidebar-count">{props.items.length}</span>
+              </Flex>
+              <Flex align="center" gap={2}>
+                {newAction}
+                {refreshAction}
+              </Flex>
             </Flex>
           }
         />
@@ -193,8 +205,17 @@ function HistoryContents({
         paddingTop: token.paddingSM
       }}
     >
-      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={t('搜索会话标题')} aria-label={t('搜索会话标题')} allowClear />
       {header}
+      <Input
+        className="object-search-input"
+        variant="filled"
+        prefix={<SearchOutlined />}
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={t('搜索会话标题')}
+        aria-label={t('搜索会话标题')}
+        allowClear
+      />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
@@ -212,6 +233,7 @@ function HistoryContents({
                 disabled: busy,
                 label: (
                   <Flex className="chat-history-row" align="center" justify="space-between" gap="small">
+                    <MessageOutlined style={{ color: token.colorTextTertiary, flexShrink: 0 }} />
                     <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
                       {i.title}
                     </Typography.Text>
@@ -234,6 +256,11 @@ function HistoryContents({
             />
           )}
         </Spin>
+      </div>
+      <div className="chat-history-foot">
+        <LockOutlined />
+        {t('本地加密保存')}
+        <span>DeepSeek</span>
       </div>
     </Flex>
   )

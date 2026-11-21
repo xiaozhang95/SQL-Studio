@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
 
-const conversationMaxWidth = 960
+const conversationMaxWidth = 840
 const transcriptInset = 32
 const loadingMinDuration = 1000
 
 export const CHAT = {
-  composerResize: { minimumHeight: 160, compactMinimumHeight: 120, maximumHeight: 560, reservedHeight: 200, keyboardStep: 24, handleHeight: 8 },
+  composerResize: { minimumHeight: 108, compactMinimumHeight: 96, maximumHeight: 560, reservedHeight: 180, keyboardStep: 24, handleHeight: 8 },
   roundSwitch: { windowSize: 5, estimatedHeight: 520, loadingMinDuration, edgeTolerance: 2 },
   iconButton: { type: 'default', shape: 'circle', size: 'small' },
   resultIndexWidth: 56,
@@ -37,7 +37,7 @@ export const CHAT = {
   modelTriggerIconSize: 20,
   modeConfirmationWidth: 720,
   spacing: { block: 'middle', detail: 'small' },
-  composerRows: { minRows: 4, maxRows: 10 },
+  composerRows: { minRows: 2, maxRows: 8 },
   content: {
     width: `calc(100% - ${transcriptInset * 2}px)`,
     maxWidth: conversationMaxWidth,

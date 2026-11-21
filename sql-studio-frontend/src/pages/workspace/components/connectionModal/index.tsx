@@ -32,9 +32,9 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
       width={960}
       styles={{
         container: { padding: 0, overflow: 'hidden' },
-        header: { margin: 0, padding: '20px 24px', borderBottom: '1px solid var(--border)' },
+        header: { margin: 0, height: 52, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' },
         body: { padding: 0 },
-        footer: { margin: 0, padding: '16px 24px', borderTop: '1px solid var(--border)' }
+        footer: { margin: 0, height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
       }}
       title={connection ? t('编辑连接') : t('新建连接')}
       open={open}
@@ -56,26 +56,26 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             <Button onClick={onClose} disabled={busy}>
               {t('取消')}
             </Button>
-            <Button type="default" onClick={save} loading={saving} disabled={testing}>
+            <Button type="primary" onClick={save} loading={saving} disabled={testing}>
               {t('保存连接')}
             </Button>
           </div>
         </div>
       }
     >
-      <div className="connection-dialog-body" style={{ display: 'flex', height: 'min(600px, calc(100dvh - 180px))', minHeight: 0, overflow: 'hidden' }}>
+      <div className="connection-dialog-body" style={{ display: 'flex', height: 'min(600px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
         <aside
           className="engine-picker"
           style={{
-            width: 'clamp(160px, 30%, 280px)',
+            width: 'clamp(180px, 26%, 240px)',
             flex: 'none',
-            padding: '20px clamp(12px, 2%, 16px)',
-            background: 'var(--surface)',
+            padding: '12px 10px',
+            background: 'var(--surface-subtle)',
             borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
-            gap: 4,
+            gap: 2,
             overflowY: 'auto'
           }}
         >
@@ -92,7 +92,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               onClick={() => selectEngine(profile.value)}
               style={{
                 height: 'auto',
-                minHeight: 48,
+                minHeight: 42,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
@@ -100,7 +100,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 textAlign: 'left'
               }}
             >
-              <EngineIcon type={profile.value} variant="logo" size={32} />
+              <EngineIcon type={profile.value} variant="logo" size={24} />
               <span>{profile.label}</span>
             </Button>
           ))}

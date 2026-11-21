@@ -2,7 +2,7 @@
 
 本仓库开发先读 [.agents/skills/sql-studio/SKILL.md](.agents/skills/sql-studio/SKILL.md)，再按任务读取实际模块 README。
 
-前端任务继续读取并使用独立的 [sql-studio-frontend skill](.agents/skills/sql-studio-frontend/SKILL.md)，遵守 [前端开发规范](docs/FRONTEND_STANDARDS.md)：保留 Ant Design 默认样式，局部布局优先 style/styles，必要原生覆盖仅放 app.scss；同类组件统一尺寸、边框及弧度；组件/hooks/常量/枚举/接口/方法按功能独立入口及 README；优先共享只读定义和 TypeScript 类型约束；数据库实现按 mysql 等引擎独立封装，外层只组合与调用。
+前端任务继续读取并使用独立的 [sql-studio-frontend skill](.agents/skills/sql-studio-frontend/SKILL.md)，遵守 [前端开发规范](docs/FRONTEND_STANDARDS.md)：以 Ant Design 为底座并使用项目主题令牌，全局 Rail + PageHeader 上下文 Header，每个操作面只保留一个 primary 主操作；局部布局优先 style/styles，必要原生覆盖仅放 app.scss；同类组件统一尺寸、边框及弧度；组件/hooks/常量/枚举/接口/方法按功能独立入口及 README；优先共享只读定义和 TypeScript 类型约束；数据库实现按 mysql 等引擎独立封装，外层只组合与调用。
 
 - 前端源码入口：[sql-studio-frontend/src/README.md](sql-studio-frontend/src/README.md)。
 - 后端包入口：[sql-studio-backend/internal/README.md](sql-studio-backend/internal/README.md)。

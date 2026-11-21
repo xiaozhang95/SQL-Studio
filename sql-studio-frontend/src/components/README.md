@@ -1,11 +1,13 @@
 # 公共组件
 
 - [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景，仅 Windows 将标题左对齐至下方搜索框外边缘。
-- [pageHeader](pageHeader/README.md)：工作区及各功能页共用顶栏布局。
-- [databasePage](databasePage/README.md)：监控与同步的工作区返回入口、顶栏和正文布局。
+- [appRail](appRail/README.md)：全局左侧导航、主题切换和系统设置入口。
+- [studioIcon](studioIcon/README.md)：与应用视觉稿一致的线性 SVG 图标，供 Rail、Header 和对象树使用。
+- [pageHeader](pageHeader/README.md)：工作区及各功能页共用的上下文 Header。
+- [databasePage](databasePage/README.md)：监控与同步的上下文 Header 与画布内容布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
-- [errorNotice](errorNotice/README.md)：页面顶栏和弹框共用的错误提示。
-- [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面顶栏。
+- [errorNotice](errorNotice/README.md)：上下文 Header 和弹框共用的错误提示。
+- [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面 Header。
 - [deleteDialog](deleteDialog/README.md) 为数据行、Redis 键、执行历史及 AI 会话提供带目标范围的确认弹框。
 - [deleteConfirmation](deleteConfirmation/README.md) 为查询收藏、模型和表字段草稿提供按钮旁的确认气泡。
 
@@ -15,7 +17,7 @@
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。
 
 - [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型配置、外观设置、语言设置和关于软件，版本号共用，检查更新仅在桌面端显示。
-- [sectionNavigation](sectionNavigation/README.md)：顶栏左侧的各功能页与工作区的切换入口。
+- [sectionNavigation](sectionNavigation/README.md)：旧顶栏页面切换入口；当前已由 AppRail 取代，保留组件实现但不再挂载。
 
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
 

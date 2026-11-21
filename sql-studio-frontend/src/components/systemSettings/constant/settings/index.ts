@@ -1,4 +1,4 @@
-import { GlobalOutlined, InfoCircleOutlined, RobotOutlined, SkinOutlined } from '@ant-design/icons'
+import { GlobalOutlined, InfoCircleOutlined, RobotOutlined, SunOutlined } from '@ant-design/icons'
 
 import type { FontSizePreference, Language, ThemePreference } from '@/typings/theme'
 
@@ -7,7 +7,7 @@ export type SettingsSection = (typeof SettingsSection)[keyof typeof SettingsSect
 
 export const settingsSections = [
   { value: SettingsSection.Model, label: '模型配置', icon: RobotOutlined },
-  { value: SettingsSection.Appearance, label: '外观设置', icon: SkinOutlined },
+  { value: SettingsSection.Appearance, label: '外观设置', icon: SunOutlined },
   { value: SettingsSection.Language, label: '语言设置', icon: GlobalOutlined },
   { value: SettingsSection.About, label: '关于软件', icon: InfoCircleOutlined }
 ] as const
@@ -25,11 +25,11 @@ export const themeOptions = [
 
 export const fontSizeOptions = [
   { value: 'small', label: '较小（12px）', fontSize: 12 },
-  { value: 'standard', label: '标准（14px）', fontSize: 14 },
-  { value: 'large', label: '稍大（16px）', fontSize: 16 }
+  { value: 'standard', label: '标准（13px）', fontSize: 13 },
+  { value: 'large', label: '稍大（15px）', fontSize: 15 }
 ] as const satisfies readonly { value: FontSizePreference; label: string; fontSize: number }[]
 
-export const settingsLayout = { width: 860, height: 440, sidebarWidth: 180, previewHeight: 96, cardMinWidth: 132 } as const
+export const settingsLayout = { width: 920, height: 532, sidebarWidth: 208, previewHeight: 84, cardMinWidth: 180 } as const
 
 export const languageOptions = [
   { value: 'zh-CN', label: '简体中文', heading: '你好，世界', sample: '数据库工作区' },

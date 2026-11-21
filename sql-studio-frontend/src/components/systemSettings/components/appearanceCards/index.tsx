@@ -1,3 +1,4 @@
+import { CheckOutlined } from '@ant-design/icons'
 import { Radio, theme } from 'antd'
 import type { RadioProps } from 'antd'
 import type { ReactNode } from 'react'
@@ -27,29 +28,32 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
       style={{ width: '100%', display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${settingsLayout.cardMinWidth}px), 1fr))`, gap: token.marginSM }}
     >
       {options.map((option) => {
+        const selected = option.value === value
         const styles = {
           root: {
-            display: 'grid',
-            gridTemplateColumns: 'auto 1fr',
-            alignItems: 'center',
-            gap: token.marginXS,
+            position: 'relative',
+            display: 'block',
             margin: 0,
             padding: token.paddingSM,
             minWidth: 0,
+            border: `1px solid ${selected ? 'var(--primary)' : token.colorBorderSecondary}`,
             borderRadius: token.borderRadiusLG,
-            boxShadow: 'var(--card-shadow), var(--appearance-card-shadow, 0 0 0 0 transparent)',
+            boxShadow: selected ? '0 0 0 3px var(--primary-soft)' : undefined,
             cursor: disabled ? 'not-allowed' : 'pointer',
-            background: token.colorBgContainer
+            background: selected ? 'var(--primary-soft)' : token.colorBgContainer
           },
-          icon: { gridColumn: 1, gridRow: 2 },
-          label: { display: 'contents' }
+          icon: { position: 'absolute', top: 0, right: 0, width: 1, height: 1, opacity: 0 },
+          label: { display: 'block', marginTop: token.marginXS, textAlign: 'center' as const }
         } satisfies RadioProps['styles']
         return (
           <Radio key={option.value} value={option.value} classNames={{ root: 'appearance-option-card' }} styles={styles}>
-            <div aria-hidden="true" style={{ gridColumn: '1 / -1', gridRow: 1, minWidth: 0, marginBottom: token.marginXS }}>
+            <span className="appearance-option-check" aria-hidden="true">
+              {selected && <CheckOutlined />}
+            </span>
+            <div aria-hidden="true" style={{ minWidth: 0 }}>
               {option.preview}
             </div>
-            <span style={{ gridColumn: 2, gridRow: 2 }}>{option.label}</span>
+            <span>{option.label}</span>
           </Radio>
         )
       })}

@@ -1,15 +1,19 @@
 # PageHeader
 
-顶栏下沿与 SQL 工作区、AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design 默认 colorBorderSecondary），不单独加深边框。
+工作区、AI 助手、监控和同步共用的上下文 Header，只承载页面标题、面包屑、页面操作和错误提示。全局页面切换、主题切换和系统设置入口由 [AppRail](../appRail/README.md) 负责；Electron 最上方的标题栏由 [DesktopTitleBar](../desktopTitleBar/README.md) 在 App 层统一渲染。
 
-工作区与 AI 助手共用的顶部布局，children 包含左侧无边框文字按钮和页面入口，所有按钮垂直居中对齐；actions 包含右侧的「系统设置」图标文字按钮。顶栏不展示全局布局或后台配置保存的 loading，其他按钮的位置由调用方决定。浏览器和 Electron 的业务 header 最小高度为 token.controlHeight + token.paddingSM（默认 44px），左右边距沿用 workspace-inset；左侧按钮间距为 token.marginXXS（默认 4px），右侧与区域间距为 token.marginXS（默认 8px）。保留 surface 背景和 border 底线；窄屏控件可换行，右侧控件保持右对齐。仅负责布局，按钮类型由调用方设置为 text，保留 Ant Design 默认悬停、焦点与禁用反馈。
+## 布局
 
-Electron 中在业务 header 前组合 [DesktopTitleBar](../desktopTitleBar/README.md)，标题栏和 header 使用相同 surface 背景并随亮暗主题同步；Windows 标题左侧 Logo 与侧栏搜索框外边缘对齐，macOS/Linux 标题继续居中。普通浏览器不增加额外行。调用方容器需沿用纵向 flex 布局。
+- 高度为 `token.controlHeight + token.paddingMD`，左右使用 `token.paddingSM`，下沿 1px `--border`，背景 `--surface`。
+- 左侧 `title` 为页面标题，单行省略；`breadcrumb` 为次级面包屑，窄于 1280px 时隐藏。
+- `children` 可用于标题后的页面级补充操作；常规页面操作放在 `actions`，由调用方决定按钮类型和顺序。
+- 右侧操作区保持右对齐，窄屏允许换行；工作台、AI 助手和数据库页均在这里展示连接/模型/同步状态与当前页操作。
+- 不再提供居中标题、`titleOffset` 或 `desktopTitle` 等标题栏参数。
 
-title 和 titleOffset 为业务 header 的可选居中标题和水平偏移，默认偏移 0。标题使用 Ant Design 的强调字重，通过 ResizeObserver 限制宽度，卸载时清理。AI 助手显示会话标题，并以侧栏宽度的一半作为偏移。
+## 错误
 
-`errors` 接收页面级错误原因，子区域通过 [PageErrors](../pageErrors/README.md) 登记错误。PageHeader 在顶栏下方使用左右贴边的通栏合并并去重展示。`errorAction` 放置重试操作，`onErrorClose` 可清理调用方的操作错误，`errorScope` 用于切换工作区标签或会话时重置提示的关闭状态。提示区最多占视口高度的四分之一，长错误可滚动阅读。
+`errors` 接收页面级错误原因，子区域通过 [PageErrors](../pageErrors/README.md) 登记错误。PageHeader 在 Header 下方使用左右贴边的通栏合并并去重展示。`errorAction` 放置重试操作，`onErrorClose` 清理调用方的操作错误，`errorScope` 用于切换工作区标签或会话时重置提示关闭状态。提示区最多占视口高度的四分之一，长错误可滚动阅读。
 
-showDesktopTitle?: boolean 默认 true，只控制 Electron 最上方的应用标题。AI 助手沿用默认值，应用标题与业务 header 的会话标题是两个独立区域。
+## 边界
 
-desktopTitle?: string 为 Electron 最上方的标题，缺省 SQL Studio；desktopActive?: boolean 默认 true，控制是否由当前页面同步系统窗口标题。工作台传活动页派生标题及自身 active 状态；AI 助手、监控和同步页传入当前语言的功能页名称，AI 页业务 header 的会话标题独立显示。
+仅负责布局和错误展示，不读取业务状态，不负责全局导航、桌面标题或页面切换锁。调用方容器应使用纵向 flex 布局，Header 固定在内容区顶部。

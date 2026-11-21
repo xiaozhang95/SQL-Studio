@@ -6,7 +6,7 @@
 
 相邻的思考与执行步骤合并为一个折叠区，展开后按原顺序显示，未完成片段明确标识。展开键 `process-ID` 保存在 Go 布局的 expanded 中，旧的 `thinking-ID` 和 `tools-ID` 展开记录也可恢复。实时生成与历史恢复使用相同的展示分组。
 
-思考正文、执行步骤、参数及结果统一恢复Ant Design默认字号（默认14px），不单独缩小；过程标题图标也使用fontSize token对应尺寸。消息块统一使用CHAT.spacing.block（16px），同组详情使用detail（8px）。
+思考正文、执行步骤、参数及结果统一使用 Ant Design 基础字号（standard 13px，随界面字号偏好变化），不单独缩小；过程标题图标也使用 fontSize token 对应尺寸。消息块统一使用CHAT.spacing.block（16px），同组详情使用detail（8px）。
 
 每条用户提问气泡之后使用 Ant Design Divider 分隔问答。横线铺满消息区域，与顶栏下沿和侧栏右沿共用 `1px solid var(--border)`。分隔线自身 margin 为 0，与问题操作使用统一的 8px 组内间距。
 

@@ -14,11 +14,11 @@ model 提供 tabs/activeTab、runs、运行状态和切换/关闭回调，childr
 
 主页面的导航和内容高度覆盖仅作用于直属导航栏及内容容器，不影响结果区的嵌套 Tabs。
 
-主页面使用 Ant Design 卡片页签，常态、悬停和选中态均沿用左右对称的上圆角和卡片间距。导航栏顶部和两侧留出主题内边距，页签边框颜色沿用 Ant Design 默认值。当前页使用内容区底色和主题指示线。原生样式覆盖限定在 app.scss 的直属导航范围。
+主页面使用 28px 页签芯片：常态透明，悬停中性底，选中项使用内容区底色、1px 边框和轻微阴影，并在页签栏底部显示 2px 绿色活动线。导航栏高 38px，顶部和两侧留出 6 × 8px 内边距；末尾保留 26px 新建查询按钮。原生样式覆盖限定在 app.scss 的直属导航范围。
 
 Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度，content 层的 100% 仅作用于直属主页面容器，避免编辑器和结果区塌缩。
 
-model 额外提供 connections/designerDirty，renderDesigner(page) 注入表设计页面。table-create/table-design 使用设计图标，Tab 星号标记未保存；隐藏时保留已访问的组件实例，不提前加载未访问页。其他页面继续切换销毁展示组件。主页面标签的关闭和右键批量关闭复用工作区回调并检查草稿。
+model 额外提供 connections/designerDirty、newQuery 和 closeTabs，renderDesigner(page) 注入表设计页面。table-create/table-design 使用设计图标，未保存修改显示 6px 琥珀色圆点；页签栏的新建按钮调用 newQuery。隐藏时保留已访问的组件实例，不提前加载未访问页。其他页面继续切换销毁展示组件。主页面标签的关闭和右键批量关闭复用工作区回调并检查草稿。
 
 全局不启用 destroyOnHidden，仅逐项设置；否则全局销毁会覆盖设计页的 false，导致切页丢失草稿。查询等普通页仍按项销毁，设计页保持挂载。
 

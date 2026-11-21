@@ -11,8 +11,8 @@ README 和规范按 [项目通用文档维护规则](../sql-studio/SKILL.md#文�
 
 ## 五项约定
 
-1. **保留 Ant Design 默认样式。** 局部布局先用组件参数、`style` 或语义化 `styles`，用公开类型约束样式对象。确实需要原生选择器覆盖时，仅放 [app.scss](../../../sql-studio-frontend/src/app.scss)，限定业务作用域并说明原因；不在组件或其他样式文件散落 `.ant-*` 覆盖。
-2. **统一外观。** 同类控件的尺寸、边框和弧度使用 [appearance](../../../sql-studio-frontend/src/constant/appearance/README.md) 与 Ant Design token，页面尺寸进入页面 constant。圆角沿用 Ant Design 默认 token，不设置全局 borderRadius 覆盖；紧凑表格和成功/失败语义色集中复用，不随意新增局部外观。
+1. **以 Ant Design 为底座。** 使用项目 [主题 token](../../../sql-studio-frontend/src/constant/theme/index.ts) 和设计令牌统一颜色、字号、间距与状态；全局页面切换、主题切换和系统设置由 AppRail 承载，业务页面使用 PageHeader 上下文 Header，每个操作面只保留一个 primary 主操作。局部布局先用组件参数、`style` 或语义化 `styles`，用公开类型约束样式对象。确实需要原生选择器覆盖时，仅放 [app.scss](../../../sql-studio-frontend/src/app.scss)，限定业务作用域并说明原因；不在组件或其他样式文件散落 `.ant-*` 覆盖。
+2. **统一外观。** 同类控件的尺寸、边框和弧度使用 [appearance](../../../sql-studio-frontend/src/constant/appearance/README.md) 与 Ant Design token，页面尺寸进入页面 constant。圆角沿用 Ant Design 默认 token，不设置全局 borderRadius 覆盖；亮暗主题使用近黑/近白与 `#f4f6f2`/`#0a0c0a` 画布，紧凑表格和成功/失败语义色集中复用，不随意新增局部外观。
 3. **按功能独立模块。** 组件、hooks、常量/枚举、类型/接口、服务方法和工具各按功能建立目录，以 `index.ts(x)` 和同级 `README.md` 为入口；App/main 为框架例外。README 说明职责、导出、参数与默认值、返回值、调用方式及边界；异步模块补充错误、取消、缓存和状态归属，UI 补充受控值与回调。相关私有 helper 可留在同一功能，不为每个局部变量拆文件。迁移同步调用方、父级索引和文档，不保留旧路径转发壳。
 4. **共享只读定义与类型契约。** 复用状态、枚举值及配置集中定义，避免可变全局状态。项目启用 `erasableSyntaxOnly`，枚举优先使用 `as const` 对象和推导联合类型；使用接口、判别联合、泛型及 `satisfies` 约束契约，不用 `any` 或双重断言掩盖错误。网络及存储输入仍需运行时校验。
 5. **数据库按引擎封装。** MySQL 专属配置、SQL、补全、类型以及实际需要的组件/hooks/样式放 [databases/mysql](../../../sql-studio-frontend/src/databases/mysql/README.md) 的对应功能目录。外部通过 [DatabaseAdapter](../../../sql-studio-frontend/src/databases/typings/README.md) 和 [getDatabaseAdapter](../../../sql-studio-frontend/src/databases/README.md) 组合调用，不在通用 UI 硬编码方言、端口和图标；HTTP、分组、通用结果 UI 等保留共享层，不建立未支持引擎的空实现。

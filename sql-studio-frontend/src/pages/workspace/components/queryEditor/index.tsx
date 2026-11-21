@@ -1,10 +1,11 @@
-import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Dropdown, Switch, Tooltip, Upload } from 'antd'
+import { Button, Dropdown, Switch, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import StudioIcon from '@/components/studioIcon'
 import { usePageError } from '@/contexts/pageErrors'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -108,8 +109,14 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
         disabled={running}
         runActions={
           <>
-            <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={runSQL} disabled={!objects.connected || running} />
-            {activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
+            <Button type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
+              {t('运行')}
+            </Button>
+            {activeRunning && (
+              <Button type="text" danger icon={<StopOutlined />} onClick={cancelQuery}>
+                {t('取消执行')}
+              </Button>
+            )}
             {objects.error && (
               <ToolbarButton label={t('重试连接')} hint={objects.error} icon={<ReloadOutlined />} disabled={running} onClick={() => model.connectionAction('open', tab.connectionId)} />
             )}
@@ -124,7 +131,7 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
           >
             <Tooltip title={aiModelHint ?? t('AI 代码补全')}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CodeOutlined aria-hidden="true" />
+                <StudioIcon name="sparkle" size={14} />
                 <span>{t('代码补全')}</span>
                 <Switch
                   size="small"
@@ -136,7 +143,7 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
                 />
               </div>
             </Tooltip>
-            <ToolbarButton label={t('优化')} hint={aiModelHint} icon={<BulbOutlined />} disabled={!ai.configured || !hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+            <ToolbarButton label={t('优化')} hint={aiModelHint} icon={<StudioIcon name="zap" size={14} />} disabled={!ai.configured || !hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
           </div>
         )}
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>

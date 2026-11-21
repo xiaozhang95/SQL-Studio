@@ -1,8 +1,9 @@
-import { ApiOutlined, DatabaseOutlined, SettingOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Checkbox, Flex, Form, Input, Select, Steps, theme } from 'antd'
+import { InfoCircleOutlined, SettingOutlined } from '@ant-design/icons'
+import { Button, Card, Checkbox, Flex, Form, Input, Select, Steps, Tag, theme } from 'antd'
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
+import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import EngineIcon from '@/components/engineIcon'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -26,6 +27,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   const checking = status === 'checking'
   const running = status === 'running'
   const busy = checking || running
+  useNavigationLockEffect(running)
   const options = model.eligibleConnections.map(({ id, name, host, port }) => ({ value: id, label: `${name} · ${host}:${port}` }))
   const externalSource = model.choices.source === model.externalID
   const connectionLabel = (side: 'source' | 'target') =>
@@ -38,46 +40,74 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
     (plan.skippedViews
       ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
       : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
+  const statusLabel =
+    status === 'checking'
+      ? t('正在检查')
+      : status === 'running'
+        ? t('正在同步')
+        : status === 'completed'
+          ? t('同步完成')
+          : status === 'error'
+            ? t('同步已停止')
+            : status === 'cancelled'
+              ? t('同步已取消')
+              : t('未开始')
+  const statusClass = status === 'completed' ? ' is-connected' : status === 'error' || status === 'cancelled' ? ' is-warning' : ''
+  const breadcrumb = [connectionLabel('source'), connectionLabel('target')].filter(Boolean).join(' → ') || undefined
 
   return (
-    <DatabasePage title={t('同步数据库')} backDisabled={running} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
+    <DatabasePage
+      title={t('同步数据库')}
+      breadcrumb={breadcrumb}
+      contentWidth={1120}
+      errors={[model.databaseError, model.error, result?.error]}
+      headerActions={
+        <span className={`connection-status-pill${statusClass}`}>
+          <span className="connection-status-dot" />
+          <span>{statusLabel}</span>
+        </span>
+      }
+      {...pageProps}
+    >
       <Card size="small">
-        <Steps
-          size="small"
-          current={result ? 2 : plan || checking ? 1 : 0}
-          status={status === 'error' ? 'error' : done ? 'finish' : 'process'}
-          items={[{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]}
-        />
+        <Flex align="center" gap="middle" wrap>
+          <Steps
+            size="small"
+            current={result ? 2 : plan || checking ? 1 : 0}
+            status={status === 'error' ? 'error' : done ? 'finish' : 'process'}
+            items={[{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]}
+            style={{ flex: '1 1 480px', minWidth: 0, maxWidth: 470 }}
+          />
+          <Select
+            aria-label={t('数据库类型')}
+            value={model.profile.value}
+            style={{ width: 240, flex: '0 0 240px', marginInlineStart: 'auto' }}
+            disabled={busy}
+            options={sqlDatabaseProfiles.map(({ value, label }) => ({
+              value,
+              label: (
+                <Flex align="center" gap="small">
+                  <EngineIcon type={value} variant="logo" size={20} />
+                  <span>{label}</span>
+                </Flex>
+              )
+            }))}
+            onChange={model.changeEngine}
+          />
+        </Flex>
       </Card>
       {!result ? (
         <>
-          <Form layout="horizontal" labelCol={{ flex: '116px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
+          <Form layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
             <Flex vertical gap="middle">
-              <Card size="small">
-                <Form.Item label={t('数据库类型')} htmlFor="sync-engine" style={{ marginBottom: 0, maxWidth: 480 }}>
-                  <Select
-                    id="sync-engine"
-                    value={model.profile.value}
-                    options={sqlDatabaseProfiles.map(({ value, label }) => ({
-                      value,
-                      label: (
-                        <Flex align="center" gap="small">
-                          <EngineIcon type={value} variant="logo" size={20} />
-                          <span>{label}</span>
-                        </Flex>
-                      )
-                    }))}
-                    onChange={model.changeEngine}
-                  />
-                </Form.Item>
-              </Card>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 385px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
                 <Card
                   size="small"
                   title={
                     <Flex gap="small" align="center">
-                      <DatabaseOutlined />
+                      <EngineIcon type={model.profile.value} variant="logo" size={18} />
                       {t('源端')}
+                      {model.choices.source && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
                 >
@@ -135,8 +165,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   size="small"
                   title={
                     <Flex gap="small" align="center">
-                      <ApiOutlined />
+                      <EngineIcon type={model.profile.value} variant="logo" size={18} />
                       {t('目标端')}
+                      {model.choices.target && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
                 >
@@ -188,7 +219,21 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
               </Card>
             </Flex>
           </Form>
-          <Alert type={plan ? 'success' : 'info'} showIcon title={checkText || t('目标库已存在时立即停止。同步新库需要勾选表结构。')} />
+          <Flex
+            align="flex-start"
+            gap="small"
+            style={{
+              padding: '10px 12px',
+              border: `1px solid ${plan ? token.colorSuccessBorder : token.colorBorderSecondary}`,
+              borderRadius: token.borderRadiusLG,
+              background: plan ? token.colorSuccessBg : token.colorFillAlter,
+              color: token.colorTextSecondary,
+              fontSize: token.fontSizeSM
+            }}
+          >
+            <InfoCircleOutlined style={{ color: plan ? token.colorSuccess : token.colorInfo, marginTop: 2 }} />
+            <span style={{ overflowWrap: 'anywhere' }}>{checkText || t('目标库已存在时立即停止。同步新库需要勾选表结构。')}</span>
+          </Flex>
         </>
       ) : (
         <SyncResult
@@ -209,15 +254,19 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
           <Button onClick={pageProps.onBack}>{t('完成')}</Button>
         ) : result ? (
           <Button onClick={model.back}>{t('修改配置')}</Button>
-        ) : (
+        ) : plan ? (
           <>
-            <Button loading={checking} disabled={!model.valid || busy} onClick={() => void model.check()}>
+            <Button disabled={busy} onClick={() => void model.check()}>
               {t('同步检查')}
             </Button>
-            <Button disabled={!plan || !model.valid || busy} onClick={() => void model.run()}>
+            <Button type="primary" disabled={!model.valid || busy} onClick={() => void model.run()}>
               {t('开始同步')}
             </Button>
           </>
+        ) : (
+          <Button type="primary" loading={checking} disabled={!model.valid || busy} onClick={() => void model.check()}>
+            {t('同步检查')}
+          </Button>
         )}
       </Flex>
     </DatabasePage>

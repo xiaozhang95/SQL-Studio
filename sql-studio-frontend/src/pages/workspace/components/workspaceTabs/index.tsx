@@ -13,7 +13,7 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
+  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs' | 'newQuery'>
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
   renderRedis: (page: WorkspaceTab, connection: Connection) => ReactNode
@@ -26,14 +26,15 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
   return (
     <Tabs
       className="workspace-tabs"
-      styles={{ item: { width: workspaceTabLayout.width, flex: 'none', paddingInline: 'var(--workspace-inset)' } }}
-      tabBarStyle={{ margin: 0, paddingInline: 'var(--ant-padding-xxs)', paddingBlockStart: 'var(--ant-padding-xxs)', background: 'var(--tab-bar-background)' }}
+      styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
+      tabBarStyle={{ margin: 0 }}
       type="editable-card"
       size={appearance.navigationSize}
-      hideAdd
+      tabBarGutter={4}
       activeKey={activeTab}
       onChange={selectTab}
       onEdit={(key, action) => {
+        if (action === 'add') model.newQuery()
         if (action === 'remove') closeTab(String(key))
       }}
       renderTabBar={(props, DefaultTabBar) => (
@@ -103,7 +104,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
               ) : (
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
               )}
-              {designerDirty[item.id] && <span style={{ flex: 'none' }}> *</span>}
+              {designerDirty[item.id] && <span className="workspace-tab-dirty" role="img" aria-label={t('未保存')} title={t('未保存')} />}
             </span>
           ),
           closable: true,

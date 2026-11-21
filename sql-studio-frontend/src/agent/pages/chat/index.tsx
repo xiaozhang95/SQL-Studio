@@ -4,10 +4,8 @@ import { useEffect, useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
-import SectionNavigation from '@/components/sectionNavigation'
-import SystemSettings from '@/components/systemSettings'
+import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { AppearancePreferences } from '@/typings/theme'
 
 import type { WorkspaceController } from '../../hooks/workspace'
 import { Composer } from './components/composer'
@@ -23,20 +21,12 @@ import { useAgentSidebar } from './hooks/sidebar'
 
 const defaultConversationTitle = '新建会话'
 
-export function ChatPage({
-  dark,
-  workspace,
-  onBack,
-  ...appearancePreferences
-}: AppearancePreferences & {
-  dark: boolean
-  workspace: WorkspaceController
-  onBack: () => void
-}) {
+export function ChatPage({ dark, workspace }: { dark: boolean; workspace: WorkspaceController }) {
   const { t } = useTranslation()
 
   const operation = useOperationMode(workspace)
   const chat = useChat(workspace, operation.mode)
+  useNavigationLockEffect(chat.historyBusy)
   const { applyLatest } = workspace
   useEffect(() => {
     if (!chat.inFlight) applyLatest()
@@ -52,10 +42,11 @@ export function ChatPage({
     [chat.history, localizedDefaultTitle]
   )
   const activeTitle = history.find((i) => i.id === workspace.state.activeId)?.title ?? localizedDefaultTitle
+  const selectedModel = ai.status?.configured ? ai.status.models.find((model) => model.id === ai.status?.configId) : undefined
   return (
     <Flex
       style={{
-        height: '100dvh',
+        height: '100%',
         flexDirection: 'column',
         background: token.colorBgContainer,
         color: token.colorText,
@@ -63,21 +54,25 @@ export function ChatPage({
       }}
     >
       <PageHeader
-        desktopTitle={t('AI 助手')}
-        title={activeTitle}
-        titleOffset={mobile ? 0 : sidebar.visibleWidth / 2}
+        title={t('AI 助手')}
+        breadcrumb={activeTitle}
         errors={[chat.error, chat.loadError, chat.confirmWrite.error, ai.readError, ai.choiceError]}
         errorScope={workspace.state.activeId}
         errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : ai.readError ? <Button onClick={ai.retry}>{t('重试')}</Button> : undefined}
-        actions={<SystemSettings {...appearancePreferences} />}
-      >
-        {' '}
-        <Button type="text" icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
-          {localizedDefaultTitle}
-        </Button>
-        {mobile && <Button type="text" aria-label={t('历史会话')} icon={<MenuOutlined />} onClick={chat.showHistory} />}
-        <SectionNavigation destination="workspace" onSwitch={onBack} switchDisabled={chat.historyBusy} />
-      </PageHeader>
+        actions={
+          <>
+            <span className={`connection-status-pill${operation.mode === 'write' ? ' is-warning' : selectedModel ? ' is-connected' : ''}`}>
+              <span className="connection-status-dot" />
+              <span>{selectedModel?.name ?? t('请选择模型')}</span>
+              <span className="connection-status-engine">{operation.mode === 'write' ? t('完全访问模式') : t('只读模式')}</span>
+            </span>
+            <Button icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
+              {localizedDefaultTitle}
+            </Button>
+            {mobile && <Button type="text" aria-label={t('历史会话')} icon={<MenuOutlined />} onClick={chat.showHistory} />}
+          </>
+        }
+      />
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <History
           mobile={mobile}
@@ -90,6 +85,7 @@ export function ChatPage({
           loading={chat.historyLoading}
           onClose={chat.closeHistory}
           onSelect={chat.selectHistory}
+          onNew={() => void chat.createNew()}
           onRefresh={chat.refreshHistory}
           onDelete={chat.deleteHistory}
           onRename={chat.renameHistory}

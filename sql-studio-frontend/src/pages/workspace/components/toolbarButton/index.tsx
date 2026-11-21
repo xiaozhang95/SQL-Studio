@@ -11,12 +11,12 @@ interface Props extends Omit<ButtonProps, 'children' | 'type' | 'title' | 'aria-
 }
 
 /** 工作区操作共用图标按钮，禁用时仍可查看说明。 */
-const ToolbarButton = forwardRef<GetRef<typeof Button>, Props>(function ToolbarButton({ label, hint, ...props }, ref) {
+const ToolbarButton = forwardRef<GetRef<typeof Button>, Props>(function ToolbarButton({ label, hint, className, ...props }, ref) {
   const { t } = useTranslation()
   return (
     <Tooltip title={t(hint ?? label)}>
       <span style={{ display: 'inline-flex' }}>
-        <Button {...props} ref={ref} type="text" aria-label={t(label)} />
+        <Button {...props} ref={ref} type="text" className={className ? `toolbar-icon-button ${className}` : 'toolbar-icon-button'} aria-label={t(label)} />
       </span>
     </Tooltip>
   )

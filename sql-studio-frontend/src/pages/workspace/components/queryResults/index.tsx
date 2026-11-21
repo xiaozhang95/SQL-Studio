@@ -1,4 +1,18 @@
-import { CloseOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, StopOutlined, TableOutlined, UndoOutlined } from '@ant-design/icons'
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  LoadingOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  SearchOutlined,
+  StopOutlined,
+  TableOutlined,
+  UndoOutlined
+} from '@ant-design/icons'
 import { Alert, Empty, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
@@ -210,6 +224,22 @@ export default function QueryResults({ model, themeMode }: Props) {
     }))
   ]
   const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? 0), resultTableLayout.selectionWidth)
+  const failed = Boolean(!result && (run?.error || batch?.error))
+  const durationMs = result?.durationMs ?? batch?.statements?.[resultIndex]?.durationMs
+  const resultStatus = activeRunning ? (
+    <span className="result-run-status is-running">
+      <LoadingOutlined spin />
+      <span>{t('执行中')}</span>
+    </span>
+  ) : failed || result ? (
+    <span className={`result-run-status${failed ? ' is-error' : ''}`}>
+      {failed ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
+      <span>{t(failed ? '失败' : '成功')}</span>
+      {!failed && durationMs !== undefined && <span className="result-run-metric">{durationMs} ms</span>}
+      {!failed && result?.isQuery && <span className="result-run-metric">{t('{value1} 行', { value1: result.rows.length })}</span>}
+      {!failed && Boolean(result?.columns.length) && <span className="result-run-metric">{t('{value1} 列', { value1: result?.columns.length ?? 0 })}</span>}
+    </span>
+  ) : undefined
   if (!run) return null
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
@@ -218,6 +248,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         run={run}
         running={activeRunning}
         activeKey={activeKey}
+        status={resultStatus}
         onChange={(key) => {
           if (key === 'messages' || key === 'summary') setSelectedView({ pageId: tab.id, runId: run.id, view: key })
           else {
@@ -235,7 +266,8 @@ export default function QueryResults({ model, themeMode }: Props) {
             gap: 8,
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            padding: '8px var(--workspace-inset)',
+            minHeight: 38,
+            padding: '0 var(--workspace-inset)',
             borderBottom: '1px solid var(--border)',
             flex: 'none'
           }}

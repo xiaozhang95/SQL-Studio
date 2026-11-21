@@ -26,11 +26,6 @@ export default function AISettings({ model, disabled }: Props) {
   const locked = disabled || !model.ready || model.loading || model.busy
   return (
     <Flex vertical gap="middle">
-      <Flex justify="flex-end">
-        <Button icon={<PlusOutlined />} disabled={locked || model.entries.length >= maxAIConfigurations} onClick={() => editor.show()}>
-          {t('添加模型')}
-        </Button>
-      </Flex>
       <Spin spinning={model.loading}>
         <Flex vertical gap="small" role="list" aria-label={t('已添加模型')}>
           {model.entries.map((entry) => (
@@ -39,14 +34,22 @@ export default function AISettings({ model, disabled }: Props) {
               role="listitem"
               align="center"
               gap="small"
-              style={{ minWidth: 0, padding: token.paddingSM, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: token.borderRadiusLG, background: token.colorFillAlter }}
+              style={{
+                minWidth: 0,
+                padding: token.paddingSM,
+                border: `1px solid ${model.activeId === entry.id ? token.colorPrimaryBorder : token.colorBorderSecondary}`,
+                borderRadius: token.borderRadiusLG,
+                background: model.activeId === entry.id ? token.colorPrimaryBg : token.colorBgContainer
+              }}
             >
-              <AIProviderIcon provider={entry.provider} size={token.controlHeight} />
+              <AIProviderIcon provider={entry.provider} size={30} />
               <Flex vertical gap={token.marginXXS} style={{ flex: 1, minWidth: 0 }}>
                 <Typography.Text strong ellipsis={{ tooltip: entry.modelName }}>
                   {entry.modelName}
                 </Typography.Text>
-                <Typography.Text type="secondary">{getAIAdapter(entry.provider).profile.label}</Typography.Text>
+                <Typography.Text type="secondary" style={{ fontFamily: 'var(--mono)', fontSize: token.fontSizeSM }}>
+                  {getAIAdapter(entry.provider).profile.label} · {entry.model}
+                </Typography.Text>
               </Flex>
               <Radio
                 name={defaultModelGroup}
@@ -84,6 +87,9 @@ export default function AISettings({ model, disabled }: Props) {
           {!model.entries.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('还未添加模型')} />}
         </Flex>
       </Spin>
+      <Button type="dashed" block icon={<PlusOutlined />} disabled={locked || model.entries.length >= maxAIConfigurations} onClick={() => editor.show()}>
+        {t('添加模型')}
+      </Button>
       <ModelEditor editor={editor} />
     </Flex>
   )

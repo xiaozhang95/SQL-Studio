@@ -6,30 +6,28 @@ import { ChatPage } from '@/agent/pages/chat'
 import ContentLoading from '@/components/contentLoading'
 import { PageErrorsProvider } from '@/components/pageErrors'
 import PageHeader from '@/components/pageHeader'
-import SectionNavigation from '@/components/sectionNavigation'
-import SystemSettings from '@/components/systemSettings'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
+import type { ThemeMode } from '@/typings/theme'
 
-interface Props extends AppearancePreferences {
+interface Props {
   themeMode: ThemeMode
-  onBack: () => void
 }
-export default function AgentPage(props: Props) {
+export default function AgentPage({ themeMode }: Props) {
   const { t } = useTranslation()
 
   const workspace = useWorkspace()
   const { token } = theme.useToken()
-  const { themeMode, ...chatProps } = props
   if (!workspace.ready)
     return (
-      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: token.colorBgContainer }}>
-        <PageHeader desktopTitle={t('AI 助手')} actions={<SystemSettings {...props} />}>
-          <Button type="text" icon={<PlusOutlined />} disabled>
-            {t('新建会话')}
-          </Button>
-          <SectionNavigation destination="workspace" onSwitch={props.onBack} />
-        </PageHeader>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: token.colorBgContainer }}>
+        <PageHeader
+          title={t('AI 助手')}
+          actions={
+            <Button icon={<PlusOutlined />} disabled>
+              {t('新建会话')}
+            </Button>
+          }
+        />
         <div style={{ flex: 1, minHeight: 0 }}>
           <ContentLoading label={t('正在恢复Agent记录…')} />
         </div>
@@ -37,7 +35,7 @@ export default function AgentPage(props: Props) {
     )
   return (
     <PageErrorsProvider>
-      <ChatPage key={workspace.epoch} workspace={workspace} dark={themeMode === 'dark'} {...chatProps} />
+      <ChatPage key={workspace.epoch} workspace={workspace} dark={themeMode === 'dark'} />
     </PageErrorsProvider>
   )
 }

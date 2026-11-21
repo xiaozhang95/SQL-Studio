@@ -1,78 +1,36 @@
 import { theme } from 'antd'
-import { useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
-import DesktopTitleBar from '@/components/desktopTitleBar'
 import ErrorNotice from '@/components/errorNotice'
 import { usePageErrors } from '@/contexts/pageErrors'
 
-export default function PageHeader({
-  children,
-  actions,
-  title,
-  titleOffset = 0,
-  showDesktopTitle = true,
-  desktopTitle,
-  desktopActive = true,
-  errors = [],
-  errorAction,
-  onErrorClose,
-  errorScope
-}: {
-  children: ReactNode
+interface Props {
+  children?: ReactNode
   actions: ReactNode
   title?: ReactNode
-  titleOffset?: number
-  showDesktopTitle?: boolean
-  desktopTitle?: string
-  desktopActive?: boolean
+  breadcrumb?: ReactNode
   errors?: readonly (string | undefined)[]
   errorAction?: ReactNode
   onErrorClose?: () => void
   errorScope?: string
-}) {
+}
+
+/** 页面上下文 Header：标题、面包屑和当前页面操作，全局导航由 AppRail 承载。 */
+export default function PageHeader({ children, actions, title, breadcrumb, errors = [], errorAction, onErrorClose, errorScope }: Props) {
   const { token } = theme.useToken()
   const pageErrors = usePageErrors()
-  const titleElement = useRef<HTMLDivElement>(null)
-  const leftActions = useRef<HTMLDivElement>(null)
-  const rightActions = useRef<HTMLDivElement>(null)
-  const hasTitle = Boolean(title)
-  useLayoutEffect(() => {
-    const label = titleElement.current
-    const header = label?.parentElement
-    const left = leftActions.current
-    const right = rightActions.current
-    if (!label || !header || !left || !right) return
-    const measure = () => {
-      const center = header.getBoundingClientRect().left + header.clientWidth / 2 + titleOffset
-      const gap = parseFloat(getComputedStyle(header).columnGap) || 0
-      const leftBounds = left.getBoundingClientRect()
-      const rightBounds = right.getBoundingClientRect()
-      const sameRow = leftBounds.top < rightBounds.bottom && rightBounds.top < leftBounds.bottom
-      const available = sameRow ? Math.min(center - leftBounds.right, rightBounds.left - center) - gap : 0
-      label.style.setProperty('--header-title-available-width', `${Math.max(0, available * 2)}px`)
-    }
-    const observer = new ResizeObserver(measure)
-    observer.observe(header)
-    observer.observe(left)
-    observer.observe(right)
-    measure()
-    return () => observer.disconnect()
-  }, [hasTitle, titleOffset])
   return (
     <>
-      <DesktopTitleBar showTitle={showDesktopTitle} title={desktopTitle} active={desktopActive} />
       <header
-        className="topbar"
+        className="context-header"
         style={{
-          minHeight: token.controlHeight + token.paddingSM,
+          minHeight: token.controlHeight + token.paddingMD,
           flex: 'none',
-          paddingInline: 'var(--workspace-inset)',
+          paddingInline: token.paddingSM,
           paddingBlock: token.paddingXXS,
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
-          justifyContent: 'space-between',
           gap: token.marginXS,
           background: 'var(--surface)',
           borderBottom: '1px solid var(--border)',
@@ -80,29 +38,16 @@ export default function PageHeader({
           position: 'relative'
         }}
       >
-        <div ref={leftActions} className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXXS, minWidth: 0, flexWrap: 'wrap' }}>
+        <div className="context-header-id" style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, minWidth: 0, flex: '0 1 auto' }}>
+          {title && (
+            <div className="context-header-title" title={typeof title === 'string' ? title : undefined}>
+              {title}
+            </div>
+          )}
+          {breadcrumb && <div className="context-header-breadcrumb">{breadcrumb}</div>}
           {children}
         </div>
-        {title && (
-          <div
-            ref={titleElement}
-            style={{
-              position: 'absolute',
-              left: `calc(50% + ${titleOffset}px)`,
-              transform: 'translateX(-50%)',
-              maxWidth: 'var(--header-title-available-width, 0px)',
-              fontSize: token.fontSizeLG,
-              fontWeight: token.fontWeightStrong,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none'
-            }}
-          >
-            {title}
-          </div>
-        )}
-        <div ref={rightActions} style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
+        <div className="context-header-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
           {actions}
         </div>
       </header>
