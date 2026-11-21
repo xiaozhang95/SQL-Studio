@@ -14,3 +14,4 @@
 | [后端架构](BACKEND_ARCHITECTURE.md) | Go 包依赖、装配和生命周期 |
 | [数据库](DATABASES.md) | 引擎差异、SQL 边界、结构管理与转储 |
 | [用户状态](USER_STATE.md) | 配置文件、版本、修订和恢复 |
+| [UI 设计稿](../design/README.md) | 全应用“精致进化”设计规范、可交互原型与高保真截图 |
