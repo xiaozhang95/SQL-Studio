@@ -77,11 +77,17 @@ const baseFontSize = { small: 12, standard: 14, large: 16 } as const satisfies R
 
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
   const palette = palettes[themeMode]
+  const tint = (color: string, weight: number, background = palette.surface) => `color-mix(in srgb, ${color} ${weight}%, ${background})`
   return {
     algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       fontSize: baseFontSize[fontSizeMode],
       controlHeight: 30,
+      // 保留原生焦点边框和键盘轮廓，统一减弱控件边框外的焦点阴影。
+      controlOutlineWidth: 1,
+      controlOutline: tint(palette.primary, 20, 'transparent'),
+      colorWarningOutline: tint(palette.warning, 20, 'transparent'),
+      colorErrorOutline: tint(palette.error, 20, 'transparent'),
       // 主色与信息色共用绿色，亮暗及交互色由算法派生。
       colorPrimary: palette.primary,
       colorInfo: palette.primary,
@@ -113,6 +119,17 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgHover: palette.hover
     },
     components: {
+      Alert: {
+        colorInfoBg: tint(palette.primary, 12),
+        colorInfoBorder: tint(palette.primary, 24),
+        colorSuccessBg: tint(palette.success, 12),
+        colorSuccessBorder: tint(palette.success, 24),
+        colorWarningBg: tint(palette.warning, 12),
+        colorWarningBorder: tint(palette.warning, 24),
+        colorErrorBg: tint(palette.error, 12),
+        colorErrorBorder: tint(palette.error, 24)
+      },
+      Steps: { colorPrimaryBg: tint(palette.primary, 12) },
       Modal: { contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
       // 文本按钮与默认按钮的悬停/按下背景与树、下拉、表格共用同一档。
       Button: {

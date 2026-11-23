@@ -1,5 +1,5 @@
 import { SettingOutlined } from '@ant-design/icons'
-import { Button, Modal, theme, Tooltip, Typography } from 'antd'
+import { Button, Grid, Modal, theme, Tooltip, Typography } from 'antd'
 
 import { railButtonStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -17,6 +17,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
 
   const settings = useSystemSettings(preferences)
   const { token } = theme.useToken()
+  const compact = Grid.useBreakpoint().xs
   const sectionTitle = t(settingsSections.find((section) => section.value === settings.section)?.label ?? '')
   return (
     <>
@@ -92,53 +93,59 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
           <nav
             aria-label={t('设置分类')}
             style={{
-              width: settingsLayout.sidebarWidth,
+              width: compact ? settingsLayout.compactSidebarWidth : settingsLayout.sidebarWidth,
               flex: 'none',
               display: 'flex',
               flexDirection: 'column',
-              gap: 16,
-              padding: '14px 10px',
+              gap: compact ? token.marginXS : 16,
+              padding: compact ? '14px 4px' : '14px 10px',
               borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
               overflowY: 'auto'
             }}
           >
             {settingsGroups.map((group) => (
               <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-                <Typography.Text strong style={{ padding: '4px 10px 6px', color: token.colorText }}>
-                  {t(group.label)}
-                </Typography.Text>
+                {!compact && (
+                  <Typography.Text strong style={{ padding: '4px 10px 6px', color: token.colorText }}>
+                    {t(group.label)}
+                  </Typography.Text>
+                )}
                 {group.sections.map((section) => {
                   const active = settings.section === section.value
+                  const label = t(section.label)
                   return (
-                    <Button
-                      key={section.value}
-                      type="text"
-                      className="settings-section-choice"
-                      icon={<section.icon style={{ fontSize: token.fontSizeLG }} aria-hidden="true" />}
-                      aria-pressed={active}
-                      disabled={settings.busy}
-                      onClick={() => settings.setSection(section.value)}
-                      style={{
-                        height: 40,
-                        minHeight: 40,
-                        flexShrink: 0,
-                        gap: 10,
-                        paddingInline: 10,
-                        borderRadius: token.borderRadius,
-                        justifyContent: 'flex-start',
-                        textAlign: 'start',
-                        whiteSpace: 'normal',
-                        color: settings.busy ? undefined : token.colorText
-                      }}
-                    >
-                      {t(section.label)}
-                    </Button>
+                    <Tooltip key={section.value} title={compact ? label : undefined} placement="right" trigger={['hover', 'focus']}>
+                      <Button
+                        type="text"
+                        className="settings-section-choice"
+                        icon={<section.icon style={{ fontSize: token.fontSizeLG }} aria-hidden="true" />}
+                        aria-label={label}
+                        aria-pressed={active}
+                        disabled={settings.busy}
+                        onClick={() => settings.setSection(section.value)}
+                        style={{
+                          width: '100%',
+                          height: 40,
+                          minHeight: 40,
+                          flexShrink: 0,
+                          gap: 10,
+                          paddingInline: compact ? 0 : 10,
+                          borderRadius: token.borderRadius,
+                          justifyContent: compact ? 'center' : 'flex-start',
+                          textAlign: 'start',
+                          whiteSpace: 'normal',
+                          color: settings.busy ? undefined : token.colorText
+                        }}
+                      >
+                        {!compact && label}
+                      </Button>
+                    </Tooltip>
                   )
                 })}
               </div>
             ))}
           </nav>
-          <section aria-label={sectionTitle} style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', padding: '20px 24px' }}>
+          <section aria-label={sectionTitle} style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', padding: compact ? token.padding : '20px 24px' }}>
             <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 20 }}>
               {sectionTitle}
             </Typography.Title>

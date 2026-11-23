@@ -28,7 +28,6 @@ html[data-theme='dark'] {
   --text-tertiary: var(--ant-color-text-tertiary);
   --text-quaternary: var(--ant-color-text-quaternary);
   --surface: var(--ant-color-bg-container);
-  --rail-surface: #f8faf6;
   --surface-subtle: #f8faf6;
   --surface-hover: var(--ant-control-item-bg-hover);
   --primary: var(--ant-color-primary);
@@ -62,7 +61,6 @@ html[data-theme='dark'] .ant-tooltip .ant-tooltip-container {
 }
 
 html[data-theme='dark'] .sql-studio-theme {
-  --rail-surface: #111111;
   --surface-subtle: #1a1a1a;
   --code-keyword: #c4a7ff;
   --code-string: #7dd3a8;

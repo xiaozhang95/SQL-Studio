@@ -151,6 +151,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
         <Card
           size="small"
+          styles={{ body: { paddingInlineEnd: 0 } }}
           title={
             <Flex gap="small" align="center">
               <HistoryOutlined />
@@ -158,7 +159,12 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
             </Flex>
           }
         >
-          <div ref={log} role="log" aria-label={t('同步日志')} style={{ maxHeight: 340, overflowY: 'auto', overflowWrap: 'anywhere' }}>
+          <div
+            ref={log}
+            role="log"
+            aria-label={t('同步日志')}
+            style={{ maxHeight: 340, overflowY: 'auto', overflowWrap: 'anywhere', scrollbarGutter: 'stable', paddingInlineEnd: token.paddingSM }}
+          >
             <Timeline items={running ? events : [...events, finalEntry]} />
           </div>
         </Card>

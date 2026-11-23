@@ -60,7 +60,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         gap: 4,
         padding: '10px 0 12px',
         borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
-        background: 'var(--rail-surface)',
+        background: token.colorBgContainer,
         userSelect: 'none'
       }}
     >

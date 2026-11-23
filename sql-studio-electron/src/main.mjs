@@ -105,6 +105,8 @@ async function loadIcons() {
 function createWindow(dark, appIcon, updates) {
   let origin = ''
   const background = dark ? '#141414' : '#ffffff'
+  // 原生按钮透出渲染层背景，弹窗遮罩出现时也与标题栏连成一体。
+  const titleBarOverlay = { color: 'rgba(0, 0, 0, 0)', height: 32 }
   mainWindow = new BrowserWindow({
     title: 'SQL Studio',
     width: 1440,
@@ -119,7 +121,7 @@ function createWindow(dark, appIcon, updates) {
       ? { trafficLightPosition: { x: 12, y: 6 } }
       : {
           autoHideMenuBar: true,
-          titleBarOverlay: { color: background, symbolColor: dark ? '#ffffff' : '#000000', height: 32 }
+          titleBarOverlay: { ...titleBarOverlay, symbolColor: dark ? '#ffffff' : '#000000' }
         }),
     webPreferences: {
       preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
@@ -175,7 +177,7 @@ function createWindow(dark, appIcon, updates) {
   const syncTheme = (event, value) => {
     if (!isWorkbench(event) || !validTitleBarTheme(value)) return
     mainWindow?.setBackgroundColor(value.background)
-    if (process.platform !== 'darwin') mainWindow?.setTitleBarOverlay({ color: value.background, symbolColor: value.foreground, height: 32 })
+    if (process.platform !== 'darwin') mainWindow?.setTitleBarOverlay({ ...titleBarOverlay, symbolColor: value.foreground })
     reportThemeReady()
   }
   ipcMain.on('sql-studio:titlebar-theme', syncTheme)

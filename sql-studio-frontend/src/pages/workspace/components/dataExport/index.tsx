@@ -61,7 +61,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
               { key: 'time', label: t('时间'), children: `${(Math.max(0, (state.endedAt ?? now) - state.startedAt) / 1000).toFixed(1)}s` }
             ]}
           />
-          <Alert type="info" title={t('导出可访问的表和视图结构；不包含例程、触发器、事件及权限。跨表不保证同一时间快照，导出期间请避免修改结构及数据。')} />
+          <Alert type="info" variant="filled" showIcon title={t('导出可访问的表和视图结构；不包含例程、触发器、事件及权限。跨表不保证同一时间快照，导出期间请避免修改结构及数据。')} />
           <ErrorNotice title={t('导出失败，未保存完整文件')} error={state.error} />
           <div
             ref={logs}

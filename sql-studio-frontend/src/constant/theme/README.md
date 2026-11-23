@@ -8,6 +8,12 @@ createThemeConfig(themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'stan
 
 保留 CSS 变量 key，工作区、Agent 与 AntApp 弹框共用此配置。字号与主题由现有 useThemePreference 保存后应用。Button 的 `primaryShadow`、`defaultShadow` 和 `dangerShadow` 在亮暗主题下统一设为 `none`，按钮悬停、按下和键盘焦点沿用原生反馈。
 
+表单控件的焦点阴影共用 1px 扩展宽度和 20% 状态色，正常、警告、错误分别取主色、警告色、错误色。控件边框和键盘焦点轮廓沿用各组件的原生样式。
+
+Alert 的信息、成功、警告、错误统一使用当前主题面板色与 12% 对应状态色混合的底色，描边使用 24% 对应状态色。`filled` 和 `banner` 沿用原生无可见描边样式，正文和图标沿用原生语义色。
+
+Steps 的完成图标底色由当前面板色与 12% 主色混合，当前步骤使用原生实色强调。
+
 连接类型、设置分类、对象树、会话列表、结果页签及下拉选项共用中性灰选中底。controlItemBgActive、controlItemBgActiveHover 与 controlItemBgHover 使用同一中性填充；Button 的 textHoverBg/defaultHoverBg/defaultActiveBg 也使用同一 palette.hover/active，Rail、页签、表格和卡片的自定义 hover 统一走 `--surface-hover`，避免不同控件出现两档悬停背景；表格勾选行继承选中 token。当前页签使用绿色底线，主题、字号和语言卡片使用统一的中性边框，选中状态由原生单选圆点表示。colorBorder 使用 `#cfd7cd` / `#3a3a3a`，colorBorderSecondary 使用发丝线 `#e2e7df` / `#282828`；弹窗沿用 Ant Design 默认圆角，遮罩色分别为 `rgba(18,24,19,.38)` / `rgba(0,0,0,.62)`。
 
-暗色主题采用独立调色板，不做简单反相；主操作、活动导航和选中线使用绿色，普通文字和边框保持中性。全局 Rail 使用独立 `--rail-surface`：亮色 `#f8faf6`、暗色 `#111111`，比次级面板更深一档。每个操作面只有一个 primary 操作。
+暗色主题采用独立调色板，主操作、活动导航和选中线使用绿色，普通文字和边框保持中性。全局 Rail 与右侧面板共用 `colorBgContainer`，亮色为 `#ffffff`，暗色为 `#131313`。每个操作面只有一个 primary 操作。

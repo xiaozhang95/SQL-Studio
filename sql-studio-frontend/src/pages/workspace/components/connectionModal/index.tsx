@@ -1,5 +1,5 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip, Typography } from 'antd'
+import { Alert, AutoComplete, Button, Form, Grid, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip, Typography } from 'antd'
 
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
@@ -21,6 +21,7 @@ type Props = {
 }
 export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
   const { t } = useTranslation()
+  const compact = Grid.useBreakpoint().xs
 
   const { form, selectEngine, selectRedisMode, redisMode, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   const redis = engine.value === DatabaseEngine.Redis
@@ -34,7 +35,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         container: { padding: 0, overflow: 'hidden' },
         header: { margin: 0, height: 52, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' },
         body: { padding: 0 },
-        footer: { margin: 0, height: 58, padding: '0 16px 0 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
+        footer: { margin: 0, minHeight: 58, padding: '8px 16px 8px 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
       }}
       title={connection ? t('编辑连接') : t('新建连接')}
       open={open}
@@ -48,11 +49,11 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         }
       }}
       footer={
-        <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'space-between' }}>
+        <div className="modal-footer" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'space-between' }}>
           <Button icon={<LinkOutlined />} onClick={test} loading={testing} disabled={saving}>
             {t('测试连接')}
           </Button>
-          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineStart: 'auto' }}>
             <Button onClick={onClose} disabled={busy}>
               {t('取消')}
             </Button>
@@ -63,48 +64,62 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         </div>
       }
     >
-      <div className="connection-dialog-body" style={{ display: 'flex', height: 'min(532px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
-        <aside
-          className="engine-picker"
-          style={{
-            width: 210,
-            flex: 'none',
-            padding: '14px 10px',
-            borderRight: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-            gap: 2,
-            overflowY: 'auto'
-          }}
-        >
-          <Typography.Text type="secondary" strong className="engine-picker-heading" style={{ display: 'block', padding: '0 8px 8px' }}>
-            {t('数据库类型')}
-          </Typography.Text>
-          {databaseProfiles.map((profile) => (
-            <Button
-              key={profile.value}
-              type="text"
-              className="engine-choice"
-              aria-pressed={profile.value === engine.value}
-              disabled={busy || Boolean(connection && profile.value !== engine.value)}
-              onClick={() => selectEngine(profile.value)}
-              style={{
-                height: 42,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                whiteSpace: 'normal',
-                textAlign: 'left'
-              }}
-            >
-              <EngineIcon type={profile.value} variant="logo" size={24} />
-              <span>{profile.label}</span>
-            </Button>
-          ))}
-        </aside>
+      <div className="connection-dialog-body" style={{ display: 'flex', flexDirection: compact ? 'column' : 'row', height: 'min(532px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
+        {compact ? (
+          <div style={{ flex: 'none', padding: '8px 12px', borderBlockEnd: '1px solid var(--border)' }}>
+            <Select
+              aria-label={t('数据库类型')}
+              value={engine.value}
+              disabled={busy || Boolean(connection)}
+              style={{ width: '100%' }}
+              options={databaseProfiles.map(({ value, label }) => ({ value, label }))}
+              onChange={selectEngine}
+            />
+          </div>
+        ) : (
+          <aside
+            className="engine-picker"
+            aria-label={t('数据库类型')}
+            style={{
+              width: 210,
+              flex: 'none',
+              padding: '14px 10px',
+              borderInlineEnd: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              gap: 2,
+              overflowY: 'auto'
+            }}
+          >
+            <Typography.Text type="secondary" strong className="engine-picker-heading" style={{ display: 'block', padding: '0 8px 8px' }}>
+              {t('数据库类型')}
+            </Typography.Text>
+            {databaseProfiles.map((profile) => (
+              <Button
+                key={profile.value}
+                type="text"
+                className="engine-choice"
+                aria-pressed={profile.value === engine.value}
+                disabled={busy || Boolean(connection && profile.value !== engine.value)}
+                onClick={() => selectEngine(profile.value)}
+                style={{
+                  height: 42,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  whiteSpace: 'normal',
+                  textAlign: 'left'
+                }}
+              >
+                <EngineIcon type={profile.value} variant="logo" size={24} />
+                <span>{profile.label}</span>
+              </Button>
+            ))}
+          </aside>
+        )}
         <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
-          <div className={`connection-engine-header ${engine.className}`} style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, height: 62, padding: '0 20px', borderBottom: '1px solid var(--border)' }}>
+          <div className={`connection-engine-header ${engine.className}`} style={{ flex: 'none', display: 'flex', alignItems: 'center', flexWrap: compact ? 'wrap' : undefined, gap: compact ? 8 : 12, minHeight: 62, padding: compact ? '8px 12px' : '0 20px', borderBottom: '1px solid var(--border)' }}>
             <EngineIcon type={engine.value} variant="logo" />
             <span>{engine.label}</span>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>

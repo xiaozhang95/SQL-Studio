@@ -44,7 +44,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
     (plan.skippedViews
       ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
       : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
+  const checkTextColor = `color-mix(in srgb, ${token.colorSuccessText} 65%, ${token.colorText})`
   const breadcrumb = [connectionLabel('source'), connectionLabel('target')].filter(Boolean).join(' → ') || undefined
+  const steps = [{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]
 
   return (
     <DatabasePage title={t('同步数据库')} breadcrumb={breadcrumb} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
@@ -52,9 +54,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
         <Flex align="center" gap="middle" wrap>
           <Steps
             size="small"
-            current={result ? 2 : plan || checking ? 1 : 0}
-            status={status === 'error' ? 'error' : done ? 'finish' : 'process'}
-            items={[{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]}
+            current={done ? steps.length : result ? 2 : plan || checking ? 1 : 0}
+            status={status === 'error' ? 'error' : 'process'}
+            items={steps}
             style={{ flex: '1 1 480px', minWidth: 0, maxWidth: 470 }}
           />
           <Select
@@ -237,9 +239,15 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             </Flex>
           </Form>
           {plan ? (
-            <Alert type="success" showIcon title={t('检查通过')} description={checkText} styles={{ description: { overflowWrap: 'anywhere' } }} />
+            <Alert
+              type="success"
+              showIcon
+              title={t('检查通过')}
+              description={checkText}
+              styles={{ title: { color: checkTextColor }, description: { color: checkTextColor, overflowWrap: 'anywhere' } }}
+            />
           ) : (
-            <Alert type="info" variant="filled" showIcon title={t('目标库已存在时立即停止。同步新库需要勾选目标选项。')} style={{ backgroundColor: 'var(--primary-soft)' }} />
+            <Alert type="info" variant="filled" showIcon title={t('目标库已存在时立即停止。同步新库需要勾选目标选项。')} />
           )}
         </>
       ) : (

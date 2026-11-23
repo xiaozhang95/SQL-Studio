@@ -1,7 +1,7 @@
 {
   "name": "sql-studio-frontend",
   "private": true,
-  "version": "1.2.4",
+  "version": "1.2.5",
   "type": "module",
   "scripts": {
     "test:sql": "node --test tests/mysql.test.mjs",

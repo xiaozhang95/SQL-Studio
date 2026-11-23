@@ -1,7 +1,7 @@
 # 公共组件
 
-- [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，与业务 header 共用主题背景，仅 Windows 将标题左对齐至下方搜索框外边缘。
-- [appRail](appRail/README.md)：全局左侧导航、主题切换和系统设置入口。
+- [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，使用主题背景和 1px 下沿分隔线，Windows 将标题左对齐至下方搜索框外边缘。
+- [appRail](appRail/README.md)：全局左侧导航、主题切换和系统设置入口，底色与右侧面板一致。
 - [studioIcon](studioIcon/README.md)：与应用视觉稿一致的线性 SVG 图标，供 Rail、Header 和对象树使用。
 - [pageHeader](pageHeader/README.md)：工作区及各功能页共用的上下文 Header。
 - [databasePage](databasePage/README.md)：监控与同步的上下文 Header 与画布内容布局。
@@ -16,7 +16,7 @@
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。
 
-- [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型配置、外观设置、语言设置和关于软件，版本号共用，检查更新仅在桌面端显示。
+- [systemSettings](systemSettings/README.md)：全局共用的系统设置弹框，窄窗口使用图标分类栏，包含模型配置、外观设置、语言设置和关于软件，检查更新仅在桌面端显示。
 
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
 
