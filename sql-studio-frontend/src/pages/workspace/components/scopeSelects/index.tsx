@@ -21,9 +21,7 @@ type Props = {
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
-const connectionStyle = { flex: '0 1 190px', minWidth: 140, maxWidth: 190 } satisfies CSSProperties
-const databaseStyle = { flex: '0 1 160px', minWidth: 130, maxWidth: 160 } satisfies CSSProperties
-const schemaStyle = { flex: '0 1 150px', minWidth: 130, maxWidth: 150 } satisfies CSSProperties
+const scopeSelectStyle = { flex: '0 1 240px', minWidth: 190, maxWidth: 240 } satisfies CSSProperties
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
   const { t } = useTranslation()
@@ -38,7 +36,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
     <>
       <Select
         className="connection-select"
-        style={connectionStyle}
+        style={scopeSelectStyle}
         aria-label={t('选择连接')}
         showSearch
         optionFilterProp="searchText"
@@ -62,7 +60,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       />
       <Select
         className="database-select"
-        style={databaseStyle}
+        style={scopeSelectStyle}
         aria-label={t('选择数据库')}
         prefix={database ? undefined : <DatabaseOutlined />}
         showSearch
@@ -88,7 +86,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       />
       {!redis && getDatabaseAdapter(current?.type).explorer && (
         <Select
-          style={schemaStyle}
+          style={scopeSelectStyle}
           aria-label={t('选择 Schema')}
           placeholder={t('Schema（默认搜索路径）')}
           allowClear

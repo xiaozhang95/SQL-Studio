@@ -27,12 +27,13 @@ interface Props {
   entries: Entry[]
   busy: boolean
   status: string
+  assistantModel?: string
   expanded: string[]
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
   confirmation?: ReactNode
 }
-export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
+export function Transcript({ entries, busy, status, assistantModel, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -68,13 +69,23 @@ export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit
           const index = start + offset
           const isLatest = index === rounds.length - 1
           return (
-            <div key={round.id} data-chat-round={round.id} data-round-index={index} style={{ ...CHAT.content, paddingBlock: token.paddingXS }}>
+            <div
+              key={round.id}
+              data-chat-round={round.id}
+              data-round-index={index}
+              style={{
+                ...CHAT.content,
+                paddingBlock: index ? '26px 8px' : token.paddingXS,
+                borderTop: index ? '1px solid var(--border)' : undefined
+              }}
+            >
               <TranscriptTurn
                 locked={busy}
                 entries={round.entries}
                 busy={busy && isLatest}
                 waiting={isLatest && Boolean(confirmation)}
                 status={status}
+                assistantModel={assistantModel}
                 expanded={expanded}
                 onExpanded={onExpanded}
                 onEdit={onEdit}

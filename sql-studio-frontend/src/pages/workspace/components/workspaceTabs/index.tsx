@@ -13,7 +13,7 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs' | 'newQuery'>
+  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
   renderRedis: (page: WorkspaceTab, connection: Connection) => ReactNode
@@ -29,12 +29,12 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
       styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
       tabBarStyle={{ margin: 0 }}
       type="editable-card"
+      hideAdd
       size={appearance.navigationSize}
       tabBarGutter={4}
       activeKey={activeTab}
       onChange={selectTab}
       onEdit={(key, action) => {
-        if (action === 'add') model.newQuery()
         if (action === 'remove') closeTab(String(key))
       }}
       renderTabBar={(props, DefaultTabBar) => (

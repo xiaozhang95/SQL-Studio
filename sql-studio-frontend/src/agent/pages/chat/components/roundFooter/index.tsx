@@ -1,10 +1,14 @@
-import { Collapse, Flex, Tooltip, Typography } from 'antd'
+import { ExportOutlined } from '@ant-design/icons'
+import { Button, Collapse, Flex, Tooltip, Typography } from 'antd'
 
 import { useTranslation } from '@/hooks/useTranslation'
+import { requestOpenQuery } from '@/services/openQuery'
 
 import type { Entry } from '../../../../typings/chat'
+import { answerTables } from '../../../../utils/answerTables'
 import { chatErrors } from '../../../../utils/chatEvents'
 import { CHAT } from '../../constant/chat'
+import { ExportExcel } from '../exportExcel'
 
 interface Props {
   entries: Entry[]
@@ -23,6 +27,11 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
   const errors = chatErrors(entries)
   const failed = errors.length > 0 || entries.some((entry) => entry.incomplete)
   const stopped = entries.some((entry) => entry.stopped)
+  const parts = answer ? answerTables(answer) : []
+  const sqlPart = parts.find((part) => part.kind === 'code' && /(sql|mysql|postgres)/i.test(part.language))
+  const tablePart = [...parts].reverse().find((part) => part.kind === 'table')
+  const sql = sqlPart?.kind === 'code' ? sqlPart.text : undefined
+  const table = tablePart?.kind === 'table' ? tablePart.value : undefined
   return (
     <>
       {errors.length > 0 && (
@@ -40,6 +49,17 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
             }
           ]}
         />
+      )}
+      {(sql || table) && (
+        <Flex align="center" gap={6} wrap>
+          {sql && <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} className="agent-action-link">{t('复制 SQL')}</Typography.Text>}
+          {sql && (
+            <Button type="text" size="small" className="agent-action-link" icon={<ExportOutlined />} onClick={() => requestOpenQuery(sql)}>
+              {t('在查询页打开')}
+            </Button>
+          )}
+          {table && <ExportExcel value={table} title={t('查询结果')} variant="link" />}
+        </Flex>
       )}
       <Flex align="center" gap={CHAT.spacing.detail} wrap>
         {answer && <Typography.Text copyable={{ text: answer, tooltips: [t('复制回答'), t('已复制')] }} />}

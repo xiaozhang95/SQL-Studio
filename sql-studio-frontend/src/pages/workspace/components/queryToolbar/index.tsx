@@ -24,7 +24,7 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         minHeight: 44,
-        padding: '0 12px',
+        padding: '0 var(--workspace-inset)',
         borderBottom: '1px solid var(--border)',
         background: 'var(--surface)',
         userSelect: 'none'

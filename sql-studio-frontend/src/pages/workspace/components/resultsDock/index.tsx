@@ -92,9 +92,9 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
             event.preventDefault()
             resize(event.key === 'Home' ? minimumHeight : event.key === 'End' ? maximumHeight : visibleHeight + (event.key === 'ArrowUp' ? keyboardStep : -keyboardStep))
           }}
-          style={{ position: 'absolute', insetInline: 0, top: 0, height: 5, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'row-resize', touchAction: 'none' }}
+          style={{ position: 'absolute', insetInline: 0, top: 0, height: 6, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'row-resize', touchAction: 'none' }}
         >
-          <span style={{ width: 48, height: 2, borderRadius: 0, background: resizing ? 'var(--ant-color-text-secondary)' : 'var(--resize-grip-color, var(--border))' }} />
+          <span style={{ width: 40, height: 2, borderRadius: 2, background: resizing ? 'var(--text-tertiary)' : 'var(--resize-grip-color, var(--border))' }} />
         </div>
       )}
       <div className="result-panel-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>

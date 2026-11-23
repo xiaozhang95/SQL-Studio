@@ -1,4 +1,4 @@
-import { Checkbox, Form, Input, InputNumber, Select } from 'antd'
+import { Checkbox, Form, Input, InputNumber, Select, Tag } from 'antd'
 
 import type { DatabaseProfile } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -20,16 +20,22 @@ export default function DatabaseSyncConnection({ side, profile, options, value, 
   const field = `sync-${side}`
   return (
     <>
-      <Form.Item label={t(side === 'source' ? '源连接' : '目标连接')} htmlFor={field}>
-        <Select
-          id={field}
-          value={value || undefined}
-          options={[{ value: externalID, label: t('外部连接') }, ...options]}
-          showSearch={{ optionFilterProp: 'label' }}
-          placeholder={t('选择已保存或外部连接')}
-          onChange={onChange}
-        />
-      </Form.Item>
+      {value === externalID ? (
+        <Form.Item label={t(side === 'source' ? '源连接' : '目标连接')}>
+          <Tag>{t('外部连接')}</Tag>
+        </Form.Item>
+      ) : (
+        <Form.Item label={t(side === 'source' ? '源连接' : '目标连接')} htmlFor={field}>
+          <Select
+            id={field}
+            value={value || undefined}
+            options={options}
+            showSearch={{ optionFilterProp: 'label' }}
+            placeholder={t('选择已保存连接')}
+            onChange={onChange}
+          />
+        </Form.Item>
+      )}
       {value === externalID && (
         <>
           <Form.Item label={t(side === 'source' ? '源主机' : '目标主机')} htmlFor={field + '-host'}>

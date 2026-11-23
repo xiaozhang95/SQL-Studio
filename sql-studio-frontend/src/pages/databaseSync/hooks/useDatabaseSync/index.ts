@@ -15,7 +15,8 @@ const initialChoices = { source: '', target: '' }
 const externalID = ':external:'
 type Side = keyof typeof initialChoices
 type Status = 'form' | 'checking' | 'running' | 'completed' | 'error' | 'cancelled'
-type Result = { progress: SyncProgress; logs: SyncProgress[]; startedAt: number; endedAt?: number; error?: string }
+type ResultLog = { progress: SyncProgress; at: number }
+type Result = { progress: SyncProgress; logs: ResultLog[]; startedAt: number; endedAt?: number; error?: string }
 const emptyProgress: SyncProgress = { phase: 'checking', created: false, completed: 0, tables: 0, skippedViews: 0, rows: 0 }
 
 export function useDatabaseSync(connections: readonly Connection[], initialConnection: Connection | undefined, onCreated: (connectionId: string) => void) {
@@ -126,6 +127,18 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     if (side === 'source') clearSource()
     setCredentials((previous) => ({ ...previous, [side]: { ...previous[side], ...patch } }))
   }
+  const swap = () => {
+    if (current.current) return
+    invalidate()
+    cancelList()
+    setValues((previous) => ({
+      ...previous,
+      sourceDatabase: previous.targetDatabase,
+      targetDatabase: previous.sourceDatabase
+    }))
+    setChoices((previous) => ({ source: previous.target, target: previous.source }))
+    setCredentials((previous) => ({ source: previous.target, target: previous.source }))
+  }
 
   const valid =
     values.structure &&
@@ -171,13 +184,20 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     const input = payload()
     const startedAt = Date.now()
     let progress = emptyProgress
-    setResult({ progress, logs: [progress], startedAt })
+    setResult({ progress, logs: [{ progress, at: startedAt }], startedAt })
     setStatus('running')
     try {
       await runDatabaseSync(input, controller.signal, (next) => {
         const stageChanged = next.phase !== progress.phase || next.table !== progress.table
         progress = next
-        setResult((previous) => previous && { ...previous, progress: next, logs: stageChanged ? [...previous.logs.slice(-149), next] : previous.logs })
+        setResult(
+          (previous) =>
+            previous && {
+              ...previous,
+              progress: next,
+              logs: stageChanged ? [...previous.logs.slice(-149), { progress: next, at: Date.now() }] : previous.logs
+            }
+        )
       })
       setStatus('completed')
     } catch (error) {
@@ -219,6 +239,7 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     eligibleConnections,
     choices,
     choose,
+    swap,
     credentials,
     externalID,
     updateExternal,

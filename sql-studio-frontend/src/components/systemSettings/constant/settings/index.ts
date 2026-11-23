@@ -13,9 +13,10 @@ export const settingsSections = [
 ] as const
 
 export const settingsGroups = [
-  { label: '模型服务', sections: [settingsSections[0]] },
-  { label: '偏好设置', sections: [settingsSections[1], settingsSections[2], settingsSections[3]] }
+  { label: 'AI', sections: [settingsSections[0]] },
+  { label: '通用', sections: [settingsSections[1], settingsSections[2], settingsSections[3]] }
 ] as const
+
 
 export const themeOptions = [
   { value: 'system', label: '跟随系统' },
@@ -25,11 +26,11 @@ export const themeOptions = [
 
 export const fontSizeOptions = [
   { value: 'small', label: '较小（12px）', fontSize: 12 },
-  { value: 'standard', label: '标准（13px）', fontSize: 13 },
-  { value: 'large', label: '稍大（15px）', fontSize: 15 }
+  { value: 'standard', label: '标准（14px）', fontSize: 14 },
+  { value: 'large', label: '稍大（16px）', fontSize: 16 }
 ] as const satisfies readonly { value: FontSizePreference; label: string; fontSize: number }[]
 
-export const settingsLayout = { width: 920, height: 532, sidebarWidth: 208, previewHeight: 84, cardMinWidth: 180 } as const
+export const settingsLayout = { width: 920, height: 532, sidebarWidth: 208, previewHeight: 96, cardMinWidth: 132 } as const
 
 export const languageOptions = [
   { value: 'zh-CN', label: '简体中文', heading: '你好，世界', sample: '数据库工作区' },

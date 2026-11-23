@@ -3,12 +3,15 @@ import {
   CloseOutlined,
   CodeOutlined,
   DashboardOutlined,
+  DatabaseFilled,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
   ExportOutlined,
+  EyeOutlined,
   FileTextOutlined,
   FolderOutlined,
+  KeyOutlined,
   LinkOutlined,
   PlusOutlined,
   ProfileOutlined,
@@ -24,7 +27,6 @@ import { useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
-import StudioIcon from '@/components/studioIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
@@ -306,32 +308,21 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     }
   }
   function icon(node: ExplorerNode) {
-    if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} size={20} />
-    if (node.primary)
-      return (
-        <span style={{ display: 'inline-flex', color: 'var(--ant-color-warning)' }}>
-          <StudioIcon name="key" size={15} />
-        </span>
-      )
+    if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} size={18} />
+    if (node.primary) return <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} />
     switch (node.kind) {
       case 'group':
       case 'schema':
-        return <StudioIcon name="folder" size={15} />
+        return <FolderOutlined />
       case 'redis-database':
-        return (
-          <span style={{ display: 'inline-flex', color: 'var(--inactive-icon)' }}>
-            <StudioIcon name="database" size={15} />
-          </span>
-        )
+        return <DatabaseFilled style={{ color: 'var(--inactive-icon)' }} />
       case 'database':
         return (
-          <span
-            role="img"
+          <DatabaseFilled
             aria-label={
               node.databaseState === 'open' ? t('数据库已打开') : node.databaseState === 'opening' ? t('数据库正在打开') : node.databaseState === 'error' ? t('数据库打开失败') : t('数据库未打开')
             }
             style={{
-              display: 'inline-flex',
               color:
                 node.databaseState === 'open'
                   ? 'var(--ant-color-success)'
@@ -341,16 +332,14 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
                       ? 'var(--ant-color-error)'
                       : 'var(--inactive-icon)'
             }}
-          >
-            <StudioIcon name="database" size={15} />
-          </span>
+          />
         )
       case 'tables':
-        return <StudioIcon name="table" size={15} />
+        return <TableOutlined />
       case 'views':
-        return <StudioIcon name="eye" size={15} />
+        return <EyeOutlined />
       case 'table':
-        return node.view ? <StudioIcon name="eye" size={15} /> : <StudioIcon name="table" size={15} />
+        return node.view ? <EyeOutlined /> : <TableOutlined />
       case 'columns':
       case 'column':
         return <ProfileOutlined />
@@ -380,12 +369,13 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         title={connectionFailure ? undefined : node.kind === 'group' ? title : generated && node.tooltip ? t(node.tooltip) : node.tooltip}
         style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden', color: node.retry ? 'var(--ant-color-error-text)' : 'inherit' }}
       >
-        <span className={node.connection ? `connection-tree-icon ${node.status}` : undefined} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
+        <span className={node.connection ? `tree-node-icon connection-tree-icon ${node.status}` : 'tree-node-icon'} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
           {icon(node)}
         </span>
-        <span title={connectionFailure ? title : undefined} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <span title={connectionFailure ? title : undefined} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {title}
         </span>
+        {node.connection && <span className={`connection-tree-status ${node.status}`} aria-hidden="true" />}
         {node.retry && (
           <span style={{ display: 'inline-flex', flexShrink: 0 }}>
             <ToolbarButton
@@ -410,8 +400,6 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       ))}
       <div className="object-sidebar-search">
         <Input
-          className="object-search-input"
-          variant="filled"
           prefix={<SearchOutlined />}
           value={search}
           onChange={(event) => updateExplorer({ search: event.target.value })}

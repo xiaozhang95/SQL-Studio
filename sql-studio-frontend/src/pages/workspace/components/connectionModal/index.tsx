@@ -1,5 +1,5 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip } from 'antd'
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip, Typography } from 'antd'
 
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
@@ -28,13 +28,14 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
   return (
     <Modal
       forceRender
+      rootClassName="sql-studio-theme"
       className="connection-dialog"
       width={960}
       styles={{
         container: { padding: 0, overflow: 'hidden' },
         header: { margin: 0, height: 52, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' },
         body: { padding: 0 },
-        footer: { margin: 0, height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
+        footer: { margin: 0, height: 58, padding: '0 16px 0 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
       }}
       title={connection ? t('编辑连接') : t('新建连接')}
       open={open}
@@ -48,11 +49,11 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         }
       }}
       footer={
-        <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'space-between' }}>
           <Button icon={<LinkOutlined />} onClick={test} loading={testing} disabled={saving}>
             {t('测试连接')}
           </Button>
-          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineStart: 'auto', flexWrap: 'wrap' }}>
+          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Button onClick={onClose} disabled={busy}>
               {t('取消')}
             </Button>
@@ -63,14 +64,13 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         </div>
       }
     >
-      <div className="connection-dialog-body" style={{ display: 'flex', height: 'min(600px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
+      <div className="connection-dialog-body" style={{ display: 'flex', height: 'min(532px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
         <aside
           className="engine-picker"
           style={{
-            width: 'clamp(180px, 26%, 240px)',
+            width: 210,
             flex: 'none',
-            padding: '12px 10px',
-            background: 'var(--surface-subtle)',
+            padding: '14px 10px',
             borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
@@ -79,9 +79,9 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             overflowY: 'auto'
           }}
         >
-          <div className="engine-picker-heading" style={{ paddingBottom: 8 }}>
+          <Typography.Text type="secondary" strong className="engine-picker-heading" style={{ display: 'block', padding: '0 8px 8px' }}>
             {t('数据库类型')}
-          </div>
+          </Typography.Text>
           {databaseProfiles.map((profile) => (
             <Button
               key={profile.value}
@@ -91,8 +91,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               disabled={busy || Boolean(connection && profile.value !== engine.value)}
               onClick={() => selectEngine(profile.value)}
               style={{
-                height: 'auto',
-                minHeight: 42,
+                height: 42,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
@@ -106,23 +105,23 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           ))}
         </aside>
         <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px clamp(16px, 3%, 28px)' }}>
-            <div className={`connection-engine-header ${engine.className}`} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16 }}>
-              <EngineIcon type={engine.value} variant="logo" />
-              <span>{engine.label}</span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <Tag>
-                  {t('默认端口 ')}
-                  {sentinel ? 26379 : engine.port}
+          <div className={`connection-engine-header ${engine.className}`} style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, height: 62, padding: '0 20px', borderBottom: '1px solid var(--border)' }}>
+            <EngineIcon type={engine.value} variant="logo" />
+            <span>{engine.label}</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Tag style={{ marginInlineEnd: 0 }}>
+                {t('默认端口 ')}
+                {sentinel ? 26379 : engine.port}
+              </Tag>
+              <Tooltip title={t('连接凭据仅加密保存在当前电脑')}>
+                <Tag icon={<SafetyCertificateOutlined />} style={{ marginInlineEnd: 0 }}>
+                  {t('本地加密')}
                 </Tag>
-                <Tooltip title={t('连接凭据仅加密保存在当前电脑')}>
-                  <Tag color="success" icon={<SafetyCertificateOutlined />}>
-                    {t('本地加密')}
-                  </Tag>
-                </Tooltip>
-              </div>
+              </Tooltip>
             </div>
-            <Form form={form} layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px' }}>
+            <Form form={form} layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
               <Form.Item name="type" hidden>
                 <Input />
               </Form.Item>
@@ -135,7 +134,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                     label: t('常规'),
                     forceRender: true,
                     children: (
-                      <div className="connection-fields" style={{ paddingTop: 8 }}>
+                      <div className="connection-fields">
                         <Form.Item name="name" label={t('连接名称')} rules={[{ required: true, whitespace: true, message: t('请输入连接名称') }]}>
                           <Input placeholder={t('例如：本地开发库')} />
                         </Form.Item>
@@ -213,7 +212,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                     label: 'SSL',
                     forceRender: true,
                     children: (
-                      <div className="connection-fields" style={{ paddingTop: 8 }}>
+                      <div className="connection-fields">
                         <Form.Item name="tls" label="SSL / TLS" valuePropName="checked" extra={t('验证服务器证书及主机名')}>
                           <Switch />
                         </Form.Item>

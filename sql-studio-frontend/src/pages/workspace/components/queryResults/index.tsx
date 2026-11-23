@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Empty, Input, Pagination, Table, Typography } from 'antd'
+import { Alert, Button, Input, Pagination, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -46,6 +46,8 @@ import ResultTabs from '../resultTabs'
 import SQLPreview from '../sqlPreview'
 import ToolbarButton from '../toolbarButton'
 
+const numericType = /(?:^|\W)(?:tiny|small|medium|big|large)?int|decimal|numeric|float|double|real|money|serial|year/i
+
 type Props = {
   themeMode: ThemeMode
   model: Pick<
@@ -73,6 +75,7 @@ type Props = {
     | 'selectResult'
     | 'resultHeight'
     | 'setResultHeight'
+    | 'newQuery'
   >
 }
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，分页独立于滚动内容。 */
@@ -128,7 +131,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   } | null>(null)
   // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
   const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
-  const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
+    const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
   const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
   const databaseType = model.savedConnections.find((connection) => connection.id === tab.connectionId)?.type
@@ -150,6 +153,8 @@ export default function QueryResults({ model, themeMode }: Props) {
       key: 'index',
       width: resultTableLayout.indexWidth,
       fixed: 'left' as const,
+      align: 'right' as const,
+      className: 'cell-index',
       render: (
         _: unknown,
         row: {
@@ -157,28 +162,41 @@ export default function QueryResults({ model, themeMode }: Props) {
         }
       ) => (row.key < 0 ? <ToolbarButton label={t('移除新增行')} size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
     },
-    ...(result?.columns || []).map((column, index) => ({
-      title: (
-        <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-          {run?.kind === 'structure' ? t(column.name) : column.name}
-          {column.type && (
-            <Typography.Text className="column-type" type="secondary">
-              {column.type}
-            </Typography.Text>
-          )}
-        </div>
-      ),
-      key: String(index),
-      sorter: true,
-      sortOrder: sort?.column === index ? sort.order : null,
-      showSorterTooltip: { title: t('对当前已加载的结果排序') },
-      onCell: (row: { key: number }) => ({
-        className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
-        onDoubleClick: () => {
-          if (tab.kind === 'data' && adapter?.dataEditing && row.key >= 0) void editing.begin(row.key, index)
-        }
-      }),
-      width: run?.kind === 'ddl' ? undefined : adapter?.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : resultTableLayout.columnWidth,
+    ...(result?.columns || []).map((column, index) => {
+      const numeric = numericType.test(column.type ?? '')
+      return {
+        title: (
+          <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+            {run?.kind === 'structure' ? t(column.name) : column.name}
+            {column.type && (
+              <Typography.Text className="column-type" type="secondary">
+                {column.type}
+              </Typography.Text>
+            )}
+          </div>
+        ),
+        key: String(index),
+        sorter: true,
+        sortOrder: sort?.column === index ? sort.order : null,
+        showSorterTooltip: { title: t('对当前已加载的结果排序') },
+        align: numeric ? ('right' as const) : undefined,
+        onCell: (row: { key: number }) => ({
+          className:
+            [editing.isDirty(row.key, index) ? 'data-cell-dirty' : '', numeric ? 'cell-amount' : ''].filter(Boolean).join(' ') || undefined,
+          onDoubleClick: () => {
+            if (tab.kind === 'data' && adapter?.dataEditing && row.key >= 0) void editing.begin(row.key, index)
+          }
+        }),
+        width:
+          run?.kind === 'ddl'
+            ? undefined
+            : index === (result?.columns.length ?? 0) - 1
+              ? undefined
+              : adapter?.isSQLColumn(column.name)
+                ? resultSQLLayout.columnWidth
+                : numeric
+                  ? 140
+                  : 220,
       render: (
         _: unknown,
         row: {
@@ -221,9 +239,10 @@ export default function QueryResults({ model, themeMode }: Props) {
             </span>
           </span>
         )
-    }))
+      }
+    })
   ]
-  const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? 0), resultTableLayout.selectionWidth)
+  const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? resultTableLayout.columnWidth), resultTableLayout.selectionWidth)
   const failed = Boolean(!result && (run?.error || batch?.error))
   const durationMs = result?.durationMs ?? batch?.statements?.[resultIndex]?.durationMs
   const resultStatus = activeRunning ? (
@@ -273,6 +292,12 @@ export default function QueryResults({ model, themeMode }: Props) {
           }}
         >
           <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
+            {tab.kind !== 'data' && showingResult && (
+              <span className="result-selection-info">
+                <CheckCircleOutlined />
+                {t('已选择 {value1} 行', { value1: selectedRows.length })}
+              </span>
+            )}
             {tab.kind === 'data' && adapter?.dataEditing && (
               <>
                 <ToolbarButton
@@ -311,7 +336,7 @@ export default function QueryResults({ model, themeMode }: Props) {
           <div className="result-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
             {showingResult && (
               <Input
-                style={{ width: 180, flex: '0 1 180px', minWidth: 0 }}
+                style={{ width: 160, flex: '0 1 160px', minWidth: 0 }}
                 prefix={<SearchOutlined />}
                 placeholder={t('筛选当前结果')}
                 aria-label={t('筛选查询结果')}
@@ -418,16 +443,18 @@ export default function QueryResults({ model, themeMode }: Props) {
             />
           </>
         ) : (
-          <Empty
-            className="query-empty"
-            image={
-              <EmptyStateIcon>
-                <TableOutlined />
-              </EmptyStateIcon>
-            }
-            description={t('暂无结果')}
-            style={{ margin: '20px 0' }}
-          />
+          <div className="workspace-empty-state" style={{ minHeight: 180 }}>
+            <EmptyStateIcon>
+              <TableOutlined />
+            </EmptyStateIcon>
+            <Typography.Text type="secondary">{t('暂无结果')}</Typography.Text>
+            <Button icon={<PlusOutlined />} disabled={model.running} onClick={model.newQuery}>
+              {t('新建查询')}
+            </Button>
+            <Typography.Text type="secondary">
+              {t('从左侧选择表')}
+            </Typography.Text>
+          </div>
         )}
       </div>
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (

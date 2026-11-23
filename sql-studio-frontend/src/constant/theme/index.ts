@@ -22,6 +22,7 @@ type Palette = {
   fillQuaternary: string
   hover: string
   active: string
+  mask: string
 }
 
 /** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
@@ -31,7 +32,7 @@ const palettes: Record<ThemeMode, Palette> = {
     success: '#16a34a',
     warning: '#b45309',
     error: '#dc2626',
-    text: '#161a16',
+    text: '#000000',
     textSecondary: '#556055',
     textTertiary: '#7d887d',
     textQuaternary: '#aab3aa',
@@ -45,32 +46,34 @@ const palettes: Record<ThemeMode, Palette> = {
     fillTertiary: '#e9ede6',
     fillQuaternary: '#f0f3ee',
     hover: '#f0f3ee',
-    active: '#f0f3ee'
+    active: '#f0f3ee',
+    mask: 'rgba(18, 24, 19, 0.38)'
   },
   dark: {
     primary: '#42d47c',
     success: '#42d47c',
     warning: '#fbbf24',
     error: '#f87171',
-    text: '#f2f5f1',
+    text: '#ffffff',
     textSecondary: '#a9b1a7',
     textTertiary: '#7e877d',
     textQuaternary: '#586157',
-    canvas: '#0a0c0a',
-    surface: '#121512',
-    elevated: '#181c18',
-    border: '#262c26',
-    borderStrong: '#364036',
-    fill: '#1e231e',
-    fillSecondary: '#191d19',
-    fillTertiary: '#202520',
-    fillQuaternary: '#1e231e',
-    hover: '#1e231e',
-    active: '#1e231e'
+    canvas: '#0a0a0a',
+    surface: '#131313',
+    elevated: '#1a1a1a',
+    border: '#282828',
+    borderStrong: '#3a3a3a',
+    fill: '#202020',
+    fillSecondary: '#1a1a1a',
+    fillTertiary: '#232323',
+    fillQuaternary: '#202020',
+    hover: '#202020',
+    active: '#202020',
+    mask: 'rgba(0, 0, 0, 0.62)'
   }
 }
 
-const baseFontSize = { small: 12, standard: 13, large: 15 } as const satisfies Record<FontSizePreference, number>
+const baseFontSize = { small: 12, standard: 14, large: 16 } as const satisfies Record<FontSizePreference, number>
 
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
   const palette = palettes[themeMode]
@@ -96,7 +99,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       colorBgLayout: palette.canvas,
       colorBgContainer: palette.surface,
       colorBgElevated: palette.elevated,
-      colorBorder: palette.border,
+      colorBgMask: palette.mask,
+      colorBorder: palette.borderStrong,
       colorBorderSecondary: palette.border,
       colorFill: palette.fill,
       colorFillSecondary: palette.fillSecondary,
@@ -107,6 +111,18 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgActive: palette.active,
       controlItemBgActiveHover: palette.active,
       controlItemBgHover: palette.hover
+    },
+    components: {
+      // 设计稿统一使用 12px 弹窗圆角。
+      Modal: { borderRadiusLG: 12, contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
+      // 文本按钮与默认按钮的悬停/按下背景与树、下拉、表格共用同一档。
+      Button: {
+        textHoverBg: palette.hover,
+        defaultHoverBg: palette.hover,
+        defaultActiveBg: palette.active,
+        // 深色主按钮沿用品牌深绿与白字，避免亮绿底配深色文字过抢眼；图标强调仍使用亮绿主色。
+        ...(themeMode === 'dark' ? { colorPrimary: '#15803d', colorPrimaryHover: '#1a9348', colorPrimaryActive: '#116532', primaryColor: '#ffffff' } : {})
+      }
     },
     cssVar: { key: 'sql-studio-theme' }
   }

@@ -16,8 +16,8 @@ function WorkspacePreview({ mode }: { mode: ThemeMode }) {
         height: '100%',
         minWidth: 0,
         overflow: 'hidden',
-        background: token.colorBgContainer,
-        border: `1px solid ${token.colorBorder}`,
+        background: token.colorBgLayout,
+        border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadiusSM
       }}
     >
@@ -31,7 +31,7 @@ function WorkspacePreview({ mode }: { mode: ThemeMode }) {
           gap: 3,
           padding: '4px 0',
           borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
-          background: token.colorFillAlter
+          background: token.colorBgContainer
         }}
       >
         <span style={{ width: 6, height: 6, borderRadius: 2, background: token.colorPrimary, marginBottom: 2 }} />
@@ -48,7 +48,7 @@ function WorkspacePreview({ mode }: { mode: ThemeMode }) {
           gap: 5,
           padding: '6px 4px',
           borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
-          background: token.colorBgLayout
+          background: token.colorBgContainer
         }}
       >
         {[0, 1, 2, 3, 4].map((item) => line(`side-${item}`, item === 1 ? '70%' : item === 3 ? '55%' : '82%', item === 1 ? token.colorPrimary : token.colorTextQuaternary))}

@@ -42,8 +42,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
     [chat.history, localizedDefaultTitle]
   )
   const activeTitle = history.find((i) => i.id === workspace.state.activeId)?.title ?? localizedDefaultTitle
-  const selectedModel = ai.status?.configured ? ai.status.models.find((model) => model.id === ai.status?.configId) : undefined
-  return (
+    return (
     <Flex
       style={{
         height: '100%',
@@ -55,17 +54,12 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
     >
       <PageHeader
         title={t('AI 助手')}
-        breadcrumb={activeTitle}
+        breadcrumb={`${t('会话')} / ${activeTitle}`}
         errors={[chat.error, chat.loadError, chat.confirmWrite.error, ai.readError, ai.choiceError]}
         errorScope={workspace.state.activeId}
         errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : ai.readError ? <Button onClick={ai.retry}>{t('重试')}</Button> : undefined}
         actions={
           <>
-            <span className={`connection-status-pill${operation.mode === 'write' ? ' is-warning' : selectedModel ? ' is-connected' : ''}`}>
-              <span className="connection-status-dot" />
-              <span>{selectedModel?.name ?? t('请选择模型')}</span>
-              <span className="connection-status-engine">{operation.mode === 'write' ? t('完全访问模式') : t('只读模式')}</span>
-            </span>
             <Button icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
               {localizedDefaultTitle}
             </Button>
@@ -73,7 +67,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
           </>
         }
       />
-      <Flex style={{ flex: 1, minHeight: 0 }}>
+      <Flex style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <History
           mobile={mobile}
           layout={sidebar}
@@ -104,9 +98,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
               }}
             >
               <div style={chat.loading || chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
-                {chat.loading ? (
-                  <ContentLoading label={t('正在加载会话…')} />
-                ) : chat.loadError ? null : chat.entries.length === 0 ? (
+                {chat.loading ? null : chat.loadError ? null : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (
                   <Transcript
@@ -114,6 +106,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                     entries={chat.entries}
                     busy={chat.busy}
                     status={chat.status}
+                    assistantModel={ai.status?.model}
                     expanded={workspace.state.expanded}
                     onExpanded={(expanded) => workspace.update({ expanded })}
                     onEdit={chat.editQuestion}
@@ -147,10 +140,16 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                   onDraftChange={chat.onDraftChange}
                   usage={chat.usage}
                 />
+                <div className="agent-disclaimer">{t('AI 可能出错，请核对生成的 SQL 与执行结果。')}</div>
               </div>
             </div>
           </Flex>
         </Flex>
+        {chat.loading && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', background: 'var(--surface)' }}>
+            <ContentLoading label={t('正在加载会话…')} />
+          </div>
+        )}
       </Flex>
     </Flex>
   )

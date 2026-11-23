@@ -6,11 +6,10 @@
 
 - `title`：已翻译的页面标题，传给 PageHeader。
 - `breadcrumb`：可选页面范围，例如连接名或「源 → 目标」。
-- `headerActions`：当前页状态和操作，例如采样状态、同步状态。
-- `contentWidth`：内容最大宽度，监控默认 1380px，同步传 1120px。
+- `headerActions`：当前页操作，例如刷新或说明。
 - `children`：页面内容。
 - `errors`：当前页面业务错误，与连接错误合并展示。
 - `connectionError` / `retryConnections`：连接读取失败时的错误与重试操作。
 - `onBack`：保留给需要主动返回工作区的页面操作，不用于 Header 导航。
 
-正文使用 `--canvas` 背景，最大宽度内居中，内边距 18 × 22px，区块间距 token.marginMD；页面内容独立滚动。Header、错误条和正文使用纵向 flex 排列，页面根节点高度由全局内容区约束。
+正文使用 `--canvas` 背景，铺满主区域宽度，左右和顶部内边距 16px，底部 30px，区块间距 14px；页面内容独立滚动。Header、错误条和正文使用纵向 flex 排列，页面根节点高度由全局内容区约束。内容容器至少撑满正文区域，页面级 ContentLoading 因此在整页主体内水平、垂直居中。

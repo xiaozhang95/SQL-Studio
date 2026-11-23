@@ -27,7 +27,6 @@ interface Props {
   showHeader?: boolean
 }
 export function QueryResult({ showExport = true, ...props }: Props) {
-  const { t } = useTranslation()
   if (isObject(props.value) && typeof props.value.error === 'string') return null
   if (isObject(props.value) && typeof props.value.warning === 'string') {
     // Tool failures carry a recovery instruction for DeepSeek. Other warnings can describe a successful operation.
@@ -36,8 +35,7 @@ export function QueryResult({ showExport = true, ...props }: Props) {
   }
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
-      <ResultContent {...props} />
-      {showExport && <ExportExcel value={props.value} title={props.title ?? t('查询结果')} />}
+      <ResultContent {...props} showExport={showExport} />
     </Flex>
   )
 }
@@ -60,7 +58,7 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
 const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
 const resultTableStyles = { section: { boxShadow: 'var(--card-shadow)' } } satisfies TableProps['styles']
 
-function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
+function ResultContent({ value, sql, title, tool, showHeader = true, showExport = true }: Props) {
   const tablePagination = useTablePagination()
 
   const { t } = useTranslation()
@@ -123,15 +121,20 @@ function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
       <ResultTable
         title={cardTitle}
         extra={
-          showHeader && (
+          showHeader || showExport ? (
             <Space size="middle">
-              <Typography.Text type="secondary">
-                {rows.length} {t(' 行 · ')}
-                {result.columns.length} {t(' 列')}
-              </Typography.Text>
-              <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
+              {showHeader && (
+                <>
+                  <Typography.Text type="secondary">
+                    {rows.length} {t(' 行 · ')}
+                    {result.columns.length} {t(' 列')}
+                  </Typography.Text>
+                  <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
+                </>
+              )}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
             </Space>
-          )
+          ) : undefined
         }
       >
         {result.truncated && <Alert type="warning" showIcon title={t('当前工具查询的结果已截断，每次最多返回 100 行。全量统计请使用聚合查询。')} banner />}
@@ -205,7 +208,17 @@ function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
   }
   if (Array.isArray(value) && value.every((v) => typeof v === 'string'))
     return (
-      <ResultTable title={cardTitle} extra={showHeader ? t('{value1} 项', { value1: value.length }) : undefined}>
+      <ResultTable
+        title={cardTitle}
+        extra={
+          showHeader || showExport ? (
+            <Space size="middle">
+              {showHeader && <Typography.Text type="secondary">{t('{value1} 项', { value1: value.length })}</Typography.Text>}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
+            </Space>
+          ) : undefined
+        }
+      >
         <Table
           classNames={resultTableClassNames}
           styles={resultTableStyles}
@@ -245,7 +258,17 @@ function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
       render: (v: unknown) => <Tooltip title={cellText(v)}>{cellText(v)}</Tooltip>
     }))
     return (
-      <ResultTable title={cardTitle} extra={showHeader ? t('{value1} 项', { value1: value.length }) : undefined}>
+      <ResultTable
+        title={cardTitle}
+        extra={
+          showHeader || showExport ? (
+            <Space size="middle">
+              {showHeader && <Typography.Text type="secondary">{t('{value1} 项', { value1: value.length })}</Typography.Text>}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
+            </Space>
+          ) : undefined
+        }
+      >
         <Table
           classNames={resultTableClassNames}
           styles={resultTableStyles}
@@ -271,7 +294,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true }: Props) {
     )
   }
   return (
-    <ContentCard title={cardTitle}>
+    <ContentCard title={cardTitle} extra={showExport ? <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" /> : undefined}>
       <Typography.Paragraph
         style={{
           whiteSpace: 'pre-wrap',

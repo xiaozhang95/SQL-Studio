@@ -110,7 +110,7 @@ export default function TrendChart({ title, series, history }: Props) {
                     const points = segment.map((point) => `${x(point.index)},${y(point.value)}`).join(' ')
                     return (
                       <g key={index}>
-                        <polygon points={`${x(first.index)},${y(0)} ${points} ${x(last.index)},${y(0)}`} fill={colors[track.tone]} fillOpacity={0.1} />
+                        <polygon points={`${x(first.index)},${y(0)} ${points} ${x(last.index)},${y(0)}`} fill={colors[track.tone]} fillOpacity={0.14} />
                         <polyline points={points} fill="none" stroke={colors[track.tone]} strokeWidth={2} strokeLinejoin="round" />
                       </g>
                     )

@@ -39,7 +39,7 @@
 | 查询工具栏 | 文本按钮较多 | 范围选择 + 绿色“运行” + AI 分组 + 图标化次级操作 |
 | 按钮层级 | 常规操作全部 default | 每个操作面一个 primary，其余 default / ghost / icon |
 | 文字颜色 | 纯黑 / 纯白 | 近黑 `#161a16` / 近白 `#f2f5f1`，降低长时间使用的刺激 |
-| 布局底色 | `#ececec` / `#000` | 暖灰绿 `#f4f6f2` / 近黑 `#0a0c0a` |
+| 布局底色 | `#ececec` / `#000` | 暖灰绿 `#f4f6f2` / 中性近黑 `#0a0a0a` |
 | 结果头部 | 页签 + 工具栏 + 表格 | 页签与执行状态同层，搜索/导出在下一层，表格更紧凑 |
 | AI 助手 | 独立顶栏 + 侧栏 | 共用 Rail/Header，历史侧栏与 840px 对话列 |
 | 监控/同步 | 顶栏 + 大标题 + Card | 共用 Rail/Header，画布内容 + 8px 面板 + 统一工具条 |
@@ -91,17 +91,17 @@
 
 | Token | 值 | 用途 |
 | --- | --- | --- |
-| `canvas` | `#0a0c0a` | 页面画布 |
-| `surface` | `#121512` | 面板、编辑器 |
-| `surface-subtle` | `#181c18` | Rail、表头、次级区域 |
-| `surface-sunken` | `#0e110e` | 按下态、凹槽 |
-| `surface-hover` | `#1e231e` | 悬停 / 选中底 |
+| `canvas` | `#0a0a0a` | 页面画布 |
+| `surface` | `#131313` | 面板、编辑器 |
+| `surface-subtle` | `#1a1a1a` | Rail、表头、次级区域 |
+| `surface-sunken` | `#101010` | 按下态、凹槽 |
+| `surface-hover` | `#202020` | 悬停 / 选中底 |
 | `text` | `#f2f5f1` | 主文本 |
 | `text-2` | `#a9b1a7` | 正文次级 |
 | `text-3` | `#7e877d` | 说明、表头 |
 | `text-4` | `#586157` | 行号、弱提示 |
-| `border` | `#262c26` | 发丝分隔 |
-| `border-strong` | `#364036` | 输入框悬停 |
+| `border` | `#282828` | 发丝分隔 |
+| `border-strong` | `#3a3a3a` | 输入框悬停 |
 | `primary` | `#42d47c` | 主操作、活动导航 |
 | `primary-hover` | `#5be392` | 主操作悬停 |
 | `primary-active` | `#34c06e` | 主操作按下 |
@@ -554,14 +554,14 @@ SQL 语法色只作用于 CodeMirror 和 SQL 预览；普通界面文字不使�
 | `colorTextSecondary` | `#556055` | `#a9b1a7` |
 | `colorTextTertiary` | `#7d887d` | `#7e877d` |
 | `colorTextQuaternary` | `#aab3aa` | `#586157` |
-| `colorBgLayout` | `#f4f6f2` | `#0a0c0a` |
-| `colorBgContainer` | `#ffffff` | `#121512` |
-| `colorBgElevated` | `#ffffff` | `#181c18` |
-| `colorBorder` | `#cfd7cd` | `#364036` |
-| `colorBorderSecondary` | `#e2e7df` | `#262c26` |
-| `colorFill` | `#eef1ec` | `#1e231e` |
-| `controlItemBgHover` | `#f0f3ee` | `#1e231e` |
-| `controlItemBgActive` | `#f0f3ee` | `#1e231e` |
+| `colorBgLayout` | `#f4f6f2` | `#0a0a0a` |
+| `colorBgContainer` | `#ffffff` | `#131313` |
+| `colorBgElevated` | `#ffffff` | `#1a1a1a` |
+| `colorBorder` | `#cfd7cd` | `#3a3a3a` |
+| `colorBorderSecondary` | `#e2e7df` | `#282828` |
+| `colorFill` | `#eef1ec` | `#202020` |
+| `controlItemBgHover` | `#f0f3ee` | `#202020` |
+| `controlItemBgActive` | `#f0f3ee` | `#202020` |
 | `fontSize` | 13（标准） | 13（标准） |
 | `controlHeight` | 30–32 | 30–32 |
 
@@ -592,7 +592,7 @@ SQL 语法色只作用于 CodeMirror 和 SQL 预览；普通界面文字不使�
 
 1. **外观基线**：从「保留 AntD 默认外观」改为「以 AntD 组件为底座，使用项目设计令牌；外壳布局和确需的状态样式允许局部受控覆盖」。
 2. **按钮层级**：从「常规操作统一 default」改为「每个操作面一个 primary，其余 default/ghost/icon；确认弹窗默认 default，写入确认可使用 warning」。
-3. **主题色**：从纯黑/纯白改为近黑 `#161a16` / 近白 `#f2f5f1`；布局底从 `#ececec/#000` 改为 `#f4f6f2/#0a0c0a`；绿色主色由 `#52c41a` 过渡到 `#15803d/#42d47c`。
+3. **主题色**：从纯黑/纯白改为近黑 `#161a16` / 近白 `#f2f5f1`；布局底从 `#ececec/#000` 改为 `#f4f6f2/#0a0a0a`（暗色背景保持中性近黑，不带绿色倾向）；绿色主色由 `#52c41a` 过渡到 `#15803d/#42d47c`。
 4. **导航结构**：从「顶栏 + SectionNavigation」改为「左 Rail + 上下文 Header」；系统设置入口移到 Rail 底部。
 
 **保持不变**的规范：

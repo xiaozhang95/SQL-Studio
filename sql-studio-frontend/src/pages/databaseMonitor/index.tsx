@@ -1,4 +1,4 @@
-import { ReloadOutlined } from '@ant-design/icons'
+import { ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Card, Empty, Flex, Select, Tag, Tooltip, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
@@ -37,19 +37,11 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     value,
     label: value === 0 ? t('已关闭') : value < 60 ? t('每 {count} 秒', { count: value }) : t('每 {count} 分钟', { count: value / 60 })
   }))
-  const statusLabel = sampleError ? t(snapshot ? '采样失败，显示上次数据' : '采样失败') : snapshot ? t('采样正常') : t('正在读取数据库指标…')
   return (
     <DatabasePage
       title={t('监控指标')}
-      breadcrumb={connection?.name}
-      contentWidth={1380}
+      breadcrumb={connection ? `${connection.name}${snapshot?.details?.version ? ` · ${snapshot.details.version}` : ''}` : undefined}
       errors={[sampleError]}
-      headerActions={
-        <span className={`connection-status-pill${sampleError ? ' is-warning' : snapshot ? ' is-connected' : ''}`}>
-          <span className="connection-status-dot" />
-          <span>{statusLabel}</span>
-        </span>
-      }
       {...pageProps}
     >
       {connections.length ? (
@@ -58,7 +50,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
             <Flex align="center" gap="small" wrap>
               <Select
                 aria-label={t('选择连接')}
-                style={{ width: 240, flex: '0 1 260px', minWidth: 0 }}
+                style={{ width: 236, flex: '0 1 236px', minWidth: 0 }}
                 value={connection?.id}
                 options={options}
                 showSearch={{ optionFilterProp: 'searchText' }}
@@ -68,7 +60,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
               {connection && monitor.databaseScoped && (
                 <Select
                   aria-label={t('数据库')}
-                  style={{ width: 200, flex: '0 1 220px', minWidth: 0 }}
+                  style={{ width: 190, flex: '0 1 190px', minWidth: 0 }}
                   value={monitor.database}
                   showSearch={{ optionFilterProp: 'label' }}
                   options={[
@@ -79,7 +71,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
                 />
               )}
               {connection && (
-                <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                <Typography.Text type="secondary">
                   {snapshot?.database || (monitor.databaseScoped ? '' : t('实例统计'))}
                   {snapshot && ` · ${t('采样于 {time}', { time: new Date(snapshot.sampledAt).toLocaleTimeString(language) })}`}
                 </Typography.Text>
@@ -93,7 +85,14 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
                       </Tag>
                     </Tooltip>
                   )}
-                  <Select aria-label={t('自动刷新')} value={monitor.refreshInterval} options={intervalOptions} prefix={t('自动刷新')} style={{ minWidth: 164 }} onChange={monitor.setRefreshInterval} />
+                  <Select
+                    aria-label={t('自动刷新')}
+                    value={monitor.refreshInterval}
+                    options={intervalOptions}
+                    prefix={<ClockCircleOutlined />}
+                    style={{ width: 132 }}
+                    onChange={monitor.setRefreshInterval}
+                  />
                   <Button icon={<ReloadOutlined />} loading={monitor.loading} onClick={monitor.refresh}>
                     {t('刷新')}
                   </Button>

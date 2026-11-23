@@ -16,7 +16,7 @@ export default function EngineIcon({
   const engine = getDatabaseProfile(type)
   const originalBrand = engine.iconPresentation === 'brand'
   // text-tertiary 带透明度，先叠在主题容器底色上，避免选中行蓝色透入灰色状态底板。
-  const statusBackground = connected ? 'var(--ant-color-success)' : 'linear-gradient(var(--inactive-icon), var(--inactive-icon)), var(--surface)'
+  const statusBackground = connected ? 'var(--brand)' : 'linear-gradient(var(--inactive-icon), var(--inactive-icon)), var(--surface)'
   return (
     <span
       className={`engine-symbol ${engine.className} ${connected ? 'is-connected' : 'is-closed'}${variant === 'logo' ? ' is-logo' : ''}`}

@@ -52,18 +52,18 @@
 }
 
 .app[data-theme='dark'] {
-  --canvas: #0a0c0a;
-  --surface: #121512;
-  --surface-subtle: #181c18;
-  --surface-sunken: #0e110e;
-  --surface-hover: #1e231e;
-  --rail-surface: #0f120f;
+  --canvas: #0a0a0a;
+  --surface: #131313;
+  --surface-subtle: #1a1a1a;
+  --surface-sunken: #101010;
+  --surface-hover: #202020;
+  --rail-surface: #111111;
   --text: #f2f5f1;
   --text-2: #a9b1a7;
   --text-3: #7e877d;
   --text-4: #586157;
-  --border: #262c26;
-  --border-strong: #364036;
+  --border: #282828;
+  --border-strong: #3a3a3a;
   --primary: #42d47c;
   --primary-hover: #5be392;
   --primary-active: #34c06e;
@@ -136,7 +136,7 @@ body {
 
 body {
   overflow: hidden;
-  background: #0a0c0a;
+  background: #0a0a0a;
   color: #f2f5f1;
   font-family: var(--ui-font);
   font-size: 13px;
@@ -4021,8 +4021,8 @@ body.clean .modal {
 }
 
 .theme-preview.dark {
-  border-color: #262c26;
-  background: #0a0c0a;
+  border-color: #282828;
+  background: #0a0a0a;
 }
 
 .theme-preview .mini-rail {
@@ -4036,8 +4036,8 @@ body.clean .modal {
 }
 
 .theme-preview.dark .mini-rail {
-  background: #121512;
-  border-color: #262c26;
+  background: #131313;
+  border-color: #282828;
 }
 
 .theme-preview .mini-side {
@@ -4052,8 +4052,8 @@ body.clean .modal {
 }
 
 .theme-preview.dark .mini-side {
-  background: #121512;
-  border-color: #262c26;
+  background: #131313;
+  border-color: #282828;
 }
 
 .theme-preview .mini-side::before,
@@ -4187,8 +4187,8 @@ body.clean .modal {
 }
 
 .theme-preview.dark .mini-main {
-  background: #121512;
-  border-color: #262c26;
+  background: #131313;
+  border-color: #282828;
 }
 
 .font-size-card {

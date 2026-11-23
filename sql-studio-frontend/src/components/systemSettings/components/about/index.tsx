@@ -15,6 +15,7 @@ export default function About({ disabled }: { disabled: boolean }) {
   const busy = disabled || Boolean(pending) || desktopConsole.opening
   const downloading = pending === 'download'
   const showDownloadProgress = downloading || (downloadFailed && Boolean(progress))
+  const version = import.meta.env.VITE_SQL_STUDIO_VERSION
   const status = {
     upToDate: '当前已是最新版本',
     available: '发现新版本 {version}',
@@ -25,7 +26,7 @@ export default function About({ disabled }: { disabled: boolean }) {
     <Flex vertical gap="middle">
       <Flex gap="middle" align="baseline" wrap>
         <Typography.Text>{t('当前版本')}</Typography.Text>
-        <Typography.Text>{import.meta.env.VITE_SQL_STUDIO_VERSION}</Typography.Text>
+        <Typography.Text style={{ fontVariantNumeric: 'tabular-nums' }}>{version || '—'}</Typography.Text>
       </Flex>
       {desktop && (
         <>

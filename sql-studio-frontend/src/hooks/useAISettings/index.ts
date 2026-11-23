@@ -90,8 +90,8 @@ export function useAISettings() {
       entries: new Map(values.map(({ id, provider, model }) => [id, { provider, model }]))
     })
     setEntries(values)
-    setConnectionTests({})
     setActiveId(selected || values[0]?.id || '')
+    setConnectionTests({})
     setReady(true)
     return values
   }
@@ -120,6 +120,7 @@ export function useAISettings() {
     if (pending.current) return
     generation.current++
     cancelAll()
+
     setEntries([])
     setActiveId('')
     setReady(false)

@@ -54,6 +54,7 @@ type Props = {
   >
 }
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
+const runShortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵'
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
   const { t } = useTranslation()
@@ -111,6 +112,7 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
           <>
             <Button type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
               {t('运行')}
+              <span className="run-shortcut">{runShortcut}</span>
             </Button>
             {activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={cancelQuery}>
@@ -127,15 +129,23 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
           <div
             role="group"
             aria-label={t('SQL AI 工具')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineEnd: 4, paddingInlineEnd: 8, borderInlineEnd: '1px solid var(--border)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              height: 26,
+              marginInlineEnd: 4,
+              paddingInlineEnd: 8,
+              borderInlineEnd: '1px solid var(--border)'
+            }}
           >
             <Tooltip title={aiModelHint ?? t('AI 代码补全')}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <StudioIcon name="sparkle" size={14} />
-                <span>{t('代码补全')}</span>
+                <span>{t('AI 补全')}</span>
                 <Switch
                   size="small"
-                  aria-label={t('代码补全')}
+                  aria-label={t('AI 代码补全')}
                   checked={ai.configured && ai.enabled}
                   disabled={!ai.configured || running || ai.preferenceSaving}
                   loading={ai.preferenceSaving}

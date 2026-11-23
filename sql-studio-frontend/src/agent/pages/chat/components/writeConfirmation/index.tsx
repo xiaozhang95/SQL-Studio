@@ -1,5 +1,5 @@
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { Button, Descriptions, Flex, Space, Typography } from 'antd'
+import { Button, Descriptions, Flex, Space, Tag, theme, Typography } from 'antd'
 
 import ContentCard from '@/components/contentCard'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -17,20 +17,23 @@ interface Props {
 export function WriteConfirmation({ value, submitting, onDecide }: Props) {
   const { t } = useTranslation()
 
+  const { token } = theme.useToken()
   const writing = !('kind' in value)
-  const title = writing ? t('待确认的数据库操作') : t('是否继续本轮')
+  const title = writing ? t('等待确认 · 即将写入') : t('是否继续本轮')
   const continueLabel = writing ? t('确认执行') : value.kind === 'context' ? t('压缩后继续') : t('继续')
-  const stopLabel = writing ? t('取消执行') : value.kind === 'input' ? t('返回编辑') : t('停止本轮')
+  const stopLabel = writing ? t('取消') : value.kind === 'input' ? t('返回编辑') : t('停止本轮')
   return (
     <ContentCard
       role="region"
       aria-label={writing ? t('数据库操作确认') : t('继续操作确认')}
+      style={writing ? { background: token.colorWarningBg, borderColor: token.colorWarningBorder } : undefined}
       title={
         <Space>
-          <ExclamationCircleOutlined />
+          <ExclamationCircleOutlined style={writing ? { color: token.colorWarning } : undefined} />
           <span>{title}</span>
         </Space>
       }
+      extra={writing ? <Tag color="warning">{t('完全访问模式')}</Tag> : undefined}
     >
       <Flex vertical gap={CHAT.spacing.block}>
         {writing ? (
@@ -51,13 +54,26 @@ export function WriteConfirmation({ value, submitting, onDecide }: Props) {
         ) : (
           <Typography.Text>{value.detail}</Typography.Text>
         )}
-        <Flex gap={CHAT.spacing.detail} wrap>
-          <Button type="default" loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
+        <Flex gap={CHAT.spacing.detail} wrap justify="flex-end">
+          {writing && (
+            <Button disabled={submitting} onClick={() => void onDecide(false)}>
+              {stopLabel}
+            </Button>
+          )}
+          <Button
+            type={writing ? 'primary' : 'default'}
+            style={writing ? { background: token.colorWarning, borderColor: token.colorWarning, color: token.colorTextLightSolid } : undefined}
+            loading={submitting}
+            disabled={submitting}
+            onClick={() => void onDecide(true)}
+          >
             {continueLabel}
           </Button>
-          <Button disabled={submitting} onClick={() => void onDecide(false)}>
-            {stopLabel}
-          </Button>
+          {!writing && (
+            <Button disabled={submitting} onClick={() => void onDecide(false)}>
+              {stopLabel}
+            </Button>
+          )}
         </Flex>
       </Flex>
     </ContentCard>

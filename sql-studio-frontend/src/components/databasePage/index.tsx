@@ -14,13 +14,12 @@ interface Props extends DatabasePageProps {
   title: string
   breadcrumb?: ReactNode
   headerActions?: ReactNode
-  contentWidth?: number
   children: ReactNode
   errors?: readonly (string | undefined)[]
 }
 
-/** 监控与同步共用的画布页：标题进入上下文 Header，内容在画布上居中滚动。 */
-export default function DatabasePage({ title, breadcrumb, headerActions, contentWidth = 1380, connectionError, retryConnections, children, errors = [] }: Props) {
+/** 监控与同步共用的画布页：标题进入上下文 Header，内容铺满画布。 */
+export default function DatabasePage({ title, breadcrumb, headerActions, connectionError, retryConnections, children, errors = [] }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   return (
@@ -32,8 +31,8 @@ export default function DatabasePage({ title, breadcrumb, headerActions, content
         errors={[connectionError, ...errors]}
         errorAction={connectionError ? <Button onClick={retryConnections}>{t('重试')}</Button> : undefined}
       />
-      <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '18px 22px 30px' }}>
-        <Flex vertical gap={token.marginMD} style={{ width: '100%', maxWidth: contentWidth, margin: '0 auto', minWidth: 0 }}>
+      <main style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 16px 30px' }}>
+        <Flex vertical gap={14} style={{ width: '100%', minWidth: 0, minHeight: '100%' }}>
           {children}
         </Flex>
       </main>

@@ -1,10 +1,11 @@
-import { InfoCircleOutlined, SettingOutlined } from '@ant-design/icons'
-import { Button, Card, Checkbox, Flex, Form, Input, Select, Steps, Tag, theme } from 'antd'
+import { CheckCircleOutlined, InfoCircleOutlined, LinkOutlined, SettingOutlined } from '@ant-design/icons'
+import { Button, Card, Checkbox, Flex, Form, Input, Select, Steps, Tag, theme, Typography } from 'antd'
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import EngineIcon from '@/components/engineIcon'
+import StudioIcon from '@/components/studioIcon'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -17,9 +18,10 @@ type Props = DatabasePageProps & {
   connections: readonly Connection[]
   initialConnection?: Connection
   onCreated: (id: string) => void
+  onOpenTarget?: (connectionId: string, database: string) => void
 }
 
-export default function DatabaseSync({ connections, initialConnection, onCreated, ...pageProps }: Props) {
+export default function DatabaseSync({ connections, initialConnection, onCreated, onOpenTarget, ...pageProps }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const model = useDatabaseSync(connections, initialConnection, onCreated)
@@ -30,6 +32,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   useNavigationLockEffect(running)
   const options = model.eligibleConnections.map(({ id, name, host, port }) => ({ value: id, label: `${name} · ${host}:${port}` }))
   const externalSource = model.choices.source === model.externalID
+  const externalTarget = model.choices.target === model.externalID
   const connectionLabel = (side: 'source' | 'target') =>
     model.choices[side] === model.externalID
       ? `${model.credentials[side].host.trim()}:${model.credentials[side].port || model.profile.port}`
@@ -40,33 +43,13 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
     (plan.skippedViews
       ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
       : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
-  const statusLabel =
-    status === 'checking'
-      ? t('正在检查')
-      : status === 'running'
-        ? t('正在同步')
-        : status === 'completed'
-          ? t('同步完成')
-          : status === 'error'
-            ? t('同步已停止')
-            : status === 'cancelled'
-              ? t('同步已取消')
-              : t('未开始')
-  const statusClass = status === 'completed' ? ' is-connected' : status === 'error' || status === 'cancelled' ? ' is-warning' : ''
   const breadcrumb = [connectionLabel('source'), connectionLabel('target')].filter(Boolean).join(' → ') || undefined
 
   return (
     <DatabasePage
       title={t('同步数据库')}
       breadcrumb={breadcrumb}
-      contentWidth={1120}
       errors={[model.databaseError, model.error, result?.error]}
-      headerActions={
-        <span className={`connection-status-pill${statusClass}`}>
-          <span className="connection-status-dot" />
-          <span>{statusLabel}</span>
-        </span>
-      }
       {...pageProps}
     >
       <Card size="small">
@@ -81,7 +64,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
           <Select
             aria-label={t('数据库类型')}
             value={model.profile.value}
-            style={{ width: 240, flex: '0 0 240px', marginInlineStart: 'auto' }}
+            style={{ width: 220, flex: '0 0 220px', marginInlineStart: 'auto' }}
             disabled={busy}
             options={sqlDatabaseProfiles.map(({ value, label }) => ({
               value,
@@ -98,11 +81,13 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
       </Card>
       {!result ? (
         <>
-          <Form layout="horizontal" labelCol={{ flex: '96px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
+          <Form layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
             <Flex vertical gap="middle">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 385px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
+              <div className="sync-grid">
                 <Card
                   size="small"
+                  className="sync-card"
+                  styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -110,6 +95,17 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       {model.choices.source && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
+                  actions={[
+                    <Button
+                      key="external"
+                      type="link"
+                      size="small"
+                      icon={<LinkOutlined />}
+                      onClick={() => model.choose('source', externalSource ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
+                    >
+                      {externalSource ? t('使用已保存连接') : t('使用外部连接')}
+                    </Button>
+                  ]}
                 >
                   <DatabaseSyncConnection
                     side="source"
@@ -121,7 +117,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('source', value)}
                     onCredentials={(patch) => model.updateExternal('source', patch)}
                   />
-                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" style={{ marginBottom: 0 }}>
+                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" style={{ marginBottom: 4 }}>
                     {externalSource ? (
                       <Flex gap="small" wrap>
                         <Input
@@ -160,9 +156,23 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       />
                     )}
                   </Form.Item>
+                  <Typography.Text type="secondary" style={{ display: 'block', paddingInlineStart: 88 }}>
+                    {t('将复制全部表，自动跳过视图')}
+                  </Typography.Text>
                 </Card>
+                <Button
+                  className="sync-swap"
+                  shape="circle"
+                  aria-label={t('交换源端与目标端')}
+                  title={t('交换源端与目标端')}
+                  icon={<StudioIcon name="swap" size={14} />}
+                  disabled={busy || checking || running}
+                  onClick={model.swap}
+                />
                 <Card
                   size="small"
+                  className="sync-card"
+                  styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -170,6 +180,17 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       {model.choices.target && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
+                  actions={[
+                    <Button
+                      key="external"
+                      type="link"
+                      size="small"
+                      icon={<LinkOutlined />}
+                      onClick={() => model.choose('target', externalTarget ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
+                    >
+                      {externalTarget ? t('使用已保存连接') : t('使用外部连接')}
+                    </Button>
+                  ]}
                 >
                   <DatabaseSyncConnection
                     side="target"
@@ -181,7 +202,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('target', value)}
                     onCredentials={(patch) => model.updateExternal('target', patch)}
                   />
-                  <Form.Item label={t('目标数据库')} htmlFor="sync-target-db" style={{ marginBottom: 0 }}>
+                  <Form.Item label={t('目标数据库')} htmlFor="sync-target-db" style={{ marginBottom: 4 }}>
                     <Input
                       id="sync-target-db"
                       value={values.targetDatabase}
@@ -190,6 +211,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       onChange={(event) => update({ targetDatabase: event.target.value })}
                     />
                   </Form.Item>
+                  <Typography.Text type="secondary" style={{ display: 'block', paddingInlineStart: 88 }}>
+                    {t('检查通过后新建；目标库已存在时立即停止')}
+                  </Typography.Text>
                 </Card>
               </div>
               <Card
@@ -200,74 +224,128 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     {t('同步选项')}
                   </Flex>
                 }
+                styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
               >
-                <Form.Item label={t('同步内容')}>
-                  <Flex wrap gap="middle">
-                    <Checkbox checked={values.structure} onChange={(event) => update({ structure: event.target.checked })}>
-                      {t('表结构')}
-                    </Checkbox>
-                    <Checkbox checked={values.data} disabled={!values.structure || busy} onChange={(event) => update({ data: event.target.checked })}>
-                      {t('表数据')}
-                    </Checkbox>
-                  </Flex>
-                </Form.Item>
-                <Form.Item label={t('目标选项')} style={{ marginBottom: 0 }}>
-                  <Checkbox checked={values.createDatabase} onChange={(event) => update({ createDatabase: event.target.checked })}>
+                <Flex align="flex-start" gap={10}>
+                  <Checkbox checked={values.data} disabled={busy || !values.structure} onChange={(event) => update({ data: event.target.checked })} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div>{t('同时复制表数据')}</div>
+                    <Typography.Text type="secondary">
+                      {t('关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}
+                    </Typography.Text>
+                  </div>
+                  {plan && (
+                    <Typography.Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
+                      {t('跳过 {value1} 个视图', { value1: plan.skippedViews })}
+                    </Typography.Text>
+                  )}
+                </Flex>
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                  <Checkbox checked={values.createDatabase} disabled={busy} onChange={(event) => update({ createDatabase: event.target.checked })}>
                     {t('目标库不存在时新建')}
                   </Checkbox>
-                </Form.Item>
+                </div>
               </Card>
             </Flex>
           </Form>
-          <Flex
-            align="flex-start"
-            gap="small"
-            style={{
-              padding: '10px 12px',
-              border: `1px solid ${plan ? token.colorSuccessBorder : token.colorBorderSecondary}`,
-              borderRadius: token.borderRadiusLG,
-              background: plan ? token.colorSuccessBg : token.colorFillAlter,
-              color: token.colorTextSecondary,
-              fontSize: token.fontSizeSM
-            }}
-          >
-            <InfoCircleOutlined style={{ color: plan ? token.colorSuccess : token.colorInfo, marginTop: 2 }} />
-            <span style={{ overflowWrap: 'anywhere' }}>{checkText || t('目标库已存在时立即停止。同步新库需要勾选表结构。')}</span>
-          </Flex>
+          {plan ? (
+            <Flex
+              align="center"
+              gap={10}
+              style={{
+                padding: '10px 14px',
+                border: '1px solid var(--primary-border)',
+                borderRadius: token.borderRadiusLG,
+                background: 'var(--primary-soft)'
+              }}
+            >
+              <CheckCircleOutlined style={{ color: token.colorSuccess, fontSize: 18 }} />
+              <Flex vertical style={{ flex: 1, minWidth: 0 }}>
+                <Typography.Text strong>{t('检查通过')}</Typography.Text>
+                <Typography.Text type="secondary" style={{ overflowWrap: 'anywhere' }}>
+                  {checkText}
+                </Typography.Text>
+              </Flex>
+              <Tag color="success">{t('可以开始')}</Tag>
+            </Flex>
+          ) : (
+            <Flex
+              align="flex-start"
+              gap="small"
+              style={{
+                padding: '10px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: token.borderRadiusLG,
+                background: token.colorFillAlter,
+                color: token.colorTextSecondary,
+              }}
+            >
+              <InfoCircleOutlined style={{ color: token.colorInfo, marginTop: 2 }} />
+              <span style={{ overflowWrap: 'anywhere' }}>{t('目标库已存在时立即停止。同步新库需要勾选目标选项。')}</span>
+            </Flex>
+          )}
         </>
       ) : (
         <SyncResult
           status={status}
           result={result}
           plan={plan}
-          source={`${connectionLabel('source')} / ${values.sourceDatabase}`}
-          target={`${connectionLabel('target')} / ${values.targetDatabase.trim()}`}
+          engineLabel={model.profile.label}
+          sourceDatabase={values.sourceDatabase}
+          targetDatabase={values.targetDatabase.trim()}
           withData={values.data}
         />
       )}
-      <Flex justify="end" gap="small" wrap>
-        {running ? (
-          <Button danger onClick={model.cancel}>
-            {t('取消同步')}
+      <Flex justify="space-between" align="center" gap="small" wrap>
+        {result ? (
+          <Button disabled={running} onClick={model.back}>
+            {t('返回配置')}
           </Button>
-        ) : done ? (
-          <Button onClick={pageProps.onBack}>{t('完成')}</Button>
-        ) : result ? (
-          <Button onClick={model.back}>{t('修改配置')}</Button>
-        ) : plan ? (
-          <>
-            <Button disabled={busy} onClick={() => void model.check()}>
-              {t('同步检查')}
-            </Button>
-            <Button type="primary" disabled={!model.valid || busy} onClick={() => void model.run()}>
-              {t('开始同步')}
-            </Button>
-          </>
         ) : (
-          <Button type="primary" loading={checking} disabled={!model.valid || busy} onClick={() => void model.check()}>
-            {t('同步检查')}
-          </Button>
+          <Typography.Text type="secondary">
+            {t('同步内容：{value1}', { value1: values.data ? t('结构 + 数据') : t('仅结构') })}
+          </Typography.Text>
         )}
+        <Flex gap="small" wrap>
+          {running && (
+            <Button danger onClick={model.cancel}>
+              {t('取消同步')}
+            </Button>
+          )}
+          {result && (
+            <Button disabled={running} onClick={pageProps.onBack}>
+              {t('返回工作区')}
+            </Button>
+          )}
+          {result ? (
+            <Button
+              type="primary"
+              disabled={!done || externalTarget || !model.choices.target || !values.targetDatabase.trim()}
+              onClick={() => onOpenTarget?.(model.choices.target, values.targetDatabase.trim())}
+            >
+              {t('打开目标连接')}
+            </Button>
+          ) : (
+            <>
+              <Button disabled={busy} onClick={pageProps.onBack}>
+                {t('取消')}
+              </Button>
+              {plan && (
+                <Button disabled={busy} onClick={() => void model.check()}>
+                  {t('同步检查')}
+                </Button>
+              )}
+              <Button
+                type="primary"
+                loading={!plan && checking}
+                disabled={!model.valid || busy}
+                onClick={() => void (plan ? model.run() : model.check())}
+              >
+                {plan ? t('开始同步') : t('同步检查')}
+              </Button>
+            </>
+          )}
+        </Flex>
       </Flex>
     </DatabasePage>
   )

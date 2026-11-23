@@ -1,6 +1,6 @@
-import { DeleteOutlined, EditOutlined, LockOutlined, MessageOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, MessageOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
-import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
+import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, Tag, theme, Tooltip, Typography } from 'antd'
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
@@ -96,10 +96,10 @@ export function History(props: Props) {
         <HistoryContents
           {...contentsProps}
           header={
-            <Flex align="center" justify="space-between" style={{ paddingInline: token.paddingXXS }}>
+            <Flex align="center" justify="space-between" style={{ height: 42 }}>
               <Flex align="center" gap={6}>
                 <Typography.Text strong>{t('会话')}</Typography.Text>
-                <span className="object-sidebar-count">{props.items.length}</span>
+                <Tag style={{ marginInlineEnd: 0 }}>{props.items.length}</Tag>
               </Flex>
               <Flex align="center" gap={2}>
                 {newAction}
@@ -190,9 +190,32 @@ function HistoryContents({
   onSearchChange,
   header
 }: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
 
   const { token } = theme.useToken()
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const startOfYesterday = startOfToday.getTime() - 24 * 60 * 60 * 1000
+  const timeLabel = (updatedAt: string) => {
+    const time = Date.parse(updatedAt)
+    if (!Number.isFinite(time)) return ''
+    if (time >= startOfToday.getTime()) return new Date(time).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
+    if (time >= startOfYesterday) return t('昨天')
+    const date = new Date(time)
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  }
+  // 设计稿按最近更新时间分组，组内维持服务端返回顺序之外的时间倒序。
+  const grouped = [
+    { key: 'today', label: '今天', items: [] as ConversationInfo[] },
+    { key: 'yesterday', label: '昨天', items: [] as ConversationInfo[] },
+    { key: 'earlier', label: '更早', items: [] as ConversationInfo[] }
+  ]
+  ;[...items]
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+    .forEach((item) => {
+      const time = Date.parse(item.updatedAt)
+      grouped[time >= startOfToday.getTime() ? 0 : time >= startOfYesterday ? 1 : 2].items.push(item)
+    })
   return (
     <Flex
       vertical
@@ -200,15 +223,13 @@ function HistoryContents({
         height: '100%',
         minHeight: 0,
         padding: token.paddingXS,
-        paddingInline: 'var(--workspace-inset)',
+        paddingInline: token.padding,
         gap: token.marginSM,
         paddingTop: token.paddingSM
       }}
     >
       {header}
       <Input
-        className="object-search-input"
-        variant="filled"
         prefix={<SearchOutlined />}
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
@@ -221,46 +242,65 @@ function HistoryContents({
           {items.length === 0 && !loading ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? t('没有匹配的会话') : t('还没有对话')} />
           ) : (
-            <Conversations
-              className="chat-history-list"
-              activeKey={activeId}
-              onActiveChange={(key) => {
-                if (!busy) void onSelect(key)
-              }}
-              styles={{ root: { padding: 0 }, item: { paddingInline: token.paddingXS } }}
-              items={items.map((i) => ({
-                key: i.id,
-                disabled: busy,
-                label: (
-                  <Flex className="chat-history-row" align="center" justify="space-between" gap="small">
-                    <MessageOutlined style={{ color: token.colorTextTertiary, flexShrink: 0 }} />
-                    <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
-                      {i.title}
+            grouped.map((group) =>
+              group.items.length ? (
+                <div key={group.key}>
+                  {group.key !== 'earlier' && (
+                    <Typography.Text strong className="chat-history-group">
+                      {t(group.label)}
                     </Typography.Text>
-                    <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                      <Button
-                        danger
-                        type="text"
-                        size="small"
-                        aria-label={t('删除会话 ') + i.title}
-                        aria-haspopup="dialog"
-                        disabled={busy || selecting}
-                        icon={<DeleteOutlined />}
-                        onClick={() => onDeleteOpen(i)}
-                      />
-                    </span>
-                  </Flex>
-                )
-              }))}
-            />
+                  )}
+                  <Conversations
+                    className="chat-history-list"
+                    activeKey={activeId}
+                    onActiveChange={(key) => {
+                      if (!busy) void onSelect(key)
+                    }}
+                    styles={{ root: { padding: 0 }, item: { minHeight: 34, padding: '5px 8px' } }}
+                    items={group.items.map((i) => ({
+                      key: i.id,
+                      disabled: busy,
+                      label: (
+                        <Flex className="chat-history-row" align="center" justify="space-between" gap="small">
+                          <MessageOutlined className="chat-history-icon" style={{ flexShrink: 0, fontSize: 14 }} />
+                          <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
+                            {i.title}
+                          </Typography.Text>
+                          <span className="chat-history-time">{timeLabel(i.updatedAt)}</span>
+                          <span
+                            className="chat-history-actions"
+                            style={{ flexShrink: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              type="text"
+                              size="small"
+                              aria-label={t('重命名会话 ') + i.title}
+                              disabled={busy || selecting}
+                              icon={<EditOutlined />}
+                              onClick={() => onRenameOpen(i)}
+                            />
+                            <Button
+                              danger
+                              type="text"
+                              size="small"
+                              aria-label={t('删除会话 ') + i.title}
+                              aria-haspopup="dialog"
+                              disabled={busy || selecting}
+                              icon={<DeleteOutlined />}
+                              onClick={() => onDeleteOpen(i)}
+                            />
+                          </span>
+                        </Flex>
+                      )
+                    }))}
+                  />
+                </div>
+              ) : null
+            )
           )}
         </Spin>
-      </div>
-      <div className="chat-history-foot">
-        <LockOutlined />
-        {t('本地加密保存')}
-        <span>DeepSeek</span>
       </div>
     </Flex>
   )

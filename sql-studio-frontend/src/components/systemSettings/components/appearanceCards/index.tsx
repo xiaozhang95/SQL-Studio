@@ -1,4 +1,3 @@
-import { CheckOutlined } from '@ant-design/icons'
 import { Radio, theme } from 'antd'
 import type { RadioProps } from 'antd'
 import type { ReactNode } from 'react'
@@ -28,32 +27,27 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
       style={{ width: '100%', display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${settingsLayout.cardMinWidth}px), 1fr))`, gap: token.marginSM }}
     >
       {options.map((option) => {
-        const selected = option.value === value
         const styles = {
           root: {
-            position: 'relative',
-            display: 'block',
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr',
+            alignItems: 'center',
+            gap: token.marginXS,
             margin: 0,
             padding: token.paddingSM,
             minWidth: 0,
-            border: `1px solid ${selected ? 'var(--primary)' : token.colorBorderSecondary}`,
             borderRadius: token.borderRadiusLG,
-            boxShadow: selected ? '0 0 0 3px var(--primary-soft)' : undefined,
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            background: selected ? 'var(--primary-soft)' : token.colorBgContainer
+            cursor: disabled ? 'not-allowed' : 'pointer'
           },
-          icon: { position: 'absolute', top: 0, right: 0, width: 1, height: 1, opacity: 0 },
-          label: { display: 'block', marginTop: token.marginXS, textAlign: 'center' as const }
+          icon: { gridColumn: 1, gridRow: 2 },
+          label: { display: 'contents' }
         } satisfies RadioProps['styles']
         return (
           <Radio key={option.value} value={option.value} classNames={{ root: 'appearance-option-card' }} styles={styles}>
-            <span className="appearance-option-check" aria-hidden="true">
-              {selected && <CheckOutlined />}
-            </span>
-            <div aria-hidden="true" style={{ minWidth: 0 }}>
+            <div aria-hidden="true" style={{ gridColumn: '1 / -1', gridRow: 1, minWidth: 0, marginBottom: token.marginXS }}>
               {option.preview}
             </div>
-            <span>{option.label}</span>
+            <span style={{ gridColumn: 2, gridRow: 2, minWidth: 0 }}>{option.label}</span>
           </Radio>
         )
       })}

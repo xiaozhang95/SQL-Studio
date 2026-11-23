@@ -1,14 +1,16 @@
+import { ExportOutlined } from '@ant-design/icons'
 import { javascript } from '@codemirror/lang-javascript'
 import { json } from '@codemirror/lang-json'
 import { python } from '@codemirror/lang-python'
 import { sql } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
-import { theme, Typography } from 'antd'
+import { Button, Space, theme, Tooltip, Typography } from 'antd'
 import { useMemo } from 'react'
 
 import ContentCard from '@/components/contentCard'
 import { useTranslation } from '@/hooks/useTranslation'
+import { requestOpenQuery } from '@/services/openQuery'
 
 import { APPEARANCE } from '../../../../constant/appearance'
 
@@ -46,9 +48,10 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
+  const sqlLanguage = ['sql', 'mysql', 'postgres', 'postgresql'].includes(language)
   const displayText = useMemo(() => (formatJson && language === 'json' ? formatJsonText(text) : text), [formatJson, language, text])
   const extensions = useMemo(() => {
-    const lang = ['sql', 'mysql', 'postgres', 'postgresql'].includes(language)
+    const lang = sqlLanguage
       ? sql()
       : ['json', 'jsonc'].includes(language)
         ? json()
@@ -61,15 +64,38 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
       lang,
       EditorView.lineWrapping,
       EditorView.theme({
-        '&.cm-editor': { backgroundColor: token.colorBgContainer, color: token.colorText, fontSize: `${token.fontSize}px`, fontFamily: token.fontFamily },
+        '&.cm-editor': {
+          backgroundColor: token.colorBgContainer,
+          color: token.colorText,
+          fontSize: 'var(--ant-font-size)',
+          fontFamily: 'inherit'
+        },
         '&.cm-focused': { outline: 'none' },
-        '.cm-scroller': { overflow: 'auto', fontFamily: token.fontFamily, fontSize: `${token.fontSize}px`, lineHeight: String(token.lineHeight) },
-        '.cm-content': { padding: `${token.paddingSM}px`, fontFamily: token.fontFamily }
+        '.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: 'var(--ant-font-size)', lineHeight: '1.72' },
+        '.cm-content': { padding: '12px 14px', fontFamily: 'inherit' }
       })
     ]
-  }, [language, token.colorBgContainer, token.colorText, token.fontSize, token.fontFamily, token.lineHeight, token.paddingSM])
+  }, [sqlLanguage, language, token.colorBgContainer, token.colorText])
   return (
-    <ContentCard code title={title ?? (language || t('代码'))} extra={<Typography.Text copyable={{ text, tooltips: [t('复制代码'), t('已复制')] }} />}>
+    <ContentCard
+      code
+      title={
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {title ?? (sqlLanguage ? 'SQL' : language || t('代码'))}
+          {sqlLanguage && <span className="code-readonly">{t('只读查询')}</span>}
+        </span>
+      }
+      extra={
+        <Space size={2}>
+          <Typography.Text copyable={{ text, tooltips: [t('复制代码'), t('已复制')] }} />
+          {sqlLanguage && (
+            <Tooltip title={t('在查询页打开')}>
+              <Button type="text" size="small" aria-label={t('在查询页打开')} icon={<ExportOutlined />} onClick={() => requestOpenQuery(text)} />
+            </Tooltip>
+          )}
+        </Space>
+      }
+    >
       <CodeMirror
         aria-label={t('代码内容')}
         value={displayText}

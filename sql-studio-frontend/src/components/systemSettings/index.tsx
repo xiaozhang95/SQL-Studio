@@ -47,6 +47,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
         </Button>
       )}
       <Modal
+        rootClassName="sql-studio-theme"
         title={t('系统设置')}
         width={settingsLayout.width}
         open={settings.open}
@@ -56,22 +57,33 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
         keyboard={!settings.busy}
         destroyOnHidden
         styles={{
-          container: { padding: 0, overflow: 'hidden', borderRadius: token.borderRadiusLG },
-          header: { margin: 0, height: 52, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: `1px solid ${token.colorBorderSecondary}` },
+          container: { padding: 0, overflow: 'hidden', borderRadius: 12 },
+          header: {
+            margin: 0,
+            height: 52,
+            padding: '0 16px 0 20px',
+            display: 'flex',
+            alignItems: 'center',
+            borderBottom: `1px solid ${token.colorBorderSecondary}`
+          },
           body: { padding: 0 },
-          footer: { margin: 0, height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', borderTop: `1px solid ${token.colorBorderSecondary}` }
+          footer: {
+            margin: 0,
+            height: 56,
+            padding: '0 16px 0 20px',
+            display: 'flex',
+            alignItems: 'center',
+            borderTop: `1px solid ${token.colorBorderSecondary}`
+          }
         }}
         footer={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <span style={{ color: token.colorTextQuaternary, fontSize: token.fontSizeSM }}>{t('偏好保存在当前设备，保存后立即生效')}</span>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-              <Button disabled={settings.busy} onClick={settings.close}>
-                {t('取消')}
-              </Button>
-              <Button type="primary" loading={settings.busy} disabled={!settings.canSave} onClick={() => void settings.save()}>
-                {t('保存')}
-              </Button>
-            </div>
+          <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'flex-end' }}>
+            <Button disabled={settings.busy} onClick={settings.close}>
+              {t('取消')}
+            </Button>
+            <Button type="primary" loading={settings.busy} disabled={!settings.canSave} onClick={() => void settings.save()}>
+              {t('保存')}
+            </Button>
           </div>
         }
       >
@@ -83,51 +95,57 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
               flex: 'none',
               display: 'flex',
               flexDirection: 'column',
-              gap: token.marginLG,
-              padding: `${token.paddingSM}px ${token.paddingXS}px`,
+              gap: 16,
+              padding: '14px 10px',
               borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
-              background: token.colorFillAlter,
               overflowY: 'auto'
             }}
           >
             {settingsGroups.map((group) => (
-              <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS, flexShrink: 0 }}>
-                <Typography.Text type="secondary" style={{ paddingInline: token.padding, marginBottom: token.marginXXS }}>
+              <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+                <Typography.Text strong style={{ padding: '4px 10px 6px', color: token.colorText }}>
                   {t(group.label)}
                 </Typography.Text>
-                {group.sections.map((section) => (
-                  <Button
-                    key={section.value}
-                    type="text"
-                    className="settings-section-choice"
-                    icon={<section.icon aria-hidden="true" />}
-                    aria-pressed={settings.section === section.value}
-                    disabled={settings.busy}
-                    onClick={() => settings.setSection(section.value)}
-                    style={{
-                      height: 32,
-                      minHeight: 32,
-                      flexShrink: 0,
-                      justifyContent: 'flex-start',
-                      textAlign: 'start',
-                      whiteSpace: 'normal'
-                    }}
-                  >
-                    {t(section.label)}
-                  </Button>
-                ))}
+                {group.sections.map((section) => {
+                  const active = settings.section === section.value
+                  return (
+                    <Button
+                      key={section.value}
+                      type="text"
+                      className="settings-section-choice"
+                      icon={<section.icon style={{ fontSize: 16 }} aria-hidden="true" />}
+                      aria-pressed={active}
+                      disabled={settings.busy}
+                      onClick={() => settings.setSection(section.value)}
+                      style={{
+                        height: 40,
+                        minHeight: 40,
+                        flexShrink: 0,
+                        gap: 10,
+                        paddingInline: 10,
+                        borderRadius: 8,
+                        justifyContent: 'flex-start',
+                        textAlign: 'start',
+                        whiteSpace: 'normal',
+                        color: 'var(--text)'
+                      }}
+                    >
+                      {t(section.label)}
+                    </Button>
+                  )
+                })}
               </div>
             ))}
           </nav>
-          <section aria-label={sectionTitle} style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', padding: `${token.paddingLG}px ${token.paddingXL}px` }}>
-            <Typography.Title level={5} style={{ marginTop: 0, marginBottom: token.marginLG }}>
+          <section aria-label={sectionTitle} style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', padding: '20px 24px' }}>
+            <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 20 }}>
               {sectionTitle}
             </Typography.Title>
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
             {settings.section === SettingsSection.About && <About disabled={settings.busy} />}
             {settings.section === SettingsSection.Appearance && (
               <>
-                <Typography.Text strong style={{ display: 'block', marginBottom: token.marginSM }}>
+                <Typography.Text strong style={{ display: 'block', marginBottom: 9 }}>
                   {t('主题模式')}
                 </Typography.Text>
                 <AppearanceCards
@@ -137,8 +155,8 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
                   disabled={settings.busy}
                   options={themeOptions.map((option) => ({ ...option, label: t(option.label), preview: <ThemePreview preference={option.value} /> }))}
                 />
-                <div style={{ marginTop: token.marginLG }}>
-                  <Typography.Text strong style={{ display: 'block', marginBottom: token.marginSM }}>
+                <div style={{ marginTop: 22 }}>
+                  <Typography.Text strong style={{ display: 'block', marginBottom: 9 }}>
                     {t('界面字号')}
                   </Typography.Text>
                   <AppearanceCards
@@ -154,13 +172,17 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
                           style={{
                             height: settingsLayout.previewHeight,
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            gap: token.marginXS,
                             borderRadius: token.borderRadiusSM,
-                            background: token.colorFillAlter
+                            background: token.colorFillAlter,
+                            fontSize: option.fontSize
                           }}
                         >
-                          <span style={{ fontSize: option.fontSize, fontWeight: 500, lineHeight: 1 }}>Aa</span>
+                          <span>SQL Studio</span>
+                          <span>{t('数据查询')}</span>
                         </div>
                       )
                     }))}

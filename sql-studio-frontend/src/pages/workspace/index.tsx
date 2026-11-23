@@ -1,11 +1,10 @@
-import { PlusOutlined, StarOutlined, StopOutlined } from '@ant-design/icons'
-import { Button, Tooltip, Typography } from 'antd'
+import { PlusOutlined, StopOutlined } from '@ant-design/icons'
+import { Button, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import PageHeader from '@/components/pageHeader'
 import StudioIcon from '@/components/studioIcon'
 import { sidebarLayout } from '@/constant/sidebarLayout'
-import { getDatabaseProfile } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
@@ -40,10 +39,7 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
   const favorites = useQueryFavorites()
   const connection = model.savedConnections.find((item) => item.id === model.tab.connectionId)
-  const connectionStatus = model.objects.snapshots[model.tab.connectionId]?.status
-  const connected = connectionStatus === 'connected'
   const breadcrumb = [connection?.name, model.tab.database, model.tab.title].filter(Boolean).join(' / ')
-  const statusText = connected ? t('已连接') : connectionStatus === 'loading' ? t('连接中') : t('未连接')
   return (
     <div
       className="app-shell"
@@ -74,31 +70,11 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
         errorScope={model.activeTab}
         actions={
           <>
-            {model.tab.connectionId && (
-              <span className={`connection-status-pill${connected ? ' is-connected' : ''}`}>
-                <span className="connection-status-dot" />
-                <span>{statusText}</span>
-                {connection && <span className="connection-status-engine">{getDatabaseProfile(connection.type).label}</span>}
-              </span>
+            {model.tabs.length > 0 && (
+              <Button icon={<PlusOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
+                {t('新建查询')}
+              </Button>
             )}
-            <Button icon={<PlusOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
-              {t('新建查询')}
-            </Button>
-            <Tooltip title={t('新建连接')}>
-              <Button
-                type="text"
-                icon={<StudioIcon name="database" size={16} />}
-                aria-label={t('新建连接')}
-                disabled={model.running || !model.workspaceReady}
-                onClick={() => {
-                  model.setEditing(undefined)
-                  model.setConnectionModal(true)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title={t('查询收藏')}>
-              <Button type="text" icon={<StarOutlined />} aria-label={t('查询收藏')} onClick={favorites.show} />
-            </Tooltip>
             {model.runningTabId && !model.activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
                 {t('取消执行')}
@@ -112,7 +88,7 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
           <ContentLoading label={t('正在恢复工作区…')} />
         </div>
       ) : (
-        <div className="workspace" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div className="workspace" style={{ position: 'relative', display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <ConnectionSidebar
             model={model}
             layout={sidebar}
@@ -147,11 +123,7 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
                   )}
                 >
                   <>
-                    {!model.pageReady ? (
-                      <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                        {model.pageLoadFailed ? <Button onClick={model.retryPage}>{t('重试')}</Button> : <ContentLoading label={t('正在加载当前标签…')} />}
-                      </div>
-                    ) : (
+                    {model.pageReady && (
                       <>
                         {model.tab.kind === 'query' && (
                           <QueryEditor
@@ -168,12 +140,11 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
                 </WorkspaceTabs>
               ) : (
                 <div className="workspace-empty-state">
-                  <img className="workspace-empty-logo" src="/studio.svg" alt="" width={48} height={48} />
-                  <Typography.Title level={3} style={{ margin: 0, fontSize: 20 }}>
+                  <Typography.Title level={3} style={{ margin: 0 }}>
                     {t('开始一次查询')}
                   </Typography.Title>
-                  <Typography.Text type="secondary" style={{ maxWidth: 460, fontSize: 12, lineHeight: 1.7 }}>
-                    {t('新建查询开始编写 SQL，或双击左侧表查看数据；数据库结构列表可从右键菜单打开。')}
+                  <Typography.Text type="secondary" style={{ maxWidth: 460 }}>
+                    {t('新建查询开始编写 SQL，或双击左侧表查看数据')}
                   </Typography.Text>
                   <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                     <Button type="primary" icon={<PlusOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
@@ -194,6 +165,11 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
               )}
             </div>
           </main>
+          {model.tabs.length > 0 && !model.pageReady && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)' }}>
+              {model.pageLoadFailed ? <Button onClick={model.retryPage}>{t('重试')}</Button> : <ContentLoading label={t('正在加载当前标签…')} />}
+            </div>
+          )}
         </div>
       )}
       <DataExport model={model.dataExport} />

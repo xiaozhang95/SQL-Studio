@@ -8,16 +8,16 @@
 
 - [history](history/README.md)：本地对话历史。
 - [deepseekLogo](deepseekLogo/README.md)：官方蓝鲸标志。
-- [processCard](processCard/README.md)：可折叠、隐藏的过程卡片。
+- [processCard](processCard/README.md)：可折叠的执行过程卡片。
 
-- [roundFooter](roundFooter/README.md)：每轮回答底部的操作和状态。
+- [roundFooter](roundFooter/README.md)：每轮回答底部的复制、打开查询、导出、状态和时间。
 
 - [turnContent](turnContent/README.md)：单轮消息、过程、结果和错误。
 - [roundNavigation](roundNavigation/README.md)：问题刻度预览和完整问题列表。
 
 - [answerContent](answerContent/README.md)：结构化最终回答。
 - [answerMarkdown](answerMarkdown/README.md)：回答说明的安全 Markdown 展示。
-- [exportExcel](exportExcel/README.md)：当前结果Excel导出。
+- [exportExcel](exportExcel/README.md)：当前结果 Excel 导出，支持默认、图标和文本链接三种呈现。
 
-- [codeBlock](codeBlock/README.md)：回答代码高亮与复制。
+- [codeBlock](codeBlock/README.md)：回答代码高亮、复制与在查询页打开。
 - [writeConfirmation](writeConfirmation/README.md)：回复下方的逐次写入确认卡片。

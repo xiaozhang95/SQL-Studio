@@ -1,4 +1,4 @@
-import { LoadingOutlined } from '@ant-design/icons'
+import { LoadingOutlined, MessageOutlined, ProfileOutlined } from '@ant-design/icons'
 import { Select, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
@@ -52,8 +52,8 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
         </div>
       }
       items={[
-        { key: 'messages', label: t('消息'), icon: running ? <LoadingOutlined spin /> : undefined },
-        { key: 'summary', label: t('摘要') },
+        { key: 'messages', label: t('消息'), icon: running ? <LoadingOutlined spin /> : <MessageOutlined /> },
+        { key: 'summary', label: t('摘要'), icon: <ProfileOutlined /> },
         ...visibleResults.map(({ item, index, resultIndex }) => ({
           key: String(index),
           disabled: running,

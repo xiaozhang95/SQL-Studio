@@ -1,4 +1,4 @@
-import { theme } from 'antd'
+import { theme, Typography } from 'antd'
 import type { ReactNode } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
@@ -24,9 +24,9 @@ export default function PageHeader({ children, actions, title, breadcrumb, error
       <header
         className="context-header"
         style={{
-          minHeight: token.controlHeight + token.paddingMD,
+          minHeight: 48,
           flex: 'none',
-          paddingInline: token.paddingSM,
+          paddingInline: token.padding,
           paddingBlock: token.paddingXXS,
           display: 'flex',
           flexWrap: 'wrap',
@@ -41,10 +41,14 @@ export default function PageHeader({ children, actions, title, breadcrumb, error
         <div className="context-header-id" style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, minWidth: 0, flex: '0 1 auto' }}>
           {title && (
             <div className="context-header-title" title={typeof title === 'string' ? title : undefined}>
-              {title}
+              <Typography.Text strong>{title}</Typography.Text>
             </div>
           )}
-          {breadcrumb && <div className="context-header-breadcrumb">{breadcrumb}</div>}
+          {breadcrumb && (
+            <Typography.Text type="secondary" className="context-header-breadcrumb">
+              {breadcrumb}
+            </Typography.Text>
+          )}
           {children}
         </div>
         <div className="context-header-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>

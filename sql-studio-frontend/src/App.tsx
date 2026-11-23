@@ -4,7 +4,7 @@ import xZhCN from '@ant-design/x/locale/zh_CN'
 import { App as AntApp } from 'antd'
 import enUS from 'antd/locale/en_US'
 import zhCN from 'antd/locale/zh_CN'
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
 
 import AppRail from '@/components/appRail'
 import ContentLoading from '@/components/contentLoading'
@@ -24,6 +24,7 @@ import Workspace from '@/pages/workspace'
 import { useWorkspace } from '@/pages/workspace/hooks/useWorkspace'
 import { selectedConnectionScope } from '@/pages/workspace/utils/explorerTree'
 import { workspacePageTitle } from '@/pages/workspace/utils/pageTitle'
+import { subscribeOpenQuery } from '@/services/openQuery'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 import { translate } from '@/utils/translate'
 
@@ -37,6 +38,15 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
   const { section, connectionId, database } = navigation
   const active = section === 'workspace'
   const model = useWorkspace(active)
+  const openQuery = useRef<(sql: string) => void>(() => {})
+  useEffect(() => {
+    openQuery.current = (sql) => {
+      const { connectionId, database, schema } = model.tab
+      model.addTab(sql, { connectionId, database, schema, table: '' })
+      navigation.openWorkspace()
+    }
+  })
+  useEffect(() => subscribeOpenQuery((sql) => openQuery.current(sql)), [])
   const databasePageProps = {
     onBack: navigation.openWorkspace,
     connectionError: model.connectionError,
@@ -91,6 +101,10 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
                   connections={model.connections}
                   initialConnection={initialConnection?.type === DatabaseEngine.Redis ? undefined : initialConnection}
                   onCreated={(id) => void model.objects.refreshDatabases(id).catch(() => {})}
+                  onOpenTarget={(targetConnectionId, database) => {
+                    model.addTab('', { connectionId: targetConnectionId, database, schema: '', table: '' })
+                    navigation.openWorkspace()
+                  }}
                   {...databasePageProps}
                 />
               )}

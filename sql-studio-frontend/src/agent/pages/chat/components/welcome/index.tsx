@@ -14,27 +14,28 @@ export function Welcome() {
 
   return (
     <Flex vertical align="center" gap="large" style={{ width: '100%', maxWidth: 720, margin: '0 auto' }}>
-      <img src="/studio.svg" alt="" width={48} height={48} style={{ borderRadius: 14, boxShadow: '0 4px 16px rgba(21, 128, 61, 0.2)' }} />
       <Space orientation="vertical" align="center" size="small" style={{ textAlign: 'center' }}>
-        <Typography.Title level={3} style={{ margin: 0, fontSize: 23 }}>
+        <Typography.Title level={3} style={{ margin: 0 }}>
           {t('想了解哪些数据？')}
         </Typography.Title>
-        <Typography.Text type="secondary">{t('从连接、表结构到数据分析，直接描述你想了解的内容。')}</Typography.Text>
+        <Typography.Text type="secondary">
+          {t('从连接、表结构到数据分析，直接描述你想了解的内容。')}
+        </Typography.Text>
       </Space>
       <div className="agent-welcome-suggestions">
         {examples.map((example) => (
-          <Card key={example.title} size="small" className="agent-welcome-card">
+          <Card key={example.title} size="small" className="agent-welcome-card" styles={{ body: { padding: 14 } }}>
             <span className="agent-welcome-icon">{example.icon}</span>
-            <Typography.Text strong style={{ display: 'block', marginTop: 10 }}>
+            <Typography.Text strong style={{ display: 'block', marginTop: 11 }}>
               {t(example.title)}
             </Typography.Text>
-            <Typography.Text type="secondary" style={{ display: 'block', marginTop: 3, fontSize: 11 }}>
+            <Typography.Text type="secondary" style={{ display: 'block', marginTop: 3 }}>
               {t(example.question)}
             </Typography.Text>
           </Card>
         ))}
       </div>
-      <Typography.Text type="secondary" style={{ fontSize: 10 }}>
+      <Typography.Text type="secondary">
         {t('在下方输入问题，涉及数据或结构修改时会逐次请求确认。')}
       </Typography.Text>
     </Flex>

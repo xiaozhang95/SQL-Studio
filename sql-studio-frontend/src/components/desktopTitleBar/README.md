@@ -8,4 +8,4 @@ title?: string 默认 SQL Studio，由 App 按当前页面计算：工作区使�
 
 不读取数据库，不持久化新状态；桥接契约见 [desktop](../../typings/desktop/README.md)。
 
-可见标题左侧展示 16px 应用 Logo。仅 preload 的 platform 为 win32 时，Logo 和标题整体左对齐；左右留白共用 workspace-inset，默认 12px，使 Logo 左边缘与下方侧栏搜索框的外边缘对齐。macOS 和 Linux 继续整体居中，macOS 左侧保留系统红黄绿窗口按钮的位置。Logo 不参与拖拽，长标题仍省略。
+可见标题左侧展示 16px 应用 Logo。仅 preload 的 platform 为 win32 时，Logo 和标题整体左对齐；左右留白共用 workspace-inset（16px），使 Logo 左边缘与下方侧栏搜索框的外边缘对齐。macOS 和 Linux 继续整体居中，macOS 左侧保留系统红黄绿窗口按钮的位置。Logo 不参与拖拽，长标题仍省略。

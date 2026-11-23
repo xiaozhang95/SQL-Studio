@@ -2,7 +2,9 @@ import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
 import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
 import { Fragment, useMemo } from 'react'
+import type { ReactNode } from 'react'
 
+import StudioIcon from '@/components/studioIcon'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
@@ -10,6 +12,7 @@ import { readSQL } from '../../../../utils/queryResult'
 import { CHAT } from '../../constant/chat'
 import { AnswerContent } from '../answerContent'
 import { CodeBlock } from '../codeBlock'
+import { DeepSeekLogo } from '../deepseekLogo'
 import { ProcessCard } from '../processCard'
 import { QueryResult } from '../queryResult'
 import { RoundFooter } from '../roundFooter'
@@ -89,18 +92,64 @@ interface Props {
   locked: boolean
   busy: boolean
   status: string
+  assistantModel?: string
   expanded: string[]
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
 }
-export function TurnContent({ entries, busy, waiting, locked, status, expanded, onExpanded, onEdit }: Props) {
+
+function AssistantHead({ model }: { model?: string }) {
+  return (
+    <Flex align="center" gap={8} style={{ marginBottom: 12 }}>
+      <span
+        aria-hidden="true"
+        style={{
+          display: 'grid',
+          placeItems: 'center',
+          width: 22,
+          height: 22,
+          flex: 'none',
+          borderRadius: 7,
+          background: 'var(--primary-soft)',
+          color: 'var(--primary)'
+        }}
+      >
+        <StudioIcon name="bot" size={12} />
+      </span>
+      <Typography.Text strong>
+        SQL Studio AI
+      </Typography.Text>
+      {model && (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            height: 18,
+            padding: '0 6px',
+            border: '1px solid var(--border)',
+            borderRadius: 999,
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          <DeepSeekLogo size={11} />
+          {model}
+        </span>
+      )}
+    </Flex>
+  )
+}
+
+export function TurnContent({ entries, busy, waiting, locked, status, assistantModel, expanded, onExpanded, onEdit }: Props) {
   const { t, language } = useTranslation()
 
   const { token } = theme.useToken()
   const sections = blocks(entries)
+  const assistantBody = (content: ReactNode) => <div style={{ paddingInlineStart: 30, minWidth: 0 }}>{content}</div>
+  const headSection = sections.findIndex((block) => block.type !== 'footer' && block.entries[0]?.role !== 'user')
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0, paddingBottom: token.padding }}>
-      {sections.map((block) => {
+      {sections.map((block, sectionIndex) => {
         const first = block.entries[0]
         if (block.type === 'footer')
           return (
@@ -110,7 +159,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                 .map((entry) => (
                   <Alert key={entry.id} type="info" showIcon title={t(entry.text)} />
                 ))}
-              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />
+              {assistantBody(<RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />)}
             </Fragment>
           )
         if (block.type === 'process') {
@@ -122,61 +171,76 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
           else if (block.entries.some((entry) => entry.streaming)) title = t('DeepSeek 正在思考…')
           else if (block.entries.some((entry) => entry.incomplete)) title = t('思考过程（未完成）')
           return (
-            <ProcessCard
-              key={key}
-              title={title}
-              icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
-              expanded={expanded.includes(key)}
-              onExpand={(open) => {
-                const remaining = expanded.filter((id) => id !== key)
-                onExpanded(open ? [...remaining, key] : remaining)
-              }}
-            >
-              <ProcessDetails entries={block.entries} />
-            </ProcessCard>
+            <Fragment key={key}>
+              {sectionIndex === headSection && <AssistantHead model={assistantModel} />}
+              {assistantBody(
+                <ProcessCard
+                  title={title}
+                  icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
+                  expanded={expanded.includes(key)}
+                  onExpand={(open) => {
+                    const remaining = expanded.filter((id) => id !== key)
+                    onExpanded(open ? [...remaining, key] : remaining)
+                  }}
+                >
+                  <ProcessDetails entries={block.entries} />
+                </ProcessCard>
+              )}
+            </Fragment>
           )
         }
         return block.entries.map((e) => {
           const user = e.role === 'user'
-          return (
-            <Flex key={e.id} vertical gap={CHAT.spacing.detail} style={{ width: '100%', minWidth: 0 }}>
-              <Bubble
-                placement={user ? 'end' : 'start'}
-                variant={user ? 'filled' : 'borderless'}
-                styles={{
-                  root: { width: user ? undefined : '100%' },
-                  body: { width: user ? undefined : '100%', maxWidth: '100%', minWidth: 0 },
-                  content: { padding: user ? token.paddingSM : 0, maxWidth: '100%', width: user ? undefined : '100%' }
-                }}
-                content={
-                  !user ? (
-                    <AnswerContent text={e.text} streaming={e.streaming} />
-                  ) : (
-                    <Typography.Paragraph
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        overflowWrap: 'anywhere',
-                        margin: 0,
-                        maxWidth: '100%'
-                      }}
-                    >
+          if (user)
+            return (
+              <Flex key={e.id} className="user-message" vertical gap={CHAT.spacing.detail} style={{ width: '100%', minWidth: 0 }}>
+                <Bubble
+                  placement="end"
+                  variant="borderless"
+                  styles={{
+                    root: { width: '100%' },
+                    body: { width: '100%', maxWidth: '78%', minWidth: 0 },
+                    content: {
+                      width: '100%',
+                      maxWidth: '100%',
+                      padding: '9px 13px',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px 12px 4px 12px',
+                      background: 'var(--surface-subtle)'
+                    }
+                  }}
+                  content={
+                    <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0, maxWidth: '100%' }}>
                       {e.text}
                       {e.incomplete && <Typography.Text type="secondary">{t('（未完成）')}</Typography.Text>}
                     </Typography.Paragraph>
-                  )
-                }
-              />
-              {user && (
-                <Flex justify="end" align="center" gap={CHAT.spacing.detail} wrap>
+                  }
+                />
+                <Flex className="user-message-actions" justify="end" align="center" gap={CHAT.spacing.detail} wrap>
                   {e.createdAt && <Typography.Text type="secondary">{new Date(e.createdAt).toLocaleString(language, { hour12: false })}</Typography.Text>}
                   <Tooltip title={t('编辑问题')}>
                     <Button type="text" size="small" aria-label={t('编辑问题')} disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
                   </Tooltip>
                   <Typography.Text copyable={{ text: e.text, tooltips: [t('复制问题'), t('已复制')] }} />
                 </Flex>
+              </Flex>
+            )
+          return (
+            <Fragment key={e.id}>
+              {sectionIndex === headSection && <AssistantHead model={assistantModel} />}
+              {assistantBody(
+                <Bubble
+                  placement="start"
+                  variant="borderless"
+                  styles={{
+                    root: { width: '100%' },
+                    body: { width: '100%', maxWidth: '100%', minWidth: 0 },
+                    content: { padding: 0, maxWidth: '100%', width: '100%' }
+                  }}
+                  content={<AnswerContent text={e.text} streaming={e.streaming} />}
+                />
               )}
-              {user && <Divider style={{ margin: 0 }} />}
-            </Flex>
+            </Fragment>
           )
         })
       })}

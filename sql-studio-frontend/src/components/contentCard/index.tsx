@@ -16,7 +16,7 @@ export default function ContentCard({ code = false, style, ...props }: ContentCa
         ...(code ? { overflow: 'hidden' } : {}),
         ...style
       }}
-      styles={code ? { body: { padding: 0 }, header: { marginBottom: 0 } } : undefined}
+      styles={code ? { body: { padding: 0 }, header: { marginBottom: 0, minHeight: 32, paddingInline: 10 } } : undefined}
     />
   )
 }
