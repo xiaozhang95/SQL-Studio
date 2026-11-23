@@ -1,8 +1,8 @@
-import { PlusOutlined, StopOutlined } from '@ant-design/icons'
+import { PlusOutlined } from '@ant-design/icons'
 import { Button, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
-import PageHeader from '@/components/pageHeader'
+import PageErrorBanner from '@/components/pageErrorBanner'
 import StudioIcon from '@/components/studioIcon'
 import { sidebarLayout } from '@/constant/sidebarLayout'
 import { DatabaseEngine } from '@/databases/typings'
@@ -22,7 +22,7 @@ import QueryResults from './components/queryResults'
 import RedisQuery from './components/redisQuery'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { workspaceEmptyStyle } from './constant/layout'
+import { workspaceEmptyStyle, workspaceTabBarStyle } from './constant/layout'
 import type { WorkspaceModel } from './hooks/useWorkspace'
 
 type Props = {
@@ -36,13 +36,9 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
   const { t } = useTranslation()
 
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
-  const connection = model.savedConnections.find((item) => item.id === model.tab.connectionId)
-  const breadcrumb = [connection?.name, model.tab.database, model.tab.title].filter(Boolean).join(' / ')
   return (
     <div className="app-shell" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--surface)' }}>
-      <PageHeader
-        title={t('工作台')}
-        breadcrumb={breadcrumb || undefined}
+      <PageErrorBanner
         errors={[
           model.connectionError,
           model.operationError,
@@ -63,20 +59,6 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
           ) : undefined
         }
         errorScope={model.activeTab}
-        actions={
-          <>
-            {model.tabs.length > 0 && (
-              <Button icon={<PlusOutlined />} disabled={model.running || !model.workspaceReady} onClick={model.newQuery}>
-                {t('新建查询')}
-              </Button>
-            )}
-            {model.runningTabId && !model.activeRunning && (
-              <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
-                {t('取消执行')}
-              </Button>
-            )}
-          </>
-        }
       />
       {!model.workspaceReady ? (
         <div className="workspace-empty" style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--surface)' }}>
@@ -93,8 +75,8 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
               model.setConnectionModal(true)
             }}
           />
-          <main className="main-area" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
-            <div className="query-workspace" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <main className="main-area" aria-label={t('工作台')} style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+            <div className="query-workspace" style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {model.tabs.length > 0 ? (
                 <WorkspaceTabs
                   model={model}
@@ -151,13 +133,25 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
                   </div>
                 </div>
               )}
+              {model.tabs.length > 0 && !model.pageReady && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    insetInline: 0,
+                    insetBlockStart: workspaceTabBarStyle.height,
+                    insetBlockEnd: 0,
+                    zIndex: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--surface)'
+                  }}
+                >
+                  {model.pageLoadFailed ? <Button onClick={model.retryPage}>{t('重试')}</Button> : <ContentLoading label={t('正在加载当前标签…')} />}
+                </div>
+              )}
             </div>
           </main>
-          {model.tabs.length > 0 && !model.pageReady && (
-            <div style={{ position: 'absolute', inset: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)' }}>
-              {model.pageLoadFailed ? <Button onClick={model.retryPage}>{t('重试')}</Button> : <ContentLoading label={t('正在加载当前标签…')} />}
-            </div>
-          )}
         </div>
       )}
       <DataExport model={model.dataExport} />

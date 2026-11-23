@@ -1,11 +1,11 @@
-import { DeleteOutlined, EditOutlined, MessageOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, MessageOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
-import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, Tag, theme, Tooltip, Typography } from 'antd'
+import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
 import { useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 
 import DeleteDialog from '@/components/deleteDialog'
 import ErrorNotice from '@/components/errorNotice'
+import { SidebarHeader, SidebarSearch } from '@/components/sidebarControls'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -76,7 +76,7 @@ export function History(props: Props) {
   )
   const newAction = (
     <Tooltip title={t('新建会话')}>
-      <Button type="text" size="small" aria-label={t('新建会话')} icon={<PlusOutlined />} onClick={props.onNew} disabled={props.busy || props.loading} />
+      <Button type="text" size="small" aria-label={t('新建会话')} icon={<PlusOutlined />} onClick={props.onNew} disabled={props.busy || props.selecting || props.loading} />
     </Tooltip>
   )
   return (
@@ -85,7 +85,8 @@ export function History(props: Props) {
         ref={panelRef}
         style={{
           position: 'relative',
-          display: mobile ? 'none' : 'block',
+          display: mobile ? 'none' : 'flex',
+          flexDirection: 'column',
           flexShrink: 0,
           height: '100%',
           width: visibleWidth,
@@ -93,21 +94,17 @@ export function History(props: Props) {
           borderRight: '1px solid var(--border)'
         }}
       >
-        <HistoryContents
-          {...contentsProps}
-          header={
-            <Flex align="center" justify="space-between" style={{ height: 42 }}>
-              <Flex align="center" gap={6}>
-                <Typography.Text strong>{t('会话')}</Typography.Text>
-                <Tag style={{ marginInlineEnd: 0 }}>{props.items.length}</Tag>
-              </Flex>
-              <Flex align="center" gap={2}>
-                {newAction}
-                {refreshAction}
-              </Flex>
-            </Flex>
+        <SidebarHeader
+          title={t('会话')}
+          count={props.items.length}
+          actions={
+            <>
+              {refreshAction}
+              {newAction}
+            </>
           }
         />
+        <HistoryContents {...contentsProps} />
         <div
           className="sidebar-resizer"
           role="separator"
@@ -121,7 +118,20 @@ export function History(props: Props) {
           style={{ position: 'absolute', insetBlock: 0, insetInlineEnd: 0, width: 5, zIndex: 3, cursor: 'col-resize', touchAction: 'none' }}
         />
       </aside>
-      <Drawer title={t('历史会话')} extra={refreshAction} placement="left" size={280} open={mobile && open} onClose={onClose} styles={{ body: { padding: 0 } }}>
+      <Drawer
+        title={t('历史会话')}
+        extra={
+          <Flex align="center" gap={2}>
+            {newAction}
+            {refreshAction}
+          </Flex>
+        }
+        placement="left"
+        size={280}
+        open={mobile && open}
+        onClose={onClose}
+        styles={{ body: { padding: 0 } }}
+      >
         <HistoryContents {...contentsProps} />
       </Drawer>
       <DeleteDialog
@@ -187,9 +197,8 @@ function HistoryContents({
   onDeleteOpen,
   onRenameOpen,
   search,
-  onSearchChange,
-  header
-}: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void; header?: ReactNode }) {
+  onSearchChange
+}: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void }) {
   const { t, language } = useTranslation()
 
   const { token } = theme.useToken()
@@ -217,20 +226,9 @@ function HistoryContents({
       grouped[time >= startOfToday.getTime() ? 0 : time >= startOfYesterday ? 1 : 2].items.push(item)
     })
   return (
-    <Flex
-      vertical
-      style={{
-        height: '100%',
-        minHeight: 0,
-        padding: token.paddingXS,
-        paddingInline: token.padding,
-        gap: token.marginSM,
-        paddingTop: token.paddingSM
-      }}
-    >
-      {header}
-      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={t('搜索会话标题')} aria-label={t('搜索会话标题')} allowClear />
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+    <Flex vertical style={{ flex: 1, height: '100%', minHeight: 0 }}>
+      <SidebarSearch value={search} onChange={onSearchChange} placeholder={t('搜索会话标题')} />
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingInline: token.padding, paddingBlockEnd: token.paddingXS }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? t('没有匹配的会话') : t('还没有对话')} />

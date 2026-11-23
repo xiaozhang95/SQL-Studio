@@ -16,17 +16,17 @@ import {
   PlusOutlined,
   ProfileOutlined,
   ReloadOutlined,
-  SearchOutlined,
   SortAscendingOutlined,
   SwapOutlined,
   TableOutlined
 } from '@ant-design/icons'
-import { Dropdown, Empty, Input, Tree } from 'antd'
+import { Dropdown, Empty, Tree } from 'antd'
 import type { MenuProps } from 'antd'
 import { useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
+import { SidebarSearch } from '@/components/sidebarControls'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
@@ -397,16 +397,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       {failures.map((node) => (
         <ExplorerError key={node.key} error={node.title} />
       ))}
-      <div style={{ flex: 'none', padding: '8px var(--workspace-inset)', borderBottom: '1px solid var(--border)' }}>
-        <Input
-          prefix={<SearchOutlined />}
-          value={search}
-          onChange={(event) => updateExplorer({ search: event.target.value })}
-          placeholder={t('搜索连接 / 库 / 表')}
-          allowClear
-          aria-label={t('搜索数据库对象')}
-        />
-      </div>
+      <SidebarSearch value={search} onChange={(value) => updateExplorer({ search: value })} placeholder={t('搜索连接 / 库 / 表')} label={t('搜索数据库对象')} />
       <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', userSelect: 'none' }}>
         <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
           <div

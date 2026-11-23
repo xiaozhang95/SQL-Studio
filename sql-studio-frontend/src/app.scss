@@ -382,6 +382,26 @@ html[data-theme='dark'] .editor-toolbar .query-run-button.ant-btn:enabled {
   }
 }
 
+// Tabs 未提供新增按钮的语义样式入口，这里与对象栏的 small text 图标按钮对齐。
+.workspace-tabs.ant-tabs.ant-tabs-editable-card > .ant-tabs-nav .ant-tabs-nav-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--ant-control-height-sm);
+  min-inline-size: var(--ant-control-height-sm);
+  block-size: var(--ant-control-height-sm);
+  min-block-size: var(--ant-control-height-sm);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ant-border-radius-sm);
+  font-size: var(--ant-font-size);
+
+  &:is(:hover, :active) {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+}
+
 // 导航按视口收缩，激活态由 aria-current 驱动。
 .app-rail {
   width: 56px;

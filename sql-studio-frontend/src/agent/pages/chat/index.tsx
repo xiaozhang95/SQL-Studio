@@ -1,9 +1,8 @@
-import { MenuOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Flex, Grid, theme } from 'antd'
 import { useEffect, useMemo } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
-import PageHeader from '@/components/pageHeader'
+import PageErrorBanner from '@/components/pageErrorBanner'
 import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -41,9 +40,10 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
     () => chat.history.map((item) => (item.status === 'idle' && item.customTitle === false && item.title === defaultConversationTitle ? { ...item, title: localizedDefaultTitle } : item)),
     [chat.history, localizedDefaultTitle]
   )
-  const activeTitle = history.find((i) => i.id === workspace.state.activeId)?.title ?? localizedDefaultTitle
   return (
     <Flex
+      component="main"
+      aria-label={t('AI 助手')}
       style={{
         height: '100%',
         flexDirection: 'column',
@@ -52,20 +52,10 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
         colorScheme: dark ? 'dark' : 'light'
       }}
     >
-      <PageHeader
-        title={t('AI 助手')}
-        breadcrumb={`${t('会话')} / ${activeTitle}`}
+      <PageErrorBanner
         errors={[chat.error, chat.loadError, chat.confirmWrite.error, ai.readError, ai.choiceError]}
         errorScope={workspace.state.activeId}
         errorAction={chat.loadError ? <Button onClick={() => void chat.retryHistory()}>{t('重试')}</Button> : ai.readError ? <Button onClick={ai.retry}>{t('重试')}</Button> : undefined}
-        actions={
-          <>
-            <Button icon={<PlusOutlined />} disabled={chat.historyBusy || chat.loading} onClick={() => void chat.createNew()}>
-              {localizedDefaultTitle}
-            </Button>
-            {mobile && <Button type="text" aria-label={t('历史会话')} icon={<MenuOutlined />} onClick={chat.showHistory} />}
-          </>
-        }
       />
       <Flex style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <History
@@ -138,6 +128,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                   onStop={chat.stop}
                   onModelChange={ai.chooseModel}
                   onDraftChange={chat.onDraftChange}
+                  onOpenHistory={mobile ? chat.showHistory : undefined}
                   usage={chat.usage}
                 />
                 <div style={{ marginTop: 6, color: 'var(--text-secondary)', textAlign: 'center' }}>{t('AI 可能出错，请核对生成的 SQL 与执行结果。')}</div>

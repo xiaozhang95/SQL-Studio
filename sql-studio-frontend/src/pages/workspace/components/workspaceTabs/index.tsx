@@ -1,5 +1,5 @@
-import { CloseCircleOutlined, CloseOutlined, CodeOutlined, EditOutlined, FileTextOutlined, LoadingOutlined, ProfileOutlined, RightOutlined, TableOutlined } from '@ant-design/icons'
-import { Dropdown, Tabs } from 'antd'
+import { CloseCircleOutlined, CloseOutlined, CodeOutlined, EditOutlined, FileTextOutlined, LoadingOutlined, PlusOutlined, ProfileOutlined, RightOutlined, StopOutlined, TableOutlined } from '@ant-design/icons'
+import { Button, Dropdown, Tabs, Tooltip } from 'antd'
 import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
@@ -13,7 +13,24 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
 type Props = {
-  model: Pick<WorkspaceModel, 'savedConnections' | 'designerDirty' | 'tabs' | 'activeTab' | 'runs' | 'tabBusy' | 'runningTabId' | 'selectTab' | 'closeTab' | 'closeTabs'>
+  model: Pick<
+    WorkspaceModel,
+    | 'savedConnections'
+    | 'designerDirty'
+    | 'tabs'
+    | 'activeTab'
+    | 'runs'
+    | 'tabBusy'
+    | 'running'
+    | 'runningTabId'
+    | 'activeRunning'
+    | 'workspaceReady'
+    | 'newQuery'
+    | 'cancelQuery'
+    | 'selectTab'
+    | 'closeTab'
+    | 'closeTabs'
+  >
   children: ReactNode
   renderDesigner: (page: WorkspaceTab) => ReactNode
   renderRedis: (page: WorkspaceTab, connection: Connection) => ReactNode
@@ -22,7 +39,9 @@ type Props = {
 export default function WorkspaceTabs({ model, children, renderDesigner, renderRedis }: Props) {
   const { t } = useTranslation()
 
-  const { savedConnections: connections, designerDirty, tabs, activeTab, runs, tabBusy: running, runningTabId, selectTab, closeTab, closeTabs } = model
+  const { savedConnections: connections, designerDirty, tabs, activeTab, runs, tabBusy, runningTabId, selectTab, closeTab, closeTabs } = model
+  const canAdd = model.workspaceReady && !model.running
+  const addLabel = t('新建查询')
   return (
     <Tabs
       className="workspace-tabs"
@@ -34,13 +53,27 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
         remove: { width: 20, height: 20, marginInlineStart: 6 }
       }}
       type="editable-card"
-      hideAdd
+      hideAdd={!canAdd}
+      addIcon={
+        <Tooltip title={addLabel}>
+          <PlusOutlined />
+        </Tooltip>
+      }
+      locale={{ addAriaLabel: addLabel }}
+      tabBarExtraContent={
+        runningTabId && !model.activeRunning ? (
+          <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+            {t('取消执行')}
+          </Button>
+        ) : undefined
+      }
       size={appearance.navigationSize}
       tabBarGutter={4}
       activeKey={activeTab}
       onChange={selectTab}
       onEdit={(key, action) => {
         if (action === 'remove') closeTab(String(key))
+        if (action === 'add' && canAdd) model.newQuery()
       }}
       renderTabBar={(props, DefaultTabBar) => (
         <DefaultTabBar {...props}>
@@ -51,7 +84,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
               <Dropdown
                 key={key}
                 trigger={['contextMenu']}
-                disabled={running}
+                disabled={tabBusy}
                 menu={{
                   items: [
                     { key: 'current', label: t('关闭当前'), icon: <CloseOutlined /> },
@@ -115,7 +148,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
             </span>
           ),
           closable: true,
-          closeIcon: <CloseOutlined aria-disabled={running} style={{ opacity: running ? 0.35 : 1 }} />,
+          closeIcon: <CloseOutlined aria-disabled={tabBusy} style={{ opacity: tabBusy ? 0.35 : 1 }} />,
           destroyOnHidden: !designer && !redis,
           children: designer ? (
             renderDesigner(item)

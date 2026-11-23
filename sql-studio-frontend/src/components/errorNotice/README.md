@@ -6,4 +6,4 @@
 
 `error?: string` 和 `errors?: readonly (string | undefined)[]` 提供错误原因，自动去重并保留换行。没有错误时返回 null。`title?: string` 用于补充具体操作标题，`action?: ReactNode` 放置重试等操作，`onClose?: () => void` 可清理调用方错误，`style?: CSSProperties` 用于所属区域的布局。
 
-关闭只隐藏当前提示。原因变化后重新展示。`banner?: boolean` 启用 Ant Design 通栏外观，供 PageHeader 在顶栏下方使用。弹框和抽屉在内容区使用默认外观。
+关闭只隐藏当前提示。原因变化后重新展示。`banner?: boolean` 启用 Ant Design 通栏外观，供 PageErrorBanner 在页面内容上方使用。弹框和抽屉在内容区使用默认外观。

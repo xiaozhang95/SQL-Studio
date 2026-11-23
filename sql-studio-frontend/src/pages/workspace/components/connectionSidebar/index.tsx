@@ -1,7 +1,8 @@
 import { PlusOutlined } from '@ant-design/icons'
-import { Button, Flex, Tag, theme, Tooltip, Typography } from 'antd'
+import { Button, theme, Tooltip } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
+import { SidebarHeader } from '@/components/sidebarControls'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import type { useSidebarResize } from '@/hooks/useSidebarResize'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -53,15 +54,15 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
         maxWidth: '45%'
       }}
     >
-      <Flex align="center" gap="small" style={{ flex: 'none', minHeight: 42, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}>
-        <Typography.Text strong>{t('对象')}</Typography.Text>
-        <Tag style={{ marginInlineEnd: 0 }}>{model.savedConnections.length}</Tag>
-        <div style={{ marginInlineStart: 'auto' }}>
+      <SidebarHeader
+        title={t('对象')}
+        count={model.savedConnections.length}
+        actions={
           <Tooltip title={t('新建连接')}>
             <Button type="text" size="small" icon={<PlusOutlined />} aria-label={t('新建连接')} disabled={model.running} onClick={onNewConnection} />
           </Tooltip>
-        </div>
-      </Flex>
+        }
+      />
       {model.connectionLoading && !model.savedConnections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} onOpenDatabaseSection={onOpenDatabaseSection} />}
       <div
         className="sidebar-resizer"

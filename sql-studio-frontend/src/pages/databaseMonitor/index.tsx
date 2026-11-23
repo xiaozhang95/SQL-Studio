@@ -38,12 +38,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     label: value === 0 ? t('已关闭') : value < 60 ? t('每 {count} 秒', { count: value }) : t('每 {count} 分钟', { count: value / 60 })
   }))
   return (
-    <DatabasePage
-      title={t('监控指标')}
-      breadcrumb={connection ? `${connection.name}${snapshot?.details?.version ? ` · ${snapshot.details.version}` : ''}` : undefined}
-      errors={[sampleError]}
-      {...pageProps}
-    >
+    <DatabasePage title={t('监控指标')} errors={[sampleError]} {...pageProps}>
       {connections.length ? (
         <>
           <Card size="small">

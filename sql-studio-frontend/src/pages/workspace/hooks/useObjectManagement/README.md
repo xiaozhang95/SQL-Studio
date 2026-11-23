@@ -1,6 +1,6 @@
 # 对象管理生命周期
 
-操作后的刷新失败通过 refreshError 返回，明确提示操作已经生效。表设计页在表单 ErrorNotice 中展示，已关闭弹窗的操作由工作区 PageHeader 展示。clearRefreshError 清理该提示。
+操作后的刷新失败通过 refreshError 返回，明确提示操作已经生效。表设计页在表单 ErrorNotice 中展示，已关闭弹窗的操作由工作区 PageErrorBanner 展示。clearRefreshError 清理该提示。
 
 [源码](index.ts) · [hooks 索引](../README.md)
 

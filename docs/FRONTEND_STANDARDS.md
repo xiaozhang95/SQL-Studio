@@ -4,9 +4,9 @@
 
 ## Ant Design 与样式
 
-Electron 标题栏与上下文 Header 下沿、SQL 工作区与 AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design colorBorderSecondary），随亮暗主题切换。卡片、页签、表格等原生组件使用主题 token 派生的边框颜色。同一边界只由一处绘制分隔线，Tabs 栏底沿用原生分隔线。
+Electron 标题栏下沿、SQL 工作区与 AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design colorBorderSecondary），随亮暗主题切换。卡片、页签、表格等原生组件使用主题 token 派生的边框颜色。同一边界只由一处绘制分隔线，Tabs 栏底沿用原生分隔线。
 
-1. 以 Ant Design 组件为底座，使用 [主题 token](../sql-studio-frontend/src/constant/theme/README.md) 和项目设计令牌统一颜色、字号、间距与状态；全局页面切换、主题切换和系统设置由 AppRail 承载，业务页面使用 PageHeader 上下文 Header。不在业务组件里随意覆盖原生样式。
+1. 以 Ant Design 组件为底座，使用 [主题 token](../sql-studio-frontend/src/constant/theme/README.md) 和项目设计令牌统一颜色、字号、间距与状态；全局页面切换、主题切换和系统设置由 AppRail 承载，业务操作放入对应工具栏、页签栏或侧栏。
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；组件内的颜色、圆角、间距和尺寸优先读取 `theme.useToken()`，简单排版优先使用 Flex、Space 等原生组件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
 3. 同类组件使用相同尺寸和外观配置，不零散写死高度、边框、弧度或颜色。全局约定放 [appearance](../sql-studio-frontend/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
 4. 成功/失败语义色、Alert 的状态底色和描边、紧凑数据表等已确认要求集中配置后复用；圆角沿用 Ant Design 默认 token，不设置全局 borderRadius 覆盖。不能把单处要求扩大为所有原生组件的覆盖。修改共享配置时同时核对亮暗主题和所有使用者。
@@ -22,7 +22,7 @@ Electron 标题栏与上下文 Header 下沿、SQL 工作区与 AI 助手侧栏�
 
 独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
 
-页面操作错误由 PageHeader 使用 [ErrorNotice](../sql-studio-frontend/src/components/errorNotice/README.md) 在上下文 Header 下方以左右贴边的通栏展示，重复原因合并。弹框和抽屉在所属区域展示。打开已保存的数据库连接失败时，对象树在该连接下方展示具体原因和重试入口。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
+页面操作错误由 [PageErrorBanner](../sql-studio-frontend/src/components/pageErrorBanner/README.md) 在内容顶部通栏展示，重复原因合并。弹框和抽屉在所属区域展示。打开已保存的数据库连接失败时，对象树在该连接下方展示具体原因和重试入口。查询输出、对象树及聊天记录保留对应状态。HTTP 请求由共享 request 处理，413 展示请求体超限原因，网络或响应读取失败使用服务连接提示。
 
 组件、hooks、常量/枚举、类型/接口、服务方法和工具按功能独立组织。每个实际功能使用一个目录，`index.ts` 或 `index.tsx` 为实现入口，旁边必须有 `README.md`，而非把多个无关功能堆进一个文件。
 

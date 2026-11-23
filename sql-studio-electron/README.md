@@ -65,9 +65,9 @@ Windows 打包完成可执行文件编辑后，将生成的应用目录及文件
 
 启动失败时显示错误对话框。启动过程中关闭窗口会取消等待，并清理打包版本次创建的后端进程。
 
-桌面窗口保留系统窗口按钮，由前端绘制标题栏。共享的 DesktopTitleBar 提供 macOS 24px、Windows/Linux 32px 高拖动区域，和业务 PageHeader 共用 Ant Design `colorBgContainer`（`--surface`），下沿有 1px 主题分隔线。亮色、暗色、跟随系统及功能页切换均使用同一主题。Windows/Linux 原生窗口按钮使用透明底，打开弹窗时透出同一遮罩，图标颜色通过受限 IPC 同步。macOS 红黄绿按钮位于 x=12/y=6，系统级菜单栏由操作系统管理。
+桌面窗口保留系统窗口按钮，由前端绘制标题栏。共享的 DesktopTitleBar 提供 macOS 24px、Windows/Linux 32px 高拖动区域，和页面内容共用 Ant Design `colorBgContainer`（`--surface`），下沿有 1px 主题分隔线。亮色、暗色、跟随系统及功能页切换均使用同一主题。Windows/Linux 原生窗口按钮使用透明底，打开弹窗时透出同一遮罩，图标颜色通过受限 IPC 同步。macOS 红黄绿按钮位于 x=12/y=6，系统级菜单栏由操作系统管理。
 
-浏览器与 Electron 共用业务顶栏，最小高度由 Ant Design `controlHeight + paddingSM` 决定。AI 助手在恢复记录期间和聊天页面均显示最上方的 Logo 和当前语言的「AI 助手」页面标题，业务 header 中的会话标题继续保留。
+工作台、AI 助手、监控和同步直接展示业务内容。Electron 在这些页面上方显示窗口标题栏；AI 助手恢复记录和聊天时均显示当前语言的「AI 助手」窗口标题。
 
 工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。Windows 将 Logo 与标题整体左对齐，左右留白沿用 workspace-inset（16px），Logo 左边缘与下方侧栏搜索框的外边缘对齐；macOS/Linux 继续居中，macOS 左侧保留红黄绿窗口按钮。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 助手、监控和同步页均显示当前语言的功能页名称。
 

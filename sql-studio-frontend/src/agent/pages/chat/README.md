@@ -4,19 +4,19 @@
 
 聊天输入框使用 token.padding（默认 16px）作为底部留白，并按自身拖拽逻辑伸缩。
 
-ChatPage 组合会话列表、回复、思考过程、结果表和输入框。workspace 提供本地记录状态，dark 沿用全局主题；页面切换、系统设置和主题由全局 Rail 承载，chat 不再接收 AppearancePreferences 或 onBack。后台布局和配置保存不在顶部展示 loading。后台配置冲突后应用服务端最新配置。会话管理错误在 PageHeader 下方展示。会话内容加载、流式回复和弹窗错误均使用共享 ErrorNotice，展示于所属内容区域。所有请求和状态由 hooks 管理，Transcript 按 activeId 重建滚动状态。
+ChatPage 组合会话列表、回复、思考过程、结果表和输入框。workspace 提供本地记录状态，dark 沿用全局主题；页面切换、系统设置和主题由全局 Rail 承载，chat 不再接收 AppearancePreferences 或 onBack。后台布局和配置保存不在顶部展示 loading。后台配置冲突后应用服务端最新配置。会话管理错误在内容上方的 PageErrorBanner 展示。会话内容加载、流式回复和弹窗错误均使用共享 ErrorNotice，展示于所属内容区域。所有请求和状态由 hooks 管理，Transcript 按 activeId 重建滚动状态。
 
 - [hooks](hooks/README.md)
 - [components](components/README.md)
 - [constant](constant/README.md)
 
-上下文 Header 左侧为「AI 助手」标题与「会话 / 当前会话」面包屑，右侧为「新建会话」和窄屏历史入口；桌面历史栏固定显示，不提供收起入口；Electron 最上方的「AI 助手」标题由 App 统一同步，与监控、同步页使用相同规则。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用 CHAT.content，按 conversationMaxWidth（840px）居中并保留两侧 transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
+桌面会话栏固定显示并提供新建会话按钮；窄屏通过输入区的历史会话图标打开抽屉，抽屉提供新建会话与刷新。Electron 窗口标题由 App 统一同步。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用 CHAT.content，按 conversationMaxWidth（840px）居中并保留两侧 transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
 
 空会话通过 Welcome 展示引导标题、说明和三类带功能图标的提问卡片，不再显示应用 Logo。历史侧栏顶部提供「会话」标题、数量、新建会话和刷新，搜索框位于其下。会话加载或执行期间禁用新建操作。
 
 Header 右侧的「新建会话」使用 default 按钮；模型和执行模式只在输入区展示，不再于 Header 使用状态胶囊。会话标题作为面包屑，1280px 以下隐藏；不再使用居中标题和 titleOffset。
 
-完全访问模式的逐次写入确认通过 WriteConfirmation 卡片显示在当前回复下方，提供目标明细、完整 SQL 和确认或取消按钮。切换模式使用独立弹框。会话、当前轮次和确认提交失败的原因统一显示在 Header 下方。
+完全访问模式的逐次写入确认通过 WriteConfirmation 卡片显示在当前回复下方，提供目标明细、完整 SQL 和确认或取消按钮。切换模式使用独立弹框。会话、当前轮次和确认提交失败的原因统一显示在内容上方的错误通栏。
 
 历史切换立即显示目标标题，并以覆盖会话栏和输入区的整页加载层居中展示等待状态，失败显示重试；切换时卸载旧Transcript并释放其消息内容和轮次切换状态。只有加载成功才挂载目标消息区，加载/失败时禁止提交问题，其他历史项仍可选择。
 
@@ -27,5 +27,5 @@ Header 右侧的「新建会话」使用 default 按钮；模型和执行模式�
 系统设置入口固定在全局 Rail 底部，弹框集中提供模型、API Key 和外观配置，底部统一保存。输入框的模型菜单用于切换模型。
 历史加载期间通过 navigationLock 暂停 Rail 页面切换，会话执行、管理或初始化期间禁用新建和切换入口。
 
-业务 Header 使用共享 PageHeader，高度 48px。消息与结果使用全局 6px 滚动条样式。
+消息与结果使用全局 6px 滚动条样式。
 底部输入区预留与消息滚动视口相同的stable scrollbar gutter，避免主滚动条出现时正文与输入框水平偏移。

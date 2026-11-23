@@ -3,15 +3,16 @@
 - [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，使用主题背景和 1px 下沿分隔线，Windows 将标题左对齐至下方搜索框外边缘。
 - [appRail](appRail/README.md)：全局左侧导航、主题切换和系统设置入口，底色与右侧面板一致。
 - [studioIcon](studioIcon/README.md)：与应用视觉稿一致的线性 SVG 图标，供 Rail、Header 和对象树使用。
-- [pageHeader](pageHeader/README.md)：工作区及各功能页共用的上下文 Header。
-- [databasePage](databasePage/README.md)：监控与同步的上下文 Header 与画布内容布局。
+- [pageErrorBanner](pageErrorBanner/README.md)：工作区及各功能页共用的错误通栏。
+- [databasePage](databasePage/README.md)：监控与同步共用的内容布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
-- [errorNotice](errorNotice/README.md)：上下文 Header 和弹框共用的错误提示。
-- [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面 Header。
+- [errorNotice](errorNotice/README.md)：页面、弹框和抽屉共用的错误提示。
+- [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到页面错误通栏。
 - [deleteDialog](deleteDialog/README.md) 为数据行、Redis 键、执行历史及 AI 会话提供带目标范围的确认弹框。
 - [deleteConfirmation](deleteConfirmation/README.md) 为模型和表字段草稿提供按钮旁的确认气泡。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
+- [sidebarControls](sidebarControls/README.md)：对象栏和会话栏共用的标题、计数、操作与搜索布局。
 
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。

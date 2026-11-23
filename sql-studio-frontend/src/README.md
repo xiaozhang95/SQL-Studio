@@ -11,9 +11,9 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域统一按页面标签切换。
+App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域按页面标签切换，标签末尾的加号用于新建查询。
 
-工作台、AI 助手、监控和同步的页面错误集中显示在共享 PageHeader 下方，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
+工作台、AI 助手、监控和同步的页面错误由共享 [PageErrorBanner](components/pageErrorBanner/README.md) 在内容上方显示，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
 App 先读取界面偏好再挂载业务页面，确保业务请求携带已恢复的语言；偏好读取失败时使用当前默认值。JSON 与 SSE 请求统一发送 Accept-Language，后端按请求语言返回系统提示，响应 Content-Language 标明所选语言。SQL、数据库返回内容和用户命名不参与翻译。
 
@@ -23,7 +23,7 @@ Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗�
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型使用浅色文字，NULL 使用浅色斜体，金额/数字右对齐并使用等宽数字；这些文字与其他界面文本一样跟随全局字体和字号。状态/耗时仍不使用 Tag，不展示连接来源标签。
 
-上下文 Header 左右均为 16px，侧栏搜索、工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px；对象栏顶部为标题、连接数与新建入口。树使用 28px 内容行与 2px 行间距；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
+对象栏和会话栏共用 [SidebarControls](components/sidebarControls/README.md) 的标题行、搜索行、分隔线和 16px 水平内边距。工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px。树使用 28px 内容行与 2px 行间距；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
 
 工作台结果表用虚拟滚动连续显示全部返回行并在底部显示条数。AI 助手的数据结果也连续显示，超过 10 行启用虚拟滚动。执行历史、消息和摘要统一使用 Ant Design 小号分页。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
 
@@ -42,11 +42,11 @@ MySQL 和 MariaDB 对象树按“数据库 → 表 → 表名 → 字段/索引�
 - [数据库Agent](agent/README.md)：Ant Design X 聊天、工具调用及逐次写入确认；SQL 卡片与回答操作可通过 [openQuery 服务](services/openQuery/README.md) 打开到工作区查询页。
 - [公共组件](components/README.md)：工作区和Agent共用的展示能力。
 
-公共 [PageHeader](components/pageHeader/README.md) 统一工作区、AI 助手、监控和同步的上下文 Header 布局；全局 [AppRail](components/appRail/README.md) 提供页面切换、主题切换与系统设置入口。监控、同步和 AI 页的会话加载/执行通过 [navigationLock](contexts/navigationLock/README.md) 暂停 Rail 页面切换。
+工作台、AI 助手、监控和同步直接展示业务内容。全局 [AppRail](components/appRail/README.md) 提供页面切换、主题切换与系统设置入口。监控、同步和 AI 页的会话加载/执行通过 [navigationLock](contexts/navigationLock/README.md) 暂停 Rail 页面切换。
 
 Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任一功能页回到工作区，按当前标签逐项处理。非空查询分别提示“取消 / 不保存 / 保存”，空白查询直接关闭，每次仅保存该页内容，关闭后切到下一页；未提交对象修改按页确认。准备阶段暂停自动保存并通过 inert 锁定工作区交互，标签保持可见；全部标签处理完后，App 使用统一 ContentLoading 挂起页面并释放全部连接，提交空工作区。取消或失败保留当前和未处理标签，已关闭项不恢复。默认及自定义连接分组保留原展开/收起状态，只收起连接、数据库及后代。普通 Web 不增加退出确认或清理逻辑。
 
-Electron 标题栏与上下文 Header 下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design colorBorderSecondary（`--border`）。页签使用中性底、细边框和绿色活动线。
+Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design colorBorderSecondary（`--border`）。页签使用中性底、细边框和绿色活动线。
 
 页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`，监控指标使用 `/monitor`，同步数据库使用 `/sync`。pushState 切换不刷新整页，popstate 同步前进、后退，工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这些页面路径，资源缺失及未知 API 仍返回各自的 404。
 

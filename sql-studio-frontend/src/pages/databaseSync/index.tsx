@@ -34,10 +34,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   const options = model.eligibleConnections.map(({ id, name, host, port }) => ({ value: id, label: `${name} · ${host}:${port}` }))
   const externalSource = model.choices.source === model.externalID
   const externalTarget = model.choices.target === model.externalID
-  const connectionLabel = (side: 'source' | 'target') =>
-    model.choices[side] === model.externalID
-      ? `${model.credentials[side].host.trim()}:${model.credentials[side].port || model.profile.port}`
-      : (model.eligibleConnections.find(({ id }) => id === model.choices[side])?.name ?? '')
   const done = status === 'completed'
   const checkText =
     plan &&
@@ -45,11 +41,10 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
       ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
       : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
   const checkTextColor = `color-mix(in srgb, ${token.colorSuccessText} 65%, ${token.colorText})`
-  const breadcrumb = [connectionLabel('source'), connectionLabel('target')].filter(Boolean).join(' → ') || undefined
   const steps = [{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]
 
   return (
-    <DatabasePage title={t('同步数据库')} breadcrumb={breadcrumb} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
+    <DatabasePage title={t('同步数据库')} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
       <Card size="small">
         <Flex align="center" gap="middle" wrap>
           <Steps

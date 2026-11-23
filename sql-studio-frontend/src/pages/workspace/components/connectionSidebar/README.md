@@ -1,6 +1,6 @@
 # 连接与对象侧栏
 
-侧栏右沿与上下文 Header、AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design 默认 colorBorderSecondary），随亮暗主题切换。
+侧栏右沿与 AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design 默认 colorBorderSecondary），随亮暗主题切换。
 
 界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
 
@@ -12,7 +12,7 @@ explorer/updateExplorer 将树布局转发为受控状态，随工作区索引�
 
 sidebarWidth/setSidebarWidth 为与Agent历史栏共用的受控偏好宽度，交互由 useSidebarResize 管理。右边缘 5px 透明分隔条支持拖拽、键盘左右/Home/End 和双击重置；默认 272px，最小 200px，最大 560px，随工作区大小收紧以保留主区域空间。拖动结束提交一次宽度并随工作台轻量布局索引保存；调整期间不改变连接和查询范围，hover/拖动反馈沿用原生悬停 token。
 
-侧栏顶部为「对象」标题、连接计数和新建连接入口，下面依次是搜索框和完整连接树；标题行与搜索框左右内边距均为 workspace-inset（16px），与 PageHeader 标题和右侧操作对齐。列表加载失败时不重复展示错误卡片；无连接时显示空态。连接、库、表共享独立滚动区域并填满侧栏；新建连接同时可从上下文 Header 和对象栏进入，执行历史入口位于查询工具栏。连接的打开、关闭、编辑和删除均位于树根右键菜单。
+侧栏通过 [SidebarHeader](../../../../components/sidebarControls/README.md) 展示「对象」标题、连接计数和新建连接入口。DatabaseExplorer 在连接树上方使用同模块的 SidebarSearch；标题行和搜索行均与 AI 助手会话栏共用布局。无连接时显示空态，连接、库、表共享独立滚动区域。新建连接可从对象栏或工作区空态进入，执行历史入口位于查询工具栏。连接的打开、关闭、编辑和删除均位于树根右键菜单。
 
 接收 `layout: ReturnType<typeof useSidebarResize>` 和 `onNewConnection()`，由工作区统一管理实际显示宽度及拖动事件；对象栏固定显示，不提供收起状态。侧栏只消费同一份布局；顶部竖线随 visibleWidth 同步对齐。model 仍通过 Pick 消费连接列表、对象缓存和树操作，不读取查询标签状态。
 

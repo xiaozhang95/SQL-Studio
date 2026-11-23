@@ -5,7 +5,7 @@ import type { DesktopBridge } from '@/typings/desktop'
 
 const desktop: DesktopBridge | undefined = window.sqlStudioDesktop
 
-/** 与 PageHeader 共用主题背景，拖动区域与原生窗口按钮独立于业务控件。 */
+/** 与页面内容共用主题背景，拖动区域与原生窗口按钮独立于业务控件。 */
 export default function DesktopTitleBar({ showTitle = true, title = 'SQL Studio', active = true }: { showTitle?: boolean; title?: string; active?: boolean }) {
   const { token } = theme.useToken()
   useEffect(() => {

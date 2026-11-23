@@ -1,4 +1,4 @@
-import { ArrowUpOutlined, CheckOutlined, EditOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, CheckOutlined, EditOutlined, InfoCircleOutlined, LockOutlined, MenuOutlined } from '@ant-design/icons'
 import { Sender } from '@ant-design/x'
 import { Alert, Button, Dropdown, Flex, Form, theme, Tooltip } from 'antd'
 import type { FormInstance } from 'antd'
@@ -25,9 +25,10 @@ interface Props {
   onStop: () => void
   onModelChange: (id: string) => Promise<void>
   onDraftChange: (_: unknown, v: { question?: string }) => void
+  onOpenHistory?: () => void
   usage: TokenUsage | null
 }
-export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPlaceholder, aiStatus, onSend, onStop, onModelChange, onDraftChange, usage }: Props) {
+export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPlaceholder, aiStatus, onSend, onStop, onModelChange, onDraftChange, onOpenHistory, usage }: Props) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -94,6 +95,11 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
             footer={
               <Flex align="center" justify="space-between" gap="small" wrap>
                 <Flex align="center" gap={token.marginXXS}>
+                  {onOpenHistory && (
+                    <Tooltip title={t('历史会话')}>
+                      <Button type="text" aria-label={t('历史会话')} aria-haspopup="dialog" icon={<MenuOutlined />} onClick={onOpenHistory} />
+                    </Tooltip>
+                  )}
                   <Dropdown
                     trigger={['click']}
                     placement="topLeft"
