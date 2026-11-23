@@ -29,7 +29,6 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
     <Modal
       forceRender
       rootClassName="sql-studio-theme"
-      className="connection-dialog"
       width={960}
       styles={{
         container: { padding: 0, overflow: 'hidden' },
@@ -126,6 +125,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 <Input />
               </Form.Item>
               <Tabs
+                styles={{ header: { height: 36, margin: '0 0 12px' }, item: { height: 36, padding: 0 } }}
                 activeKey={section}
                 onChange={setSection}
                 items={[

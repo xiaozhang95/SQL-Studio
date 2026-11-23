@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { WorkspaceTab } from '@/typings/workspace'
 
-import { workspaceTabLayout } from '../../constant/layout'
+import { workspaceTabBarStyle, workspaceTabLayout } from '../../constant/layout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 
@@ -27,7 +27,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
     <Tabs
       className="workspace-tabs"
       styles={{
-        header: { height: 38, margin: 0, paddingInline: 'var(--workspace-inset)', background: 'var(--surface)', borderBottom: '1px solid var(--border)' },
+        header: workspaceTabBarStyle,
         item: { position: 'relative', width: workspaceTabLayout.width, height: 28, flex: 'none', padding: '0 10px', borderRadius: 'var(--ant-border-radius)' },
         remove: { width: 20, height: 20, marginInlineStart: 6 }
       }}

@@ -16,6 +16,8 @@ resultTabLayout.maximumVisibleTabs=8：超过 8 个数据结果集时使用 Sele
 
 workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
 
+workspaceTabBarStyle 共用 38px 栏高、页面内边距和表面底色，栏底分隔线沿用 Ant Design Tabs。
+
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 
 objectTreeLayout.rowHeight=30 由连接对象树和 Redis 键树共用，与 28px 节点内容和 2px 行距一致；switcherWidth=20 用于 Redis 键树统一分组箭头与叶节点占位列宽，使同层文件夹和键图标、文字对齐；scrollSaveDelay=150ms 在连接对象树滚动结束后保存位置。

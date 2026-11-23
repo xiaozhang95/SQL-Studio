@@ -110,7 +110,7 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
         )}
       </Card>
       <Tabs
-        className="monitor-view-tabs"
+        styles={{ header: { height: 38, margin: '0 0 16px' }, item: { height: 30, alignSelf: 'center', padding: '0 8px' } }}
         defaultActiveKey="activity"
         items={[
           {

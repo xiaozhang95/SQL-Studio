@@ -7,6 +7,14 @@ export const resultSQLLayout = { columnWidth: 520 } as const
 export const resultTableLayout = { indexWidth: 64, columnWidth: 200, selectionWidth: 32 } as const
 export const resultTabLayout = { maximumVisibleTabs: 8 } as const
 export const workspaceTabLayout = { width: 200 } as const
+
+/** 主页面与结果页签共用栏尺寸，分隔线由 Ant Design Tabs 绘制。 */
+export const workspaceTabBarStyle = {
+  height: 38,
+  margin: 0,
+  paddingInline: 'var(--workspace-inset)',
+  background: 'var(--surface)'
+} as const satisfies CSSProperties
 export const sqlCompletionLayout = { width: 360, height: 256 } as const
 export const scopeCloseDialogLayout = { width: 560 } as const
 export const objectTreeLayout = { rowHeight: 30, switcherWidth: 20, scrollSaveDelay: 150 } as const
