@@ -17,7 +17,7 @@ export function AnswerContent({ text, streaming = false }: { text: string; strea
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0 }}>
       {parts.map((part, index) => {
         if (part.kind === 'table') return <QueryResult key={index} value={part.value} showHeader={false} />
-        if (part.kind === 'code') return <CodeBlock key={index} text={part.text} language={part.language} />
+        if (part.kind === 'code') return <CodeBlock key={index} text={part.text} language={part.language} allowOpen />
         if (part.kind === 'pending-table')
           return streaming ? (
             <Typography.Text key={index} type="secondary">

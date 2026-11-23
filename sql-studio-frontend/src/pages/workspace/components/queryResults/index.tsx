@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Input, Pagination, Table, Typography } from 'antd'
+import { Alert, Button, Input, Table, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -24,17 +24,16 @@ import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
-import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
-import { resultSQLLayout, resultTableLayout } from '../../constant/layout'
+import { resultSQLLayout, resultTableLayout, workspaceEmptyStyle } from '../../constant/layout'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
-import { defaultOutputView, pageExecutionError } from '../../utils/queryOutput'
-import { exportResultRows, matchResultRows, pageResultRows, selectedResultRows, sortResultRows } from '../../utils/resultRows'
+import { defaultOutputView, executionCancelled, pageExecutionError } from '../../utils/queryOutput'
+import { exportResultRows, isNumericResultType, matchResultRows, resultTableRows, selectedResultRows, sortResultRows } from '../../utils/resultRows'
 import type { ResultSort } from '../../utils/resultRows'
 import DataCellEditor from '../dataCellEditor'
 import NewRowCell from '../newRowCell'
@@ -45,8 +44,6 @@ import ResultsDock from '../resultsDock'
 import ResultTabs from '../resultTabs'
 import SQLPreview from '../sqlPreview'
 import ToolbarButton from '../toolbarButton'
-
-const numericType = /(?:^|\W)(?:tiny|small|medium|big|large)?int|decimal|numeric|float|double|real|money|serial|year/i
 
 type Props = {
   themeMode: ThemeMode
@@ -69,8 +66,6 @@ type Props = {
     | 'cancelQuery'
     | 'resultSearch'
     | 'setResultSearch'
-    | 'tablePage'
-    | 'setTablePage'
     | 'resultIndex'
     | 'selectResult'
     | 'resultHeight'
@@ -78,13 +73,11 @@ type Props = {
     | 'newQuery'
   >
 }
-/** 展示当前页面的最新结果；表操作从对象树菜单发起，分页独立于滚动内容。 */
+/** 展示当前页面的最新结果；表操作从对象树菜单发起，结果表使用虚拟滚动。 */
 export default function QueryResults({ model, themeMode }: Props) {
-  const tablePagination = useTablePagination()
-
   const { t } = useTranslation()
 
-  const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, tablePage, setTablePage, resultIndex, selectResult } = model
+  const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, resultIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
   usePageError(pageExecutionError(batch), batch?.id ?? batch?.startedAt)
   const editingBlocked = model.running || result?.truncatedBy === 'oversized-row' || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
@@ -131,13 +124,13 @@ export default function QueryResults({ model, themeMode }: Props) {
   } | null>(null)
   // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
   const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
-    const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
+  const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
   const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
   const databaseType = model.savedConnections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = databaseType === DatabaseEngine.Redis ? undefined : getDatabaseAdapter(databaseType)
   const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
-  const table = useResultTableScroll({ result, runId: run?.id, view, page: tablePage, search: resultSearch, sortKey: sort ? `${sort.column}:${sort.order}` : '', added: editing.newRows.length })
+  const table = useResultTableScroll({ result, runId: run?.id, view, search: resultSearch, sortKey: sort ? `${sort.column}:${sort.order}` : '', added: editing.newRows.length })
   const deferredSearch = useDeferredValue(resultSearch)
   const matches = useMemo(() => (showingResult ? matchResultRows(editing.rows, deferredSearch) : null), [editing.rows, deferredSearch, showingResult])
   const sortType = sort ? result?.columns[sort.column]?.type : undefined
@@ -146,7 +139,7 @@ export default function QueryResults({ model, themeMode }: Props) {
     [result?.rows, editing.rows, matches, sort, sortType, showingResult]
   )
   const rowCount = editing.newRows.length + (matches?.length ?? editing.rows.length)
-  const rows = useMemo(() => (showingResult ? pageResultRows(editing.rows, editing.newRows, orderedMatches, tablePage) : []), [editing.rows, editing.newRows, orderedMatches, tablePage, showingResult])
+  const rows = useMemo(() => (showingResult ? resultTableRows(editing.rows, editing.newRows, orderedMatches) : []), [editing.rows, editing.newRows, orderedMatches, showingResult])
   const columns = [
     {
       title: '#',
@@ -163,16 +156,12 @@ export default function QueryResults({ model, themeMode }: Props) {
       ) => (row.key < 0 ? <ToolbarButton label={t('移除新增行')} size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
     },
     ...(result?.columns || []).map((column, index) => {
-      const numeric = numericType.test(column.type ?? '')
+      const numeric = isNumericResultType(column.type ?? '')
       return {
         title: (
           <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
             {run?.kind === 'structure' ? t(column.name) : column.name}
-            {column.type && (
-              <Typography.Text className="column-type" type="secondary">
-                {column.type}
-              </Typography.Text>
-            )}
+            {column.type && <Typography.Text type="secondary">{column.type}</Typography.Text>}
           </div>
         ),
         key: String(index),
@@ -181,74 +170,72 @@ export default function QueryResults({ model, themeMode }: Props) {
         showSorterTooltip: { title: t('对当前已加载的结果排序') },
         align: numeric ? ('right' as const) : undefined,
         onCell: (row: { key: number }) => ({
-          className:
-            [editing.isDirty(row.key, index) ? 'data-cell-dirty' : '', numeric ? 'cell-amount' : ''].filter(Boolean).join(' ') || undefined,
+          className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
+          style: numeric ? { fontVariantNumeric: 'tabular-nums' } : undefined,
           onDoubleClick: () => {
             if (tab.kind === 'data' && adapter?.dataEditing && row.key >= 0) void editing.begin(row.key, index)
           }
         }),
-        width:
-          run?.kind === 'ddl'
-            ? undefined
-            : index === (result?.columns.length ?? 0) - 1
-              ? undefined
-              : adapter?.isSQLColumn(column.name)
-                ? resultSQLLayout.columnWidth
-                : numeric
-                  ? 140
-                  : 220,
-      render: (
-        _: unknown,
-        row: {
-          key: number
-          cells: unknown[]
-        }
-      ) =>
-        row.key < 0 ? (
-          <NewRowCell
-            value={row.cells[index]}
-            column={editing.newColumn(row.key, index)}
-            editable={editing.canInsert(editing.newColumn(row.key, index))}
-            disabled={editingBlocked}
-            onChange={(value) => editing.changeNew(row.key, index, value)}
-          />
-        ) : editing.cell?.row === row.key && editing.cell.column === index ? (
-          <DataCellEditor editor={editing} disabled={editingBlocked} />
-        ) : adapter?.isSQLColumn(column.name) && typeof row.cells[index] === 'string' && String(row.cells[index]).trim() ? (
-          <div style={{ minWidth: 0, width: run?.kind === 'ddl' ? undefined : resultSQLLayout.columnWidth, maxWidth: '100%' }}>
-            <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} />
-          </div>
-        ) : row.cells[index] === null ? (
-          <Typography.Text className="cell-null" type="secondary">
-            (NULL)
-          </Typography.Text>
-        ) : (
-          <span
-            className={run?.kind === 'structure' && column.name === '表名' ? 'database-object-name' : undefined}
-            style={run?.kind === 'structure' && column.name === '表名' ? { display: 'flex', alignItems: 'center', gap: 8 } : undefined}
-          >
-            {run?.kind === 'structure' &&
-              column.name === '表名' &&
-              (String(row.cells[result?.columns.findIndex((item) => item.name === '类型') ?? -1]).includes('VIEW') ? <EyeOutlined /> : <TableOutlined />)}
+        width: run?.kind === 'ddl' ? undefined : index === (result?.columns.length ?? 0) - 1 ? undefined : adapter?.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : numeric ? 140 : 220,
+        render: (
+          _: unknown,
+          row: {
+            key: number
+            cells: unknown[]
+          }
+        ) =>
+          row.key < 0 ? (
+            <NewRowCell
+              value={row.cells[index]}
+              column={editing.newColumn(row.key, index)}
+              editable={editing.canInsert(editing.newColumn(row.key, index))}
+              disabled={editingBlocked}
+              onChange={(value) => editing.changeNew(row.key, index, value)}
+            />
+          ) : editing.cell?.row === row.key && editing.cell.column === index ? (
+            <DataCellEditor editor={editing} disabled={editingBlocked} />
+          ) : adapter?.isSQLColumn(column.name) && typeof row.cells[index] === 'string' && String(row.cells[index]).trim() ? (
+            <div style={{ minWidth: 0, width: run?.kind === 'ddl' ? undefined : resultSQLLayout.columnWidth, maxWidth: '100%' }}>
+              <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} />
+            </div>
+          ) : row.cells[index] === null ? (
+            <Typography.Text style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }} type="secondary">
+              (NULL)
+            </Typography.Text>
+          ) : (
             <span
-              className="cell-value"
-              title={row.cells[index] === undefined ? t('使用默认值') : String(row.cells[index])}
-              style={{ display: 'block', maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              className={run?.kind === 'structure' && column.name === '表名' ? 'database-object-name' : undefined}
+              style={run?.kind === 'structure' && column.name === '表名' ? { display: 'flex', alignItems: 'center', gap: 8 } : undefined}
             >
-              {row.cells[index] === undefined ? t('(默认)') : String(row.cells[index])}
+              {run?.kind === 'structure' &&
+                column.name === '表名' &&
+                (String(row.cells[result?.columns.findIndex((item) => item.name === '类型') ?? -1]).includes('VIEW') ? <EyeOutlined /> : <TableOutlined />)}
+              <span
+                className="cell-value"
+                title={row.cells[index] === undefined ? t('使用默认值') : String(row.cells[index])}
+                style={{ display: 'block', maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {row.cells[index] === undefined ? t('(默认)') : String(row.cells[index])}
+              </span>
             </span>
-          </span>
-        )
+          )
       }
     })
   ]
   const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? resultTableLayout.columnWidth), resultTableLayout.selectionWidth)
-  const failed = Boolean(!result && (run?.error || batch?.error))
+  const shownOutput = showingResult ? run : batch
+  const stopped = shownOutput ? executionCancelled(shownOutput) || Boolean(shownOutput.interrupted) : false
+  const failed = !stopped && Boolean(shownOutput?.error)
   const durationMs = result?.durationMs ?? batch?.statements?.[resultIndex]?.durationMs
   const resultStatus = activeRunning ? (
     <span className="result-run-status is-running">
       <LoadingOutlined spin />
       <span>{t('执行中')}</span>
+    </span>
+  ) : stopped ? (
+    <span className="result-run-status is-cancelled">
+      <StopOutlined />
+      {t(shownOutput?.interrupted ? '执行已中断' : '执行已取消')}
     </span>
   ) : failed || result ? (
     <span className={`result-run-status${failed ? ' is-error' : ''}`}>
@@ -293,7 +280,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         >
           <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
             {tab.kind !== 'data' && showingResult && (
-              <span className="result-selection-info">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                 <CheckCircleOutlined />
                 {t('已选择 {value1} 行', { value1: selectedRows.length })}
               </span>
@@ -306,7 +293,6 @@ export default function QueryResults({ model, themeMode }: Props) {
                   disabled={editingBlocked}
                   onClick={() => {
                     setResultSearch('')
-                    setTablePage(1)
                     void editing.addRow()
                   }}
                 />
@@ -325,7 +311,6 @@ export default function QueryResults({ model, themeMode }: Props) {
                   loading={editing.saving}
                   disabled={editingBlocked || !editing.dirty}
                   onClick={() => {
-                    setTablePage(1)
                     void editing.save()
                   }}
                 />
@@ -343,7 +328,6 @@ export default function QueryResults({ model, themeMode }: Props) {
                 value={resultSearch}
                 onChange={(event) => {
                   setResultSearch(event.target.value)
-                  setTablePage(1)
                 }}
                 allowClear
                 disabled={!result || result.truncatedBy === 'oversized-row'}
@@ -421,6 +405,10 @@ export default function QueryResults({ model, themeMode }: Props) {
               virtual
               size={appearance.tableSize}
               className="data-table"
+              styles={{
+                header: { cell: { paddingBlock: 4, background: 'var(--surface-subtle)', color: 'var(--text-secondary)' } },
+                body: { cell: { paddingBlock: 4, color: 'var(--text)' } }
+              }}
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
               rowSelection={{
                 columnWidth: resultTableLayout.selectionWidth,
@@ -433,7 +421,6 @@ export default function QueryResults({ model, themeMode }: Props) {
                 const selected = Array.isArray(sorter) ? sorter[0] : sorter
                 const column = Number(selected.columnKey)
                 setSorting({ result, sort: selected.order && Number.isInteger(column) ? { column, order: selected.order } : undefined })
-                setTablePage(1)
               }}
               columns={columns}
               dataSource={rows}
@@ -443,7 +430,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             />
           </>
         ) : (
-          <div className="workspace-empty-state" style={{ minHeight: 180 }}>
+          <div style={{ ...workspaceEmptyStyle, minHeight: 180 }}>
             <EmptyStateIcon>
               <TableOutlined />
             </EmptyStateIcon>
@@ -451,14 +438,14 @@ export default function QueryResults({ model, themeMode }: Props) {
             <Button icon={<PlusOutlined />} disabled={model.running} onClick={model.newQuery}>
               {t('新建查询')}
             </Button>
-            <Typography.Text type="secondary">
-              {t('从左侧选择表')}
-            </Typography.Text>
+            <Typography.Text type="secondary">{t('从左侧选择表')}</Typography.Text>
           </div>
         )}
       </div>
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
-        <Pagination {...tablePagination} current={tablePage} onChange={setTablePage} total={rowCount} pageSize={50} />
+        <Typography.Text type="secondary" style={{ flex: 'none', textAlign: 'end', padding: '8px var(--workspace-inset)', borderTop: '1px solid var(--border)' }}>
+          {t('共 {count} 条', { count: rowCount })}
+        </Typography.Text>
       )}
       <DeleteDialog
         title={deleteError ? t('删除结果') : t('删除选中的 {value1} 行数据？', { value1: currentDelete?.rows.length ?? 0 })}

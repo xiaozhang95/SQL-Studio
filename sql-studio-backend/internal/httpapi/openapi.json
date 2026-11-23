@@ -2624,7 +2624,7 @@
         "tags": [
           "配置"
         ],
-        "description": "history、query-favorites、appearance、ai-models 等独立分区；工作区索引使用 /workspace；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
+        "description": "history、appearance、ai-models 等独立分区；工作区索引使用 /workspace；缺失返回 revision=0,data=null；ai-models 响应省略 apiKey。",
         "parameters": [
           {
             "name": "section",

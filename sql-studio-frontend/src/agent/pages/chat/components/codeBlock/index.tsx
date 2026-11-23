@@ -9,6 +9,7 @@ import { Button, Space, theme, Tooltip, Typography } from 'antd'
 import { useMemo } from 'react'
 
 import ContentCard from '@/components/contentCard'
+import { useNavigationLock } from '@/contexts/navigationLock'
 import { useTranslation } from '@/hooks/useTranslation'
 import { requestOpenQuery } from '@/services/openQuery'
 
@@ -44,8 +45,9 @@ function formatJsonText(text: string) {
   })
 }
 
-export function CodeBlock({ text, language, title, formatJson = false }: { text: string; language: string; title?: string; formatJson?: boolean }) {
+export function CodeBlock({ text, language, title, formatJson = false, allowOpen = false }: { text: string; language: string; title?: string; formatJson?: boolean; allowOpen?: boolean }) {
   const { t } = useTranslation()
+  const { locked } = useNavigationLock()
 
   const { token } = theme.useToken()
   const sqlLanguage = ['sql', 'mysql', 'postgres', 'postgresql'].includes(language)
@@ -79,18 +81,13 @@ export function CodeBlock({ text, language, title, formatJson = false }: { text:
   return (
     <ContentCard
       code
-      title={
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          {title ?? (sqlLanguage ? 'SQL' : language || t('代码'))}
-          {sqlLanguage && <span className="code-readonly">{t('只读查询')}</span>}
-        </span>
-      }
+      title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{title ?? (sqlLanguage ? 'SQL' : language || t('代码'))}</span>}
       extra={
         <Space size={2}>
           <Typography.Text copyable={{ text, tooltips: [t('复制代码'), t('已复制')] }} />
-          {sqlLanguage && (
+          {sqlLanguage && allowOpen && (
             <Tooltip title={t('在查询页打开')}>
-              <Button type="text" size="small" aria-label={t('在查询页打开')} icon={<ExportOutlined />} onClick={() => requestOpenQuery(text)} />
+              <Button type="text" size="small" aria-label={t('在查询页打开')} icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(text)} />
             </Tooltip>
           )}
         </Space>

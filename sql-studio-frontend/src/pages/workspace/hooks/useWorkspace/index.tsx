@@ -26,6 +26,7 @@ import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import {
   explorerAfterChange,
   explorerAfterDatabasesLoaded,
+  explorerRoots,
   findExplorerPage,
   pagesAfterSchemaChange,
   pagesForObjectDrop,
@@ -147,7 +148,10 @@ export const useWorkspace = (active = true) => {
   )
   const schemaConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).explorer).map((connection) => connection.id), [connections])
   const foreignKeyConnections = useMemo(() => connections.filter((connection) => getDatabaseAdapter(connection.type).foreignKeys).map((connection) => connection.id), [connections])
-  const objects = useDatabaseObjects(connectionId, database, validateDatabases, schemaConnections, foreignKeyConnections)
+  const resetConnectionTree = useCallback((id: string) => {
+    setExplorer((previous) => explorerAfterDatabasesLoaded(previous, id, []))
+  }, [])
+  const objects = useDatabaseObjects(connectionId, database, validateDatabases, resetConnectionTree, schemaConnections, foreignKeyConnections)
   const dataExport = useDataExport((id, db) => canExportDatabase(objects.snapshots[id], objects.closedDatabases[id], db))
   const objectManagement = useObjectManagement({ connections, blocked: Boolean(runningTabId), onBusyChange: setObjectBusy, onChanged: onObjectChanged, beforeDrop: confirmObjectDrop })
   const setTableDesignerBusy = useCallback(
@@ -188,17 +192,16 @@ export const useWorkspace = (active = true) => {
       objects.snapshots[page.connectionId]?.status !== 'connected'
     )
   }
-  const { loadStructure, loadTables, loadTableDetails, openConnection: openObjectsConnection } = objects
+  const { loadStructure, loadTables, openConnection: openObjectsConnection } = objects
   useEffect(() => {
     if (tab.kind === 'query' && !redisConnection && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
   }, [tab.kind, redisConnection, objects.connected, database, connectionId, loadTables])
   const resultIndex = resultViews[activeTab]?.resultIndex || 0
   const batch = runs[activeTab]
   const statementRun = batch?.statements?.[resultIndex]
-  const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, id: `${batch.id}:${resultIndex}` } : batch
+  const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, cancelled: statementRun.cancelled, id: `${batch.id}:${resultIndex}` } : batch
   const result = run?.result
   const resultSearch = resultViews[activeTab]?.search || ''
-  const tablePage = resultViews[activeTab]?.page || 1
   const openedKey = JSON.stringify(
     Object.keys(objects.snapshots)
       .filter((id) => objects.snapshots[id].status === 'connected')
@@ -213,7 +216,7 @@ export const useWorkspace = (active = true) => {
       runs,
       resultViews,
       editorLayouts,
-      explorer,
+      explorer: explorerRoots(explorer, restoringConnections || openedConnections),
       resultHeight,
       sidebarWidth,
       openedConnections: restoringConnections || openedConnections,
@@ -238,14 +241,7 @@ export const useWorkspace = (active = true) => {
       setEditorLayouts(saved.editorLayouts)
       objects.retainConnections(new Set(saved.openedConnections))
       resetStructure()
-      const restoredConnectionIds = new Set(saved.openedConnections)
-      setExplorer({
-        ...saved.explorer,
-        expanded: saved.explorer.expanded.filter((key) => {
-          const [kind, owner] = JSON.parse(key) as string[]
-          return kind === 'group' || restoredConnectionIds.has(owner)
-        })
-      })
+      setExplorer(explorerRoots(saved.explorer, saved.openedConnections))
       setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
       restoreSidebarWidth(saved.sidebarWidth)
       setRestoringConnections(saved.openedConnections)
@@ -320,19 +316,7 @@ export const useWorkspace = (active = true) => {
     void Promise.resolve().then(() => {
       if (stale) return
       setRestoringConnections(null)
-      for (const { id, type } of restored) {
-        void openObjectsConnection(id)
-          .then(async () => {
-            if (type === DatabaseEngine.Redis) return
-            const expandedNodes = explorer.expanded.map((key) => JSON.parse(key) as string[])
-            const databases = expandedNodes.filter(([type, owner]) => type === 'database' && owner === id)
-            await Promise.allSettled(databases.map(([, , db]) => loadTables(db, id)))
-            // 只恢复用户已展开表的详情，避免虚拟滚动恢复时字段/索引再插入导致位移。
-            const tables = expandedNodes.filter(([type, owner, db]) => type === 'table' && owner === id && databases.some(([, , name]) => name === db))
-            await Promise.allSettled(tables.map(([, , db, name]) => loadTableDetails(db, name, id)))
-          })
-          .catch(() => {})
-      }
+      for (const { id } of restored) void openObjectsConnection(id).catch(() => {})
       setTabs((previous) =>
         previous.map((item) => (item.kind === 'query' && item.connectionId && !savedConnections.some((connection) => connection.id === item.connectionId) ? { ...item, ...emptyScope } : item))
       )
@@ -340,20 +324,7 @@ export const useWorkspace = (active = true) => {
     return () => {
       stale = true
     }
-  }, [
-    desktopPreparing,
-    desktopClosing,
-    storage.ready,
-    connectionLoading,
-    connectionError,
-    restoringConnections,
-    savedConnections,
-    openObjectsConnection,
-    loadTables,
-    loadTableDetails,
-    explorer.expanded,
-    setTabs
-  ])
+  }, [desktopPreparing, desktopClosing, storage.ready, connectionLoading, connectionError, restoringConnections, savedConnections, openObjectsConnection, setTabs])
 
   const redisConnectionStatus = redisConnection ? objects.snapshots[redisConnection.id]?.status : undefined
   const redisDatabase = redisConnection ? selectedRedisDatabase(objects.databases, database, redisConnection.database) : undefined
@@ -416,14 +387,11 @@ export const useWorkspace = (active = true) => {
     setStructureLoading(loading)
   }
   function setResultSearch(search: string) {
-    setResultViews((previous) => ({ ...previous, [activeTab]: { search, page: 1, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
-  }
-  function setTablePage(page: number) {
-    setResultViews((previous) => ({ ...previous, [activeTab]: { search: previous[activeTab]?.search || '', page, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
   }
   function selectResult(index: number) {
     if (activeRunning || !batch?.statements?.[index]) return
-    setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', page: 1, resultIndex: index } }))
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', resultIndex: index } }))
   }
   function updateTab(patch: Partial<WorkspaceTab>) {
     if (!tab.id || tab.kind !== 'query' || !storage.pageReady) return
@@ -1208,8 +1176,6 @@ export const useWorkspace = (active = true) => {
     selectResult,
     resultSearch,
     setResultSearch,
-    tablePage,
-    setTablePage,
     history,
     appendHistory,
     clearHistory,

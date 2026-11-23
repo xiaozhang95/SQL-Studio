@@ -15,7 +15,7 @@ import SidebarWidthProvider from '@/components/sidebarWidthProvider'
 import { appearance, modalDefaults } from '@/constant/appearance'
 import { createThemeConfig } from '@/constant/theme'
 import { LanguageContext } from '@/contexts/language'
-import { NavigationLockProvider } from '@/contexts/navigationLock'
+import { NavigationLockProvider, useNavigationLock } from '@/contexts/navigationLock'
 import { DatabaseEngine } from '@/databases/typings'
 import { useAppSection } from '@/hooks/useAppSection'
 import { useThemePreference } from '@/hooks/useThemePreference'
@@ -38,12 +38,11 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
   const { section, connectionId, database } = navigation
   const active = section === 'workspace'
   const model = useWorkspace(active)
+  const { locked } = useNavigationLock()
   const openQuery = useRef<(sql: string) => void>(() => {})
   useEffect(() => {
     openQuery.current = (sql) => {
-      const { connectionId, database, schema } = model.tab
-      model.addTab(sql, { connectionId, database, schema, table: '' })
-      navigation.openWorkspace()
+      if (!locked && model.workspaceReady && model.addTab(sql)) navigation.openWorkspace()
     }
   })
   useEffect(() => subscribeOpenQuery((sql) => openQuery.current(sql)), [])
@@ -56,8 +55,7 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
   const databasePage = section === 'monitor' || section === 'sync'
   const databasePageTitle = t(section === 'monitor' ? '监控指标' : '同步数据库')
   const monitorScope =
-    selectedConnectionScope(model.explorer.selected[0], model.savedConnections) ??
-    (model.tab.connectionId ? { connectionId: model.tab.connectionId, database: model.tab.database } : undefined)
+    selectedConnectionScope(model.explorer.selected[0], model.savedConnections) ?? (model.tab.connectionId ? { connectionId: model.tab.connectionId, database: model.tab.database } : undefined)
   const desktopTitle = section === 'workspace' ? (model.tab.id ? workspacePageTitle(model.tab) : 'SQL Studio') : section === 'agent' ? t('AI 助手') : databasePageTitle
   const loadingPage = (
     <DatabasePage title={databasePageTitle} {...databasePageProps}>
@@ -94,7 +92,13 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
               {model.connectionLoading && !model.savedConnections.length ? (
                 loadingPage
               ) : section === 'monitor' ? (
-                <MonitorPage key={JSON.stringify([connectionId, database])} connections={model.savedConnections} initialConnection={initialConnection} initialDatabase={database} {...databasePageProps} />
+                <MonitorPage
+                  key={JSON.stringify([connectionId, database])}
+                  connections={model.savedConnections}
+                  initialConnection={initialConnection}
+                  initialDatabase={database}
+                  {...databasePageProps}
+                />
               ) : (
                 <SyncPage
                   key={connectionId}
@@ -102,7 +106,8 @@ function Studio({ themeMode, ...appearance }: AppearancePreferences & { themeMod
                   initialConnection={initialConnection?.type === DatabaseEngine.Redis ? undefined : initialConnection}
                   onCreated={(id) => void model.objects.refreshDatabases(id).catch(() => {})}
                   onOpenTarget={(targetConnectionId, database) => {
-                    model.addTab('', { connectionId: targetConnectionId, database, schema: '', table: '' })
+                    if (!model.workspaceReady || !model.addTab('', { connectionId: targetConnectionId, database, schema: '', table: '' })) return
+                    model.connectionAction('open', targetConnectionId)
                     navigation.openWorkspace()
                   }}
                   {...databasePageProps}

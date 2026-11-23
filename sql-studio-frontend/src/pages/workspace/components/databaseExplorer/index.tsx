@@ -375,7 +375,19 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         <span title={connectionFailure ? title : undefined} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {title}
         </span>
-        {node.connection && <span className={`connection-tree-status ${node.status}`} aria-hidden="true" />}
+        {node.connection && (
+          <span
+            aria-hidden="true"
+            style={{
+              width: 6,
+              height: 6,
+              flex: 'none',
+              marginInlineStart: 2,
+              borderRadius: '50%',
+              background: node.status === 'is-connected' ? 'var(--ant-color-success)' : node.status === 'is-error' ? 'var(--ant-color-error)' : 'var(--text-tertiary)'
+            }}
+          />
+        )}
         {node.retry && (
           <span style={{ display: 'inline-flex', flexShrink: 0 }}>
             <ToolbarButton
@@ -398,7 +410,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       {failures.map((node) => (
         <ExplorerError key={node.key} error={node.title} />
       ))}
-      <div className="object-sidebar-search">
+      <div style={{ flex: 'none', padding: '8px var(--workspace-inset)', borderBottom: '1px solid var(--border)' }}>
         <Input
           prefix={<SearchOutlined />}
           value={search}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { compareResultValues, pageResultRows, selectedResultRows, sortResultRows } from '../src/pages/workspace/utils/resultRows/index.ts'
+import { compareResultValues, resultTableRows, selectedResultRows, sortResultRows } from '../src/pages/workspace/utils/resultRows/index.ts'
 import { exportCSV } from '../src/utils/csv/index.ts'
 
 test('numeric ordering preserves BIGINT, decimal, sign and exponent precision', () => {
@@ -12,19 +12,19 @@ test('numeric ordering preserves BIGINT, decimal, sign and exponent precision', 
   assert.equal(compareResultValues('-0', '0.000', 'int'), 0)
   assert.ok(compareResultValues(null, '0', 'int') < 0)
 })
-test('sorting spans pages without changing original keys or source rows', () => {
+test('sorting spans the full virtual result without changing original keys or source rows', () => {
   const rows = Array.from({ length: 120 }, (_, i) => [String(120 - i)])
   const original = structuredClone(rows),
     matches = [0, 50, 119]
   assert.deepEqual(sortResultRows(rows, matches, { column: 0, order: 'ascend' }, 'int'), [119, 50, 0])
   assert.deepEqual(matches, [0, 50, 119])
-  const page = pageResultRows(rows, [], sortResultRows(rows, null, { column: 0, order: 'ascend' }, 'int'), 2)
-  assert.equal(page[0].key, 69)
+  const visibleRows = resultTableRows(rows, [], sortResultRows(rows, null, { column: 0, order: 'ascend' }, 'int'))
+  assert.equal(visibleRows[50].key, 69)
   assert.deepEqual(page[0].cells, ['51'])
   assert.deepEqual(rows, original)
   assert.equal(sortResultRows(rows, null), null)
 })
-test('selected export keeps cross-page keys, staged values and sorting, without unselected rows', () => {
+test('selected export keeps keys across the result, staged values and sorting, without unselected rows', () => {
   const rows = Array.from({ length: 100 }, (_, i) => [String(i), i === 50 ? 'staged' : 'original'])
   const output = selectedResultRows(rows, [50, 0, 99, 50, -1, 1000], { column: 0, order: 'descend' }, 'bigint')
   assert.deepEqual(output, [rows[99], rows[50], rows[0]])

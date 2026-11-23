@@ -120,8 +120,8 @@ test('continuous edits reach a fixed deadline instead of postponing indefinitely
   assert.equal(commits.at(-1).sql, '9')
 })
 
-test('large result mapping touches only the visible page and keeps original keys', async () => {
-  const { matchResultRows, pageResultRows, exportResultRows } = await import('../src/pages/workspace/utils/resultRows/index.ts')
+test('large virtual result mapping preserves result keys and references', async () => {
+  const { matchResultRows, resultTableRows, exportResultRows } = await import('../src/pages/workspace/utils/resultRows/index.ts')
   let accesses = 0
   const original = Array.from({ length: 100000 }, (_, i) => [String(i), i % 2 === 0 ? null : 'match'])
   const rows = new Proxy(original, {
@@ -133,31 +133,32 @@ test('large result mapping touches only the visible page and keeps original keys
   const matches = matchResultRows(rows, '')
   assert.equal(matches, null)
   assert.equal(accesses, 0)
-  const page = pageResultRows(rows, [], matches, 1000)
-  assert.equal(page.length, 50)
-  assert.equal(page[0].key, 49950)
-  assert.equal(page[49].key, 49999)
-  assert.equal(accesses, 50)
+  const result = resultTableRows(rows, [], matches)
+  assert.equal(result.length, original.length)
+  assert.equal(result[49950].key, 49950)
+  assert.equal(result[49950].cells, original[49950])
+  assert.equal(accesses, original.length)
   assert.equal(exportResultRows(rows, [], matches), rows)
   const found = matchResultRows(original, 'NuLl')
   assert.equal(found.length, 50000)
   assert.deepEqual(
-    pageResultRows(original, [], found, 2).map((row) => row.key),
+    resultTableRows(original, [], found)
+      .slice(50, 100)
+      .map((row) => row.key),
     Array.from({ length: 50 }, (_, i) => 100 + i * 2)
   )
 })
 
-test('filtered CSV includes all matching rows plus staged inserts across pages', async () => {
-  const { matchResultRows, pageResultRows, exportResultRows } = await import('../src/pages/workspace/utils/resultRows/index.ts')
+test('filtered CSV includes all matching rows plus staged inserts throughout the virtual result', async () => {
+  const { matchResultRows, resultTableRows, exportResultRows } = await import('../src/pages/workspace/utils/resultRows/index.ts')
   const rows = Array.from({ length: 121 }, (_, i) => ['9007199254740993', i % 2 ? 'skip' : '中文MATCH', null])
   const added = [{ key: -1, cells: ['new', 'pending', null] }]
   const matches = matchResultRows(rows, '中文match')
-  const page = pageResultRows(rows, added, matches, 1)
+  const page = resultTableRows(rows, added, matches)
   assert.equal(page[0], added[0])
   assert.equal(page[1].key, 0)
-  assert.equal(page.length, 50)
-  const tail = pageResultRows(rows, added, matches, 2)
-  assert.equal(tail[0].key, 98)
+  assert.equal(page.length, 62)
+  assert.equal(page[50].key, 98)
   const csv = exportResultRows(rows, added, matches)
   assert.equal(csv.length, 62)
   assert.equal(csv[0], added[0].cells)

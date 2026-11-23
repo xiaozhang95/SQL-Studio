@@ -1,14 +1,26 @@
 import { Button, Tooltip } from 'antd'
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 
 import StudioIcon from '@/components/studioIcon'
 import SystemSettings from '@/components/systemSettings'
+import { railButtonStyle } from '@/constant/appearance'
 import { useNavigationLock } from '@/contexts/navigationLock'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 
 export type AppSection = 'workspace' | 'agent' | 'monitor' | 'sync'
+
+const logoStyle = {
+  width: 34,
+  height: 34,
+  marginBottom: 12,
+  padding: 0,
+  border: 0,
+  borderRadius: 'var(--ant-border-radius-lg)',
+  overflow: 'hidden'
+} satisfies CSSProperties
 
 interface Props extends AppearancePreferences {
   section: AppSection
@@ -47,18 +59,33 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
   }
 
   return (
-    <aside className="app-rail" aria-label={t('工作区')}>
+    <aside
+      className="app-rail"
+      aria-label={t('工作区')}
+      style={{
+        display: 'flex',
+        flex: 'none',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 4,
+        padding: '10px 0 12px',
+        borderInlineEnd: '1px solid var(--border)',
+        background: 'var(--rail-surface)',
+        userSelect: 'none'
+      }}
+    >
       <Tooltip title="SQL Studio" placement="right">
-        <Button type="text" className="app-rail-logo" aria-label="SQL Studio" disabled={navigationDisabled} onClick={onOpenWorkspace}>
-          <img src="/studio.svg" alt="" draggable={false} />
+        <Button type="text" className="app-rail-logo" style={logoStyle} aria-label="SQL Studio" disabled={navigationDisabled} onClick={onOpenWorkspace}>
+          <img src="/studio.svg" alt="" width={34} height={34} draggable={false} />
         </Button>
       </Tooltip>
-      <nav className="app-rail-nav" aria-label={t('工作区')}>
+      <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }} aria-label={t('工作区')}>
         {items.map((item) => (
           <Tooltip key={item.key} title={navigationDisabled ? t('请等待当前操作完成') : t(item.label)} placement="right">
             <Button
               type="text"
               className="app-rail-button"
+              style={railButtonStyle}
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}
@@ -68,12 +95,13 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
           </Tooltip>
         ))}
       </nav>
-      <div className="app-rail-spacer" />
-      <div className="app-rail-divider" />
+      <div style={{ flex: 1 }} />
+      <div style={{ width: 22, height: 1, marginBlock: 6, background: 'var(--border)' }} />
       <Tooltip title={t('切换主题')} placement="right">
         <Button
           type="text"
           className="app-rail-button"
+          style={railButtonStyle}
           icon={<StudioIcon name={themeMode === 'dark' ? 'sun' : 'moon'} size={20} />}
           aria-label={t('切换主题')}
           loading={savingTheme}

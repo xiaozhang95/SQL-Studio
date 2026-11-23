@@ -18,3 +18,5 @@ ComponentSize 是 Small/Middle/Large 的 as const 尺寸枚举，类型由值推
 Modal 与 AntApp 确认弹窗使用 Ant Design 容器外观，沿用默认位置。暗色模式通过 app.scss 为面板统一添加 1px colorBorder 描边。系统设置弹窗宽 920px、内容高度上限 532px（同时不超过视口减 240px），左右内容独立滚动。
 
 连接、AI 配置、对象管理及 AntApp 确认弹窗使用统一 Header 52px、Footer 56px 和 20 × 24px 内容内边距；业务表单继续左侧标签、右侧控件。
+
+railButtonStyle 供全局导航和设置图标入口共用尺寸及主题圆角。

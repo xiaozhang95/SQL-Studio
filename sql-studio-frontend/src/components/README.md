@@ -9,7 +9,7 @@
 - [errorNotice](errorNotice/README.md)：上下文 Header 和弹框共用的错误提示。
 - [pageErrors](pageErrors/README.md)：将子区域的操作错误登记到同一页面 Header。
 - [deleteDialog](deleteDialog/README.md) 为数据行、Redis 键、执行历史及 AI 会话提供带目标范围的确认弹框。
-- [deleteConfirmation](deleteConfirmation/README.md) 为查询收藏、模型和表字段草稿提供按钮旁的确认气泡。
+- [deleteConfirmation](deleteConfirmation/README.md) 为模型和表字段草稿提供按钮旁的确认气泡。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
 
@@ -17,7 +17,6 @@
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。
 
 - [systemSettings](systemSettings/README.md)：工作台和 AI 助手共用的系统设置弹框，含模型配置、外观设置、语言设置和关于软件，版本号共用，检查更新仅在桌面端显示。
-- [sectionNavigation](sectionNavigation/README.md)：旧顶栏页面切换入口；当前已由 AppRail 取代，保留组件实现但不再挂载。
 
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
 

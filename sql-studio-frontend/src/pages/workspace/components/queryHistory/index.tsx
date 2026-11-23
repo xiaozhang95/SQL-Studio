@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StarOutlined, StopOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons'
 import { Drawer, Empty, Input, Space, Table, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
@@ -30,11 +30,10 @@ type Props = {
   >
   terminal?: boolean
   onLoad?: (item: HistoryItem) => void
-  onFavorite?: (item: HistoryItem) => void
   onClosed?: () => void
 }
 /** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
-export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onFavorite, onClosed }: Props) {
+export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onClosed }: Props) {
   const tablePagination = useTablePagination()
 
   const { t, language } = useTranslation()
@@ -90,7 +89,7 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
     {
       title: t('操作'),
       key: 'actions',
-      width: onFavorite ? 92 : 64,
+      width: 64,
       fixed: 'right',
       render: (_, item) => {
         const missing = !connections.some((connection) => connection.id === item.connectionId)
@@ -104,7 +103,6 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
               disabled={running || missing}
               onClick={() => (onLoad ?? loadHistory)(item)}
             />
-            {onFavorite && <ToolbarButton label={t('收藏查询')} icon={<StarOutlined />} size={ComponentSize.Small} onClick={() => onFavorite(item)} />}
           </Space>
         )
       }

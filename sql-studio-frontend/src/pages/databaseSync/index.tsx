@@ -3,9 +3,9 @@ import { Button, Card, Checkbox, Flex, Form, Input, Select, Steps, Tag, theme, T
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
-import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import EngineIcon from '@/components/engineIcon'
 import StudioIcon from '@/components/studioIcon'
+import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -46,12 +46,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   const breadcrumb = [connectionLabel('source'), connectionLabel('target')].filter(Boolean).join(' → ') || undefined
 
   return (
-    <DatabasePage
-      title={t('同步数据库')}
-      breadcrumb={breadcrumb}
-      errors={[model.databaseError, model.error, result?.error]}
-      {...pageProps}
-    >
+    <DatabasePage title={t('同步数据库')} breadcrumb={breadcrumb} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
       <Card size="small">
         <Flex align="center" gap="middle" wrap>
           <Steps
@@ -92,7 +87,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
                       {t('源端')}
-                      {model.choices.source && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
                   actions={[
@@ -166,7 +160,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   aria-label={t('交换源端与目标端')}
                   title={t('交换源端与目标端')}
                   icon={<StudioIcon name="swap" size={14} />}
-                  disabled={busy || checking || running}
+                  disabled={busy}
                   onClick={model.swap}
                 />
                 <Card
@@ -177,7 +171,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
                       {t('目标端')}
-                      {model.choices.target && <Tag color="success">{t('已连接')}</Tag>}
                     </Flex>
                   }
                   actions={[
@@ -230,9 +223,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   <Checkbox checked={values.data} disabled={busy || !values.structure} onChange={(event) => update({ data: event.target.checked })} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div>{t('同时复制表数据')}</div>
-                    <Typography.Text type="secondary">
-                      {t('关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}
-                    </Typography.Text>
+                    <Typography.Text type="secondary">{t('关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}</Typography.Text>
                   </div>
                   {plan && (
                     <Typography.Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
@@ -277,7 +268,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                 border: '1px solid var(--border)',
                 borderRadius: token.borderRadiusLG,
                 background: token.colorFillAlter,
-                color: token.colorTextSecondary,
+                color: token.colorTextSecondary
               }}
             >
               <InfoCircleOutlined style={{ color: token.colorInfo, marginTop: 2 }} />
@@ -302,9 +293,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             {t('返回配置')}
           </Button>
         ) : (
-          <Typography.Text type="secondary">
-            {t('同步内容：{value1}', { value1: values.data ? t('结构 + 数据') : t('仅结构') })}
-          </Typography.Text>
+          <Typography.Text type="secondary">{t('同步内容：{value1}', { value1: values.data ? t('结构 + 数据') : t('仅结构') })}</Typography.Text>
         )}
         <Flex gap="small" wrap>
           {running && (
@@ -335,12 +324,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   {t('同步检查')}
                 </Button>
               )}
-              <Button
-                type="primary"
-                loading={!plan && checking}
-                disabled={!model.valid || busy}
-                onClick={() => void (plan ? model.run() : model.check())}
-              >
+              <Button type="primary" loading={!plan && checking} disabled={!model.valid || busy} onClick={() => void (plan ? model.run() : model.check())}>
                 {plan ? t('开始同步') : t('同步检查')}
               </Button>
             </>

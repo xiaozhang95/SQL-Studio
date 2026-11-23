@@ -1,4 +1,4 @@
-import { theme, Typography } from 'antd'
+import { Grid, theme, Typography } from 'antd'
 import type { ReactNode } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
@@ -17,6 +17,7 @@ interface Props {
 
 /** 页面上下文 Header：标题、面包屑和当前页面操作，全局导航由 AppRail 承载。 */
 export default function PageHeader({ children, actions, title, breadcrumb, errors = [], errorAction, onErrorClose, errorScope }: Props) {
+  const screens = Grid.useBreakpoint()
   const { token } = theme.useToken()
   const pageErrors = usePageErrors()
   return (
@@ -40,12 +41,12 @@ export default function PageHeader({ children, actions, title, breadcrumb, error
       >
         <div className="context-header-id" style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, minWidth: 0, flex: '0 1 auto' }}>
           {title && (
-            <div className="context-header-title" title={typeof title === 'string' ? title : undefined}>
-              <Typography.Text strong>{title}</Typography.Text>
-            </div>
+            <Typography.Text strong ellipsis={{ tooltip: typeof title === 'string' ? title : undefined }} style={{ minWidth: 0 }}>
+              {title}
+            </Typography.Text>
           )}
-          {breadcrumb && (
-            <Typography.Text type="secondary" className="context-header-breadcrumb">
+          {breadcrumb && screens.xl && (
+            <Typography.Text type="secondary" ellipsis={{ tooltip: typeof breadcrumb === 'string' ? breadcrumb : undefined }} style={{ minWidth: 0 }}>
               {breadcrumb}
             </Typography.Text>
           )}

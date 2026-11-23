@@ -26,8 +26,11 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
   return (
     <Tabs
       className="workspace-tabs"
-      styles={{ item: { width: workspaceTabLayout.width, flex: 'none' } }}
-      tabBarStyle={{ margin: 0 }}
+      styles={{
+        header: { height: 38, margin: 0, paddingInline: 'var(--workspace-inset)', background: 'var(--surface)', borderBottom: '1px solid var(--border)' },
+        item: { position: 'relative', width: workspaceTabLayout.width, height: 28, flex: 'none', padding: '0 10px', borderRadius: 'var(--ant-border-radius)' },
+        remove: { width: 20, height: 20, marginInlineStart: 6 }
+      }}
       type="editable-card"
       hideAdd
       size={appearance.navigationSize}
@@ -104,7 +107,9 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
               ) : (
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
               )}
-              {designerDirty[item.id] && <span className="workspace-tab-dirty" role="img" aria-label={t('未保存')} title={t('未保存')} />}
+              {designerDirty[item.id] && (
+                <span style={{ width: 6, height: 6, flex: 'none', borderRadius: '50%', background: 'var(--ant-color-warning)' }} role="img" aria-label={t('未保存')} title={t('未保存')} />
+              )}
             </span>
           ),
           closable: true,

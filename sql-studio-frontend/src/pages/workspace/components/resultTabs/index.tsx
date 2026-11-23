@@ -31,11 +31,15 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
       size={appearance.navigationSize}
       type="line"
       style={{ flex: 'none', minWidth: 0 }}
-      tabBarStyle={{ margin: 0, paddingInline: 'var(--workspace-inset)', background: 'var(--surface)' }}
+      styles={{
+        header: { height: 38, margin: 0, paddingInline: 'var(--workspace-inset)', background: 'var(--surface)', borderBottom: '1px solid var(--border)' },
+        item: { height: 30, padding: '0 8px', borderRadius: 'var(--ant-border-radius)' }
+      }}
+      tabBarGutter={4}
       activeKey={activeKey}
       onChange={onChange}
       tabBarExtraContent={
-        <div className="result-tab-extra">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           {status}
           {compact && (
             <Select

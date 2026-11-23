@@ -69,7 +69,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
           <Sender
             className="agent-composer"
             styles={{
-              root: { height, display: 'flex', flexDirection: 'column' },
+              root: { height, display: 'flex', flexDirection: 'column', borderRadius: token.borderRadiusLG, background: token.colorBgContainer, boxShadow: 'var(--shadow-sm)' },
               content: { padding: token.paddingSM, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
               input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
               footer: { paddingInline: token.paddingSM, paddingBlockEnd: token.paddingSM }
@@ -180,7 +180,14 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                       />
                     </Tooltip>
                   ) : (
-                    <Button {...CHAT.iconButton} type="primary" onClick={() => submit(question)} aria-label={t('发送消息')} icon={<ArrowUpOutlined />} disabled={settingsBusy || !aiStatus?.configured || tooLong} />
+                    <Button
+                      {...CHAT.iconButton}
+                      type="primary"
+                      onClick={() => submit(question)}
+                      aria-label={t('发送消息')}
+                      icon={<ArrowUpOutlined />}
+                      disabled={settingsBusy || !aiStatus?.configured || tooLong}
+                    />
                   )}
                 </Flex>
               </Flex>

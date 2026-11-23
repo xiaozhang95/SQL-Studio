@@ -229,14 +229,7 @@ function HistoryContents({
       }}
     >
       {header}
-      <Input
-        prefix={<SearchOutlined />}
-        value={search}
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder={t('搜索会话标题')}
-        aria-label={t('搜索会话标题')}
-        allowClear
-      />
+      <Input prefix={<SearchOutlined />} value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={t('搜索会话标题')} aria-label={t('搜索会话标题')} allowClear />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Spin spinning={loading}>
           {items.length === 0 && !loading ? (
@@ -246,7 +239,7 @@ function HistoryContents({
               group.items.length ? (
                 <div key={group.key}>
                   {group.key !== 'earlier' && (
-                    <Typography.Text strong className="chat-history-group">
+                    <Typography.Text strong type="secondary" style={{ display: 'block', minHeight: 28, padding: '6px 8px 0' }}>
                       {t(group.label)}
                     </Typography.Text>
                   )}
@@ -266,21 +259,11 @@ function HistoryContents({
                           <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
                             {i.title}
                           </Typography.Text>
-                          <span className="chat-history-time">{timeLabel(i.updatedAt)}</span>
-                          <span
-                            className="chat-history-actions"
-                            style={{ flexShrink: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              type="text"
-                              size="small"
-                              aria-label={t('重命名会话 ') + i.title}
-                              disabled={busy || selecting}
-                              icon={<EditOutlined />}
-                              onClick={() => onRenameOpen(i)}
-                            />
+                          <span className="chat-history-time" style={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                            {timeLabel(i.updatedAt)}
+                          </span>
+                          <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                            <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
                             <Button
                               danger
                               type="text"

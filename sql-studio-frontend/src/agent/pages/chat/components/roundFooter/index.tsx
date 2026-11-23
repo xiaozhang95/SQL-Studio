@@ -1,6 +1,7 @@
 import { ExportOutlined } from '@ant-design/icons'
 import { Button, Collapse, Flex, Tooltip, Typography } from 'antd'
 
+import { useNavigationLock } from '@/contexts/navigationLock'
 import { useTranslation } from '@/hooks/useTranslation'
 import { requestOpenQuery } from '@/services/openQuery'
 
@@ -17,6 +18,7 @@ interface Props {
 }
 export function RoundFooter({ entries, ongoing, waiting }: Props) {
   const { t, language } = useTranslation()
+  const { locked } = useNavigationLock()
 
   const question = entries.find((entry) => entry.role === 'user')
   const answer = entries
@@ -52,9 +54,13 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
       )}
       {(sql || table) && (
         <Flex align="center" gap={6} wrap>
-          {sql && <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} className="agent-action-link">{t('复制 SQL')}</Typography.Text>}
           {sql && (
-            <Button type="text" size="small" className="agent-action-link" icon={<ExportOutlined />} onClick={() => requestOpenQuery(sql)}>
+            <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} className="agent-action-link">
+              {t('复制 SQL')}
+            </Typography.Text>
+          )}
+          {sql && (
+            <Button type="text" size="small" className="agent-action-link" icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(sql)}>
               {t('在查询页打开')}
             </Button>
           )}

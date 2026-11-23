@@ -48,15 +48,14 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
         overflow: 'hidden',
         background: 'var(--surface)',
         borderRight: '1px solid var(--border)',
-        width: visibleWidth
+        width: visibleWidth,
+        maxWidth: '45%'
       }}
     >
-      <div className="object-sidebar-head">
-        <Typography.Text strong className="object-sidebar-title">
-          {t('对象')}
-        </Typography.Text>
+      <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 6, minHeight: 42, paddingInline: 'var(--workspace-inset)', borderBottom: '1px solid var(--border)' }}>
+        <Typography.Text strong>{t('对象')}</Typography.Text>
         <Tag style={{ marginInlineEnd: 0 }}>{model.savedConnections.length}</Tag>
-        <div className="object-sidebar-actions">
+        <div style={{ marginInlineStart: 'auto' }}>
           <Tooltip title={t('新建连接')}>
             <Button type="text" size="small" icon={<PlusOutlined />} aria-label={t('新建连接')} disabled={model.running} onClick={onNewConnection} />
           </Tooltip>

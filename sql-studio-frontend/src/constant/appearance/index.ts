@@ -18,3 +18,11 @@ export const appearance = {
 
 /** 原生 Modal 与 AntApp 确认弹窗的操作按钮统一使用 default。 */
 export const modalDefaults = { okButtonProps: { type: 'default' } } as const satisfies NonNullable<ConfigProviderProps['modal']>
+
+export const railButtonStyle = {
+  position: 'relative',
+  width: 40,
+  height: 40,
+  padding: 0,
+  borderRadius: 'var(--ant-border-radius-lg)'
+} as const satisfies NonNullable<ButtonProps['style']>

@@ -19,13 +19,13 @@ App 先读取界面偏好再挂载业务页面，确保业务请求携带已恢�
 
 Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。确认按钮使用统一的普通按钮配置。
 
-删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](components/deleteDialog/README.md) 确认目标与范围。库表对象使用业务弹框，单条查询收藏及模型和字段草稿使用 [DeleteConfirmation](components/deleteConfirmation/README.md) 气泡。
+删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](components/deleteDialog/README.md) 确认目标与范围。库表对象使用业务弹框，模型和字段草稿使用 [DeleteConfirmation](components/deleteConfirmation/README.md) 气泡。
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型使用浅色文字，NULL 使用浅色斜体，金额/数字右对齐并使用等宽数字；这些文字与其他界面文本一样跟随全局字体和字号。状态/耗时仍不使用 Tag，不展示连接来源标签。
 
 上下文 Header 左右均为 16px，侧栏搜索、工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px；对象栏顶部为标题、连接数与新建入口。树使用 28px 内容行与 2px 行间距，连接根节点右侧显示 5px 状态点；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
 
-查询结果与执行历史统一使用 tablePagination 的底栏样式，页码 24px、右对齐且固定在表体滚动区外。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
+结果表使用虚拟滚动并在底部显示条数。执行历史保留分页。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
 
 连接 Select 使用原生默认尺寸，工作台连接、数据库、Schema 范围选择共用 240px 宽度并允许收缩；连接图标为 20px，避免撑高控件。输出区由 resultTabs 展示数据结果标签，无列执行回执归入消息/摘要，超过 8 个结果集时用下拉切换，SQL 在消息/摘要中高亮并支持复制。连接表单支持输入或选择分组，新建预选“默认分组”，留空时使用默认分组；分组随连接配置保存，左侧树以文件夹整理，组内连接可右键编辑更换分组。
 
@@ -54,7 +54,7 @@ Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任�
 
 所有业务Modal与确认框使用Ant Design默认位置，不设置centered或自定义位置偏移。
 
-主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用近黑 `#161a16`、`#f4f6f2` 画布和 `#15803d` 主色；暗色使用近白 `#f2f5f1`、`#0a0a0a` 中性近黑画布和 `#42d47c` 主色，背景与填充不掺绿色调。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
+主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用黑色 `#000000`、`#f4f6f2` 画布和 `#15803d` 主色；暗色使用白色 `#ffffff`、`#0a0a0a` 中性近黑画布和 `#42d47c` 主色，背景与填充不掺绿色调。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
 
 滚动条沿用 ghspace：横纵统一 6px、圆角滑块、透明轨道；亮色灰色滑块、暗色半透明白色滑块，悬停加深。原生滚动条及虚拟表格、对象树的模拟滚动条在 app.scss 统一适配。
 

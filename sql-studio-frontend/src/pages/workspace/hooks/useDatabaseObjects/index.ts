@@ -19,6 +19,17 @@ type Snapshot = {
   details: Record<string, TableDetails>
   detailErrors: Record<string, string>
 }
+const emptySnapshot = {
+  databases: [],
+  tables: {},
+  loadingTables: [],
+  error: '',
+  tableErrors: {},
+  structures: {},
+  details: {},
+  detailErrors: {}
+} satisfies Omit<Snapshot, 'status'>
+
 type Session = {
   controller: AbortController
   lifecycle: DatabaseLifecycle
@@ -39,11 +50,14 @@ export function useDatabaseObjects(
   connectionId: string,
   database: string,
   onDatabasesLoaded: (id: string, databases: string[]) => void,
+  onConnectionReset: (id: string) => void,
   schemaConnections: readonly string[],
   foreignKeyConnections: readonly string[]
 ) {
   const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({})
   const sessions = useRef(new Map<string, Session>())
+  const closing = useRef(new Map<string, Promise<void>>())
+  const pendingCleanup = useRef(new Set<string>())
   const current = snapshots[connectionId]
   const [closedDatabases, setClosedDatabases] = useState<Record<string, string[]>>({})
 
@@ -65,19 +79,54 @@ export function useDatabaseObjects(
     setClosedDatabases({})
   }, [])
 
-  const closeConnection = useCallback(async (id: string) => {
-    sessions.current.get(id)?.controller.abort()
-    await setConnectionSession(id, false)
-    sessions.current.delete(id)
-    setSnapshots((previous) => {
-      const next = { ...previous }
-      delete next[id]
-      return next
-    })
+  const releaseConnection = useCallback((id: string) => {
+    const existing = closing.current.get(id)
+    if (existing) return existing
+    pendingCleanup.current.add(id)
+    const task = setConnectionSession(id, false)
+      .then(() => {
+        pendingCleanup.current.delete(id)
+      })
+      .finally(() => {
+        closing.current.delete(id)
+      })
+    closing.current.set(id, task)
+    return task
   }, [])
+
+  const closeConnection = useCallback(
+    async (id: string, failure = '') => {
+      const session = sessions.current.get(id)
+      session?.controller.abort()
+      setClosedDatabases((previous) => {
+        if (!(id in previous)) return previous
+        const next = { ...previous }
+        delete next[id]
+        return next
+      })
+      try {
+        await releaseConnection(id)
+      } catch (error) {
+        failure ||= error instanceof Error ? error.message : '关闭连接失败'
+        throw error
+      } finally {
+        if (sessions.current.get(id) === session) {
+          sessions.current.delete(id)
+          setSnapshots((previous) => {
+            const next = { ...previous }
+            if (failure) next[id] = { ...emptySnapshot, status: 'error', error: failure }
+            else delete next[id]
+            return next
+          })
+        }
+      }
+    },
+    [releaseConnection]
+  )
 
   const openConnection = useCallback(
     (id: string): Promise<string[]> => {
+      if (closing.current.has(id)) return Promise.reject(new Error('连接仍在关闭，请稍后重试'))
       const existing = sessions.current.get(id)
       if (existing?.databases && !existing.controller.signal.aborted) return Promise.resolve(existing.databases)
       if (existing?.opening && !existing.controller.signal.aborted) return existing.opening
@@ -95,12 +144,15 @@ export function useDatabaseObjects(
         pendingDetails: new Map()
       }
       sessions.current.set(id, session)
+      onConnectionReset(id)
       const valid = () => sessions.current.get(id) === session && !session.controller.signal.aborted
       setSnapshots((previous) => ({
         ...previous,
-        [id]: { status: 'loading', databases: [], tables: {}, loadingTables: [], error: '', tableErrors: {}, structures: {}, details: {}, detailErrors: {} }
+        [id]: { ...emptySnapshot, status: 'loading' }
       }))
-      const task = setConnectionSession(id, true, undefined, session.controller.signal)
+      const cleanup = pendingCleanup.current.has(id) ? releaseConnection(id) : Promise.resolve()
+      const task = cleanup
+        .then(() => setConnectionSession(id, true, undefined, session.controller.signal))
         .then(() => getDatabases(id, session.controller.signal))
         .then((databases) => {
           if (valid()) {
@@ -110,10 +162,10 @@ export function useDatabaseObjects(
           }
           return databases
         })
-        .catch((error) => {
+        .catch(async (error) => {
           if (valid()) {
             const reason = error instanceof Error && error.message.trim() ? error.message : '连接失败'
-            setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], status: 'error', error: reason } }))
+            await closeConnection(id, reason).catch(() => {})
           }
           throw error
         })
@@ -123,7 +175,7 @@ export function useDatabaseObjects(
       session.opening = task
       return task
     },
-    [onDatabasesLoaded]
+    [closeConnection, onConnectionReset, onDatabasesLoaded, releaseConnection]
   )
 
   const refreshConnection = useCallback(

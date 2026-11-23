@@ -18,14 +18,14 @@ export function Welcome() {
         <Typography.Title level={3} style={{ margin: 0 }}>
           {t('想了解哪些数据？')}
         </Typography.Title>
-        <Typography.Text type="secondary">
-          {t('从连接、表结构到数据分析，直接描述你想了解的内容。')}
-        </Typography.Text>
+        <Typography.Text type="secondary">{t('从连接、表结构到数据分析，直接描述你想了解的内容。')}</Typography.Text>
       </Space>
-      <div className="agent-welcome-suggestions">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: 10, width: '100%' }}>
         {examples.map((example) => (
           <Card key={example.title} size="small" className="agent-welcome-card" styles={{ body: { padding: 14 } }}>
-            <span className="agent-welcome-icon">{example.icon}</span>
+            <span style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 'var(--ant-border-radius)', background: 'var(--primary-soft)', color: 'var(--primary)' }}>
+              {example.icon}
+            </span>
             <Typography.Text strong style={{ display: 'block', marginTop: 11 }}>
               {t(example.title)}
             </Typography.Text>
@@ -35,9 +35,7 @@ export function Welcome() {
           </Card>
         ))}
       </div>
-      <Typography.Text type="secondary">
-        {t('在下方输入问题，涉及数据或结构修改时会逐次请求确认。')}
-      </Typography.Text>
+      <Typography.Text type="secondary">{t('在下方输入问题，涉及数据或结构修改时会逐次请求确认。')}</Typography.Text>
     </Flex>
   )
 }

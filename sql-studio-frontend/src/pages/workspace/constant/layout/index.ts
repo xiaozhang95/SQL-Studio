@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 /** 工作区专属尺寸；两页共用的侧栏尺寸位于 constant/sidebarLayout。 */
 export const resultPanelLayout = { defaultHeight: 260, minimumHeight: 260, editorReservedHeight: 280, keyboardStep: 24 } as const
 
@@ -8,3 +10,14 @@ export const workspaceTabLayout = { width: 200 } as const
 export const sqlCompletionLayout = { width: 360, height: 256 } as const
 export const scopeCloseDialogLayout = { width: 560 } as const
 export const objectTreeLayout = { rowHeight: 30, switcherWidth: 20, scrollSaveDelay: 150 } as const
+
+export const workspaceEmptyStyle = {
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 10,
+  padding: 32,
+  textAlign: 'center'
+} as const satisfies CSSProperties

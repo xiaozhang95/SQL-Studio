@@ -32,16 +32,16 @@ html[data-theme='dark'] {
   --surface: var(--ant-color-bg-container);
   --rail-surface: #f8faf6;
   --surface-subtle: #f8faf6;
-  --surface-hover: #f0f3ee;
+  --surface-hover: var(--ant-control-item-bg-hover);
   --surface-sunken: #eef1ec;
   --canvas: var(--ant-color-bg-layout);
   --primary: var(--ant-color-primary);
-  // 实色品牌绿：主按钮、已连接引擎底板与 Rail 激活块共用，避免同一屏出现多种绿。
+  // 已连接引擎图标的底板。
   --brand: #15803d;
   --primary-soft: #e9f4ed;
   --primary-border: #bfe3cb;
   --border: var(--ant-color-border-secondary);
-  --border-strong: #cfd7cd;
+  --border-strong: var(--ant-color-border);
   --tab-bar-background: var(--surface);
   --inactive-icon: var(--ant-color-text-tertiary);
   --code-keyword: #7c3aed;
@@ -62,7 +62,6 @@ html[data-theme='dark'] {
   backdrop-filter: blur(2px);
 }
 
-
 // 弹窗标题跟随全局界面字号。
 .ant-modal .ant-modal-title {
   font-size: var(--ant-font-size);
@@ -76,9 +75,7 @@ html[data-theme='dark'] .ant-tooltip .ant-tooltip-container {
 html[data-theme='dark'] .sql-studio-theme {
   --rail-surface: #111111;
   --surface-subtle: #1a1a1a;
-  --surface-hover: #202020;
   --surface-sunken: #101010;
-  --border-strong: #3a3a3a;
   --primary-soft: rgba(66, 212, 124, 0.12);
   --primary-border: rgba(66, 212, 124, 0.32);
   --code-keyword: #c4a7ff;
@@ -146,45 +143,9 @@ html[data-theme='dark'] {
   margin-inline-start: 0;
 }
 
-// 模型卡与语言卡使用同一套设置卡片交互。
-.ai-model-card {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
-}
-
+// 模型卡的悬停状态。
 .ai-model-card:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
-}
-
-.ai-model-card.is-default {
-  border-color: var(--primary-border);
-  background: var(--primary-soft);
-}
-
-// 深色下绿色底与绿色文字叠加会对比不足，默认卡改用中性次级底和绿色描边。
-html[data-theme='dark'] .ai-model-card.is-default {
-  background: var(--surface-subtle);
-}
-
-.ai-model-logo {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.ai-model-action.ant-btn {
-  width: 26px;
-  height: 26px;
-  padding: 0;
+  box-shadow: var(--shadow-xs);
 }
 
 .ai-default-pill.ant-radio-wrapper {
@@ -213,19 +174,6 @@ html[data-theme='dark'] .ai-model-card.is-default {
 
 .chat-history-list .ant-conversations-item-active .chat-history-icon {
   color: var(--primary);
-}
-
-.chat-history-group {
-  display: block;
-  min-height: 28px;
-  padding: 6px 8px 0;
-  color: var(--text-tertiary);
-}
-
-.chat-history-time {
-  flex: none;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
 }
 
 .chat-history-actions {
@@ -327,7 +275,6 @@ body,
   padding: 0 !important;
 }
 
-
 // 同步配置两栏中间放置交换按钮，窄屏改为纵向并旋转图标。
 .sync-grid {
   display: grid;
@@ -359,47 +306,6 @@ body,
 
   .sync-swap.ant-btn {
     transform: rotate(90deg);
-  }
-}
-
-// 状态信息固定两列描述卡，窄屏单列，保留 Ant Design 默认行距。
-.monitor-status-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  align-items: start;
-}
-
-@media (max-width: 1100px) {
-  .monitor-status-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-// 监控卡片按偶数列切换，四列时为每张卡片预留足够宽度。
-.database-monitor-metrics {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.database-monitor-metrics > .monitor-metric {
-  padding-inline: 18px;
-  border-inline-start: 1px solid var(--border);
-}
-
-.database-monitor-metrics > .monitor-metric:first-child {
-  padding-inline-start: 0;
-  border-inline-start: 0;
-}
-
-@media (max-width: 1119px) {
-  .database-monitor-metrics > .monitor-metric:nth-child(odd) {
-    padding-inline-start: 0;
-    border-inline-start: 0;
-  }
-}
-@media (min-width: 1120px) {
-  .database-monitor-metrics {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -439,7 +345,6 @@ body,
   -webkit-user-select: none;
   user-select: none;
 }
-.topbar input,
 .editor-toolbar input {
   -webkit-user-select: text;
   user-select: text;
@@ -552,12 +457,6 @@ body,
 .object-tree .ant-tree .ant-tree-treenode-active:not(.ant-tree-treenode-disabled) .ant-tree-node-selected {
   color: var(--text);
   background: var(--ant-control-item-bg-active);
-}
-
-.ant-modal .ant-modal-close:focus,
-.ant-modal .ant-modal-close:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 .settings-section-choice[aria-pressed='true'] .anticon {
@@ -677,230 +576,35 @@ body,
   outline-offset: 2px;
 }
 
-// 工作区页签使用芯片外观，活动项保留中性底、细边框和绿色底线。
-.workspace-tabs.ant-tabs-card.ant-tabs-top > .ant-tabs-nav {
-  margin: 0;
-  height: 38px;
-  padding: 0 var(--workspace-inset);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-
-  &::before {
-    border-bottom: 0;
-  }
-
+// Tabs 语义样式负责尺寸；选择器仅处理内部标签的交互与激活线。
+:is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
   .ant-tabs-nav-list {
     align-items: center;
-    height: 100%;
   }
 
-  .ant-tabs-tab {
-    position: relative;
-    height: 28px;
-    margin: 0 !important;
-    padding: 0 10px !important;
-    border: 1px solid transparent !important;
-    border-radius: var(--ant-border-radius) !important;
-    background: transparent !important;
-    color: var(--text-secondary);
-    transition:
-      background-color 120ms ease,
-      border-color 120ms ease,
-      color 120ms ease;
-
-    .ant-tabs-tab-btn {
-      display: flex;
-      align-items: center;
-      height: 100%;
-      color: inherit;
-      text-shadow: none;
-    }
+  .ant-tabs-tab-btn {
+    text-shadow: none;
   }
+}
 
-  .ant-tabs-tab + .ant-tabs-tab {
-    margin-left: 4px !important;
-  }
-
-  .ant-tabs-tab:not(.ant-tabs-tab-active, .ant-tabs-tab-disabled):hover {
-    background: var(--surface-hover) !important;
-    color: var(--text);
-  }
-
+.workspace-tabs > .ant-tabs-nav {
   .ant-tabs-tab-active {
-    background: var(--surface-subtle) !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-    .ant-tabs-tab-btn {
-    }
+    background: var(--surface-subtle);
+    border-color: var(--border);
 
     &::after {
       content: '';
       position: absolute;
-      right: 8px;
+      inset-inline: 8px;
       bottom: -5px;
-      left: 8px;
       height: 2px;
-      border-radius: 2px 2px 0 0;
       background: var(--primary);
-      z-index: 2;
     }
   }
 
-  .ant-tabs-ink-bar {
-    display: none;
-  }
-
-  .ant-tabs-tab,
-  .ant-tabs-tab:focus,
-  .ant-tabs-tab:focus-visible {
-    outline: none;
-  }
-
-  .ant-tabs-tab-btn:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: -2px;
-    border-radius: 4px;
-  }
-
-  .ant-tabs-tab-remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    margin-inline-start: 6px;
-    border-radius: 4px;
-    color: var(--text-tertiary);
-    font-size: 10px;
+  .ant-tabs-tab:not(:hover, :focus-within, .ant-tabs-tab-active) .ant-tabs-tab-remove {
     opacity: 0;
-    pointer-events: none;
-    transition:
-      opacity 100ms ease,
-      background-color 100ms ease;
-
-    &:hover {
-      background: var(--ant-control-item-bg-hover);
-      color: var(--text);
-    }
   }
-
-  .ant-tabs-tab:hover .ant-tabs-tab-remove,
-  .ant-tabs-tab-active .ant-tabs-tab-remove,
-  .ant-tabs-tab:focus-within .ant-tabs-tab-remove {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .ant-tabs-nav-add {
-    width: 26px;
-    height: 26px;
-    margin-inline-start: 4px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--ant-border-radius);
-    background: transparent;
-    color: var(--text-tertiary);
-    font-size: 12px;
-
-    &:hover {
-      background: var(--surface-hover);
-      color: var(--text);
-    }
-  }
-}
-
-.workspace-tab-dirty {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--ant-color-warning);
-}
-
-// 查询工具栏的「运行」按钮内快捷键提示。
-.run-shortcut {
-  margin-inline-start: 3px;
-  opacity: 0.75;
-}
-
-// 结果页签使用设计稿的 38px 线形导航：正文色激活文字 + 绿色底线。
-.statement-result-tabs > .ant-tabs-nav {
-  height: 38px;
-  margin: 0;
-  padding: 0 var(--workspace-inset);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-
-  &::before {
-    border-bottom: 0;
-  }
-
-  .ant-tabs-nav-list {
-    align-items: center;
-    height: 100%;
-  }
-
-  .ant-tabs-tab {
-    height: 30px;
-    margin: 0 !important;
-    padding: 0 8px !important;
-    border-radius: 5px;
-    color: var(--text-secondary);
-
-    &:hover {
-      background: var(--surface-hover);
-      color: var(--text);
-    }
-
-    .ant-tabs-tab-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      height: 100%;
-      text-shadow: none;
-    }
-  }
-
-  .ant-tabs-tab-active {
-    position: relative;
-
-    .ant-tabs-tab-btn {
-      color: var(--text) !important;
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      right: 8px;
-      bottom: -4px;
-      left: 8px;
-      height: 2px;
-      border-radius: 2px;
-      background: var(--primary);
-    }
-  }
-
-  .ant-tabs-ink-bar {
-    display: none;
-  }
-}
-
-.result-selection-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-// 结果页签与执行状态共用一行，状态指标使用紧凑的次要文字。
-.result-tab-extra {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
 }
 
 .result-run-status {
@@ -914,7 +618,7 @@ body,
     font-size: 12px;
   }
 
-  &:not(.is-error, .is-running) {
+  &:not(.is-error, .is-running, .is-cancelled) {
     color: var(--ant-color-success);
 
     .anticon {
@@ -943,201 +647,38 @@ body,
   }
 }
 
-// 结果表保持水平分隔线，使用更紧凑的 30px 行高。
-.data-table {
-  .ant-table-thead > tr > th {
-    height: auto;
-    min-height: 30px;
-    padding-block: 4px;
-    background: var(--surface-subtle);
-    color: var(--text-tertiary);
-  }
-
-  .ant-table-tbody > tr > td {
-    height: auto;
-    min-height: 30px;
-    padding-block: 4px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-secondary);
-  }
-
-  .column-type {
-    color: var(--text-tertiary);
-  }
-
-  .cell-null {
-    color: var(--text-tertiary);
-    font-style: italic;
-  }
-
-  .cell-index {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .cell-amount {
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-  }
-
-  .ant-table-tbody > tr:hover > td {
-    background: var(--surface-hover);
-  }
-
-  .ant-table-tbody > tr.ant-table-row-selected > td {
-    background: var(--primary-soft);
-  }
+// 虚拟数据表选中行使用主题强调底色。
+.data-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--primary-soft);
 }
 
-// ---------------------------------------------------------------------------
-// 全局 Rail、上下文 Header、对象栏与结果状态
-// ---------------------------------------------------------------------------
-
+// 导航按视口收缩，激活态由 aria-current 驱动。
 .app-rail {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
   width: 56px;
-  padding: 10px 0 12px;
-  border-right: 1px solid var(--border);
-  background: var(--rail-surface);
-  user-select: none;
-  z-index: 10;
 }
 
-.app-rail-logo.ant-btn {
-  width: 34px;
-  height: 34px;
-  margin-bottom: 12px;
-  padding: 0;
-  border: 0;
-  border-radius: 10px;
-  overflow: hidden;
+@media (max-width: 900px) {
+  .app-rail {
+    width: 48px;
+  }
+}
+
+.app-rail-logo.ant-btn:hover {
   background: transparent;
+}
 
-  &:hover {
-    background: transparent;
+.app-rail-button.ant-btn[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -4px;
+    inset-block: 11px;
+    width: 2px;
+    background: currentColor;
   }
-
-  img {
-    display: block;
-    width: 34px;
-    height: 34px;
-  }
-}
-
-.app-rail-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-}
-
-.app-rail-button.ant-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 20px;
-
-  &:hover {
-    background: var(--surface-hover);
-    color: var(--text);
-  }
-
-  &:disabled {
-    background: transparent;
-    color: var(--text-quaternary);
-  }
-
-  &[aria-current='page'] {
-    background: var(--brand);
-    color: #fff;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 11px;
-      bottom: 11px;
-      left: -8px;
-      width: 2px;
-      border-radius: 2px;
-      background: var(--brand);
-    }
-  }
-}
-
-.app-rail-spacer {
-  flex: 1;
-}
-
-.app-rail-divider {
-  width: 22px;
-  height: 1px;
-  margin: 6px 0;
-  background: var(--border);
-}
-
-.context-header-title {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.context-header-breadcrumb {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text-tertiary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workspace-empty-state {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 32px;
-  background: var(--surface);
-  text-align: center;
-}
-
-.object-sidebar-head {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  height: 42px;
-  padding: 0 var(--workspace-inset);
-  border-bottom: 1px solid var(--border);
-}
-
-.object-sidebar-title {
-  color: var(--text);
-}
-
-.object-sidebar-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-}
-
-.object-sidebar-search {
-  flex: none;
-  padding: 8px var(--workspace-inset);
-  border-bottom: 1px solid var(--border);
 }
 
 .object-tree .ant-tree .ant-tree-node-content-wrapper {
@@ -1155,46 +696,9 @@ body,
   background: var(--primary);
 }
 
-// 连接根节点右侧的 6px 状态点，未连接灰、失败红、已连接绿。
-.connection-tree-status {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  margin-inline-start: 2px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.connection-tree-status.is-connected {
-  background: var(--ant-color-success);
-}
-
-.connection-tree-status.is-error {
-  background: var(--ant-color-error);
-}
-
-@media (max-width: 1280px) {
-  .context-header-breadcrumb {
-    display: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .app-rail {
-    width: 48px;
-  }
-}
-
-.agent-composer.ant-sender {
-  border-color: var(--border-strong);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-
-  &:focus-within {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-soft);
-  }
+.agent-composer.ant-sender:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 // 用户消息的编辑/复制操作只在悬停或键盘聚焦时出现，保持气泡本身简洁。
@@ -1209,16 +713,6 @@ body,
   pointer-events: auto;
 }
 
-.agent-disclaimer {
-  margin-top: 6px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.code-readonly {
-  color: var(--text-tertiary);
-}
-
 .agent-action-link.ant-typography,
 .agent-action-link.ant-btn {
   display: inline-flex;
@@ -1226,14 +720,6 @@ body,
   height: 26px;
   padding-inline: 4px;
   color: var(--text-secondary);
-}
-
-.agent-welcome-suggestions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  width: 100%;
-  margin-top: 24px;
 }
 
 .agent-welcome-card.ant-card {
@@ -1247,22 +733,5 @@ body,
     border-color: var(--ant-color-primary-border);
     background: var(--surface-hover);
     box-shadow: var(--card-shadow);
-  }
-}
-
-.agent-welcome-icon {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 14px;
-}
-
-@media (max-width: 900px) {
-  .agent-welcome-suggestions {
-    grid-template-columns: 1fr;
   }
 }

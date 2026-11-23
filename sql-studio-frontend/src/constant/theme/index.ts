@@ -113,15 +113,12 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgHover: palette.hover
     },
     components: {
-      // 设计稿统一使用 12px 弹窗圆角。
-      Modal: { borderRadiusLG: 12, contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
+      Modal: { contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
       // 文本按钮与默认按钮的悬停/按下背景与树、下拉、表格共用同一档。
       Button: {
         textHoverBg: palette.hover,
         defaultHoverBg: palette.hover,
-        defaultActiveBg: palette.active,
-        // 深色主按钮沿用品牌深绿与白字，避免亮绿底配深色文字过抢眼；图标强调仍使用亮绿主色。
-        ...(themeMode === 'dark' ? { colorPrimary: '#15803d', colorPrimaryHover: '#1a9348', colorPrimaryActive: '#116532', primaryColor: '#ffffff' } : {})
+        defaultActiveBg: palette.active
       }
     },
     cssVar: { key: 'sql-studio-theme' }

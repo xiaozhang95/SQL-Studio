@@ -130,7 +130,12 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
   const swap = () => {
     if (current.current) return
     invalidate()
-    cancelList()
+    if (choices.source !== choices.target || choices.source === externalID) {
+      cancelList()
+      setDatabases([])
+      setDatabaseError('')
+      setLoading(false)
+    }
     setValues((previous) => ({
       ...previous,
       sourceDatabase: previous.targetDatabase,

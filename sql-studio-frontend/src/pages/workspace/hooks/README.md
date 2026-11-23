@@ -4,7 +4,6 @@
 - [useDesktopExit](useDesktopExit/README.md)：仅 Electron 的退出确认、草稿保存与连接收尾。
 - [useWorkspacePersistence](useWorkspacePersistence/README.md)：工作区索引及分片的本地保存与恢复。
 - [useQueryHistory](useQueryHistory/README.md)：只读取当前页面连接的历史，按连接分别保存。
-- [useQueryFavorites](useQueryFavorites/README.md)：命名、管理及保存查询收藏。
 - [useDatabaseObjects](useDatabaseObjects/README.md)：按连接隔离的元数据缓存、打开/关闭与取消。
 - [useConnectionForm](useConnectionForm/README.md)：连接表单、测试与保存。
 - [useConnectionGroups](useConnectionGroups/README.md)：共享分组列表的新建、重命名与连接移动。

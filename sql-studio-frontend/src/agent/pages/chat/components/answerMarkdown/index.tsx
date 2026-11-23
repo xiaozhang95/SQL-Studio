@@ -94,7 +94,7 @@ export function AnswerMarkdown({ text }: { text: string }) {
       case 'text':
         return token.tokens ? nodes(token.tokens) : token.text
       case 'code':
-        return <CodeBlock text={token.text} language={token.lang ?? ''} />
+        return <CodeBlock text={token.text} language={token.lang ?? ''} allowOpen />
       case 'hr':
         return <Divider style={{ margin: 0 }} />
       case 'blockquote':

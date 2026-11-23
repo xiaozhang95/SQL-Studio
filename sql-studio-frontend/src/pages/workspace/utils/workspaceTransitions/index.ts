@@ -15,7 +15,17 @@ export function upsertConnection(connections: readonly Connection[], saved: Conn
   return connections.some((item) => item.id === saved.id) ? connections.map((item) => (item.id === saved.id ? saved : item)) : [...connections, saved]
 }
 
-/** 仅用已成功加载的库列表清理失效树身份，不把加载中或失败当作删库。 */
+/** 持久化及恢复仅保留分组和已打开的连接根节点。 */
+export function explorerRoots(layout: ExplorerLayout, openedConnections: readonly string[]): ExplorerLayout {
+  const opened = new Set(openedConnections)
+  const keep = (key: string) => {
+    const [kind, owner] = JSON.parse(key) as string[]
+    return kind === 'group' || (kind === 'connection' && opened.has(owner))
+  }
+  return { ...layout, expanded: layout.expanded.filter(keep), selected: layout.selected.filter(keep) }
+}
+
+/** 保留指定库的分支；新建连接会话时传空列表以重置该连接的子节点。 */
 export function explorerAfterDatabasesLoaded(layout: ExplorerLayout, connectionId: string, databases: readonly string[]): ExplorerLayout {
   const names = new Set(databases)
   const keep = (key: string) => {

@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, HistoryOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, HistoryOutlined, LoadingOutlined, StopOutlined } from '@ant-design/icons'
 import { Alert, Card, Collapse, Flex, Progress, Tag, theme, Timeline, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
@@ -117,7 +117,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
       <Card size="small">
         <Flex align="flex-start" gap={12}>
           <span style={{ display: 'inline-flex', flex: 'none', color: statusColor, fontSize: 34 }}>
-            {status === 'error' ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
+            {running ? <LoadingOutlined spin /> : done ? <CheckCircleOutlined /> : status === 'cancelled' ? <StopOutlined /> : <CloseCircleOutlined />}
           </span>
           <Flex vertical gap={6} style={{ flex: 1, minWidth: 0 }}>
             <Flex align="center" gap={8} wrap>
@@ -187,9 +187,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
                 <Typography.Text type="secondary" style={{ flex: 'none' }}>
                   {item.label}
                 </Typography.Text>
-                <Typography.Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-                  {item.value}
-                </Typography.Text>
+                <Typography.Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{item.value}</Typography.Text>
               </Flex>
             ))}
           </Flex>
@@ -203,9 +201,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
           )}
         </Card>
       </div>
-      {(status === 'cancelled' || error) && (
-        <Alert type="warning" showIcon title={t(progress.created ? '已创建的库、表及已写入记录会保留。' : '如操作在建库时中断，请先检查目标库状态。')} />
-      )}
+      {(status === 'cancelled' || error) && <Alert type="warning" showIcon title={t(progress.created ? '已创建的库、表及已写入记录会保留。' : '如操作在建库时中断，请先检查目标库状态。')} />}
     </>
   )
 }

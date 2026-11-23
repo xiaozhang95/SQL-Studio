@@ -7,7 +7,6 @@
 | workspace-index.json | v2 页面、内容引用、查询范围与布局轻量索引 |
 | workspace-parts/<SHA256>.json | 按页保存的 SQL 草稿与结果 |
 | history.json | 各连接最近50条执行历史 |
-| query-favorites.json | 命名收藏的 SQL、连接与数据库范围 |
 | appearance.json | theme/fontSize/language 界面偏好 |
 | ai-models.json | 模型配置列表、使用处选择的记录和补全偏好 |
 | connections.json | connections/groups 对象，连接必须明确保存 type/group，密码为 AES-GCM 密文 |
@@ -22,7 +21,5 @@
 每个分区最多32MiB内容，状态文件最多33MiB；0600临时文件 Sync 后同目录原子替换，目录0700。Windows权限取决于当前目录 ACL。connections.json 与 master.key 须一起备份；公开连接接口不返回密码，模型配置接口逐行清除 Key，`ai-models.json` 含本机保存的明文 Key。普通状态接口禁止访问连接文件与废弃密钥分区。
 
 工作区与历史按防抖策略保存。冲突时重新读取服务端最新配置，丢弃基于旧修订的待保存内容。后台保存不在顶部展示 loading。强制关闭可能丢失尚未提交修改。恢复不执行 SQL、不写业务数据库；查询草稿、结果和对话文本可能包含敏感内容。
-
-查询收藏在命名、重命名或删除确认时立即保存，独立于执行历史。修订冲突时以最新列表重放单条收藏操作，继续冲突时提示用户重试。打开收藏只恢复 SQL 草稿和连接范围。
 
 工作区内容按散列保存，提交先发布分片再提交索引，读取校验散列；未引用内容按当前回收策略清理，不删除仍被索引引用的内容。Agent 只读写当前 v2 分片会话，不转换其他会话格式。

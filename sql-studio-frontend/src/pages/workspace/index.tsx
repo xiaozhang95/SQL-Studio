@@ -17,13 +17,12 @@ import ConnectionSidebar from './components/connectionSidebar'
 import DataExport from './components/dataExport'
 import ObjectManagementModal from './components/objectManagementModal'
 import QueryEditor from './components/queryEditor'
-import QueryFavorites from './components/queryFavorites'
 import QueryHistory from './components/queryHistory'
 import QueryResults from './components/queryResults'
 import RedisQuery from './components/redisQuery'
 import TableDesigner from './components/tableDesigner'
 import WorkspaceTabs from './components/workspaceTabs'
-import { useQueryFavorites } from './hooks/useQueryFavorites'
+import { workspaceEmptyStyle } from './constant/layout'
 import type { WorkspaceModel } from './hooks/useWorkspace'
 
 type Props = {
@@ -37,14 +36,10 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
   const { t } = useTranslation()
 
   const sidebar = useSidebarResize(model.sidebarWidth, model.setSidebarWidth, sidebarLayout, model.workspaceReady)
-  const favorites = useQueryFavorites()
   const connection = model.savedConnections.find((item) => item.id === model.tab.connectionId)
   const breadcrumb = [connection?.name, model.tab.database, model.tab.title].filter(Boolean).join(' / ')
   return (
-    <div
-      className="app-shell"
-      style={{ height: '100%', minWidth: 900, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--surface)' }}
-    >
+    <div className="app-shell" style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: 'var(--text)', background: 'var(--surface)' }}>
       <PageHeader
         title={t('工作台')}
         breadcrumb={breadcrumb || undefined}
@@ -125,21 +120,14 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
                   <>
                     {model.pageReady && (
                       <>
-                        {model.tab.kind === 'query' && (
-                          <QueryEditor
-                            key={model.activeTab}
-                            model={model}
-                            themeMode={themeMode}
-                            onFavorite={(sql) => favorites.edit({ sql, connectionId: model.tab.connectionId, database: model.tab.database, schema: model.tab.schema })}
-                          />
-                        )}
+                        {model.tab.kind === 'query' && <QueryEditor key={model.activeTab} model={model} themeMode={themeMode} />}
                         <QueryResults model={model} themeMode={themeMode} />
                       </>
                     )}
                   </>
                 </WorkspaceTabs>
               ) : (
-                <div className="workspace-empty-state">
+                <div style={workspaceEmptyStyle}>
                   <Typography.Title level={3} style={{ margin: 0 }}>
                     {t('开始一次查询')}
                   </Typography.Title>
@@ -183,19 +171,8 @@ export default function Workspace({ model, active, onOpenDatabaseSection, themeM
         onSaved={model.onConnectionSaved}
       />
       {!model.savedConnections.some((connection) => connection.id === model.connectionId && connection.type === DatabaseEngine.Redis) && (
-        <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} onFavorite={({ sql, connectionId, database, schema }) => favorites.edit({ sql, connectionId, database, schema })} />
+        <QueryHistory key={model.connectionId} model={model} themeMode={themeMode} />
       )}
-      <QueryFavorites
-        favorites={favorites}
-        connections={model.connections}
-        themeMode={themeMode}
-        canOpen={model.workspaceReady && !model.running}
-        onOpen={(item) => {
-          const connection = model.connections.find(({ id }) => id === item.connectionId)
-          const scope = connection ? { connectionId: connection.id, database: item.database, schema: item.schema, table: '' } : undefined
-          if (model.addTab(item.sql, scope, item.title)) favorites.close()
-        }}
-      />
     </div>
   )
 }

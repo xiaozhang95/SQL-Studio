@@ -4,6 +4,8 @@ export type ResultSort = { column: number; order: 'ascend' | 'descend' }
 const textOrder = new Intl.Collator('zh-CN', { numeric: true })
 const numericType = /^(?:tinyint|smallint|mediumint|int(?:eger)?|bigint|int[248]|decimal|numeric|float[48]?|double|real|number|money)\b/i
 
+export const isNumericResultType = (type: string) => numericType.test(type)
+
 /** 用十进制有效数字和数量级比较，不将 BIGINT/DECIMAL 转为有损 Number。 */
 function numericValue(value: unknown) {
   const match = /^([+-]?)(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(String(value).trim())
@@ -17,7 +19,7 @@ function numericValue(value: unknown) {
 
 export function compareResultValues(left: unknown, right: unknown, type = ''): number {
   if (left == null || right == null) return left == null ? (right == null ? 0 : -1) : 1
-  if (numericType.test(type)) {
+  if (isNumericResultType(type)) {
     const a = numericValue(left),
       b = numericValue(right)
     if (a && b) {
@@ -62,20 +64,10 @@ export function matchResultRows(rows: unknown[][], search: string): number[] | n
   })
   return matches
 }
-/** Map only visible rows, preserving original row keys across search and pagination. */
-export function pageResultRows(rows: unknown[][], added: ResultRow[], matches: number[] | null, page: number, size = 50): ResultRow[] {
-  const total = added.length + (matches?.length ?? rows.length)
-  const start = Math.max(0, page - 1) * size,
-    end = Math.min(total, start + size),
-    output: ResultRow[] = []
-  for (let i = start; i < end; i++) {
-    if (i < added.length) output.push(added[i])
-    else {
-      const key = matches ? matches[i - added.length] : i - added.length
-      output.push({ key, cells: rows[key] })
-    }
-  }
-  return output
+/** Preserve original row keys across filtering and sorting without copying cell values. */
+export function resultTableRows(rows: unknown[][], added: ResultRow[], matches: number[] | null): ResultRow[] {
+  const existing = matches === null ? rows.map((cells, key) => ({ key, cells })) : matches.map((key) => ({ key, cells: rows[key] }))
+  return added.length ? [...added, ...existing] : existing
 }
 /** CSV still exports all filtered rows and staged inserts, with no display wrappers. */
 export function exportResultRows(rows: unknown[][], added: ResultRow[], matches: number[] | null): unknown[][] {

@@ -2,6 +2,7 @@ import { SettingOutlined } from '@ant-design/icons'
 import { Button, Modal, theme, Tooltip, Typography } from 'antd'
 
 import StudioIcon from '@/components/studioIcon'
+import { railButtonStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
@@ -25,6 +26,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
           <Button
             type="text"
             className="app-rail-button"
+            style={railButtonStyle}
             aria-label={t('系统设置')}
             aria-haspopup="dialog"
             aria-expanded={settings.open}
@@ -57,7 +59,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
         keyboard={!settings.busy}
         destroyOnHidden
         styles={{
-          container: { padding: 0, overflow: 'hidden', borderRadius: 12 },
+          container: { padding: 0, overflow: 'hidden' },
           header: {
             margin: 0,
             height: 52,

@@ -35,15 +35,28 @@ export default function AISettings({ model, disabled }: Props) {
               key={entry.id}
               role="listitem"
               align="center"
-              className={`ai-model-card${model.activeId === entry.id ? ' is-default' : ''}`}
+              className="ai-model-card"
               style={{
                 minWidth: 0,
                 gap: 10,
                 padding: '11px 12px',
-                borderRadius: token.borderRadiusLG
+                borderRadius: token.borderRadiusLG,
+                border: `1px solid ${model.activeId === entry.id ? token.colorPrimaryBorder : token.colorBorderSecondary}`,
+                background: model.activeId === entry.id ? token.colorFillAlter : token.colorBgContainer
               }}
             >
-              <span className="ai-model-logo">
+              <span
+                style={{
+                  display: 'grid',
+                  placeItems: 'center',
+                  width: 30,
+                  height: 30,
+                  flex: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: token.borderRadiusLG,
+                  background: token.colorBgContainer
+                }}
+              >
                 <AIProviderIcon provider={entry.provider} size={18} />
               </span>
               <Flex vertical gap={1} style={{ flex: 1, minWidth: 0 }}>
@@ -83,14 +96,7 @@ export default function AISettings({ model, disabled }: Props) {
                   {model.activeId === entry.id ? t('默认') : t('设为默认')}
                 </Radio>
                 <Tooltip title={t('编辑模型')}>
-                  <Button
-                    type="text"
-                    className="ai-model-action"
-                    icon={<EditOutlined />}
-                    aria-label={t('编辑模型 {value1}', { value1: entry.model })}
-                    disabled={locked}
-                    onClick={() => editor.show(entry)}
-                  />
+                  <Button type="text" size="small" icon={<EditOutlined />} aria-label={t('编辑模型 {value1}', { value1: entry.model })} disabled={locked} onClick={() => editor.show(entry)} />
                 </Tooltip>
                 <DeleteConfirmation
                   title={t('删除这个模型？')}
@@ -98,15 +104,7 @@ export default function AISettings({ model, disabled }: Props) {
                   disabled={locked}
                   onConfirm={() => model.removeEntry(entry.id)}
                 >
-                  <Button
-                    type="text"
-                    danger
-                    className="ai-model-action"
-                    icon={<DeleteOutlined />}
-                    aria-label={t('删除模型 {value1}', { value1: entry.modelName })}
-                    title={t('删除模型')}
-                    disabled={locked}
-                  />
+                  <Button type="text" danger size="small" icon={<DeleteOutlined />} aria-label={t('删除模型 {value1}', { value1: entry.modelName })} title={t('删除模型')} disabled={locked} />
                 </DeleteConfirmation>
               </Flex>
             </Flex>

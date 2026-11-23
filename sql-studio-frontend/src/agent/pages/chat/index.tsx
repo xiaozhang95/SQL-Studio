@@ -42,7 +42,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
     [chat.history, localizedDefaultTitle]
   )
   const activeTitle = history.find((i) => i.id === workspace.state.activeId)?.title ?? localizedDefaultTitle
-    return (
+  return (
     <Flex
       style={{
         height: '100%',
@@ -140,7 +140,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                   onDraftChange={chat.onDraftChange}
                   usage={chat.usage}
                 />
-                <div className="agent-disclaimer">{t('AI 可能出错，请核对生成的 SQL 与执行结果。')}</div>
+                <div style={{ marginTop: 6, color: 'var(--text-secondary)', textAlign: 'center' }}>{t('AI 可能出错，请核对生成的 SQL 与执行结果。')}</div>
               </div>
             </div>
           </Flex>

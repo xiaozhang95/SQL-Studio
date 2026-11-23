@@ -28,6 +28,6 @@ Table 采用原生 small、8px 单元格内边距、小号载入按钮，每页 
 
 PostgreSQL 历史增加 Schema 列和 schema 搜索，未记录/未指定展示默认搜索路径；载入仍只追加 SQL，不自动改换当前连接、数据库或 schema。
 
-清空历史、载入编辑器及收藏使用 ToolbarButton 图标入口，Tooltip 和 aria-label 提供名称。工作区 SQL 历史支持从记录收藏原语句和范围，Redis 历史使用命令载入按钮。
+清空历史和载入编辑器使用 ToolbarButton 图标入口，Tooltip 和 aria-label 提供名称。Redis 历史使用命令载入按钮。
 
 空态图标复用公共 EmptyStateIcon，统一主题色与尺寸。

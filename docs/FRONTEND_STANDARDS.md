@@ -18,7 +18,7 @@
 
 ## 单一功能模块
 
-删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](../sql-studio-frontend/src/components/deleteDialog/README.md) 展示目标和影响范围。涉及库表对象的删除与清空使用所属业务弹框，保留完整名称校验。删除单条查询收藏、移除模型或表设计草稿字段使用 [DeleteConfirmation](../sql-studio-frontend/src/components/deleteConfirmation/README.md) 气泡。模型和字段草稿在对应设置或表结构保存后生效。确认按钮使用 default 类型，提交期间避免重复操作，失败原因在所属弹框或气泡中展示。
+删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](../sql-studio-frontend/src/components/deleteDialog/README.md) 展示目标和影响范围。涉及库表对象的删除与清空使用所属业务弹框，保留完整名称校验。移除模型或表设计草稿字段使用 [DeleteConfirmation](../sql-studio-frontend/src/components/deleteConfirmation/README.md) 气泡。模型和字段草稿在对应设置或表结构保存后生效。确认按钮使用 default 类型，提交期间避免重复操作，失败原因在所属弹框或气泡中展示。
 
 独立内容区的加载提示统一复用 [ContentLoading](../sql-studio-frontend/src/components/contentLoading/README.md)，沿用 Ant Design 的默认指示器、颜色、尺寸和字体。共用布局和必要的样式覆盖集中在 `app.scss`。
 

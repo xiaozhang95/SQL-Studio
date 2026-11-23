@@ -33,7 +33,7 @@ export type RunState = {
   durationMs?: number
   interrupted?: boolean
 }
-export type ResultView = { search: string; page: number; resultIndex: number }
+export type ResultView = { search: string; resultIndex: number }
 export type EditorLayout = { anchor: number; head: number; top: number; left: number }
 export type ExplorerLayout = { expanded: string[]; selected: string[]; search: string; top: number }
 export type WorkspaceSnapshot = {
@@ -62,13 +62,4 @@ export type HistoryItem = {
   ok: boolean
   error?: string
   cancelled?: boolean
-}
-
-export type QueryFavorite = {
-  id: string
-  title: string
-  sql: string
-  connectionId: string
-  database: string
-  schema?: string
 }

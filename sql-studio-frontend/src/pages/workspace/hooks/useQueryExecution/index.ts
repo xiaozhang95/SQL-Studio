@@ -99,7 +99,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
         endedAt: entry.error || entry.cancelled || index === statements.length - 1 ? new Date().toISOString() : undefined,
         durationMs: Math.round(performance.now() - batchStart)
       })
-      setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: index } }))
+      setResultViews((previous) => ({ ...previous, [tabId]: { search: '', resultIndex: index } }))
     }
     let statementStart = batchStart
     try {
@@ -187,7 +187,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
           endedAt: new Date().toISOString(),
           durationMs
         })
-        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', page: 1, resultIndex: completed.length } }))
+        setResultViews((previous) => ({ ...previous, [tabId]: { search: '', resultIndex: completed.length } }))
       } else if (!cancelled) {
         message.error(reason)
       }

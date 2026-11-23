@@ -1,4 +1,4 @@
-import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StarOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
@@ -24,7 +24,6 @@ import ToolbarButton from '../toolbarButton'
 
 type Props = {
   themeMode: ThemeMode
-  onFavorite: (sql: string) => void
   model: Pick<
     WorkspaceModel,
     | 'activeTab'
@@ -56,7 +55,7 @@ type Props = {
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
 const runShortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵'
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
-export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
+export default function QueryEditor({ model, themeMode }: Props) {
   const { t } = useTranslation()
 
   const { activeTab, running, activeRunning, cancelQuery, tab, runSQL, objects, connections, onEditorReady, columns } = model
@@ -112,7 +111,7 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
           <>
             <Button type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
               {t('运行')}
-              <span className="run-shortcut">{runShortcut}</span>
+              <span style={{ marginInlineStart: 3, opacity: 0.75 }}>{runShortcut}</span>
             </Button>
             {activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={cancelQuery}>
@@ -153,14 +152,20 @@ export default function QueryEditor({ model, themeMode, onFavorite }: Props) {
                 />
               </div>
             </Tooltip>
-            <ToolbarButton label={t('优化')} hint={aiModelHint} icon={<StudioIcon name="zap" size={14} />} disabled={!ai.configured || !hasSQL || running} loading={ai.loading} onClick={() => void ai.optimize()} />
+            <ToolbarButton
+              label={t('优化')}
+              hint={aiModelHint}
+              icon={<StudioIcon name="zap" size={14} />}
+              disabled={!ai.configured || !hasSQL || running}
+              loading={ai.loading}
+              onClick={() => void ai.optimize()}
+            />
           </div>
         )}
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={running || importing}>
           <ToolbarButton label={t('导入')} icon={<UploadOutlined />} loading={importing} disabled={running} />
         </Upload>
         <ToolbarButton label={t('导出')} icon={<DownloadOutlined />} disabled={!hasSQL} onClick={model.exportCurrentSQL} />
-        <ToolbarButton label={t('收藏查询')} icon={<StarOutlined />} disabled={!hasSQL} onClick={() => onFavorite(model.getSelectedSQL() ?? model.getCurrentSQL())} />
         <ToolbarButton label={t('执行历史')} icon={<HistoryOutlined />} disabled={!connections.some((connection) => connection.id === tab.connectionId)} onClick={model.openHistory} />
       </QueryToolbar>
       <SQLOptimization model={ai} themeMode={themeMode} />

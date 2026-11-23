@@ -16,7 +16,6 @@
 - [查询结果导出弹框](resultExport/README.md)
 - [结果视图标签](resultTabs/README.md)使用线形 Tabs 切换消息、摘要和数据结果。
 - [执行历史抽屉](queryHistory/README.md)
-- [查询收藏抽屉与命名弹窗](queryFavorites/README.md)，列表 SQL 与执行历史共用只读预览。
 - [底部可伸缩面板](resultsDock/README.md)
 
 - [逐条执行消息](queryMessages/README.md)
