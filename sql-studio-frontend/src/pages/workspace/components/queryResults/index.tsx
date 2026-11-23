@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons'
 import { Alert, Button, Flex, Input, Space, Table, theme, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import DeleteDialog from '@/components/deleteDialog'
@@ -73,6 +74,9 @@ type Props = {
     | 'newQuery'
   >
 }
+
+const headerTextStyle = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } satisfies CSSProperties
+
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，结果表使用虚拟滚动。 */
 export default function QueryResults({ model, themeMode }: Props) {
   const { t } = useTranslation()
@@ -158,17 +162,23 @@ export default function QueryResults({ model, themeMode }: Props) {
     },
     ...(result?.columns || []).map((column, index) => {
       const numeric = isNumericResultType(column.type ?? '')
+      const name = run?.kind === 'structure' ? t(column.name) : column.name
       return {
         title: (
-          <div className="column-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-            {run?.kind === 'structure' ? t(column.name) : column.name}
-            {column.type && <Typography.Text type="secondary">{column.type}</Typography.Text>}
-          </div>
+          <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 2, textAlign: 'start' }}>
+            <span title={name} style={headerTextStyle}>
+              {name}
+            </span>
+            {column.type && (
+              <Typography.Text type="secondary" title={column.type} style={headerTextStyle}>
+                {column.type}
+              </Typography.Text>
+            )}
+          </span>
         ),
         key: String(index),
         sorter: true,
         sortOrder: sort?.column === index ? sort.order : null,
-        showSorterTooltip: { title: t('对当前已加载的结果排序') },
         align: numeric ? ('right' as const) : undefined,
         onCell: (row: { key: number }) => ({
           className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
@@ -412,6 +422,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               virtual
               size={appearance.tableSize}
               className="data-table"
+              showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}
               styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
               rowSelection={{

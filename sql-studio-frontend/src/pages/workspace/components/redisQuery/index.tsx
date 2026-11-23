@@ -117,6 +117,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             onHistory={model.appendHistory}
             onBusy={setCommandBusy}
             onDatabase={(next) => model.selectRedisDatabase(tab.id, connection.id, String(next))}
+            onVerifyConnection={objects.verifyConnection}
           />
           {active && editorMode && (
             <>

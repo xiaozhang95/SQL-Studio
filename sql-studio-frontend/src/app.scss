@@ -395,10 +395,6 @@ html[data-theme='dark'] .editor-toolbar .query-run-button.ant-btn:enabled {
   }
 }
 
-.app-rail-logo.ant-btn:hover {
-  background: transparent;
-}
-
 .app-rail-button.ant-btn[aria-current='page']::before {
   content: '';
   position: absolute;

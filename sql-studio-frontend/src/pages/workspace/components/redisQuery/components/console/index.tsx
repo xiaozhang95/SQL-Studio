@@ -29,11 +29,12 @@ type Props = {
   onHistory: (item: HistoryItem) => void
   onBusy: (busy: boolean) => void
   onDatabase: (database: number) => void
+  onVerifyConnection: (id: string) => void
 }
 
 const selectHintLimit = 16
 
-export default function Console({ page, id, database, databases, visible, themeMode, blocked, connectionName, host, loadedCommand, onHistory, onBusy, onDatabase }: Props) {
+export default function Console({ page, id, database, databases, visible, themeMode, blocked, connectionName, host, loadedCommand, onHistory, onBusy, onDatabase, onVerifyConnection }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [initial] = useState(() => readTerminal(page, id))
@@ -130,8 +131,10 @@ export default function Console({ page, id, database, databases, visible, themeM
     } catch (error) {
       if (!controller.signal.aborted) {
         const reason = error instanceof Error ? error.message : String(error)
-        complete({ answer: reason, error: true, statementError: error instanceof RequestError && error.statementError })
+        const statementError = error instanceof RequestError && error.statementError
+        complete({ answer: reason, error: true, statementError })
         saveHistory(Math.round(performance.now() - started), reason)
+        if (!statementError && !(error instanceof RequestError && error.status === 413)) onVerifyConnection(id)
       }
     } finally {
       if (request.current === controller) request.current = null

@@ -8,6 +8,7 @@ import ts from 'typescript'
 import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { DatabaseLifecycle } from '../src/pages/workspace/utils/databaseLifecycle/index.ts'
 import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
+import { explorerRoots } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
 
 const read = (path) => readFileSync(new URL('../src/pages/workspace/' + path, import.meta.url), 'utf8')
 const source = read('hooks/useDatabaseObjects/index.ts')
@@ -53,7 +54,7 @@ function harness(sessionRequest) {
     calls,
     render: () => {
       cursor = 0
-      return create('offline', '', () => {}, [])
+      return create('offline', '', () => {}, () => {}, [], [])
     },
     unmount: () => cleanups.forEach((cleanup) => cleanup?.())
   }
@@ -122,15 +123,20 @@ test('manual retry after failure is saved only after a successful connection', a
 })
 
 test('closing a pending connection aborts it and late responses cannot restore the saved open flag', async () => {
-  let complete
-  const h = harness((_id, open) => (open ? new Promise((resolve) => (complete = resolve)) : Promise.resolve()))
+  const opened = Promise.withResolvers()
+  const response = Promise.withResolvers()
+  const h = harness(async (_id, open, _database, signal) => {
+    if (!open) return
+    opened.resolve(signal)
+    await response.promise
+  })
   const pending = h.render().openConnection('offline')
   assert.deepEqual(savedConnections(h.render()), [])
   assert.equal(h.render().snapshots.offline.status, 'loading')
-  const signal = h.calls[0][3]
+  const signal = await opened.promise
   await h.render().closeConnection('offline')
   assert.equal(signal.aborted, true)
-  complete()
+  response.resolve()
   await pending
   assert.equal(h.render().snapshots.offline, undefined)
   assert.deepEqual(savedConnections(h.render()), [])
@@ -194,9 +200,6 @@ test('expanded failure nodes finish Tree loading and retain an explicit retry wi
 })
 
 test('restoring a closed or failed connection does not let old expansion records reopen it', () => {
-  const start = workspace.indexOf('      const restoredConnectionIds =')
-  const code = workspace.slice(start, workspace.indexOf('      setResultHeight(', start))
-  const restore = new Function('saved', 'setExplorer', stripTypeScriptTypes(code))
   const key = (...parts) => JSON.stringify(parts)
   const group = key('group', '默认分组')
   const connected = key('connection', 'other')
@@ -205,12 +208,11 @@ test('restoring a closed or failed connection does not let old expansion records
   const failedDatabase = key('database', 'offline', 'db')
   const saved = {
     openedConnections: ['other'],
-    explorer: { expanded: [group, failed, failedDatabase, connected, database], selected: [failed], search: '', top: 120 }
+    explorer: { expanded: [group, failed, failedDatabase, connected, database], selected: [failed, connected, database], search: '', top: 120 }
   }
-  let restored
-  restore(saved, (value) => (restored = value))
-  assert.deepEqual(restored.expanded, [group, connected, database])
-  assert.deepEqual(restored.selected, [failed])
+  const restored = explorerRoots(saved.explorer, saved.openedConnections)
+  assert.deepEqual(restored.expanded, [group, connected])
+  assert.deepEqual(restored.selected, [connected])
   assert.equal(restored.top, 120)
   assert.equal(saved.explorer.expanded.length, 5)
 })

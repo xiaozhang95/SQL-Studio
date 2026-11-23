@@ -1,6 +1,5 @@
 import { Button, Divider, theme, Tooltip } from 'antd'
 import { useState } from 'react'
-import type { CSSProperties } from 'react'
 
 import StudioIcon from '@/components/studioIcon'
 import SystemSettings from '@/components/systemSettings'
@@ -11,16 +10,6 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
 
 export type AppSection = 'workspace' | 'agent' | 'monitor' | 'sync'
-
-const logoStyle = {
-  width: 34,
-  height: 34,
-  marginBottom: 12,
-  padding: 0,
-  border: 0,
-  borderRadius: 'var(--ant-border-radius-lg)',
-  overflow: 'hidden'
-} satisfies CSSProperties
 
 interface Props extends AppearancePreferences {
   section: AppSection
@@ -75,11 +64,6 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         userSelect: 'none'
       }}
     >
-      <Tooltip title="SQL Studio" placement="right">
-        <Button type="text" className="app-rail-logo" style={logoStyle} aria-label="SQL Studio" disabled={navigationDisabled} onClick={onOpenWorkspace}>
-          <img src="/studio.svg" alt="" width={34} height={34} draggable={false} />
-        </Button>
-      </Tooltip>
       <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }} aria-label={t('工作区')}>
         {items.map((item) => (
           <Tooltip key={item.key} title={navigationDisabled ? t('请等待当前操作完成') : t(item.label)} placement="right">
