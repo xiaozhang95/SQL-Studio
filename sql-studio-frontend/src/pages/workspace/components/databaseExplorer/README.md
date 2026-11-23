@@ -66,7 +66,7 @@ Tree 与视口 ref 使用 ExplorerNode 泛型。titleRender 直接消费 Tree �
 
 Tree 显式设置 motionAppear/motionEnter/motionLeave=false，展开和折叠直接更新可见行（Ant Design 会将 null 回退为默认动画，不能用 motion=null 禁用）。按展开状态裁剪后代数据会同步移除原生树的层级索引，关闭过渡可避免离场节点缩进归零、先跳到最左侧再消失；保留虚拟滚动与按需加载。
 
-右键菜单按所属连接适配器能力提供对象操作。暗色下可用危险项悬停时使用白色文字和图标，以及加深的主题红底。PostgreSQL 支持建库、删库、删表或视图、清空表和重命名；schema、表分类及表节点支持新建表，表节点支持设计表字段。表名保留完整双引号 schema/table 标识。
+右键菜单按所属连接适配器能力提供对象操作。监控指标与同步数据库入口和全局 Rail 共用 [StudioIcon](../../../../components/studioIcon/README.md) 的图标定义。暗色下可用危险项悬停时使用白色文字和图标，以及加深的主题红底。PostgreSQL 支持建库、删库、删表或视图、清空表和重命名；schema、表分类及表节点支持新建表，表节点支持设计表字段。表名保留完整双引号 schema/table 标识。
 
 PostgreSQL 新增 schema 文件夹层：连接 → 数据库 → schema → 表/视图 → 对象 → 字段/索引/外键。schema/类别只展开本地元数据，不切换查询范围、不发送表数据 SQL。表标题省略所属 schema，菜单和详情仍以原始完整表身份操作；schema 内分类不提供指向整个数据库的菜单。
 

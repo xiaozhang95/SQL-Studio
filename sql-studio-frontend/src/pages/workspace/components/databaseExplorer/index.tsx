@@ -2,7 +2,6 @@ import {
   ClearOutlined,
   CloseOutlined,
   CodeOutlined,
-  DashboardOutlined,
   DatabaseFilled,
   DatabaseOutlined,
   DeleteOutlined,
@@ -17,7 +16,6 @@ import {
   ProfileOutlined,
   ReloadOutlined,
   SortAscendingOutlined,
-  SwapOutlined,
   TableOutlined
 } from '@ant-design/icons'
 import { Dropdown, Empty, Tree } from 'antd'
@@ -27,6 +25,7 @@ import { useMemo, useState } from 'react'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import { SidebarSearch } from '@/components/sidebarControls'
+import StudioIcon, { databaseSectionIconNames } from '@/components/studioIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
@@ -129,7 +128,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
           { key: 'query', label: t('打开查询'), icon: <CodeOutlined /> },
           ...(!status || status === 'error' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
           ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
-          { key: 'monitor', label: t('监控指标'), icon: <DashboardOutlined /> },
+          { key: 'monitor', label: t('监控指标'), icon: <StudioIcon name={databaseSectionIconNames.monitor} /> },
           { type: 'divider' },
           { key: 'edit', label: t('编辑连接'), icon: <EditOutlined /> },
           {
@@ -164,8 +163,8 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         ...(!connected && status !== 'loading' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
         ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
         { type: 'divider' },
-        { key: 'monitor', label: t('监控指标'), icon: <DashboardOutlined /> },
-        { key: 'sync', label: t('同步数据库'), icon: <SwapOutlined /> },
+        { key: 'monitor', label: t('监控指标'), icon: <StudioIcon name={databaseSectionIconNames.monitor} /> },
+        { key: 'sync', label: t('同步数据库'), icon: <StudioIcon name={databaseSectionIconNames.sync} /> },
         { type: 'divider' },
         { key: 'edit', label: t('编辑连接'), icon: <EditOutlined /> },
         {

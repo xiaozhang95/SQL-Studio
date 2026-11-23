@@ -1,7 +1,7 @@
 import { Button, Divider, theme, Tooltip } from 'antd'
 import { useState } from 'react'
 
-import StudioIcon from '@/components/studioIcon'
+import StudioIcon, { databaseSectionIconNames } from '@/components/studioIcon'
 import SystemSettings from '@/components/systemSettings'
 import { railButtonStyle } from '@/constant/appearance'
 import { useNavigationLock } from '@/contexts/navigationLock'
@@ -30,8 +30,8 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
   const items = [
     { key: 'workspace', label: '工作区', icon: <StudioIcon name="database" size={20} />, onClick: onOpenWorkspace },
     { key: 'agent', label: 'AI 助手', icon: <StudioIcon name="bot" size={20} />, onClick: onOpenAgent },
-    { key: 'monitor', label: '监控指标', icon: <StudioIcon name="activity" size={20} />, onClick: () => onOpenDatabaseSection('monitor') },
-    { key: 'sync', label: '同步数据库', icon: <StudioIcon name="swap" size={20} />, onClick: () => onOpenDatabaseSection('sync') }
+    { key: 'monitor', label: '监控指标', icon: <StudioIcon name={databaseSectionIconNames.monitor} size={20} />, onClick: () => onOpenDatabaseSection('monitor') },
+    { key: 'sync', label: '同步数据库', icon: <StudioIcon name={databaseSectionIconNames.sync} size={20} />, onClick: () => onOpenDatabaseSection('sync') }
   ] as const
 
   async function toggleTheme() {
