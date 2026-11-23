@@ -116,6 +116,9 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       Modal: { contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
       // 文本按钮与默认按钮的悬停/按下背景与树、下拉、表格共用同一档。
       Button: {
+        primaryShadow: 'none',
+        defaultShadow: 'none',
+        dangerShadow: 'none',
         textHoverBg: palette.hover,
         defaultHoverBg: palette.hover,
         defaultActiveBg: palette.active

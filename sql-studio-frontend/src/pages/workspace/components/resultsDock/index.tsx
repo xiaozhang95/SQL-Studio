@@ -1,3 +1,4 @@
+import { theme } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
@@ -15,6 +16,7 @@ type Props = {
 const { minimumHeight, defaultHeight, editorReservedHeight, keyboardStep } = resultPanelLayout
 export default function ResultsDock({ children, resizable, height, onHeightChange }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   const panel = useRef<HTMLElement | null>(null)
   const drag = useRef<{
@@ -52,9 +54,9 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
         minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
-        background: 'var(--surface)',
+        background: token.colorBgContainer,
         overflow: 'hidden',
-        borderTop: resizable ? '1px solid var(--border)' : 0,
+        borderBlockStart: resizable ? token.lineWidth + 'px solid ' + token.colorBorderSecondary : undefined,
         paddingTop: resizable ? 5 : 0,
         userSelect: resizing ? 'none' : 'text'
       }}
@@ -94,7 +96,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
           }}
           style={{ position: 'absolute', insetInline: 0, top: 0, height: 6, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'row-resize', touchAction: 'none' }}
         >
-          <span style={{ width: 40, height: 2, borderRadius: 2, background: resizing ? 'var(--text-tertiary)' : 'var(--resize-grip-color, var(--border))' }} />
+          <span style={{ width: 40, height: 2, borderRadius: token.borderRadiusSM, background: resizing ? token.colorTextTertiary : 'var(--resize-grip-color, var(--border))' }} />
         </div>
       )}
       <div className="result-panel-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>

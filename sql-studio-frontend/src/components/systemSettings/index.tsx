@@ -1,7 +1,6 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { Button, Modal, theme, Tooltip, Typography } from 'antd'
 
-import StudioIcon from '@/components/studioIcon'
 import { railButtonStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
@@ -30,7 +29,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
             aria-label={t('系统设置')}
             aria-haspopup="dialog"
             aria-expanded={settings.open}
-            icon={<StudioIcon name="sliders" size={20} />}
+            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: 18 }} />}
             disabled={preferences.themeReady === false}
             onClick={settings.show}
           />
@@ -115,7 +114,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
                       key={section.value}
                       type="text"
                       className="settings-section-choice"
-                      icon={<section.icon style={{ fontSize: 16 }} aria-hidden="true" />}
+                      icon={<section.icon style={{ fontSize: token.fontSizeLG }} aria-hidden="true" />}
                       aria-pressed={active}
                       disabled={settings.busy}
                       onClick={() => settings.setSection(section.value)}
@@ -125,11 +124,11 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
                         flexShrink: 0,
                         gap: 10,
                         paddingInline: 10,
-                        borderRadius: 8,
+                        borderRadius: token.borderRadius,
                         justifyContent: 'flex-start',
                         textAlign: 'start',
                         whiteSpace: 'normal',
-                        color: 'var(--text)'
+                        color: settings.busy ? undefined : token.colorText
                       }}
                     >
                       {t(section.label)}

@@ -154,14 +154,11 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
         }}
         allowClear
       />
-      <div
-        ref={viewport}
-        className="history-table-viewport"
-        style={{ flex: 1, minHeight: 0, minWidth: 0, marginTop: 16, overflow: 'hidden', ...({ '--history-body-height': `${bodyHeight}px` } as CSSProperties) }}
-      >
+      <div ref={viewport} style={{ flex: 1, minHeight: 0, minWidth: 0, marginTop: 16, overflow: 'hidden' }}>
         <Table<HistoryItem>
           size={appearance.tableSize}
           className="history-table"
+          style={{ '--history-body-height': `${bodyHeight || 24}px` } as CSSProperties}
           rowKey="id"
           columns={columns}
           dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database} ${item.schema || ''}`.toLowerCase().includes(historySearch.toLowerCase()))}

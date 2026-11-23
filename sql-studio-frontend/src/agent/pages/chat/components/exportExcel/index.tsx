@@ -38,14 +38,7 @@ export function ExportExcel({ value, title, variant = 'button' }: { value: unkno
     )
   return (
     <Flex vertical align="start" gap={CHAT.spacing.detail}>
-      <Button
-        type={variant === 'link' ? 'text' : 'default'}
-        size={variant === 'link' ? 'small' : undefined}
-        className={variant === 'link' ? 'agent-action-link' : undefined}
-        icon={<DownloadOutlined />}
-        loading={busy}
-        onClick={() => void download()}
-      >
+      <Button type={variant === 'link' ? 'text' : 'default'} size={variant === 'link' ? 'small' : undefined} icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
         {label}
       </Button>
     </Flex>

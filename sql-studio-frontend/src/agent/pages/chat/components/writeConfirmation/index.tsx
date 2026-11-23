@@ -60,13 +60,7 @@ export function WriteConfirmation({ value, submitting, onDecide }: Props) {
               {stopLabel}
             </Button>
           )}
-          <Button
-            type={writing ? 'primary' : 'default'}
-            style={writing ? { background: token.colorWarning, borderColor: token.colorWarning, color: token.colorTextLightSolid } : undefined}
-            loading={submitting}
-            disabled={submitting}
-            onClick={() => void onDecide(true)}
-          >
+          <Button type={writing ? 'primary' : 'default'} loading={submitting} disabled={submitting} onClick={() => void onDecide(true)}>
             {continueLabel}
           </Button>
           {!writing && (

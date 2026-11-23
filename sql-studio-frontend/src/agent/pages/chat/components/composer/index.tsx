@@ -69,7 +69,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
           <Sender
             className="agent-composer"
             styles={{
-              root: { height, display: 'flex', flexDirection: 'column', borderRadius: token.borderRadiusLG, background: token.colorBgContainer, boxShadow: 'var(--shadow-sm)' },
+              root: { height, display: 'flex', flexDirection: 'column', borderRadius: token.borderRadiusLG, background: token.colorBgContainer, boxShadow: 'var(--composer-shadow)' },
               content: { padding: token.paddingSM, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
               input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
               footer: { paddingInline: token.paddingSM, paddingBlockEnd: token.paddingSM }
@@ -131,7 +131,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                       aria-label={t('操作模式')}
                       disabled={busy || settingsBusy}
                       icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
-                      className={mode === 'write' ? 'chat-mode-write' : undefined}
+                      style={mode === 'write' && !busy && !settingsBusy ? { color: token.colorWarningText } : undefined}
                     >
                       {mode === 'write' ? t('完全访问模式') : t('只读模式')}
                       <DropdownChevron disabled={busy || settingsBusy} />

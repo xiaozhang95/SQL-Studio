@@ -22,10 +22,10 @@ waiting为true时由轮次页脚显示等待确认状态，确认卡片由Transc
 
 渲染单轮 entries、回答底部复制和状态。`busy/status` 为本轮生成状态，`locked` 禁用所有用户问题编辑，`expanded/onExpanded` 管理折叠，`onEdit` 回填问题。执行过程内展示工具参数、调用说明和结果。切换轮次卸载后由外部 `expanded` 恢复折叠。
 
-每轮助手内容前显示 22px 助手图标、「SQL Studio AI」和模型胶囊，正文缩进 30px；用户气泡靠右、最大宽 78%，使用 surface-subtle 底、细边框和 12/4 圆角，编辑与复制操作只在悬停/聚焦时出现。轮次之间由 Transcript 使用 26px 间距和 1px 分隔线隔开。
+每轮助手内容前显示 22px 助手图标、「SQL Studio AI」和模型 Tag，图标底色使用 `--primary-soft`，正文缩进 30px；用户气泡靠右、最大宽 78%，沿用 Ant Design X Bubble 的 outlined 外观，编辑与复制操作只在悬停/聚焦时出现。轮次之间由 Transcript 使用 26px 间距和 1px 分隔线隔开。
 
 助手Bubble的root/body/content均满宽，避免表格按内容宽度收缩；用户气泡继续靠右并自适应。
 
-执行过程内的QueryResult传showHeader=false，隐藏结果上方的图标、标题、条目数及行列/耗时栏；保留操作说明、表格列头、分页、截断提示、SQL展开和Excel导出。title仍传入用于导出文件名。
+执行过程内的QueryResult传showHeader=false，隐藏结果上方的图标、标题、条目数及行列/耗时栏；保留操作说明、表格列头、滚动、截断提示、SQL展开和Excel导出。title仍传入用于导出文件名。
 
 统一使用CHAT.spacing：问题/过程/回答/错误/底部状态等内容块之间为block（16px），问题气泡与操作、工具名称/调用说明/参数等同组详情之间为detail（8px）。执行步骤改用满宽Flex，步骤元数据与结果、相邻步骤统一16px；用户问题分隔线不再叠加默认margin。正文与卡片均保持满宽和相同左边线。

@@ -1,5 +1,5 @@
 import { DatabaseOutlined, SearchOutlined, TableOutlined } from '@ant-design/icons'
-import { Card, Flex, Space, Typography } from 'antd'
+import { Card, Flex, Space, theme, Typography } from 'antd'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -11,6 +11,7 @@ const examples = [
 
 export function Welcome() {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   return (
     <Flex vertical align="center" gap="large" style={{ width: '100%', maxWidth: 720, margin: '0 auto' }}>
@@ -20,10 +21,10 @@ export function Welcome() {
         </Typography.Title>
         <Typography.Text type="secondary">{t('从连接、表结构到数据分析，直接描述你想了解的内容。')}</Typography.Text>
       </Space>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: 10, width: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: token.marginSM, width: '100%' }}>
         {examples.map((example) => (
-          <Card key={example.title} size="small" className="agent-welcome-card" styles={{ body: { padding: 14 } }}>
-            <span style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 'var(--ant-border-radius)', background: 'var(--primary-soft)', color: 'var(--primary)' }}>
+          <Card key={example.title} size="small">
+            <span style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: token.borderRadius, background: 'var(--primary-soft)', color: token.colorPrimary }}>
               {example.icon}
             </span>
             <Typography.Text strong style={{ display: 'block', marginTop: 11 }}>

@@ -16,7 +16,7 @@ model 提供 tabs/activeTab、runs、运行状态和切换/关闭回调，childr
 
 主页面使用 28px 页签芯片：常态透明，悬停中性底，选中项使用内容区底色、1px 边框和轻微阴影，并在页签栏底部显示 2px 绿色活动线。导航栏高 38px，左右使用 workspace-inset（16px）内边距，栏底由 Tabs 绘制单条主题分隔线；页签栏不显示新增按钮，新建查询从页面 Header 或工具栏进入。原生样式覆盖限定在 app.scss 的直属导航范围。
 
-Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度，content 层的 100% 仅作用于直属主页面容器，避免编辑器和结果区塌缩。
+Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度。body 和 content 通过 Tabs.styles 继承高度，外层 holder 的溢出限制仅用于主页面，避免编辑器和结果区塌缩。
 
 model 额外提供 connections/designerDirty 和 closeTabs，renderDesigner(page) 注入表设计页面。table-create/table-design 使用设计图标，未保存修改显示 6px 琥珀色圆点。隐藏时保留已访问的组件实例，不提前加载未访问页。其他页面继续切换销毁展示组件。主页面标签的关闭和右键批量关闭复用工作区回调并检查草稿。
 

@@ -1,4 +1,4 @@
-import { Grid, theme, Typography } from 'antd'
+import { Flex, Grid, theme, Typography } from 'antd'
 import type { ReactNode } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
@@ -33,13 +33,13 @@ export default function PageHeader({ children, actions, title, breadcrumb, error
           flexWrap: 'wrap',
           alignItems: 'center',
           gap: token.marginXS,
-          background: 'var(--surface)',
-          borderBottom: '1px solid var(--border)',
+          background: token.colorBgContainer,
+          borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
           userSelect: 'none',
           position: 'relative'
         }}
       >
-        <div className="context-header-id" style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, minWidth: 0, flex: '0 1 auto' }}>
+        <Flex align="center" gap={token.marginSM} style={{ minWidth: 0, flex: '0 1 auto' }}>
           {title && (
             <Typography.Text strong ellipsis={{ tooltip: typeof title === 'string' ? title : undefined }} style={{ minWidth: 0 }}>
               {title}
@@ -51,10 +51,10 @@ export default function PageHeader({ children, actions, title, breadcrumb, error
             </Typography.Text>
           )}
           {children}
-        </div>
-        <div className="context-header-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
+        </Flex>
+        <Flex align="center" gap={token.marginXS} wrap style={{ flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
           {actions}
-        </div>
+        </Flex>
       </header>
       <div style={{ flexShrink: 0, maxHeight: '25dvh', overflowY: 'auto' }}>
         <ErrorNotice

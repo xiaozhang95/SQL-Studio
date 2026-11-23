@@ -1,4 +1,4 @@
-import { Button, Tooltip } from 'antd'
+import { Button, Divider, theme, Tooltip } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
@@ -34,6 +34,7 @@ interface Props extends AppearancePreferences {
 /** 全局左侧导航：页面切换、主题切换与系统设置入口。 */
 export default function AppRail({ section, themeMode, disabled = false, onOpenWorkspace, onOpenAgent, onOpenDatabaseSection, ...preferences }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
   const { locked } = useNavigationLock()
   const navigationDisabled = disabled || locked
   const [savingTheme, setSavingTheme] = useState(false)
@@ -69,7 +70,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         alignItems: 'center',
         gap: 4,
         padding: '10px 0 12px',
-        borderInlineEnd: '1px solid var(--border)',
+        borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
         background: 'var(--rail-surface)',
         userSelect: 'none'
       }}
@@ -85,7 +86,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
             <Button
               type="text"
               className="app-rail-button"
-              style={railButtonStyle}
+              style={section === item.key ? { ...railButtonStyle, background: 'var(--primary-soft)', color: token.colorPrimary } : railButtonStyle}
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}
@@ -96,7 +97,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         ))}
       </nav>
       <div style={{ flex: 1 }} />
-      <div style={{ width: 22, height: 1, marginBlock: 6, background: 'var(--border)' }} />
+      <Divider style={{ width: token.controlHeightSM, minWidth: 0, marginBlock: token.marginXXS }} />
       <Tooltip title={t('切换主题')} placement="right">
         <Button
           type="text"

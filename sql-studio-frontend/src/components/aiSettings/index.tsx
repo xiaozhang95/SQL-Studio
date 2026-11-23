@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Empty, Flex, Radio, Spin, Tag, theme, Tooltip, Typography } from 'antd'
+import { Button, Empty, Flex, Radio, Spin, theme, Tooltip, Typography } from 'antd'
 import { useId } from 'react'
 
 import { maxAIConfigurations } from '@/ai/typings'
@@ -35,13 +35,12 @@ export default function AISettings({ model, disabled }: Props) {
               key={entry.id}
               role="listitem"
               align="center"
-              className="ai-model-card"
               style={{
                 minWidth: 0,
                 gap: 10,
                 padding: '11px 12px',
                 borderRadius: token.borderRadiusLG,
-                border: `1px solid ${model.activeId === entry.id ? token.colorPrimaryBorder : token.colorBorderSecondary}`,
+                border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
                 background: model.activeId === entry.id ? token.colorFillAlter : token.colorBgContainer
               }}
             >
@@ -52,7 +51,7 @@ export default function AISettings({ model, disabled }: Props) {
                   width: 30,
                   height: 30,
                   flex: 'none',
-                  border: '1px solid var(--border)',
+                  border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
                   borderRadius: token.borderRadiusLG,
                   background: token.colorBgContainer
                 }}
@@ -64,21 +63,6 @@ export default function AISettings({ model, disabled }: Props) {
                   <Typography.Text strong ellipsis={{ tooltip: entry.modelName }}>
                     {entry.modelName}
                   </Typography.Text>
-                  {model.activeId === entry.id && (
-                    <Tag
-                      style={{
-                        height: 22,
-                        lineHeight: '20px',
-                        paddingInline: 6,
-                        marginInlineEnd: 0,
-                        background: 'var(--surface)',
-                        borderColor: 'var(--primary-border)',
-                        color: 'var(--primary)'
-                      }}
-                    >
-                      {t('默认')}
-                    </Tag>
-                  )}
                 </Flex>
                 <Typography.Text type="secondary" ellipsis={{ tooltip: entry.model }}>
                   {entry.model}
@@ -87,7 +71,6 @@ export default function AISettings({ model, disabled }: Props) {
               <Flex align="center" gap={4} style={{ flexShrink: 0 }}>
                 <Radio
                   name={defaultModelGroup}
-                  className={`ai-default-pill${model.activeId === entry.id ? ' is-checked' : ''}`}
                   checked={model.activeId === entry.id}
                   disabled={locked}
                   aria-label={t('默认模型 {value1}', { value1: entry.modelName })}
@@ -117,7 +100,7 @@ export default function AISettings({ model, disabled }: Props) {
         icon={<PlusOutlined />}
         disabled={locked || model.entries.length >= maxAIConfigurations}
         onClick={() => editor.show()}
-        style={{ alignSelf: 'flex-start', height: 42, marginTop: 9, paddingInline: 12, borderColor: 'var(--border-strong)' }}
+        style={{ alignSelf: 'flex-start', marginTop: token.marginXS }}
       >
         {t('添加模型')}
       </Button>

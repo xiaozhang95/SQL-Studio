@@ -16,7 +16,7 @@ import type { useDatabaseObjects } from '../useDatabaseObjects'
 
 type Options = {
   connections: Connection[]
-  objects: Pick<ReturnType<typeof useDatabaseObjects>, 'snapshots'>
+  objects: Pick<ReturnType<typeof useDatabaseObjects>, 'snapshots' | 'verifyConnection'>
   running: boolean
   request: { current: AbortController | null }
   message: Pick<MessageInstance, 'info'> & { error: (reason: string) => unknown }
@@ -111,6 +111,7 @@ export function createQueryExecutor({ connections, objects, running, request, me
           controller.signal,
           (step) => {
             const now = performance.now()
+            if (step.error && !step.statementError && !controller.signal.aborted) objects.verifyConnection(target.id)
             record(
               step.index,
               {
@@ -157,14 +158,16 @@ export function createQueryExecutor({ connections, objects, running, request, me
           } catch (error) {
             controller.signal.throwIfAborted()
             const reason = error instanceof Error ? error.message : '查询失败'
-            const statementError = kind === 'query' && error instanceof RequestError && error.statementError
-            record(index, { error: reason, statementError, durationMs: Math.round(performance.now() - statementStart) })
+            const statementError = error instanceof RequestError && error.statementError
+            if (!statementError && !(error instanceof RequestError && error.status === 413)) objects.verifyConnection(target.id)
+            record(index, { error: reason, statementError: kind === 'query' && statementError, durationMs: Math.round(performance.now() - statementStart) })
             break
           }
         }
       }
     } catch (error) {
       const cancelled = controller.signal.aborted
+      if (!cancelled && !completed.at(-1)?.error && !(error instanceof RequestError && (error.statementError || error.status === 413))) objects.verifyConnection(target.id)
       if (cancelled && completed.length < statements.length && !completed.at(-1)?.error) {
         record(completed.length, { cancelled: true, durationMs: Math.round(performance.now() - statementStart) })
         return

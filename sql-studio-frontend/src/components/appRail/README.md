@@ -19,9 +19,9 @@
 
 ## 行为
 
-- 导航按钮使用 `aria-current="page"` 标记当前页面，当前项使用实色品牌绿 `--brand` 底、白色图标和左侧品牌色竖线；悬停显示 Tooltip。
+- 导航按钮使用 `aria-current="page"` 标记当前页面。当前项悬停时保持 `--primary-soft` 底色、主题色图标和左侧主题色竖线，其他项沿用 Ant Design 的悬停样式。悬停均显示 Tooltip。
 - 主题按钮保存与当前相反的主题，保留现有字号和语言；保存期间显示加载态。
-- 系统设置按钮以内联 `SystemSettings variant="rail"` 打开设置弹窗。
+- 系统设置使用 18px 线框齿轮图标，通过 `SystemSettings variant="rail"` 打开设置弹窗。
 - 只在桌面外壳内使用；窄屏由布局隐藏文字，不隐藏入口。
 
 ## 边界

@@ -7,9 +7,8 @@ html[data-theme='light'] {
   --thumb-hover: rgba(144, 147, 153, 0.8);
   --selection: rgba(21, 128, 61, 0.14);
   --shadow-xs: 0 1px 2px rgba(17, 24, 18, 0.05);
-  --shadow-sm: 0 4px 12px rgba(17, 24, 18, 0.07);
+  --composer-shadow: 0 4px 12px rgba(17, 24, 18, 0.07);
   --card-shadow: var(--shadow-xs);
-  --card-hover-shadow: var(--shadow-sm);
   color-scheme: light;
 }
 html[data-theme='dark'] {
@@ -17,9 +16,8 @@ html[data-theme='dark'] {
   --thumb-hover: rgba(255, 255, 255, 0.35);
   --selection: rgba(66, 212, 124, 0.2);
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --composer-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   --card-shadow: var(--shadow-xs);
-  --card-hover-shadow: var(--shadow-sm);
   color-scheme: dark;
 }
 // App 与弹窗/抽屉门户共享 Ant Design 变量作用域，所有颜色从当前主题派生。
@@ -33,16 +31,12 @@ html[data-theme='dark'] {
   --rail-surface: #f8faf6;
   --surface-subtle: #f8faf6;
   --surface-hover: var(--ant-control-item-bg-hover);
-  --surface-sunken: #eef1ec;
-  --canvas: var(--ant-color-bg-layout);
   --primary: var(--ant-color-primary);
   // 已连接引擎图标的底板。
   --brand: #15803d;
-  --primary-soft: #e9f4ed;
-  --primary-border: #bfe3cb;
+  // 导航激活项与 AI 图标的底色统一使用当前主色的 12% 不透明度。
+  --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
   --border: var(--ant-color-border-secondary);
-  --border-strong: var(--ant-color-border);
-  --tab-bar-background: var(--surface);
   --inactive-icon: var(--ant-color-text-tertiary);
   --code-keyword: #7c3aed;
   --code-string: #0f766e;
@@ -62,11 +56,6 @@ html[data-theme='dark'] {
   backdrop-filter: blur(2px);
 }
 
-// 弹窗标题跟随全局界面字号。
-.ant-modal .ant-modal-title {
-  font-size: var(--ant-font-size);
-}
-
 // 暗色下 colorTextLightSolid 是主按钮用的深色，Tooltip 深色气泡需要亮色文字。
 html[data-theme='dark'] .ant-tooltip .ant-tooltip-container {
   color: #fff;
@@ -75,9 +64,6 @@ html[data-theme='dark'] .ant-tooltip .ant-tooltip-container {
 html[data-theme='dark'] .sql-studio-theme {
   --rail-surface: #111111;
   --surface-subtle: #1a1a1a;
-  --surface-sunken: #101010;
-  --primary-soft: rgba(66, 212, 124, 0.12);
-  --primary-border: rgba(66, 212, 124, 0.32);
   --code-keyword: #c4a7ff;
   --code-string: #7dd3a8;
   --code-number: #fbbf24;
@@ -100,71 +86,9 @@ body {
   -webkit-app-region: drag;
 }
 
-// 暗色下为外观选项卡和 Modal 面板描边。Modal 可能挂载在应用根节点外。
-html[data-theme='dark'] {
-  .sql-studio-theme .appearance-option-card,
-  .ant-modal-container {
-    border: 1px solid var(--ant-color-border);
-  }
-}
-
-// 外观选项卡使用卡片边框与原生 Radio，保留键盘交互。
-.appearance-option-card {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: var(--shadow-xs);
-}
-
-.appearance-option-card.ant-radio-wrapper-checked:not(.ant-radio-wrapper-disabled) {
-  border-color: var(--primary);
-}
-
-.sql-studio-theme .appearance-option-card {
-  padding: 8px;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    transform 120ms ease;
-
-  &:not(.ant-radio-wrapper-disabled, .ant-radio-wrapper-checked):is(:hover, :focus-within) {
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow-sm);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .sql-studio-theme .appearance-option-card:not(.ant-radio-wrapper-disabled):is(:hover, :focus-within) {
-    transform: translateY(-1px);
-  }
-}
-
-// 设置卡片的内容区使用 display:contents 参与卡片网格，去掉文字区的默认左缩进。
-:is(.appearance-option-card, .ai-default-pill).ant-radio-wrapper > span:last-child {
-  margin-inline-start: 0;
-}
-
-// 模型卡的悬停状态。
-.ai-model-card:hover {
-  box-shadow: var(--shadow-xs);
-}
-
-.ai-default-pill.ant-radio-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 24px;
-  margin: 0;
-  padding: 0;
-  color: var(--text-tertiary);
-}
-
-.ai-default-pill.ant-radio-wrapper .ant-radio {
-  margin: 0;
-  transform: scale(0.78);
-}
-
-.ai-default-pill.ant-radio-wrapper.is-checked {
-  color: var(--primary);
+// 暗色弹窗外框用于区分遮罩中的面板边缘。
+html[data-theme='dark'] .ant-modal-container {
+  border: 1px solid var(--ant-color-border);
 }
 
 // 会话分组与时间列，悬停时用操作按钮替换时间。
@@ -248,40 +172,6 @@ body,
   height: 100%;
 }
 
-// 同步配置两栏中间放置交换按钮，窄屏改为纵向并旋转图标。
-.sync-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-}
-
-.sync-swap.ant-btn {
-  align-self: center;
-  justify-self: center;
-  width: 32px;
-  height: 32px;
-}
-
-.sync-card .ant-card-actions > li {
-  margin: 4px 0;
-}
-
-.sync-card .ant-card-actions > li > span {
-  justify-content: flex-start;
-  padding-inline: 12px;
-}
-
-@media (max-width: 1079px) {
-  .sync-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sync-swap.ant-btn {
-    transform: rotate(90deg);
-  }
-}
-
 .sidebar-resizer:is(:hover, :focus-visible),
 .sidebar.is-resizing .sidebar-resizer,
 .results-resizer:is(:hover, :focus-visible),
@@ -313,15 +203,16 @@ body,
 .object-tree .ant-tree .ant-tree-switcher::before {
   display: none;
 }
-// 双击树节点只展开/收起，不产生浏览器文字选区；内容区仍允许复制 SQL 和结果。
-.sql-studio-theme .ant-dropdown-menu {
-  -webkit-user-select: none;
-  user-select: none;
-}
 .editor-toolbar input {
   -webkit-user-select: text;
   user-select: text;
 }
+
+// 暗色模式下仅 SQL 运行按钮使用白色前景，保留原生禁用样式。
+html[data-theme='dark'] .editor-toolbar .query-run-button.ant-btn:enabled {
+  color: var(--text);
+}
+
 .object-tree .ant-tree-node-content-wrapper {
   // 给选中背景内的图标与文字保留左右留白，所有状态保持对齐。
   padding-inline: 8px;
@@ -339,12 +230,6 @@ body,
   display: none;
 }
 
-// Ant Design 6 的 body 与活动 content 之间有独立层级，必须连续传递可用高度。
-.workspace-tabs > .ant-tabs-body-holder > .ant-tabs-body,
-.workspace-tabs > .ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content,
-.workspace-tabs > .ant-tabs-body-holder > .ant-tabs-content {
-  height: 100%;
-}
 .workspace-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
   display: flex;
   align-items: center;
@@ -354,12 +239,7 @@ body,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab-remove {
-  margin-inline-start: var(--workspace-inset);
-}
-.workspace-tabs > .ant-tabs-nav .ant-tabs-tab-remove:hover {
-  background: var(--ant-control-item-bg-hover);
-}
+// 语义 styles 覆盖内层 body 和内容，外层 holder 负责限制溢出。
 .workspace-tabs > .ant-tabs-body-holder {
   min-height: 0;
   overflow: hidden;
@@ -377,46 +257,11 @@ body,
 .data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);
 }
-// AI 结果表格与 ContentCard 使用同一外框，单元格只绘制内部分隔线。
-.sql-studio-theme .ant-table-wrapper .ant-table.ant-table-bordered > .ant-table-container.agent-result-grid {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--ant-border-radius-lg);
-  overflow: hidden;
-  > :is(.ant-table-content, .ant-table-header, .ant-table-body) > table > :is(thead, tbody) > tr > :is(th, td):last-child {
-    border-inline-end: 0;
-  }
-
-  > :is(.ant-table-content, .ant-table-body) > table > tbody > tr:last-child > :is(th, td) {
-    border-bottom: 0;
-  }
-}
-
-.table-pagination.ant-pagination,
-.sql-studio-theme .ant-table-wrapper .ant-table-pagination.table-pagination {
-  flex: none;
-  width: 100%;
-  height: 38px;
-  margin: 0;
-  padding: 0 var(--workspace-inset);
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.sql-studio-theme .ant-pagination .ant-pagination-item,
-.sql-studio-theme .ant-pagination .ant-pagination-prev,
-.sql-studio-theme .ant-pagination .ant-pagination-next {
-  min-width: 24px;
-  height: 24px;
-  line-height: 22px;
-}
-.sql-studio-theme .ant-table-wrapper .ant-table-pagination.agent-result-pagination {
-  border-top: 0;
-}
+// Table.styles.body.wrapper 对应 tbody，历史固定高度需落在外层滚动容器。
 .history-table .ant-table-body {
   height: var(--history-body-height);
 }
+
 // 候选项改由 Ant Design Select 展示，保留 CodeMirror 原生补全状态与键盘处理。
 .cm-tooltip.sql-native-completion {
   display: none;
@@ -477,51 +322,10 @@ body,
   }
 }
 
-.editor-toolbar .toolbar-icon-button.ant-btn,
-.results-panel .toolbar-icon-button.ant-btn {
-  width: 29px;
-  height: 29px;
-  padding: 0;
-}
-
-.editor-toolbar .toolbar-icon-button.ant-btn-sm {
-  width: 24px;
-  height: 24px;
-}
-
-.editor-toolbar .query-toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-inline-end: 4px;
-  padding-inline-end: 8px;
-  border-inline-end: 1px solid var(--border);
-}
-
-.redis-query-panel {
-  container-type: inline-size;
-}
-
-@container (max-width: 900px) {
-  .redis-query-panel .editor-toolbar .query-toolbar-group {
-    margin-inline-end: 0;
-    padding-inline-end: 4px;
-  }
-}
-
-// Dropdown 默认把选中文字设为主色，灰色底上统一使用正文色。
-.sql-studio-theme .ant-dropdown-menu .ant-dropdown-menu-item-selected:not(.ant-dropdown-menu-item-disabled) {
-  color: var(--text);
-}
-
 // 叶节点不展示折叠箭头，不为不存在的按钮保留整格空白。
 .object-tree .ant-tree .ant-tree-switcher-noop {
   width: 8px;
   flex-basis: 8px;
-}
-
-.ant-btn.chat-mode-write:not(:disabled) {
-  color: var(--ant-color-warning);
 }
 
 // 刻度宽度和底色随当前项、悬停与焦点联动；保留 CSS 减弱动画支持。
@@ -580,51 +384,6 @@ body,
   }
 }
 
-.result-run-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-
-  .anticon {
-    font-size: 12px;
-  }
-
-  &:not(.is-error, .is-running, .is-cancelled) {
-    color: var(--ant-color-success);
-
-    .anticon {
-      color: var(--ant-color-success);
-    }
-  }
-
-  &.is-error,
-  &.is-error .anticon {
-    color: var(--ant-color-error);
-  }
-
-  &.is-running .anticon {
-    color: var(--text-tertiary);
-  }
-}
-
-.result-run-metric {
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-
-  & + &::before {
-    content: '·';
-    margin-right: 5px;
-    color: var(--text-tertiary);
-  }
-}
-
-// 虚拟数据表选中行使用主题强调底色。
-.data-table .ant-table-tbody > tr.ant-table-row-selected > td {
-  background: var(--primary-soft);
-}
-
 // 导航按视口收缩，激活态由 aria-current 驱动。
 .app-rail {
   width: 56px;
@@ -640,18 +399,13 @@ body,
   background: transparent;
 }
 
-.app-rail-button.ant-btn[aria-current='page'] {
-  background: var(--primary-soft);
-  color: var(--primary);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: -4px;
-    inset-block: 11px;
-    width: 2px;
-    background: currentColor;
-  }
+.app-rail-button.ant-btn[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -4px;
+  inset-block: 11px;
+  width: 2px;
+  background: currentColor;
 }
 
 .object-tree .ant-tree .ant-tree-node-content-wrapper {
@@ -669,9 +423,13 @@ body,
   background: var(--primary);
 }
 
-.agent-composer.ant-sender:focus-within {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+// Sender 的默认边框在亮色下对比度较低，聚焦时沿同一条边框显示主题色。
+.agent-composer.ant-sender.ant-sender-main {
+  border-color: var(--ant-color-border);
+
+  &:focus-within {
+    border-color: var(--primary);
+  }
 }
 
 // 用户消息的编辑/复制操作只在悬停或键盘聚焦时出现，保持气泡本身简洁。
@@ -684,27 +442,4 @@ body,
 .user-message:focus-within .user-message-actions {
   opacity: 1;
   pointer-events: auto;
-}
-
-.agent-action-link.ant-typography,
-.agent-action-link.ant-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding-inline: 4px;
-  color: var(--text-secondary);
-}
-
-.agent-welcome-card.ant-card {
-  text-align: left;
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    box-shadow 120ms ease;
-
-  &:hover {
-    border-color: var(--ant-color-primary-border);
-    background: var(--surface-hover);
-    box-shadow: var(--card-shadow);
-  }
 }

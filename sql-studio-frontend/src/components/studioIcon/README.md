@@ -13,13 +13,13 @@
 
 ## 名称
 
-`database`、`bot`、`activity`、`swap`、`sliders`、`play`、`folder`、`table`、`eye`、`key`、`sun`、`moon`、`sparkle`、`zap`。
+`database`、`bot`、`activity`、`swap`、`play`、`folder`、`table`、`eye`、`key`、`sun`、`moon`、`sparkle`、`zap`。
 
 普通图标使用 1.7px 圆角描边；`play` 为实心三角形。图标默认 `aria-hidden`，按钮和状态容器负责提供可访问名称。
 
 ## 使用范围
 
-- 全局 Rail 页面入口、主题与设置图标。
+- 全局 Rail 页面入口与主题图标。
 - 工作台 Header 的新建连接、对象树分类与表图标。
 - 编辑器主「运行」按钮。
 

@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons'
-import { Button, Tag, Tooltip, Typography } from 'antd'
+import { Button, Flex, Tag, theme, Tooltip, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
@@ -33,6 +33,7 @@ type Props = {
 /** 侧栏承载完整连接树，范围选择与结构缓存由工作区管理。 */
 export default function ConnectionSidebar({ model, layout, onNewConnection, onOpenDatabaseSection }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   const { panel, visibleWidth, minimumWidth, maximumWidth, resizing, resizer } = layout
   return (
@@ -46,13 +47,13 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
         flexDirection: 'column',
         minHeight: 0,
         overflow: 'hidden',
-        background: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
+        background: token.colorBgContainer,
+        borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
         width: visibleWidth,
         maxWidth: '45%'
       }}
     >
-      <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 6, minHeight: 42, paddingInline: 'var(--workspace-inset)', borderBottom: '1px solid var(--border)' }}>
+      <Flex align="center" gap="small" style={{ flex: 'none', minHeight: 42, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}>
         <Typography.Text strong>{t('对象')}</Typography.Text>
         <Tag style={{ marginInlineEnd: 0 }}>{model.savedConnections.length}</Tag>
         <div style={{ marginInlineStart: 'auto' }}>
@@ -60,7 +61,7 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
             <Button type="text" size="small" icon={<PlusOutlined />} aria-label={t('新建连接')} disabled={model.running} onClick={onNewConnection} />
           </Tooltip>
         </div>
-      </div>
+      </Flex>
       {model.connectionLoading && !model.savedConnections.length ? <ContentLoading label={t('正在加载连接…')} /> : <DatabaseExplorer model={model} onOpenDatabaseSection={onOpenDatabaseSection} />}
       <div
         className="sidebar-resizer"

@@ -11,7 +11,7 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；颜色引用 Ant Design 原生 token，不手写主题主色。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域统一按页面标签切换。
+App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域统一按页面标签切换。
 
 工作台、AI 助手、监控和同步的页面错误集中显示在共享 PageHeader 下方，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
@@ -23,9 +23,9 @@ Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗�
 
 全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型使用浅色文字，NULL 使用浅色斜体，金额/数字右对齐并使用等宽数字；这些文字与其他界面文本一样跟随全局字体和字号。状态/耗时仍不使用 Tag，不展示连接来源标签。
 
-上下文 Header 左右均为 16px，侧栏搜索、工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px；对象栏顶部为标题、连接数与新建入口。树使用 28px 内容行与 2px 行间距，连接根节点右侧显示 5px 状态点；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
+上下文 Header 左右均为 16px，侧栏搜索、工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px；对象栏顶部为标题、连接数与新建入口。树使用 28px 内容行与 2px 行间距；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
 
-结果表使用虚拟滚动并在底部显示条数。执行历史保留分页。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
+工作台结果表用虚拟滚动连续显示全部返回行并在底部显示条数。AI 助手的数据结果也连续显示，超过 10 行启用虚拟滚动。执行历史、消息和摘要统一使用 Ant Design 小号分页。左侧对象栏与Agent历史栏共用可拖动宽度（200–560px，默认272px），双击恢复默认，在任一页调整后切换页面保持一致，宽度随工作台轻量布局索引保存并恢复。
 
 连接 Select 使用原生默认尺寸，工作台连接、数据库、Schema 范围选择共用 240px 宽度并允许收缩；连接图标为 20px，避免撑高控件。输出区由 resultTabs 展示数据结果标签，无列执行回执归入消息/摘要，超过 8 个结果集时用下拉切换，SQL 在消息/摘要中高亮并支持复制。连接表单支持输入或选择分组，新建预选“默认分组”，留空时使用默认分组；分组随连接配置保存，左侧树以文件夹整理，组内连接可右键编辑更换分组。
 
@@ -60,7 +60,7 @@ Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任�
 
 内容卡片（Agent 的代码、过程、确认、回执，以及 SQL 预览面板）和 Agent 结果表格复用 ghspace 的亮暗轻微阴影，分别通过 ContentCard.style 和 Table.styles.section 应用；不添加悬停上移，主工作区编辑器与结果面板继续保持平面布局。
 
-连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 绿色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题和字号卡片使用主题色边框、浅色底和右上角勾选标记。
+连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 绿色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题、字号和语言卡片统一使用中性边框，通过原生单选圆点展示选中状态。
 
 全局主色由 constant/theme 的 colorPrimary 统一配置（亮色 `#15803d`、暗色 `#42d47c`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 

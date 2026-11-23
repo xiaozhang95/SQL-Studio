@@ -1,6 +1,6 @@
 import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
-import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
+import { Alert, Button, Divider, Flex, Tag, theme, Tooltip, Typography } from 'antd'
 import { Fragment, useMemo } from 'react'
 import type { ReactNode } from 'react'
 
@@ -99,8 +99,9 @@ interface Props {
 }
 
 function AssistantHead({ model }: { model?: string }) {
+  const { token } = theme.useToken()
   return (
-    <Flex align="center" gap={8} style={{ marginBottom: 12 }}>
+    <Flex align="center" gap={8} style={{ marginBottom: token.marginSM }}>
       <span
         aria-hidden="true"
         style={{
@@ -109,32 +110,18 @@ function AssistantHead({ model }: { model?: string }) {
           width: 22,
           height: 22,
           flex: 'none',
-          borderRadius: 7,
+          borderRadius: token.borderRadius,
           background: 'var(--primary-soft)',
-          color: 'var(--primary)'
+          color: token.colorPrimary
         }}
       >
         <StudioIcon name="bot" size={12} />
       </span>
-      <Typography.Text strong>
-        SQL Studio AI
-      </Typography.Text>
+      <Typography.Text strong>SQL Studio AI</Typography.Text>
       {model && (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            height: 18,
-            padding: '0 6px',
-            border: '1px solid var(--border)',
-            borderRadius: 999,
-            color: 'var(--text-tertiary)',
-          }}
-        >
-          <DeepSeekLogo size={11} />
+        <Tag icon={<DeepSeekLogo size={11} />} style={{ marginInlineEnd: 0, maxWidth: '100%', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>
           {model}
-        </span>
+        </Tag>
       )}
     </Flex>
   )
@@ -196,19 +183,8 @@ export function TurnContent({ entries, busy, waiting, locked, status, assistantM
               <Flex key={e.id} className="user-message" vertical gap={CHAT.spacing.detail} style={{ width: '100%', minWidth: 0 }}>
                 <Bubble
                   placement="end"
-                  variant="borderless"
-                  styles={{
-                    root: { width: '100%' },
-                    body: { width: '100%', maxWidth: '78%', minWidth: 0 },
-                    content: {
-                      width: '100%',
-                      maxWidth: '100%',
-                      padding: '9px 13px',
-                      border: '1px solid var(--border)',
-                      borderRadius: '12px 12px 4px 12px',
-                      background: 'var(--surface-subtle)'
-                    }
-                  }}
+                  variant="outlined"
+                  styles={{ root: { width: '100%' }, body: { maxWidth: '78%', minWidth: 0 } }}
                   content={
                     <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0, maxWidth: '100%' }}>
                       {e.text}

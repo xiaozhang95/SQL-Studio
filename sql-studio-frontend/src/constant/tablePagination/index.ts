@@ -4,8 +4,7 @@ import { appearance } from '@/constant/appearance'
 
 /** 原生 Table 与独立分页共用尺寸、文案及底栏样式。 */
 export const tablePaginationDefaults: PaginationProps = {
-  size: appearance.controlSize,
+  size: appearance.navigationSize,
   align: 'end',
-  className: 'table-pagination',
   showSizeChanger: false
 }

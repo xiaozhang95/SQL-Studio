@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Input, Table, Typography } from 'antd'
+import { Alert, Button, Flex, Input, Space, Table, theme, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -76,6 +76,7 @@ type Props = {
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，结果表使用虚拟滚动。 */
 export default function QueryResults({ model, themeMode }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, resultIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
@@ -199,7 +200,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               <SQLPreview compact sql={String(row.cells[index])} themeMode={themeMode} databaseType={databaseType} />
             </div>
           ) : row.cells[index] === null ? (
-            <Typography.Text style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }} type="secondary">
+            <Typography.Text style={{ color: token.colorTextSecondary, fontStyle: 'italic' }} type="secondary">
               (NULL)
             </Typography.Text>
           ) : (
@@ -227,25 +228,31 @@ export default function QueryResults({ model, themeMode }: Props) {
   const stopped = shownOutput ? executionCancelled(shownOutput) || Boolean(shownOutput.interrupted) : false
   const failed = !stopped && Boolean(shownOutput?.error)
   const durationMs = result?.durationMs ?? batch?.statements?.[resultIndex]?.durationMs
-  const resultStatus = activeRunning ? (
-    <span className="result-run-status is-running">
-      <LoadingOutlined spin />
-      <span>{t('执行中')}</span>
-    </span>
-  ) : stopped ? (
-    <span className="result-run-status is-cancelled">
-      <StopOutlined />
-      {t(shownOutput?.interrupted ? '执行已中断' : '执行已取消')}
-    </span>
-  ) : failed || result ? (
-    <span className={`result-run-status${failed ? ' is-error' : ''}`}>
-      {failed ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
-      <span>{t(failed ? '失败' : '成功')}</span>
-      {!failed && durationMs !== undefined && <span className="result-run-metric">{durationMs} ms</span>}
-      {!failed && result?.isQuery && <span className="result-run-metric">{t('{value1} 行', { value1: result.rows.length })}</span>}
-      {!failed && Boolean(result?.columns.length) && <span className="result-run-metric">{t('{value1} 列', { value1: result?.columns.length ?? 0 })}</span>}
-    </span>
-  ) : undefined
+  const status = activeRunning
+    ? { icon: <LoadingOutlined spin />, label: t('执行中'), color: token.colorTextSecondary }
+    : stopped
+      ? { icon: <StopOutlined />, label: t(shownOutput?.interrupted ? '执行已中断' : '执行已取消'), color: token.colorTextSecondary }
+      : failed
+        ? { icon: <CloseCircleOutlined />, label: t('失败'), color: token.colorErrorText }
+        : result
+          ? { icon: <CheckCircleOutlined />, label: t('成功'), color: token.colorSuccessText }
+          : undefined
+  const showMetrics = !activeRunning && !stopped && !failed
+  const resultStatus = status && (
+    <Flex align="center" gap={token.marginXS} wrap>
+      <Space size={token.marginXXS} style={{ color: status.color, whiteSpace: 'nowrap' }}>
+        {status.icon}
+        {status.label}
+      </Space>
+      {showMetrics && (durationMs !== undefined || result?.columns.length || result?.isQuery) ? (
+        <Space size={token.marginXXS} separator={<Typography.Text type="secondary">·</Typography.Text>} style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {durationMs !== undefined && <Typography.Text type="secondary">{durationMs} ms</Typography.Text>}
+          {result?.isQuery && <Typography.Text type="secondary">{t('{value1} 行', { value1: result.rows.length })}</Typography.Text>}
+          {Boolean(result?.columns.length) && <Typography.Text type="secondary">{t('{value1} 列', { value1: result?.columns.length ?? 0 })}</Typography.Text>}
+        </Space>
+      ) : null}
+    </Flex>
+  )
   if (!run) return null
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
@@ -274,7 +281,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             flexWrap: 'wrap',
             minHeight: 38,
             padding: '0 var(--workspace-inset)',
-            borderBottom: '1px solid var(--border)',
+            borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
             flex: 'none'
           }}
         >
@@ -405,10 +412,7 @@ export default function QueryResults({ model, themeMode }: Props) {
               virtual
               size={appearance.tableSize}
               className="data-table"
-              styles={{
-                header: { cell: { paddingBlock: 4, background: 'var(--surface-subtle)', color: 'var(--text-secondary)' } },
-                body: { cell: { paddingBlock: 4, color: 'var(--text)' } }
-              }}
+              styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
               rowSelection={{
                 columnWidth: resultTableLayout.selectionWidth,
@@ -443,7 +447,10 @@ export default function QueryResults({ model, themeMode }: Props) {
         )}
       </div>
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
-        <Typography.Text type="secondary" style={{ flex: 'none', textAlign: 'end', padding: '8px var(--workspace-inset)', borderTop: '1px solid var(--border)' }}>
+        <Typography.Text
+          type="secondary"
+          style={{ flex: 'none', textAlign: 'end', paddingBlock: token.paddingXS, paddingInline: token.padding, borderBlockStart: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}
+        >
           {t('共 {count} 条', { count: rowCount })}
         </Typography.Text>
       )}

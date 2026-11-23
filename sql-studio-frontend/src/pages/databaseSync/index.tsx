@@ -1,5 +1,5 @@
-import { CheckCircleOutlined, InfoCircleOutlined, LinkOutlined, SettingOutlined } from '@ant-design/icons'
-import { Button, Card, Checkbox, Flex, Form, Input, Select, Steps, Tag, theme, Typography } from 'antd'
+import { LinkOutlined, SettingOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Checkbox, Flex, Form, Grid, Input, Select, Steps, theme, Typography } from 'antd'
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
@@ -24,6 +24,7 @@ type Props = DatabasePageProps & {
 export default function DatabaseSync({ connections, initialConnection, onCreated, onOpenTarget, ...pageProps }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
   const model = useDatabaseSync(connections, initialConnection, onCreated)
   const { values, status, plan, result, update } = model
   const checking = status === 'checking'
@@ -78,11 +79,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
         <>
           <Form layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
             <Flex vertical gap="middle">
-              <div className="sync-grid">
+              <div style={{ display: 'grid', gridTemplateColumns: screens.lg ? 'minmax(0, 1fr) auto minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: token.marginSM }}>
                 <Card
                   size="small"
-                  className="sync-card"
-                  styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -155,7 +154,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   </Typography.Text>
                 </Card>
                 <Button
-                  className="sync-swap"
+                  style={{ alignSelf: 'center', justifySelf: 'center', transform: screens.lg ? undefined : 'rotate(90deg)' }}
                   shape="circle"
                   aria-label={t('交换源端与目标端')}
                   title={t('交换源端与目标端')}
@@ -165,8 +164,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                 />
                 <Card
                   size="small"
-                  className="sync-card"
-                  styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -240,40 +237,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             </Flex>
           </Form>
           {plan ? (
-            <Flex
-              align="center"
-              gap={10}
-              style={{
-                padding: '10px 14px',
-                border: '1px solid var(--primary-border)',
-                borderRadius: token.borderRadiusLG,
-                background: 'var(--primary-soft)'
-              }}
-            >
-              <CheckCircleOutlined style={{ color: token.colorSuccess, fontSize: 18 }} />
-              <Flex vertical style={{ flex: 1, minWidth: 0 }}>
-                <Typography.Text strong>{t('检查通过')}</Typography.Text>
-                <Typography.Text type="secondary" style={{ overflowWrap: 'anywhere' }}>
-                  {checkText}
-                </Typography.Text>
-              </Flex>
-              <Tag color="success">{t('可以开始')}</Tag>
-            </Flex>
+            <Alert type="success" showIcon title={t('检查通过')} description={checkText} styles={{ description: { overflowWrap: 'anywhere' } }} />
           ) : (
-            <Flex
-              align="flex-start"
-              gap="small"
-              style={{
-                padding: '10px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: token.borderRadiusLG,
-                background: token.colorFillAlter,
-                color: token.colorTextSecondary
-              }}
-            >
-              <InfoCircleOutlined style={{ color: token.colorInfo, marginTop: 2 }} />
-              <span style={{ overflowWrap: 'anywhere' }}>{t('目标库已存在时立即停止。同步新库需要勾选目标选项。')}</span>
-            </Flex>
+            <Alert type="info" variant="filled" showIcon title={t('目标库已存在时立即停止。同步新库需要勾选目标选项。')} style={{ backgroundColor: 'var(--primary-soft)' }} />
           )}
         </>
       ) : (

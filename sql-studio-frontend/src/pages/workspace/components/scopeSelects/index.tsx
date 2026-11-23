@@ -21,7 +21,7 @@ type Props = {
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
-const scopeSelectStyle = { flex: '0 1 240px', minWidth: 190, maxWidth: 240 } satisfies CSSProperties
+const scopeSelectStyle = { flex: '0 1 240px', minWidth: 'min(190px, 100%)', maxWidth: 'min(240px, 100%)' } satisfies CSSProperties
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
 export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
   const { t } = useTranslation()

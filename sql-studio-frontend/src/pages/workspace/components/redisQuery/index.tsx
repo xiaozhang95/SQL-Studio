@@ -1,5 +1,5 @@
 import { CodeOutlined, DownloadOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import { Tag, Upload } from 'antd'
+import { Flex, Tag, theme, Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -33,6 +33,7 @@ const tools = [
 
 export default function RedisQuery({ model, connection, active, themeMode }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
   const [tool, setTool] = useState(() => readRedisTool(model.tab.id))
   const [commandBusy, setCommandBusy] = useState(false)
   const [pubSubOpened, setPubSubOpened] = useState(tool === 'pubsub')
@@ -50,7 +51,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   usePageError(active ? importError : undefined)
 
   return (
-    <section className="editor-panel redis-query-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
+    <section className="editor-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: token.colorBgContainer }}>
       <QueryToolbar
         model={model}
         compact
@@ -63,17 +64,23 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           </>
         }
       >
-        <Tag title={t('连接模式')} style={{ marginInlineEnd: 4 }}>
+        <Tag title={t('连接模式')} style={{ marginInlineEnd: token.marginXXS }}>
           {t(redisModeLabel(connection.redisMode))}
         </Tag>
-        <div className="query-toolbar-group" role="group" aria-label={t('Redis 查询工具')}>
+        <Flex
+          align="center"
+          gap={token.marginXXS}
+          role="group"
+          aria-label={t('Redis 查询工具')}
+          style={{ paddingInlineEnd: token.paddingXS, borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}
+        >
           {tools.map(({ id, label, icon }) => (
             <ToolbarButton
               key={id}
               label={label}
               icon={icon}
               aria-pressed={tool === id}
-              style={tool === id ? { background: 'var(--ant-color-fill-secondary)' } : undefined}
+              style={tool === id ? { background: token.controlItemBgActive } : undefined}
               onClick={() => {
                 model.getCurrentSQL()
                 model.setHistoryOpen(false)
@@ -85,7 +92,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
               }}
             />
           ))}
-        </div>
+        </Flex>
         <Upload accept=".sql" showUploadList={false} beforeUpload={beforeImport} disabled={blocked || !editorMode || importing}>
           <ToolbarButton label={t('导入')} icon={<UploadOutlined />} loading={importing} disabled={blocked || !editorMode} />
         </Upload>

@@ -55,12 +55,12 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
       {(sql || table) && (
         <Flex align="center" gap={6} wrap>
           {sql && (
-            <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} className="agent-action-link">
+            <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} type="secondary">
               {t('复制 SQL')}
             </Typography.Text>
           )}
           {sql && (
-            <Button type="text" size="small" className="agent-action-link" icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(sql)}>
+            <Button type="text" size="small" icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(sql)}>
               {t('在查询页打开')}
             </Button>
           )}

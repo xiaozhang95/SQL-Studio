@@ -3,6 +3,10 @@
 /* ---------------------------------------------------------------------------
    1. Tokens
 --------------------------------------------------------------------------- */
+.app {
+  --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
 .app[data-theme='light'] {
   --canvas: #f4f6f2;
   --surface: #ffffff;
@@ -19,7 +23,6 @@
   --primary: #15803d;
   --primary-hover: #166534;
   --primary-active: #14532d;
-  --primary-soft: #e9f4ed;
   --primary-border: #bfe3cb;
   --on-primary: #ffffff;
   --success: #16a34a;
@@ -67,7 +70,6 @@
   --primary: #42d47c;
   --primary-hover: #5be392;
   --primary-active: #34c06e;
-  --primary-soft: rgba(66, 212, 124, 0.12);
   --primary-border: rgba(66, 212, 124, 0.32);
   --on-primary: #06170c;
   --success: #42d47c;

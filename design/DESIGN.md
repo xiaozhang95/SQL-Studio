@@ -78,7 +78,7 @@
 | `primary` | `#15803d` | 主操作、活动导航、选中线 |
 | `primary-hover` | `#166534` | 主操作悬停 |
 | `primary-active` | `#14532d` | 主操作按下 |
-| `primary-soft` | `#e9f4ed` | 活动导航底、选中行、AI 图标底 |
+| `primary-soft` | `primary`，12% 不透明度 | 活动导航底、选中行、AI 图标底 |
 | `on-primary` | `#ffffff` | 主按钮文字 |
 | `success` | `#16a34a` | 连接成功、执行成功 |
 | `warning` | `#b45309` | 未保存、写入确认、截断提示 |
@@ -105,7 +105,7 @@
 | `primary` | `#42d47c` | 主操作、活动导航 |
 | `primary-hover` | `#5be392` | 主操作悬停 |
 | `primary-active` | `#34c06e` | 主操作按下 |
-| `primary-soft` | `rgba(66,212,124,.12)` | 活动导航底、选中行 |
+| `primary-soft` | `primary`，12% 不透明度 | 活动导航底、选中行、AI 图标底 |
 | `on-primary` | `#06170c` | 亮绿底上的深色文字 |
 | `success` | `#42d47c` | 成功 |
 | `warning` | `#fbbf24` | 未保存、写入确认 |

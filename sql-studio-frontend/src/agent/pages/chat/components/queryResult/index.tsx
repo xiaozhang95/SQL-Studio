@@ -55,11 +55,10 @@ function ResultTable({ title, extra, children }: { title?: ReactNode; extra?: Re
   )
 }
 
-const resultTableClassNames = { section: 'agent-result-grid', pagination: { root: 'agent-result-pagination' } } as const
 const resultTableStyles = { section: { boxShadow: 'var(--card-shadow)' } } satisfies TableProps['styles']
 
 function ResultContent({ value, sql, title, tool, showHeader = true, showExport = true }: Props) {
-  const tablePagination = useTablePagination()
+  const tablePagination = useTablePagination({ divided: false })
 
   const { t } = useTranslation()
 
@@ -86,6 +85,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
   if (result) {
     const columnWidths = result.columns.map((column) => Math.min(280, Math.max(140, column.name.length * 14 + 32)))
     const scrollWidth = columnWidths.reduce((width, columnWidth) => width + columnWidth, CHAT.resultIndexWidth)
+    const scrollHeight = result.rows.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
     const columns: TableColumnsType<Row> = [
       {
         title: '#',
@@ -139,7 +139,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
       >
         {result.truncated && <Alert type="warning" showIcon title={t('当前工具查询的结果已截断，每次最多返回 100 行。全量统计请使用聚合查询。')} banner />}
         <Table<Row>
-          classNames={resultTableClassNames}
           styles={resultTableStyles}
           aria-label={t('查询结果')}
           size={appearance.tableSize}
@@ -147,18 +146,9 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
           tableLayout="fixed"
           columns={columns}
           dataSource={rows}
-          pagination={{
-            ...tablePagination,
-            defaultPageSize: APPEARANCE.resultPageSize,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: rows.length > 10,
-            hideOnSinglePage: rows.length <= 10,
-            showTotal: (total) => t('共 {value1} 行', { value1: total })
-          }}
-          scroll={{
-            x: scrollWidth,
-            y: rows.length > 10 ? APPEARANCE.resultPreviewHeight : undefined
-          }}
+          pagination={false}
+          virtual={scrollHeight !== undefined}
+          scroll={{ x: scrollWidth, y: scrollHeight }}
           locale={{ emptyText: t('查询成功，没有匹配的数据') }}
         />
         {sql && (
@@ -220,7 +210,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         }
       >
         <Table
-          classNames={resultTableClassNames}
           styles={resultTableStyles}
           size={appearance.tableSize}
           bordered
@@ -270,7 +259,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         }
       >
         <Table
-          classNames={resultTableClassNames}
           styles={resultTableStyles}
           size={appearance.tableSize}
           bordered

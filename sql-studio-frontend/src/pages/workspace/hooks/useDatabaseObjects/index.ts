@@ -36,6 +36,7 @@ type Session = {
   databases?: string[]
   opening?: Promise<string[]>
   refreshing?: Promise<string[]>
+  checking?: boolean
   tables: Record<string, DBTable[]>
   schemas: Record<string, string[]>
   pending: Map<string, Promise<DBTable[]>>
@@ -98,6 +99,7 @@ export function useDatabaseObjects(
     async (id: string, failure = '') => {
       const session = sessions.current.get(id)
       session?.controller.abort()
+      if (failure) onConnectionReset(id)
       setClosedDatabases((previous) => {
         if (!(id in previous)) return previous
         const next = { ...previous }
@@ -121,7 +123,26 @@ export function useDatabaseObjects(
         }
       }
     },
-    [releaseConnection]
+    [onConnectionReset, releaseConnection]
+  )
+
+  const verifyConnection = useCallback(
+    (id: string) => {
+      const session = sessions.current.get(id)
+      if (!session?.databases || session.controller.signal.aborted || session.checking) return
+      // 复核连接本身，避免把 SQL、权限或单个对象的错误当成整条连接断开。
+      session.checking = true
+      void getDatabases(id, session.controller.signal)
+        .catch(async (error: unknown) => {
+          if (sessions.current.get(id) !== session || session.controller.signal.aborted) return
+          const reason = error instanceof Error && error.message.trim() ? error.message : '连接失败'
+          await closeConnection(id, reason).catch(() => {})
+        })
+        .finally(() => {
+          session.checking = false
+        })
+    },
+    [closeConnection]
   )
 
   const openConnection = useCallback(
@@ -249,8 +270,10 @@ export function useDatabaseObjects(
           return tables
         })
         .catch((error) => {
-          if (valid())
+          if (valid()) {
+            verifyConnection(id)
             setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], tableErrors: { ...previous[id].tableErrors, [name]: error instanceof Error ? error.message : '表列表加载失败' } } }))
+          }
           throw error
         })
         .finally(() => {
@@ -260,7 +283,7 @@ export function useDatabaseObjects(
       session.pending.set(name, task)
       return task
     },
-    [connectionId, schemaConnections]
+    [connectionId, schemaConnections, verifyConnection]
   )
 
   const loadSchemas = useCallback(
@@ -291,13 +314,17 @@ export function useDatabaseObjects(
           setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], structures: { ...previous[id].structures, [key]: structure } } }))
           return structure
         })
+        .catch((error) => {
+          if (sessions.current.get(id) === session && scope.valid()) verifyConnection(id)
+          throw error
+        })
         .finally(() => {
           if (session.pendingStructures.get(key) === task) session.pendingStructures.delete(key)
         })
       session.pendingStructures.set(key, task)
       return task
     },
-    [connectionId]
+    [connectionId, verifyConnection]
   )
 
   const loadTableDetails = useCallback(
@@ -317,7 +344,10 @@ export function useDatabaseObjects(
       const foreignKeysRequest = foreignKeyConnections.includes(id)
         ? getForeignKeys(id, database, table, scope.signal)
             .then((foreignKeys) => ({ foreignKeys }))
-            .catch((error) => ({ foreignKeyError: error instanceof Error && error.message ? error.message : '外键加载失败' }))
+            .catch((error) => {
+              if (valid()) verifyConnection(id)
+              return { foreignKeyError: error instanceof Error && error.message ? error.message : '外键加载失败' }
+            })
         : undefined
       const task = Promise.all([columnsRequest, indexesRequest, foreignKeysRequest])
         .then(([columns, indexes, foreignKeyDetails]) => {
@@ -328,8 +358,10 @@ export function useDatabaseObjects(
           return details
         })
         .catch((error) => {
-          if (valid())
+          if (valid()) {
+            verifyConnection(id)
             setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], detailErrors: { ...previous[id].detailErrors, [key]: error instanceof Error ? error.message : '表结构加载失败' } } }))
+          }
           throw error
         })
         .finally(() => {
@@ -338,7 +370,7 @@ export function useDatabaseObjects(
       session.pendingDetails.set(key, task)
       return task
     },
-    [connectionId, foreignKeyConnections]
+    [connectionId, foreignKeyConnections, verifyConnection]
   )
 
   const refreshDatabases = useCallback(
@@ -356,13 +388,17 @@ export function useDatabaseObjects(
           setSnapshots((previous) => ({ ...previous, [id]: { ...previous[id], databases } }))
           return databases
         })
+        .catch((error) => {
+          if (sessions.current.get(id) === session && !session.controller.signal.aborted) verifyConnection(id)
+          throw error
+        })
         .finally(() => {
           if (session.refreshing === task) session.refreshing = undefined
         })
       session.refreshing = task
       return task
     },
-    [invalidateDatabase, onDatabasesLoaded]
+    [invalidateDatabase, onDatabasesLoaded, verifyConnection]
   )
 
   const refreshTables = useCallback(
@@ -396,6 +432,7 @@ export function useDatabaseObjects(
     closeDatabase,
     openConnection,
     closeConnection,
+    verifyConnection,
     refreshConnection,
     refreshDatabases,
     refreshTables,

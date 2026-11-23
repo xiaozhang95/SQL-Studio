@@ -53,7 +53,7 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
           }
           value={value(metric) ?? '—'}
           formatter={() => formatMetric(value(metric), metric.format, language)}
-          valueStyle={{ fontWeight: token.fontWeightStrong, fontVariantNumeric: 'tabular-nums' }}
+          valueStyle={{ fontVariantNumeric: 'tabular-nums' }}
           style={{ minWidth: 0, overflowWrap: 'anywhere' }}
         />
         {change !== undefined && Math.abs(change) >= 0.05 && (

@@ -18,12 +18,12 @@ interface Props extends DatabasePageProps {
   errors?: readonly (string | undefined)[]
 }
 
-/** 监控与同步共用的画布页：标题进入上下文 Header，内容铺满画布。 */
+/** 监控与同步共用的页面布局，底色与工作台及 AI 助手一致。 */
 export default function DatabasePage({ title, breadcrumb, headerActions, connectionError, retryConnections, children, errors = [] }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   return (
-    <Flex vertical style={{ height: '100%', minWidth: 0, color: token.colorText, background: token.colorBgLayout }}>
+    <Flex vertical style={{ height: '100%', minWidth: 0, color: token.colorText, background: token.colorBgContainer }}>
       <PageHeader
         title={title}
         breadcrumb={breadcrumb}

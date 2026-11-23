@@ -1,3 +1,4 @@
+import { Flex, theme } from 'antd'
 import type { ReactNode } from 'react'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
@@ -12,25 +13,25 @@ type Props = {
 }
 
 export default function QueryToolbar({ model, disabled, compact, runActions, children }: Props) {
+  const { token } = theme.useToken()
   const { tab, savedConnections, objects, selectConnection, selectObject } = model
   return (
-    <div
+    <Flex
       className="editor-toolbar"
+      align="center"
+      justify="space-between"
+      gap={token.marginXS}
+      wrap
       style={{
         flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
         minHeight: 44,
-        padding: '0 var(--workspace-inset)',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface)',
+        paddingInline: token.padding,
+        borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+        background: token.colorBgContainer,
         userSelect: 'none'
       }}
     >
-      <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: compact ? '1 1 308px' : '1 1 500px', minWidth: 0, flexWrap: compact ? 'nowrap' : 'wrap' }}>
+      <Flex align="center" gap="small" wrap style={{ flex: compact ? '1 1 308px' : '1 1 500px', minWidth: 0 }}>
         <ScopeSelects
           scope={tab}
           connections={savedConnections}
@@ -41,8 +42,12 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
           onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}
         />
         {runActions}
-      </div>
-      {children && <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', justifyContent: 'flex-end', flexWrap: 'wrap', minWidth: 0 }}>{children}</div>}
-    </div>
+      </Flex>
+      {children && (
+        <Flex align="center" gap={token.marginXXS} justify="flex-end" wrap style={{ marginInlineStart: 'auto', minWidth: 0 }}>
+          {children}
+        </Flex>
+      )}
+    </Flex>
   )
 }

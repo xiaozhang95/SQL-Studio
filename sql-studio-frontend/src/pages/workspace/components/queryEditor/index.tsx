@@ -109,9 +109,9 @@ export default function QueryEditor({ model, themeMode }: Props) {
         disabled={running}
         runActions={
           <>
-            <Button type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
+            <Button className="query-run-button" type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
               {t('运行')}
-              <span style={{ marginInlineStart: 3, opacity: 0.75 }}>{runShortcut}</span>
+              <span style={{ marginInlineStart: 3, opacity: themeMode === 'dark' ? 1 : 0.75 }}>{runShortcut}</span>
             </Button>
             {activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={cancelQuery}>
