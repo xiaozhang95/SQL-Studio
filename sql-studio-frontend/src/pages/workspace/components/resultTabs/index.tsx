@@ -6,7 +6,7 @@ import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RunState } from '@/typings/workspace'
 
-import { resultTabLayout, workspaceTabBarStyle } from '../../constant/layout'
+import { resultTabLayout, resultToolbarIconInset, workspaceTabBarStyle } from '../../constant/layout'
 import { resultOutputs } from '../../utils/queryOutput'
 
 type Props = {
@@ -33,13 +33,13 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
       style={{ flex: 'none', minWidth: 0 }}
       styles={{
         header: workspaceTabBarStyle,
-        item: { height: 30, padding: '0 8px', borderRadius: 'var(--ant-border-radius)' }
+        item: { height: 30, paddingBlock: 0, paddingInline: resultToolbarIconInset, borderRadius: 'var(--ant-border-radius)' }
       }}
       tabBarGutter={4}
       activeKey={activeKey}
       onChange={onChange}
       tabBarExtraContent={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, paddingInlineEnd: status || compact ? resultToolbarIconInset : undefined }}>
           {status}
           {compact && (
             <Select

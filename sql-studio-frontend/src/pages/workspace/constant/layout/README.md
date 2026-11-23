@@ -14,6 +14,8 @@ resultTableLayout 定义结果表的行号列 64px、普通数据列 200px、复
 
 resultTabLayout.maximumVisibleTabs=8：超过 8 个数据结果集时使用 Select 切换，仅显示当前结果标签，避免批量 SELECT 产生无限增长的标签导航。执行回执不占结果标签。
 
+resultToolbarIconInset 由默认按钮尺寸与图标字号计算，用于对齐结果页签、行选择计数、执行状态与操作图标的可见边缘。
+
 workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
 
 workspaceTabBarStyle 共用 38px 栏高、页面内边距和表面底色，栏底分隔线沿用 Ant Design Tabs。

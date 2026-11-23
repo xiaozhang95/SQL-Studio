@@ -6,6 +6,8 @@ export const resultPanelLayout = { defaultHeight: 260, minimumHeight: 260, edito
 export const resultSQLLayout = { columnWidth: 520 } as const
 export const resultTableLayout = { indexWidth: 64, columnWidth: 200, selectionWidth: 32 } as const
 export const resultTabLayout = { maximumVisibleTabs: 8 } as const
+/** 默认图标按钮从点击边界到居中图标的水平留白。 */
+export const resultToolbarIconInset = 'calc((var(--ant-control-height) - var(--ant-font-size)) / 2)'
 export const workspaceTabLayout = { width: 200 } as const
 
 /** 主页面与结果页签共用栏尺寸，分隔线由 Ant Design Tabs 绘制。 */

@@ -28,7 +28,7 @@ import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
-import { resultSQLLayout, resultTableLayout, workspaceEmptyStyle } from '../../constant/layout'
+import { resultSQLLayout, resultTableLayout, resultToolbarIconInset, workspaceEmptyStyle } from '../../constant/layout'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
@@ -297,7 +297,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         >
           <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
             {tab.kind !== 'data' && showingResult && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, paddingInlineStart: resultToolbarIconInset, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                 <CheckCircleOutlined />
                 {t('已选择 {value1} 行', { value1: selectedRows.length })}
               </span>
