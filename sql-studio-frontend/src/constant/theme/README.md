@@ -8,6 +8,8 @@ createThemeConfig(themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'stan
 
 保留 CSS 变量 key，工作区、Agent 与 AntApp 弹框共用此配置。字号与主题由现有 useThemePreference 保存后应用。Button 的 `primaryShadow`、`defaultShadow` 和 `dangerShadow` 在亮暗主题下统一设为 `none`，按钮悬停、按下和键盘焦点沿用原生反馈。
 
+暗色 Dropdown 的可用危险项在鼠标悬停时使用白色文字和图标，红底混入弹层底色以提高对比度。样式在 app.scss 限定到菜单危险项的悬停状态。
+
 表单控件的焦点阴影共用 1px 扩展宽度和 20% 状态色，正常、警告、错误分别取主色、警告色、错误色。控件边框和键盘焦点轮廓沿用各组件的原生样式。
 
 Alert 的信息、成功、警告、错误统一使用当前主题面板色与 12% 对应状态色混合的底色，描边使用 24% 对应状态色。`filled` 和 `banner` 沿用原生无可见描边样式，正文和图标沿用原生语义色。

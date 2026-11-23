@@ -60,6 +60,14 @@ html[data-theme='dark'] .ant-tooltip .ant-tooltip-container {
   color: #fff;
 }
 
+// 危险菜单项悬停时用白色文字，并压深红底以保留对比度。
+html[data-theme='dark'] :is(.ant-dropdown, .ant-dropdown-menu-submenu) .ant-dropdown-menu {
+  .ant-dropdown-menu-item.ant-dropdown-menu-item-danger:not(.ant-dropdown-menu-item-disabled):hover {
+    color: #fff;
+    background-color: color-mix(in srgb, var(--ant-color-error) 80%, var(--ant-color-bg-elevated));
+  }
+}
+
 html[data-theme='dark'] .sql-studio-theme {
   --surface-subtle: #1a1a1a;
   --code-keyword: #c4a7ff;
