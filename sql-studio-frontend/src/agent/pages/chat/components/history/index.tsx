@@ -228,8 +228,8 @@ function HistoryContents({
   return (
     <Flex vertical style={{ flex: 1, height: '100%', minHeight: 0 }}>
       <SidebarSearch value={search} onChange={onSearchChange} placeholder={t('搜索会话标题')} />
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingInline: token.padding, paddingBlockEnd: token.paddingXS }}>
-        <Spin spinning={loading}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingInline: token.padding, paddingBlock: token.paddingXS }}>
+        <Spin spinning={loading} styles={{ container: { display: 'flex', flexDirection: 'column', rowGap: token.marginXS } }}>
           {items.length === 0 && !loading ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={search.trim() ? t('没有匹配的会话') : t('还没有对话')} />
           ) : (
@@ -247,7 +247,10 @@ function HistoryContents({
                     onActiveChange={(key) => {
                       if (!busy) void onSelect(key)
                     }}
-                    styles={{ root: { padding: 0 }, item: { minHeight: 34, padding: '5px 8px' } }}
+                    styles={{
+                      root: { display: 'flex', flexDirection: 'column', rowGap: token.marginXXS, padding: 0 },
+                      item: { minHeight: 34, padding: '5px 8px' }
+                    }}
                     items={group.items.map((i) => ({
                       key: i.id,
                       disabled: busy,

@@ -10,7 +10,7 @@ ChatPage 组合会话列表、回复、思考过程、结果表和输入框。wo
 - [components](components/README.md)
 - [constant](constant/README.md)
 
-桌面会话栏固定显示并提供新建会话按钮；窄屏通过输入区的历史会话图标打开抽屉，抽屉提供新建会话与刷新。Electron 窗口标题由 App 统一同步。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用 CHAT.content，按 conversationMaxWidth（840px）居中并保留两侧 transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
+桌面会话栏固定显示并提供新建会话按钮；窄屏通过输入区的历史会话图标打开抽屉，抽屉提供新建会话与刷新。[会话列表](components/history/README.md) 在搜索行下方留出间距，并在会话与日期分组之间分别留白。Electron 窗口标题由 App 统一同步。消息滚动视口覆盖整个会话区，两侧空白均响应滚轮和触摸滚动；每轮正文与固定输入区复用 CHAT.content，按 conversationMaxWidth（840px）居中并保留两侧 transcriptInset（32px）间距。导航位于独立边栏，不挤入正文。
 
 空会话通过 Welcome 展示引导标题、说明和三类带功能图标的提问卡片，不再显示应用 Logo。历史侧栏顶部提供「会话」标题、数量、新建会话和刷新，搜索框位于其下。会话加载或执行期间禁用新建操作。
 
