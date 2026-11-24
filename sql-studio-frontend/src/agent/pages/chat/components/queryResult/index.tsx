@@ -1,9 +1,10 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Alert, Collapse, Descriptions, Flex, Space, Table, Tooltip, Typography } from 'antd'
+import { Alert, Collapse, Descriptions, Flex, Space, Tooltip, Typography } from 'antd'
 import type { TableColumnsType, TableProps } from 'antd'
 import type { ReactNode } from 'react'
 
 import ContentCard from '@/components/contentCard'
+import { ResizableTable } from '@/components/resizableTable'
 import { appearance } from '@/constant/appearance'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -138,7 +139,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         }
       >
         {result.truncated && <Alert type="warning" showIcon title={t('当前工具查询的结果已截断，每次最多返回 100 行。全量统计请使用聚合查询。')} banner />}
-        <Table<Row>
+        <ResizableTable<Row>
           styles={resultTableStyles}
           aria-label={t('查询结果')}
           size={appearance.tableSize}
@@ -209,7 +210,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
           ) : undefined
         }
       >
-        <Table
+        <ResizableTable
           styles={resultTableStyles}
           size={appearance.tableSize}
           bordered
@@ -258,7 +259,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
           ) : undefined
         }
       >
-        <Table
+        <ResizableTable
           styles={resultTableStyles}
           size={appearance.tableSize}
           bordered

@@ -18,8 +18,17 @@ export function SidebarHeader({ title, count, actions }: { title: string; count:
 export function SidebarSearch({ value, onChange, placeholder, label = placeholder }: { value: string; onChange: (value: string) => void; placeholder: string; label?: string }) {
   const { token } = theme.useToken()
   return (
-    <div style={{ flex: 'none', paddingBlock: token.paddingXS, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}>
-      <Input prefix={<SearchOutlined />} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={label} allowClear />
+    <div
+      style={{
+        flex: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        height: 42,
+        paddingInline: token.padding,
+        borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+      }}
+    >
+      <Input style={{ width: '100%' }} prefix={<SearchOutlined />} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={label} allowClear />
     </div>
   )
 }

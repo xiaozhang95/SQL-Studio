@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons'
 import { Alert, Button, Flex, Input, Space, Table, theme, Typography } from 'antd'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ThHTMLAttributes } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import DeleteDialog from '@/components/deleteDialog'
@@ -77,6 +77,31 @@ type Props = {
 
 const headerTextStyle = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } satisfies CSSProperties
 
+/** 表头右边缘的列宽拖拽手柄与排序标题分离，点击手柄不触发排序。 */
+function ColumnResizeHeaderCell({ className, children, ...cellProps }: ThHTMLAttributes<HTMLTableCellElement>) {
+  const { t } = useTranslation()
+  const resizable = className?.includes('data-resizable-header')
+  return (
+    <th className={className} {...cellProps}>
+      {children}
+      {resizable && (
+        <span
+          className="data-column-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('调整列宽')}
+          tabIndex={0}
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') event.stopPropagation()
+          }}
+        />
+      )}
+    </th>
+  )
+}
+
 /** 展示当前页面的最新结果；表操作从对象树菜单发起，结果表使用虚拟滚动。 */
 export default function QueryResults({ model, themeMode }: Props) {
   const { t } = useTranslation()
@@ -122,6 +147,54 @@ export default function QueryResults({ model, themeMode }: Props) {
   }
   const [sorting, setSorting] = useState<{ result?: typeof result; sort?: ResultSort }>({})
   const sort = sorting.result === result ? sorting.sort : undefined
+  const columnSizingKey = `${run?.id ?? ''}:${resultIndex}:${result?.columns.length ?? 0}`
+  const [columnSizing, setColumnSizing] = useState<{ key: string; widths: Record<number, number> }>({ key: '', widths: {} })
+  const columnWidths = columnSizing.key === columnSizingKey ? columnSizing.widths : {}
+
+  function setColumnWidth(index: number, width: number) {
+    const lastIndex = (result?.columns.length ?? 0) - 1
+    const widths = { ...columnWidths, [index]: width }
+    // 首次拖拽其他列时固定最后一列的实际宽度，避免自动伸展突然回落到默认值。
+    if (lastIndex >= 0 && index !== lastIndex && widths[lastIndex] === undefined) {
+      const lastCell = viewport.current?.querySelectorAll<HTMLElement>('.ant-table-thead th.data-resizable-header')[lastIndex]
+      const measured = lastCell?.getBoundingClientRect().width
+      if (measured) widths[lastIndex] = Math.max(resultTableLayout.minColumnWidth, Math.round(measured))
+    }
+    setColumnSizing({ key: columnSizingKey, widths })
+  }
+
+  function startColumnResize(event: ReactPointerEvent<HTMLTableCellElement>, index: number) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    const startWidth = event.currentTarget.getBoundingClientRect().width
+    const startX = event.clientX
+    const handleMove = (moveEvent: PointerEvent) => {
+      setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(startWidth + moveEvent.clientX - startX)))
+    }
+    const stop = () => {
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
+      viewport.current?.style.removeProperty('cursor')
+      viewport.current?.style.removeProperty('user-select')
+    }
+    window.addEventListener('pointermove', handleMove)
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
+    if (viewport.current) {
+      viewport.current.style.cursor = 'col-resize'
+      viewport.current.style.userSelect = 'none'
+    }
+  }
+
+  function nudgeColumn(event: ReactKeyboardEvent<HTMLTableCellElement>, index: number) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    event.preventDefault()
+    event.stopPropagation()
+    const currentWidth = event.currentTarget.getBoundingClientRect().width
+    setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(currentWidth + (event.key === 'ArrowRight' ? 16 : -16))))
+  }
   const [selectedView, setSelectedView] = useState<{
     pageId: string
     runId?: string
@@ -153,6 +226,7 @@ export default function QueryResults({ model, themeMode }: Props) {
       fixed: 'left' as const,
       align: 'right' as const,
       className: 'cell-index',
+      onHeaderCell: () => ({ style: { verticalAlign: 'top' } }),
       render: (
         _: unknown,
         row: {
@@ -163,6 +237,8 @@ export default function QueryResults({ model, themeMode }: Props) {
     ...(result?.columns || []).map((column, index) => {
       const numeric = isNumericResultType(column.type ?? '')
       const name = run?.kind === 'structure' ? t(column.name) : column.name
+      const lastColumn = index === (result?.columns.length ?? 0) - 1
+      const defaultWidth = run?.kind === 'ddl' || lastColumn ? undefined : adapter?.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : numeric ? 140 : 220
       return {
         title: (
           <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 2, textAlign: 'start' }}>
@@ -179,7 +255,17 @@ export default function QueryResults({ model, themeMode }: Props) {
         key: String(index),
         sorter: true,
         sortOrder: sort?.column === index ? sort.order : null,
-        align: numeric ? ('right' as const) : undefined,
+        onHeaderCell: () => ({
+          className: 'data-resizable-header',
+          onPointerDown: (event: ReactPointerEvent<HTMLTableCellElement>) => {
+            if (!(event.target instanceof HTMLElement) || !event.target.classList.contains('data-column-resizer')) return
+            startColumnResize(event, index)
+          },
+          onKeyDown: (event: ReactKeyboardEvent<HTMLTableCellElement>) => {
+            if (!(event.target instanceof HTMLElement) || !event.target.classList.contains('data-column-resizer')) return
+            nudgeColumn(event, index)
+          }
+        }),
         onCell: (row: { key: number }) => ({
           className: editing.isDirty(row.key, index) ? 'data-cell-dirty' : undefined,
           style: numeric ? { fontVariantNumeric: 'tabular-nums' } : undefined,
@@ -187,7 +273,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             if (tab.kind === 'data' && adapter?.dataEditing && row.key >= 0) void editing.begin(row.key, index)
           }
         }),
-        width: run?.kind === 'ddl' ? undefined : index === (result?.columns.length ?? 0) - 1 ? undefined : adapter?.isSQLColumn(column.name) ? resultSQLLayout.columnWidth : numeric ? 140 : 220,
+        width: columnWidths[index] ?? defaultWidth,
         render: (
           _: unknown,
           row: {
@@ -421,7 +507,8 @@ export default function QueryResults({ model, themeMode }: Props) {
               ref={table}
               virtual
               size={appearance.tableSize}
-              className="data-table"
+              className={`data-table${Object.keys(columnWidths).length ? ' data-table-sized' : ''}`}
+              components={{ header: { cell: ColumnResizeHeaderCell } }}
               showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}
               styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
               tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}

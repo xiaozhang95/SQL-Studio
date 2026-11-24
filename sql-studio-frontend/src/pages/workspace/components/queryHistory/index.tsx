@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons'
-import { Drawer, Empty, Input, Space, Table, Tag } from 'antd'
+import { Drawer, Empty, Input, Space, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -8,6 +8,7 @@ import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
+import { ResizableTable } from '@/components/resizableTable'
 import { appearance, ComponentSize } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
@@ -155,9 +156,10 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
         allowClear
       />
       <div ref={viewport} style={{ flex: 1, minHeight: 0, minWidth: 0, marginTop: 16, overflow: 'hidden' }}>
-        <Table<HistoryItem>
+        <ResizableTable<HistoryItem>
           size={appearance.tableSize}
           className="history-table"
+          resizeKey={connectionId ?? ''}
           style={{ '--history-body-height': `${bodyHeight || 24}px` } as CSSProperties}
           rowKey="id"
           columns={columns}

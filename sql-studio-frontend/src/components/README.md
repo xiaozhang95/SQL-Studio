@@ -22,6 +22,7 @@
 - [contentLoading](contentLoading/README.md)：工作台与 AI 助手共用的内容区加载及结果刷新提示。
 
 - [contentCard](contentCard/README.md)：内容与代码卡片的统一外框。
+- [resizableTable](resizableTable/README.md)：业务表格统一的可拖拽列宽入口，固定列保持原宽。
 - [emptyStateIcon](emptyStateIcon/README.md)：空态图标尺寸与主题色。
 - [dropdownChevron](dropdownChevron/README.md)：下拉箭头尺寸、颜色与禁用态。
 

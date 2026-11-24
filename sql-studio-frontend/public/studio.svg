@@ -1,16 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
-    <linearGradient id="background" x1="12" y1="4" x2="116" y2="128" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1ca35a"/>
-      <stop offset="1" stop-color="#0b5a2f"/>
+    <linearGradient id="background" x1="10" y1="2" x2="122" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#23AB61"/>
+      <stop offset="1" stop-color="#094526"/>
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="28" fill="url(#background)"/>
-  <g fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="59" cy="38" rx="28" ry="11"/>
-    <path d="M31 38v44c0 6.1 12.5 11 28 11s28-4.9 28-11V38"/>
-    <path d="M31 59c0 6.1 12.5 11 28 11s28-4.9 28-11"/>
-  </g>
-  <circle cx="91" cy="89" r="22" fill="#0a4223"/>
-  <path d="m80 81 8 8-8 8m14 0h9" fill="none" stroke="#c9f5da" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 64 18 Q 74 56 108 64 Q 74 72 64 110 Q 54 72 20 64 Q 54 56 64 18 Z" fill="#fff"/>
+  <path d="M 99 18 Q 100.4 27.6 110 29 Q 100.4 30.4 99 40 Q 97.6 30.4 88 29 Q 97.6 27.6 99 18 Z" fill="#C9F5DA"/>
 </svg>

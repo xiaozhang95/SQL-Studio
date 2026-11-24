@@ -249,6 +249,68 @@ body,
 .database-object-name > .anticon {
   flex: none;
 }
+// 共享表格列宽手柄覆盖表头右边缘的命中区，透明外观不干扰排序图标与文字。
+.resizable-table .resizable-column-resizer {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-end: 0;
+  z-index: 2;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.resizable-table .resizable-column-resizer::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 3px;
+  width: 1px;
+  border-radius: 1px;
+  background: transparent;
+}
+.resizable-table .resizable-column-resizer:hover::after,
+.resizable-table .resizable-column-resizer:focus-visible::after {
+  background: var(--ant-color-text-tertiary);
+}
+.resizable-table .resizable-column-resizer:focus-visible {
+  outline: 1px solid var(--ant-color-primary);
+  outline-offset: -1px;
+}
+// 手动调整列宽后按实际宽度布局，允许最后一列收窄并保留横向滚动。
+.resizable-table.resizable-table-sized > .ant-table-wrapper table {
+  min-width: 0 !important;
+}
+// 列宽手柄覆盖表头右边缘的命中区，透明外观不干扰排序图标与文字。
+.data-table .data-column-resizer {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-end: 0;
+  z-index: 2;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.data-table .data-column-resizer::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 3px;
+  width: 1px;
+  border-radius: 1px;
+  background: transparent;
+}
+.data-table .data-column-resizer:hover::after,
+.data-table .data-column-resizer:focus-visible::after {
+  background: var(--ant-color-text-tertiary);
+}
+.data-table .data-column-resizer:focus-visible {
+  outline: 1px solid var(--ant-color-primary);
+  outline-offset: -1px;
+}
+// 手动调整列宽后按实际宽度布局，允许最后一列收窄并保留横向滚动。
+.data-table.data-table-sized table {
+  min-width: 0 !important;
+}
 // 暂存警示底色需高于原生行 hover 优先级，避免移入后丢失编辑标记。
 .data-table .ant-table-tbody .ant-table-row > .ant-table-cell.data-cell-dirty {
   background: var(--ant-color-warning-bg);

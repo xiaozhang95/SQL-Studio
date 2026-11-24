@@ -20,7 +20,7 @@ export const sqlEditorAppearance = EditorView.theme({
     color: 'var(--ant-color-text-tertiary)',
     borderRight: '1px solid var(--border)'
   },
-  '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 4px' },
+  '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 20px' },
   '.cm-activeLine': { background: 'transparent' },
   '.cm-activeLineGutter': { background: 'transparent', color: 'var(--primary)', fontWeight: '500', boxShadow: 'inset 2px 0 0 var(--primary)' },
   '.cm-keyword': { color: 'var(--code-keyword)' },

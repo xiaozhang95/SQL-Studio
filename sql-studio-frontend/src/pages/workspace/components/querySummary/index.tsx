@@ -1,7 +1,8 @@
-import { Checkbox, Flex, Table, Typography } from 'antd'
+import { Checkbox, Flex, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 
+import { ResizableTable } from '@/components/resizableTable'
 import { appearance } from '@/constant/appearance'
 import type { DatabaseType } from '@/databases/typings'
 import { useTablePagination } from '@/hooks/useTablePagination'
@@ -79,8 +80,9 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
           {t('仅显示错误')}
         </Checkbox>
       </Flex>
-      <Table
+      <ResizableTable
         size={appearance.tableSize}
+        resizeKey={run.id}
         columns={columns}
         rowKey="key"
         dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || (item.error && !executionCancelled(item)))}

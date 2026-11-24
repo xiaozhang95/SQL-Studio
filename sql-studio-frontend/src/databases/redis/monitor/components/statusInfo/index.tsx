@@ -1,6 +1,7 @@
-import { Card, Descriptions, Empty, Flex, Table, Typography } from 'antd'
+import { Card, Descriptions, Empty, Flex, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 
+import { ResizableTable } from '@/components/resizableTable'
 import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { MonitorSnapshot } from '@/typings/database'
@@ -23,7 +24,7 @@ export default function StatusInfo({ detail }: { detail: RedisDetails | undefine
   return (
     <Flex vertical gap="middle">
       <Card size="small" title={t('键空间统计')}>
-        <Table<Keyspace>
+        <ResizableTable<Keyspace>
           size={appearance.tableSize}
           rowKey="database"
           dataSource={detail?.keyspaces ?? []}

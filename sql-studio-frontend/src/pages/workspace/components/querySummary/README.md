@@ -4,7 +4,7 @@
 
 [组件索引](../README.md) · [源码](index.tsx)
 
-QuerySummary 接收 run:RunState、running:boolean、themeMode:ThemeMode 和可选 databaseType。汇总已处理/总数、成功、错误、开始/结束时间及批次运行耗时，下方按语句显示高亮可复制 SQL、消息和查询耗时。仅显示错误为组件内筛选，不影响结果选择。旧快照缺少时序字段显示未记录，不伪造获取耗时。表格自身横向滚动，外层容器负责纵向滚动。
+QuerySummary 接收 run:RunState、running:boolean、themeMode:ThemeMode 和可选 databaseType。汇总已处理/总数、成功、错误、开始/结束时间及批次运行耗时，下方按语句显示高亮可复制 SQL、消息和查询耗时。仅显示错误为组件内筛选，不影响结果选择。旧快照缺少时序字段显示未记录，不伪造获取耗时。表格自身横向滚动，列宽可拖动表头右缘调整，文字统一左对齐；外层容器负责纵向滚动。
 
 查询列采用 SQLPreview compact 模式，第一行并排显示实际 SQL 与复制图标。消息列展示语句错误的具体原因。连接和请求错误在顶部展示，摘要保留执行状态并单独标记取消。
 

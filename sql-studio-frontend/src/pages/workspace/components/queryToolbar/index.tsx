@@ -24,7 +24,7 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
       wrap
       style={{
         flex: 'none',
-        minHeight: 44,
+        minHeight: 42,
         paddingInline: token.padding,
         borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,

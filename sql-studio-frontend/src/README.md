@@ -21,7 +21,7 @@ Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗�
 
 删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](components/deleteDialog/README.md) 确认目标与范围。库表对象使用业务弹框，模型和字段草稿使用 [DeleteConfirmation](components/deleteConfirmation/README.md) 气泡。
 
-全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型使用浅色文字，NULL 使用浅色斜体，金额/数字右对齐并使用等宽数字；这些文字与其他界面文本一样跟随全局字体和字号。状态/耗时仍不使用 Tag，不展示连接来源标签。
+全部原生组件覆盖集中在 app.scss；App 不覆盖 placeholder、文字和图标原色。运行工具栏右侧通过 useSQLImport 导入本地 SQL 文件，并可导出当前标签完整 SQL。查询页和对象页共用一层带图标的主页面页签。App 不覆盖全局圆角，沿用 Ant Design 默认 token；主工作区贴边铺满，编辑器和结果面板不使用卡片外框或阴影。结果字段类型使用浅色文字，NULL 使用浅色斜体，除行号列外表格文字统一左对齐，数字使用等宽数字；这些文字与其他界面文本一样跟随全局字体和字号。状态/耗时仍不使用 Tag，不展示连接来源标签。
 
 对象栏和会话栏共用 [SidebarControls](components/sidebarControls/README.md) 的标题行、搜索行、分隔线和 16px 水平内边距。工作区工具栏、页签栏和内容内边距统一为 workspace-inset=16px。树使用 28px 内容行与 2px 行间距；结果表使用 30px 紧凑行高、吸顶表头和水平分隔线，执行历史沿用 small Table。
 
