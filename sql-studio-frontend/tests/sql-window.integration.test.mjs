@@ -307,9 +307,9 @@ for (const type of ['mysql', 'postgresql']) {
           assert.equal(output.batch.statements[1].result.rows[0][0], name)
           assert.equal(output.batch.statements[2].result.rows[0][0], '3')
         })
-        await step(t, 'Navicat-style setup, table recreation, inserts, updates and deletes execute in the window', async () => {
+        await step(t, 'Export-style setup, table recreation, inserts, updates and deletes execute in the window', async () => {
           const r = await success(
-            "/* Navicat-style dump */ SET NAMES utf8mb4; SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS flow; CREATE TABLE flow(id BIGINT PRIMARY KEY,label VARCHAR(100),amount DECIMAL(20,4)); INSERT INTO flow VALUES(9007199254740993,'中文;one',12.3400),(2,'',0); SELECT * FROM flow ORDER BY id; UPDATE flow SET label='changed' WHERE id=2; DELETE FROM flow WHERE id=2; UPDATE flow SET label='none' WHERE id=2; SET FOREIGN_KEY_CHECKS=1; SELECT * FROM flow;",
+            "/* Export-style dump */ SET NAMES utf8mb4; SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS flow; CREATE TABLE flow(id BIGINT PRIMARY KEY,label VARCHAR(100),amount DECIMAL(20,4)); INSERT INTO flow VALUES(9007199254740993,'中文;one',12.3400),(2,'',0); SELECT * FROM flow ORDER BY id; UPDATE flow SET label='changed' WHERE id=2; DELETE FROM flow WHERE id=2; UPDATE flow SET label='none' WHERE id=2; SET FOREIGN_KEY_CHECKS=1; SELECT * FROM flow;",
             11
           )
           assert.equal(r[3].isQuery, false)

@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 import type { useDataExport } from '../../hooks/useDataExport'
 
-/** Navicat-style summary, bounded log and table progress with native theme tokens. */
+/** Compact summary, bounded log and table progress with native theme tokens. */
 export default function DataExport({ model }: { model: ReturnType<typeof useDataExport> }) {
   const { t, language } = useTranslation()
 

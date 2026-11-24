@@ -7,10 +7,6 @@ type Palette = {
   success: string
   warning: string
   error: string
-  text: string
-  textSecondary: string
-  textTertiary: string
-  textQuaternary: string
   canvas: string
   surface: string
   elevated: string
@@ -32,10 +28,6 @@ const palettes: Record<ThemeMode, Palette> = {
     success: '#16a34a',
     warning: '#b45309',
     error: '#dc2626',
-    text: '#000000',
-    textSecondary: '#556055',
-    textTertiary: '#7d887d',
-    textQuaternary: '#aab3aa',
     canvas: '#f4f6f2',
     surface: '#ffffff',
     elevated: '#ffffff',
@@ -54,10 +46,6 @@ const palettes: Record<ThemeMode, Palette> = {
     success: '#42d47c',
     warning: '#fbbf24',
     error: '#f87171',
-    text: '#ffffff',
-    textSecondary: '#a9b1a7',
-    textTertiary: '#7e877d',
-    textQuaternary: '#586157',
     canvas: '#0a0a0a',
     surface: '#131313',
     elevated: '#1a1a1a',
@@ -94,14 +82,6 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       colorSuccess: palette.success,
       colorWarning: palette.warning,
       colorError: palette.error,
-      colorTextBase: palette.text,
-      colorText: palette.text,
-      colorTextHeading: palette.text,
-      colorTextLabel: palette.text,
-      colorTextSecondary: palette.textSecondary,
-      colorTextTertiary: palette.textTertiary,
-      colorTextQuaternary: palette.textQuaternary,
-      colorTextLightSolid: themeMode === 'dark' ? '#06170c' : '#ffffff',
       colorBgLayout: palette.canvas,
       colorBgContainer: palette.surface,
       colorBgElevated: palette.elevated,

@@ -56,7 +56,7 @@ SELECT * FROM missing_window_table;
 SELECT 999 AS never_run;
 ```
 
-第一条结果保留，第二条失败且提示后续一条未执行。另验证 ALTER、DROP、TRUNCATE、RENAME、SET、可执行版本注释可在临时库执行。用 Navicat 风格的 SET NAMES、DROP IF EXISTS、CREATE、INSERT 脚本验证真实执行。同一 MySQL 批次内，SET、用户变量和显式事务状态会延续到后续语句。每次新运行建立自己的会话。
+第一条结果保留，第二条失败且提示后续一条未执行。另验证 ALTER、DROP、TRUNCATE、RENAME、SET、可执行版本注释可在临时库执行。用导出脚本常见的 SET NAMES、DROP IF EXISTS、CREATE、INSERT 组合验证真实执行。同一 MySQL 批次内，SET、用户变量和显式事务状态会延续到后续语句。每次新运行建立自己的会话。
 
 普通字面值 `SELECT '/*! literal */';` 应成功；含分号的表名使用反引号，不能按内部字符切分。二进制/JSON：
 
