@@ -324,7 +324,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             style={{
               color:
                 node.databaseState === 'open'
-                  ? 'var(--ant-color-success)'
+                  ? 'var(--ant-color-primary)'
                   : node.databaseState === 'opening'
                     ? 'var(--ant-color-primary)'
                     : node.databaseState === 'error'

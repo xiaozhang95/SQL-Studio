@@ -24,25 +24,25 @@ type Palette = {
 /** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
 const palettes: Record<ThemeMode, Palette> = {
   light: {
-    primary: '#15803d',
+    primary: '#1c55dc',
     success: '#16a34a',
     warning: '#b45309',
     error: '#dc2626',
-    canvas: '#f4f6f2',
+    canvas: '#f4f6f8',
     surface: '#ffffff',
     elevated: '#ffffff',
-    border: '#e2e7df',
-    borderStrong: '#cfd7cd',
-    fill: '#eef1ec',
-    fillSecondary: '#f0f3ee',
-    fillTertiary: '#e9ede6',
-    fillQuaternary: '#f0f3ee',
-    hover: '#f0f3ee',
-    active: '#f0f3ee',
-    mask: 'rgba(18, 24, 19, 0.38)'
+    border: '#e2e7ec',
+    borderStrong: '#cfd7de',
+    fill: '#eef1f5',
+    fillSecondary: '#f0f3f7',
+    fillTertiary: '#e9edf2',
+    fillQuaternary: '#f0f3f7',
+    hover: '#f0f3f7',
+    active: '#f0f3f7',
+    mask: 'rgba(17, 24, 39, 0.38)'
   },
   dark: {
-    primary: '#42d47c',
+    primary: '#5fa8fb',
     success: '#42d47c',
     warning: '#fbbf24',
     error: '#f87171',
@@ -76,7 +76,7 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlOutline: tint(palette.primary, 20, 'transparent'),
       colorWarningOutline: tint(palette.warning, 20, 'transparent'),
       colorErrorOutline: tint(palette.error, 20, 'transparent'),
-      // 主色与信息色共用绿色，亮暗及交互色由算法派生。
+      // 主色与信息色共用应用蓝，亮暗及交互色由算法派生。
       colorPrimary: palette.primary,
       colorInfo: palette.primary,
       colorSuccess: palette.success,

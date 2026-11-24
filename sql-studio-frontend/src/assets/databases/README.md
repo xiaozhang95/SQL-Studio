@@ -2,17 +2,17 @@
 
 [mysql-official.svg](mysql-official.svg) 从 [MySQL 官网原始 SVG Logo](https://www.mysql.com/common/logos/mysql-logo.svg) 提取海豚标记：保留两条原始路径、原始变换与 #00758F 色值，仅移除字标并收紧 viewBox，不重绘或改色。MySQL profile 经 EngineIcon 使用此资源。
 
-对象类型及操作图标使用 `@ant-design/icons`，无需另存图片。新增资源应记录来源与实际调用者；移除最后一个调用者时同步清理资源和说明，避免保留无用途的历史品牌图片。应用 Logo 位于 [public/studio.svg](../../../public/studio.svg)，沿用 master 的数据库圆柱与查询提示符构图，使用主题绿色渐变底、白色圆柱和深色圆底浅绿提示符。`index.html` 用作 favicon，Electron 从同一 SVG 生成开屏、窗口及安装包图标。
+对象类型及操作图标使用 `@ant-design/icons`，无需另存图片。新增资源应记录来源与实际调用者；移除最后一个调用者时同步清理资源和说明，避免保留无用途的历史品牌图片。应用 Logo 位于 [public/studio.svg](../../../public/studio.svg)，为双层窗口 + 终端提示符 + 放大镜：蓝色渐变后窗、浅蓝窗体、深蓝标题栏与提示符，放大镜使用青蓝到紫的渐变；画布裁切为 560 × 560 正方形并输出 1024 尺寸，用于统一 favicon、标题栏与 Electron 图标。`index.html` 用作 favicon，Electron 从同一 SVG 生成开屏、窗口及安装包图标。
 
 postgresql.svg 使用 [PostgreSQL 官方单色白色大象图标](https://wiki.postgresql.org/wiki/File:PostgreSQL_logo.1color_white.svg)，移除了原文件中的背景矩形以保留透明背景。
 
 实际调用者为 postgresql/profile，经 engineIcon 用于类型选择、表单头部、对象树和连接选择器。
 
-MySQL、MariaDB、PostgreSQL 和 GreptimeDB 使用绿色圆角底板与白色图形。未连接时底板与未打开数据库图标共用 --inactive-icon（text-tertiary）主题色。SVG 保留源文件，图形通过图片 filter 显示白色，悬停和选中不改变图形颜色。
+MySQL、MariaDB、PostgreSQL 和 GreptimeDB 使用主色（蓝）圆角底板与白色图形。未连接时底板与未打开数据库图标共用 --inactive-icon（text-tertiary）主题色。SVG 保留源文件，图形通过图片 filter 显示白色，悬停和选中不改变图形颜色。
 
 engineIcon 将半透明灰色先合成到主题容器底色 --surface 上，避免亮暗主题的选中背景混入灰色底板。
 
-[mariadb.svg](mariadb.svg) 使用 [Simple Icons MariaDB 图标](https://github.com/simple-icons/simple-icons/blob/develop/icons/mariadb.svg)（Simple Icons，CC0），从 jsDelivr simple-icons v15 发布包取得，保留原始 24×24 路径。调用者为 mariadb/profile，经 engineIcon 用于类型选择、表单、对象树及连接选择；沿用现有绿色底板与白色图形。
+[mariadb.svg](mariadb.svg) 使用 [Simple Icons MariaDB 图标](https://github.com/simple-icons/simple-icons/blob/develop/icons/mariadb.svg)（Simple Icons，CC0），从 jsDelivr simple-icons v15 发布包取得，保留原始 24×24 路径。调用者为 mariadb/profile，经 engineIcon 用于类型选择、表单、对象树及连接选择；沿用现有主色底板与白色图形。
 
 [greptimedb.svg](greptimedb.svg) 原样取自 [GreptimeDB 官方文档仓库的 logo-routine.svg](https://github.com/GreptimeTeam/docs/blob/2e5e230f129fea81801907b7c4944a37c966a60b/static/img/logo-routine.svg)。由 GreptimeDB profile 用于连接表单、对象树和连接选择器。显示时使用共享白色滤镜和圆角底板。
 

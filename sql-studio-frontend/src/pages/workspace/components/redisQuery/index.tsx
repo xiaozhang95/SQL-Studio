@@ -37,6 +37,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
   const { token } = theme.useToken()
   const [tool, setTool] = useState(() => readRedisTool(model.tab.id))
   const [commandBusy, setCommandBusy] = useState(false)
+  const [keysOpened, setKeysOpened] = useState(tool === 'keys')
   const [pubSubOpened, setPubSubOpened] = useState(tool === 'pubsub')
   const [loadedCommand, setLoadedCommand] = useState<HistoryItem>()
   const historyLoad = useRef<HistoryItem | undefined>(undefined)
@@ -93,6 +94,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
                 const next = tool === id ? 'editor' : id
                 setTool(next)
                 saveRedisTool(tab.id, next)
+                if (id === 'keys') setKeysOpened(true)
                 if (id === 'pubsub') setPubSubOpened(true)
               }}
             />
@@ -139,9 +141,15 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
               <QueryResults model={{ ...model, running: blocked }} themeMode={themeMode} />
             </>
           )}
-          {active && tool === 'keys' && (
-            <div style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
-              <KeyBrowser key={`${connection.id}:${database}`} id={connection.id} database={Number(database)} themeMode={themeMode} />
+          {keysOpened && (
+            <div style={{ display: active && tool === 'keys' ? 'flex' : 'none', flex: 1, minWidth: 0, minHeight: 0 }}>
+              <KeyBrowser
+                key={`${connection.id}:${database}`}
+                id={connection.id}
+                database={Number(database)}
+                themeMode={themeMode}
+                active={active && tool === 'keys'}
+              />
             </div>
           )}
           {pubSubOpened && (

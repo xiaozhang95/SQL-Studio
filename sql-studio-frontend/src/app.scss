@@ -5,16 +5,16 @@
 html[data-theme='light'] {
   --thumb: rgba(144, 147, 153, 0.5);
   --thumb-hover: rgba(144, 147, 153, 0.8);
-  --selection: rgba(21, 128, 61, 0.14);
-  --shadow-xs: 0 1px 2px rgba(17, 24, 18, 0.05);
-  --composer-shadow: 0 4px 12px rgba(17, 24, 18, 0.07);
+  --selection: rgba(28, 85, 220, 0.14);
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --composer-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
   --card-shadow: var(--shadow-xs);
   color-scheme: light;
 }
 html[data-theme='dark'] {
   --thumb: rgba(255, 255, 255, 0.2);
   --thumb-hover: rgba(255, 255, 255, 0.35);
-  --selection: rgba(66, 212, 124, 0.2);
+  --selection: rgba(95, 168, 251, 0.2);
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
   --composer-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   --card-shadow: var(--shadow-xs);
@@ -28,11 +28,11 @@ html[data-theme='dark'] {
   --text-tertiary: var(--ant-color-text-tertiary);
   --text-quaternary: var(--ant-color-text-quaternary);
   --surface: var(--ant-color-bg-container);
-  --surface-subtle: #f8faf6;
+  --surface-subtle: #f8fafc;
   --surface-hover: var(--ant-control-item-bg-hover);
   --primary: var(--ant-color-primary);
   // 已连接引擎图标的底板。
-  --brand: #15803d;
+  --brand: #1c55dc;
   // 导航激活项与 AI 图标的底色统一使用当前主色的 12% 不透明度。
   --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
   --border: var(--ant-color-border-secondary);

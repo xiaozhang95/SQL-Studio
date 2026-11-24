@@ -72,7 +72,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
   })
   const finalEntry = {
     key: -1,
-    color: done ? 'green' : error ? 'red' : 'gray',
+    color: done ? token.colorSuccess : error ? token.colorError : token.colorTextTertiary,
     content: error ? (
       <Collapse
         key={startedAt}

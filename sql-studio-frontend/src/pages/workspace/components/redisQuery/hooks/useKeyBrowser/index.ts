@@ -11,7 +11,7 @@ type ScanPage = Omit<RedisKeyPage, 'cursor'> & { pattern: string; cursor: string
 const ttlRefreshMs = 1000
 const subsequentScanPages = 10
 
-export function useKeyBrowser(id: string, database: number) {
+export function useKeyBrowser(id: string, database: number, active: boolean) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('')
   const [request, setRequest] = useState<ScanRequest>({ pattern: '', cursor: '0' })
@@ -116,7 +116,7 @@ export function useKeyBrowser(id: string, database: number) {
   )
 
   useEffect(() => {
-    if (!selected || !detail || !expiring || saving) return
+    if (!active || !selected || !detail || !expiring || saving) return
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
     async function refreshTTL(ref: string) {
@@ -138,7 +138,7 @@ export function useKeyBrowser(id: string, database: number) {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [id, database, selected, detail, expiring, saving, clearMissingKey])
+  }, [active, id, database, selected, detail, expiring, saving, clearMissingKey])
 
   function scan(pattern: string, cursor = '0', continuous = false) {
     if (mutation.current) return

@@ -17,7 +17,7 @@ import KeyDelete from '../keyDelete'
 import KeyEditor from '../keyEditor'
 import KeyTree from '../keyTree'
 
-export default function KeyBrowser({ id, database, themeMode }: { id: string; database: number; themeMode: ThemeMode }) {
+export default function KeyBrowser({ id, database, themeMode, active }: { id: string; database: number; themeMode: ThemeMode; active: boolean }) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [deleteTarget, setDeleteTarget] = useState<RedisKey>()
@@ -53,10 +53,10 @@ export default function KeyBrowser({ id, database, themeMode }: { id: string; da
     promptAction,
     save,
     commit
-  } = useKeyBrowser(id, database)
-  usePageError(error)
-  usePageError(detailError)
-  usePageError(lastChange === 'value' || lastChange === 'ttl' ? changeError : undefined)
+  } = useKeyBrowser(id, database, active)
+  usePageError(active ? error : undefined)
+  usePageError(active ? detailError : undefined)
+  usePageError(active && (lastChange === 'value' || lastChange === 'ttl') ? changeError : undefined)
   const scanningMore = loading && (request.cursor !== '0' || request.continuous === true)
   const scanningBatch = scanningMore && !request.continuous
   const scanningContinuously = scanningMore && Boolean(request.continuous)
@@ -186,19 +186,21 @@ export default function KeyBrowser({ id, database, themeMode }: { id: string; da
         )}
       </section>
 
-      <KeyDelete
-        item={deleteTarget}
-        saving={saving}
-        disabled={loading}
-        error={lastChange === 'delete' ? changeError : ''}
-        onConfirm={() => void confirmDelete()}
-        onCancel={() => {
-          if (!saving) setDeleteTarget(undefined)
-        }}
-      />
+      {active && (
+        <KeyDelete
+          item={deleteTarget}
+          saving={saving}
+          disabled={loading}
+          error={lastChange === 'delete' ? changeError : ''}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => {
+            if (!saving) setDeleteTarget(undefined)
+          }}
+        />
+      )}
       <Modal
         title={t('新增键')}
-        open={Boolean(action)}
+        open={active && Boolean(action)}
         onCancel={() => {
           setAction(undefined)
           setChangeError('')

@@ -4,7 +4,7 @@
 
 EngineIcon 读取 getDatabaseAdapter(type).profile，不直接绑定引擎资产。type?:DatabaseType 省略为 MySQL；variant?:icon|logo 默认为 icon；connected?:boolean 默认为 true；size?:number 默认 icon 32px、logo 40px。树与连接下拉传 20px，类型列表传 32px；组件没有回调。
 
-MySQL、MariaDB、PostgreSQL 和 GreptimeDB 已连接时使用实色品牌绿 `--brand` 圆角底板和白色图形，与主按钮、Rail 激活块保持一致。SVG 源文件保持不变，通过图片 filter 白色化。connected=false 时底板使用主题变量 --inactive-icon，与未打开数据库图标共用 text-tertiary 灰色。悬停、选中和折叠沿用当前连接状态。数据库、schema、表和视图沿用原生语义图标。
+MySQL、MariaDB、PostgreSQL 和 GreptimeDB 已连接时使用实色品牌蓝 `--brand` 圆角底板和白色图形，与主按钮、Rail 激活块保持一致。SVG 源文件保持不变，通过图片 filter 白色化。connected=false 时底板使用主题变量 --inactive-icon，与未打开数据库图标共用 text-tertiary 灰色。悬停、选中和折叠沿用当前连接状态。数据库、schema、表和视图沿用原生语义图标。
 
 text-tertiary 是半透明色，灰色底板及兼容品牌模式的灰色状态圆点通过同色渐变叠在 --surface 上，先合成当前主题下的灰色，防止选中行的主题背景透入。只调整自有图标底板，不覆盖 Ant Design 默认样式或改变字体。
 

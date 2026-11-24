@@ -6,4 +6,4 @@ mysqlProfile 为只读 DatabaseProfile：引擎值 mysql、标签 MySQL、默认
 
 外层表单及图标组件只读取配置，不自行复制端口、标签或绑定 MySQL 资源。资源来源见 [资产说明](../../../assets/databases/README.md)；保留原始图片颜色，连接状态由公共组件的圆点展示。
 
-`EngineIcon` 将海豚以白色图形呈现，连接状态通过绿色或灰色圆角底板区分。
+`EngineIcon` 将海豚以白色图形呈现，连接状态通过主色或灰色圆角底板区分。

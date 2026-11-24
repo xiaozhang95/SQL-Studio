@@ -34,7 +34,7 @@ DatabaseAdapter.foreignKeys? 表示引擎支持读取外键元数据。启用的
 
 tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(tables,schema?) 提供引擎所属结构列表列/行，PostgreSQL 拆开 Schema 和表名列。SQLCompletionContext.namespace? 表示当前 schema，schema 字段仍是元数据 map。DatabaseExplorerAdapter.referencedTables? 根据所属方言识别 AI 上下文引用。
 
-MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于绿色或灰色圆角底板上。
+MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于主色或灰色圆角底板上。
 
 DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。支持占位的引擎通过可选 viewStandIn 生成占位语句及最终定义，用于恢复包含多个视图的转储。deleteRowSQL 根据完整主键或无主键表的原始整行生成单行删除。匹配所需的字段缺失或无法准确比较时，在提交前报告原因。
 

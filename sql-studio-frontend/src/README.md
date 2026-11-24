@@ -2,7 +2,7 @@
 
 开发前阅读并遵守 [前端开发规范](../../docs/FRONTEND_STANDARDS.md)。全局控件约定统一使用 appearance；数据库能力通过 databases 入口分派，页面和公共组件不承载引擎专属实现。
 
-进入后恢复本机工作区配置，没有记录时默认无查询标签；无查询标签时隐藏编辑器与执行工具栏，空白区展示操作提示，对象浏览结果独立展示；对象树双击数据库只展开/折叠，数据库右键可查看结构，双击表加载数据。连接表单的 label 与输入框左右排列。未选中树节点使用主题正文色，只有连接根节点按是否打开区分正常/灰色，折叠不置灰；库表图标始终正常。树高亮与查询下拉范围相互独立，连接根节点、选择器和弹窗统一使用引擎图形，连接根节点的绿色或灰色底板表示打开状态，选中行保留上下留白。
+进入后恢复本机工作区配置，没有记录时默认无查询标签；无查询标签时隐藏编辑器与执行工具栏，空白区展示操作提示，对象浏览结果独立展示；对象树双击数据库只展开/折叠，数据库右键可查看结构，双击表加载数据。连接表单的 label 与输入框左右排列。未选中树节点使用主题正文色，只有连接根节点按是否打开区分正常/灰色，折叠不置灰；库表图标始终正常。树高亮与查询下拉范围相互独立，连接根节点、选择器和弹窗统一使用引擎图形，连接根节点的主色或灰色底板表示打开状态，选中行保留上下留白。
 
 - [页面](pages/README.md)：工作区与页面私有组件/hooks。
 - [公共 hooks](hooks/README.md)：主题、语言、分页与共享状态。
@@ -11,7 +11,7 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题绿色。表操作位于对象树右键菜单，主区域按页面标签切换，标签末尾的加号用于新建查询。
+App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题主色。表操作位于对象树右键菜单，主区域按页面标签切换，标签末尾的加号用于新建查询。
 
 工作台、AI 助手、监控和同步的页面错误由共享 [PageErrorBanner](components/pageErrorBanner/README.md) 在内容上方显示，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
@@ -46,7 +46,7 @@ MySQL 和 MariaDB 对象树按“数据库 → 表 → 表名 → 字段/索引�
 
 Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任一功能页回到工作区，按当前标签逐项处理。非空查询分别提示“取消 / 不保存 / 保存”，空白查询直接关闭，每次仅保存该页内容，关闭后切到下一页；未提交对象修改按页确认。准备阶段暂停自动保存并通过 inert 锁定工作区交互，标签保持可见；全部标签处理完后，App 使用统一 ContentLoading 挂起页面并释放全部连接，提交空工作区。取消或失败保留当前和未处理标签，已关闭项不恢复。默认及自定义连接分组保留原展开/收起状态，只收起连接、数据库及后代。普通 Web 不增加退出确认或清理逻辑。
 
-Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design colorBorderSecondary（`--border`）。页签使用中性底、细边框和绿色活动线。
+Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design colorBorderSecondary（`--border`）。页签使用中性底、细边框和主色活动线。
 
 页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`，监控指标使用 `/monitor`，同步数据库使用 `/sync`。pushState 切换不刷新整页，popstate 同步前进、后退，工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这些页面路径，资源缺失及未知 API 仍返回各自的 404。
 
@@ -54,7 +54,7 @@ Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔
 
 系统设置在 Ant Design xs 断点使用带提示的图标分类栏，新建和编辑连接则将数据库类型移入顶部下拉框。业务 Modal 与确认框使用 Ant Design 默认位置。
 
-主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用 `#f4f6f2` 画布和 `#15803d` 主色；暗色使用 `#0a0a0a` 中性近黑画布和 `#42d47c` 主色，文字沿用 Ant Design 默认层级，背景与填充不掺绿色调。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
+主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用 `#f4f6f8` 画布和 `#1c55dc` 主色；暗色使用 `#0a0a0a` 中性近黑画布和 `#5fa8fb` 主色，文字沿用 Ant Design 默认层级。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
 
 Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme/README.md)。转储和同步的说明使用无可见描边的信息提示。
 
@@ -62,8 +62,8 @@ Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme
 
 内容卡片（Agent 的代码、过程、确认、回执，以及 SQL 预览面板）和 Agent 结果表格使用亮暗轻微阴影，分别通过 ContentCard.style 和 Table.styles.section 应用；不添加悬停上移，主工作区编辑器与结果面板继续保持平面布局。
 
-连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 绿色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题、字号和语言卡片统一使用中性边框，通过原生单选圆点展示选中状态。
+连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 主色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题、字号和语言卡片统一使用中性边框，通过原生单选圆点展示选中状态。
 
-全局主色由 constant/theme 的 colorPrimary 统一配置（亮色 `#15803d`、暗色 `#42d47c`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
+全局主色由 constant/theme 的 colorPrimary 统一配置（亮色 `#1c55dc`、暗色 `#5fa8fb`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
 原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置为 default；写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。
