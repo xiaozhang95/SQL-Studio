@@ -42,6 +42,7 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
   }
   const statistic = (metric: MetricDefinition, showChange = false) => {
     const change = showChange ? changeOf(metric) : undefined
+    const changed = change !== undefined && Math.abs(change) >= 0.05 ? change : undefined
     return (
       <div key={`${metric.key}:${metric.source ?? 'value'}`} style={{ minWidth: 0 }}>
         <Statistic
@@ -56,9 +57,13 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
           valueStyle={{ fontVariantNumeric: 'tabular-nums' }}
           style={{ minWidth: 0, overflowWrap: 'anywhere' }}
         />
-        {change !== undefined && Math.abs(change) >= 0.05 && (
-          <div style={{ marginTop: 2, color: token.colorTextSecondary, fontVariantNumeric: 'tabular-nums' }}>
-            {change >= 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%<span style={{ marginInlineStart: 4, color: token.colorTextTertiary }}>{t('较上次')}</span>
+        {showChange && (
+          <div style={{ minHeight: Math.round(token.fontSize * token.lineHeight), marginTop: 2, color: token.colorTextSecondary, fontVariantNumeric: 'tabular-nums' }}>
+            {changed !== undefined && (
+              <>
+                {changed >= 0 ? '↑' : '↓'} {Math.abs(changed).toFixed(1)}%<span style={{ marginInlineStart: 4, color: token.colorTextTertiary }}>{t('较上次')}</span>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -141,9 +146,14 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
             children: (
               <Flex vertical gap="middle">
                 {config.notice && <Typography.Text type="secondary">{t(config.notice)}</Typography.Text>}
-                <div style={{ display: 'grid', gridTemplateColumns: screens.xl ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)', gap: token.marginMD, alignItems: 'start' }}>
+                <div style={{ columnCount: screens.xl ? 2 : 1, columnGap: token.marginMD }}>
                   {sections.map((section) => (
-                    <Card key={section.key} size="small" title={t(config.sectionLabels[section.key] ?? section.key)} style={{ minWidth: 0 }}>
+                    <Card
+                      key={section.key}
+                      size="small"
+                      title={t(config.sectionLabels[section.key] ?? section.key)}
+                      style={{ minWidth: 0, breakInside: 'avoid', marginBottom: token.marginMD }}
+                    >
                       <Descriptions
                         size="small"
                         column={1}

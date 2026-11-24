@@ -375,6 +375,11 @@ body,
     }
   }
 
+  // card 型 Tabs 默认让激活项底边与内容区同色，芯片嵌入栏内时会显示为断线。
+  .ant-tabs-tab.ant-tabs-tab-active {
+    border-bottom-color: var(--border);
+  }
+
   .ant-tabs-tab:not(:hover, :focus-within, .ant-tabs-tab-active) .ant-tabs-tab-remove {
     opacity: 0;
   }

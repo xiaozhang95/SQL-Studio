@@ -1,4 +1,4 @@
-import { Card, Flex, Progress, Statistic, Tabs, Tag, theme, Typography } from 'antd'
+import { Card, Flex, Grid, Progress, Statistic, Tabs, Tag, theme, Typography } from 'antd'
 
 import TrendChart from '@/components/monitorTrendChart'
 import { redisModeLabel } from '@/databases/redis'
@@ -12,6 +12,8 @@ import { activityMetrics, overviewMetrics, trendCharts } from './constant'
 export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanelProps) {
   const { t, language } = useTranslation()
   const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
+  const columns = screens.xl ? 4 : 2
   const detail = snapshot.redis
   const used = Number(metricValue(snapshot, 'redis_memory_bytes'))
   const maximum = Number(metricValue(snapshot, 'redis_memory_max_bytes'))
@@ -24,7 +26,7 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
           <TrendChart key={chart.key} title={chart.title} series={chart.series} history={history} />
         ))}
       </div>
-      <div className="database-monitor-metrics" style={{ display: 'grid', gap: token.marginMD }}>
+      <div className="database-monitor-metrics" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: token.marginMD }}>
         {activityMetrics.map((metric) => (
           <Card key={metric.key} size="small" style={{ minWidth: 0 }}>
             <Statistic
@@ -52,7 +54,10 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
           </Flex>
         }
       >
-        <div className="database-monitor-metrics" style={{ display: 'grid', gap: token.marginLG }}>
+        <div
+          className="database-monitor-metrics"
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, Math.min(columns, overviewMetrics.length))}, minmax(0, 1fr))`, gap: token.marginLG }}
+        >
           {overviewMetrics.map((metric) => (
             <Statistic
               key={metric.key}

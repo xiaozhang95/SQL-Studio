@@ -33,9 +33,14 @@ export default function StatusInfo({ detail }: { detail: RedisDetails | undefine
           locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(detail?.keyspaces ? '当前没有非空逻辑库' : '服务端未返回此项统计')} /> }}
         />
       </Card>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: 'var(--ant-margin-md)', alignItems: 'start' }}>
+      <div style={{ columnWidth: 440, columnGap: 'var(--ant-margin-md)' }}>
         {detail?.sections.map((section) => (
-          <Card key={section.key} size="small" title={t(sectionLabels[section.key] ?? section.key)} style={{ minWidth: 0 }}>
+          <Card
+            key={section.key}
+            size="small"
+            title={t(sectionLabels[section.key] ?? section.key)}
+            style={{ minWidth: 0, breakInside: 'avoid', marginBottom: 'var(--ant-margin-md)' }}
+          >
             <Descriptions
               size="small"
               column={1}
