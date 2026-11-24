@@ -112,7 +112,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     const { owner: id, database: db, table } = node
     if (node.kind === 'redis-database') {
       return {
-        items: [{ key: 'new', label: t('打开查询'), icon: <CodeOutlined />, disabled: running }],
+        items: [{ key: 'new', label: t('新建查询'), icon: <CodeOutlined />, disabled: running }],
         onClick: ({ domEvent }) => {
           domEvent.stopPropagation()
           setMenuOpen(false)
@@ -125,7 +125,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       const status = objects.snapshots[id]?.status
       return {
         items: [
-          { key: 'query', label: t('打开查询'), icon: <CodeOutlined /> },
+          { key: 'query', label: t('新建查询'), icon: <CodeOutlined /> },
           ...(!status || status === 'error' ? [{ key: 'open', label: t('打开连接'), icon: <LinkOutlined /> }] : []),
           ...(status ? [{ key: 'close', label: t('关闭连接'), icon: <CloseOutlined /> }] : []),
           { key: 'monitor', label: t('监控指标'), icon: <StudioIcon name={databaseSectionIconNames.monitor} /> },

@@ -18,6 +18,7 @@ import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../utils/editorAppearance'
 import QueryToolbar from '../queryToolbar'
+import RunButton from '../runButton'
 import SQLCompletionSelect from '../sqlCompletionSelect'
 import SQLOptimization from '../sqlOptimization'
 import ToolbarButton from '../toolbarButton'
@@ -53,7 +54,6 @@ type Props = {
   >
 }
 const editorSetup = { foldGutter: false, autocompletion: true } satisfies ReactCodeMirrorProps['basicSetup']
-const runShortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵'
 /** QueryEditor 只负责对应区域展示，状态和业务操作由工作区 hook 提供。 */
 export default function QueryEditor({ model, themeMode }: Props) {
   const { t } = useTranslation()
@@ -109,10 +109,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
         disabled={running}
         runActions={
           <>
-            <Button className="query-run-button" type="primary" icon={<StudioIcon name="play" size={14} />} onClick={runSQL} disabled={!objects.connected || running}>
-              {t('运行')}
-              <span style={{ marginInlineStart: 3, opacity: themeMode === 'dark' ? 1 : 0.75 }}>{runShortcut}</span>
-            </Button>
+            <RunButton themeMode={themeMode} onClick={runSQL} disabled={!objects.connected || running} />
             {activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={cancelQuery}>
                 {t('取消执行')}

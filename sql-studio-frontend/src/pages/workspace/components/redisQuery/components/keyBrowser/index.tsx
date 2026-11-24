@@ -10,6 +10,8 @@ import type { RedisKey } from '@/services/redis'
 import type { ThemeMode } from '@/typings/theme'
 
 import ToolbarButton from '../../../toolbarButton'
+import CountBadge from '../../../countBadge'
+import { redisPanelLayout } from '../../../../constant/layout'
 import { useKeyBrowser } from '../../hooks/useKeyBrowser'
 import KeyDelete from '../keyDelete'
 import KeyEditor from '../keyEditor'
@@ -82,28 +84,17 @@ export default function KeyBrowser({ id, database, themeMode }: { id: string; da
           display: 'flex',
           flex: 'none',
           flexDirection: 'column',
-          width: 320,
+          width: redisPanelLayout.sidebarWidth,
           minHeight: 0,
           borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
         }}
       >
-        <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: 42, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+        <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
           <Typography.Text strong style={{ fontSize: token.fontSize }}>
             {t('键浏览')}
           </Typography.Text>
-          <span
-            style={{
-              paddingInline: 6,
-              borderRadius: 4,
-              background: token.colorFillSecondary,
-              color: token.colorTextSecondary,
-              fontSize: token.fontSizeSM,
-              lineHeight: '18px'
-            }}
-          >
-            {loaded}
-          </span>
+          <CountBadge count={loaded} />
           <Flex gap={token.marginXXS} style={{ marginInlineStart: 'auto' }}>
             <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
             <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(request.pattern)} />

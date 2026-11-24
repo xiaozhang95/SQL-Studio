@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail } from '@/services/redis'
 import type { ThemeMode } from '@/typings/theme'
 
+import { redisPanelLayout } from '../../../../constant/layout'
 import { sqlEditorAppearance } from '../../../../utils/editorAppearance'
 import ToolbarButton from '../../../toolbarButton'
 import { useKeyEditor } from '../../hooks/useKeyEditor'
@@ -53,7 +54,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           flex: 'none',
           alignItems: 'center',
           gap: 14,
-          height: 42,
+          height: redisPanelLayout.headerHeight,
           paddingInline: 16,
           borderBottom: `1px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
@@ -74,7 +75,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
         </Flex>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '14px 16px', background: token.colorBgLayout }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '16px', background: token.colorBgLayout }}>
         <Form
           layout="horizontal"
           colon={false}
@@ -83,7 +84,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}
           disabled={saving}
         >
-          <Form.Item label={`${t('键名')}:`} htmlFor="redis-detail-name" style={{ marginBottom: 14 }}>
+          <Form.Item label={`${t('键名')}:`} htmlFor="redis-detail-name" style={{ marginBottom: 16 }}>
             <Input
               id="redis-detail-name"
               aria-label={t('键名')}
@@ -101,7 +102,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
             htmlFor="redis-detail-ttl"
             validateStatus={editor.ttlInvalid ? 'error' : undefined}
             help={editor.ttlInvalid ? t('Redis TTL 秒数无效') : undefined}
-            style={{ marginBottom: 14 }}
+            style={{ marginBottom: 16 }}
           >
             <InputNumber
               id="redis-detail-ttl"
@@ -118,7 +119,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
             />
           </Form.Item>
 
-          <Form.Item label={`${t('键值')}:`} style={{ marginBottom: 14 }}>
+          <Form.Item label={`${t('键值')}:`} style={{ marginBottom: 16 }}>
             <div style={{ overflow: 'hidden', border: `1px solid ${token.colorBorder}`, borderRadius: token.borderRadius }}>
               <div style={{ height: 286 }}>
                 <CodeMirror
@@ -151,7 +152,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           flex: 'none',
           alignItems: 'center',
           gap: 8,
-          height: 46,
+          height: 44,
           paddingInline: 16,
           borderTop: `1px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer

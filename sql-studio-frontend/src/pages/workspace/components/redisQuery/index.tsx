@@ -3,7 +3,6 @@ import { Button, Flex, Tag, theme, Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
-import StudioIcon from '@/components/studioIcon'
 import { usePageError } from '@/contexts/pageErrors'
 import { redisModeLabel, selectedRedisDatabase } from '@/databases/redis'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -16,6 +15,7 @@ import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import QueryHistory from '../queryHistory'
 import QueryResults from '../queryResults'
 import QueryToolbar from '../queryToolbar'
+import RunButton from '../runButton'
 import ToolbarButton from '../toolbarButton'
 import Console from './components/console'
 import Editor from './components/editor'
@@ -31,7 +31,6 @@ const tools = [
   { id: 'console', label: '命令行', icon: <CodeOutlined /> },
   { id: 'pubsub', label: '发布订阅', icon: <PubSubIcon /> }
 ] as const
-const runShortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵'
 
 export default function RedisQuery({ model, connection, active, themeMode }: Props) {
   const { t } = useTranslation()
@@ -60,13 +59,12 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
         disabled={blocked}
         runActions={
           <>
-            {editorMode && (
-              <Button className="query-run-button" type="primary" icon={<StudioIcon name="play" size={14} />} onClick={model.runSQL} disabled={blocked || database === undefined}>
-                {t('运行')}
-                <span style={{ marginInlineStart: 3, opacity: themeMode === 'dark' ? 1 : 0.75 }}>{runShortcut}</span>
+            {editorMode && <RunButton themeMode={themeMode} onClick={model.runSQL} disabled={blocked || database === undefined} />}
+            {model.activeRunning && (
+              <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+                {t('取消执行')}
               </Button>
             )}
-            {model.activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={model.cancelQuery} />}
             {status === 'error' && <ToolbarButton label={t('重试连接')} hint={snapshot?.error} icon={<ReloadOutlined />} onClick={() => model.connectionAction('open', connection.id)} />}
           </>
         }

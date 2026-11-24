@@ -32,7 +32,8 @@ export default function TableDesigner({ themeMode, available, active, ...options
           gap: 8,
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          padding: 'var(--workspace-inset)',
+          minHeight: 38,
+          padding: '0 var(--workspace-inset)',
           borderBottom: '1px solid var(--border)',
           userSelect: 'none'
         }}
@@ -44,7 +45,7 @@ export default function TableDesigner({ themeMode, available, active, ...options
           {manager.dirty && <Typography.Text type="secondary">{t('未保存')}</Typography.Text>}
         </Space>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)' }}>
         {!available && <Alert type="warning" showIcon title={t('连接未打开，请重新打开连接后保存。')} style={{ marginBottom: 12 }} />}
         <Spin spinning={manager.loading}>
           <ObjectManagementForm manager={manager} themeMode={themeMode} showErrors={false} />

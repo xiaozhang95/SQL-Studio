@@ -453,7 +453,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             <Button icon={<PlusOutlined />} disabled={model.running} onClick={model.newQuery}>
               {t('新建查询')}
             </Button>
-            <Typography.Text type="secondary">{t('从左侧选择表')}</Typography.Text>
+            {databaseType !== DatabaseEngine.Redis && <Typography.Text type="secondary">{t('从左侧选择表')}</Typography.Text>}
           </div>
         )}
       </div>

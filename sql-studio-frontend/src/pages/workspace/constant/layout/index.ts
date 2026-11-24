@@ -8,7 +8,7 @@ export const resultTableLayout = { indexWidth: 64, columnWidth: 200, selectionWi
 export const resultTabLayout = { maximumVisibleTabs: 8 } as const
 /** 默认图标按钮从点击边界到居中图标的水平留白。 */
 export const resultToolbarIconInset = 'calc((var(--ant-control-height) - var(--ant-font-size)) / 2)'
-export const workspaceTabLayout = { width: 240 } as const
+export const workspaceTabLayout = { width: 200 } as const
 
 /** 主页面与结果页签共用栏尺寸，分隔线由 Ant Design Tabs 绘制。 */
 export const workspaceTabBarStyle = {
@@ -20,6 +20,8 @@ export const workspaceTabBarStyle = {
 export const sqlCompletionLayout = { width: 360, height: 256 } as const
 export const scopeCloseDialogLayout = { width: 560 } as const
 export const objectTreeLayout = { rowHeight: 30, switcherWidth: 20, scrollSaveDelay: 150 } as const
+/** Redis 键浏览/发布订阅双栏共用的侧栏宽度和标题栏高度。 */
+export const redisPanelLayout = { sidebarWidth: 320, headerHeight: 42 } as const
 
 export const workspaceEmptyStyle = {
   display: 'flex',

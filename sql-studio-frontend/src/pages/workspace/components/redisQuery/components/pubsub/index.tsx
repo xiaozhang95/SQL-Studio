@@ -7,7 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { getChannels, subscribe } from '@/services/redis'
 import type { RedisChannel, RedisChannels } from '@/services/redis'
 
-import { objectTreeLayout } from '../../../../constant/layout'
+import { objectTreeLayout, redisPanelLayout } from '../../../../constant/layout'
+import CountBadge from '../../../countBadge'
 import ToolbarButton from '../../../toolbarButton'
 
 type Message = { id: number; channel: string; payload: string; truncated?: boolean; receivedAt: number }
@@ -141,7 +142,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
           flexWrap: 'wrap',
           alignItems: 'center',
           gap: 8,
-          padding: '9px 16px',
+          padding: '10px 16px',
           borderBottom: `1px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
         }}
@@ -183,26 +184,15 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             display: 'flex',
             flex: 'none',
             flexDirection: 'column',
-            width: 320,
+            width: redisPanelLayout.sidebarWidth,
             minHeight: 0,
             borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
             background: token.colorBgContainer
           }}
         >
-          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: 42, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
             <Typography.Text strong>{t('活跃频道')}</Typography.Text>
-            <span
-              style={{
-                paddingInline: 6,
-                borderRadius: 4,
-                background: token.colorFillSecondary,
-                color: token.colorTextSecondary,
-                fontSize: token.fontSizeSM,
-                lineHeight: '18px'
-              }}
-            >
-              {channels?.channels.length ?? 0}
-            </span>
+            <CountBadge count={channels?.channels.length ?? 0} />
             {channels?.truncated && (
               <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
                 {t('仅显示部分内容')}
@@ -237,21 +227,20 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
                   disabled={status !== 'idle'}
                   onClick={() => chooseChannel(item)}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                    display: 'flex',
+                    justifyContent: 'flex-start',
                     alignItems: 'center',
                     gap: 8,
                     height: objectTreeLayout.rowHeight,
-                    paddingInline: 8,
+                    paddingInline: 16,
+                    lineHeight: `${objectTreeLayout.rowHeight}px`,
                     borderRadius: token.borderRadius,
                     background: selectedChannel === item.ref ? token.controlItemBgActive : undefined,
                     textAlign: 'start'
                   }}
                 >
-                  <Typography.Text ellipsis>{item.name}</Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {item.subscribers}
-                  </Typography.Text>
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                  <span style={{ flex: 'none', color: token.colorTextSecondary, fontVariantNumeric: 'tabular-nums' }}>{item.subscribers}</span>
                 </Button>
               ))
             ) : (
@@ -263,7 +252,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
         </aside>
 
         <section style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
-          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 8, height: 42, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}`, background: token.colorBgContainer }}>
+          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 8, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}`, background: token.colorBgContainer }}>
             <Typography.Text strong>{t('消息流')}</Typography.Text>
             <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {t('{value1} 条', { value1: messages.length })}
@@ -287,6 +276,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '82px 112px minmax(0, 1fr)',
+                    alignItems: 'baseline',
                     gap: 10,
                     padding: '8px 16px',
                     borderBottom: `1px solid ${token.colorBorderSecondary}`
