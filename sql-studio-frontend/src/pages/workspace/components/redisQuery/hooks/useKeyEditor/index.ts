@@ -45,6 +45,7 @@ export function useKeyEditor(key: RedisKey, detail: RedisKeyDetail, ttlMillis: n
     name,
     value,
     ttl,
+    ttlChanged,
     remainingSeconds,
     maximumTTL,
     ttlInvalid,

@@ -16,7 +16,7 @@ resultTabLayout.maximumVisibleTabs=8：超过 8 个数据结果集时使用 Sele
 
 resultToolbarIconInset 由默认按钮尺寸与图标字号计算，用于对齐结果页签、行选择计数、执行状态与操作图标的可见边缘。
 
-workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
+workspaceTabLayout.width=240：顶部工作区主标签固定等宽，与工具栏连接、库、Schema 选择框的默认宽度一致，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
 
 workspaceTabBarStyle 共用 38px 栏高、页面内边距和表面底色，栏底分隔线沿用 Ant Design Tabs。
 

@@ -1,7 +1,7 @@
 import { DeleteOutlined, EyeOutlined, FileOutlined, FolderOpenOutlined, FolderOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Dropdown, theme, Tree } from 'antd'
 import type { MenuProps, TreeDataNode } from 'antd'
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey } from '@/services/redis'
@@ -62,8 +62,19 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
   const { token } = theme.useToken()
   const [menuOpen, setMenuOpen] = useState(false)
   const [context, setContext] = useState<Node>()
+  const [height, setHeight] = useState(320)
+  const holder = useRef<HTMLDivElement>(null)
   const expanded = useMemo(() => new Set(expandedKeys), [expandedKeys])
   const nodes = useMemo(() => buildTree(keys), [keys])
+  useLayoutEffect(() => {
+    const element = holder.current
+    if (!element) return
+    const measure = () => setHeight(Math.max(1, element.clientHeight))
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    measure()
+    return () => observer.disconnect()
+  }, [])
   const menu: MenuProps = {
     items: [
       ...(context?.item
@@ -93,7 +104,7 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
   }
   return (
     <Dropdown trigger={['contextMenu']} open={menuOpen && !disabled} onOpenChange={setMenuOpen} menu={menu}>
-      <div className="object-tree" style={{ minWidth: 0, userSelect: 'none' }}>
+      <div ref={holder} className="object-tree" style={{ flex: 1, minWidth: 0, minHeight: 0, userSelect: 'none' }}>
         <Tree<Node>
           aria-label={t('Redis 键列表')}
           showIcon={false}
@@ -109,7 +120,7 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
           motion={{ motionAppear: false, motionEnter: false, motionLeave: false }}
           virtual
           itemHeight={objectTreeLayout.rowHeight}
-          height={Math.min(450, visibleCount(nodes, expanded) * objectTreeLayout.rowHeight)}
+          height={Math.min(height, visibleCount(nodes, expanded) * objectTreeLayout.rowHeight)}
           styles={{
             root: { background: 'transparent' },
             itemSwitcher: { width: objectTreeLayout.switcherWidth, flexBasis: objectTreeLayout.switcherWidth },
@@ -121,7 +132,7 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
               <span aria-hidden="true" style={{ display: 'flex', flex: 'none' }}>
                 {node.item ? <FileOutlined /> : expanded.has(String(node.key)) ? <FolderOpenOutlined /> : <FolderOutlined />}
               </span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.title}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: node.item ? token.fontFamilyCode : undefined }}>{node.title}</span>
             </span>
           )}
           selectedKeys={selected ? ['key:' + selected] : []}

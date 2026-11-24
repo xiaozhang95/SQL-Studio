@@ -4,6 +4,7 @@
 
 ## 快速查看
 
+- **Redis 模块预览**：[redis.html](redis.html)（键详情 / 命令行 / 发布订阅，可直接交互）
 - **交互原型**：[index.html](index.html)
   - 直接双击打开，或在当前目录运行 `python3 -m http.server 4173` 后访问 `http://127.0.0.1:4173/`。
   - 原型按 1440 × 900 设计，可直接缩放浏览。
@@ -29,6 +30,7 @@
 | 系统设置 · 外观设置（亮/暗） | [settings-appearance-light](screens/settings-appearance-light.png) · [settings-appearance-dark](screens/settings-appearance-dark.png) |
 | 系统设置 · 语言 / 关于 | [settings-language-light](screens/settings-language-light.png) · [settings-about-light](screens/settings-about-light.png) |
 | 新建连接（亮/暗） | [connection-light](screens/connection-light.png) · [connection-dark](screens/connection-dark.png) |
+| Redis 键详情 / 发布订阅 | [redis.html](redis.html) |
 
 ## 原型操作
 
@@ -39,6 +41,7 @@
 - 同步数据库：点击「同步检查」查看检查结果，再点击「开始同步」查看执行完成态；「返回配置」可回到初始状态。
 - 系统设置：切换模型 / 外观 / 语言 / 关于；主题卡片可即时预览，取消会恢复进入设置前的主题，保存后保留。
 - 新建连接：点击顶栏或侧栏的数据库图标打开，左侧可切换数据库类型。
+- Redis 设计预览：键详情可切换键、编辑 TTL/键值并保存；发布订阅可点击频道、开始/停止订阅，消息流会实时模拟。
 - 快捷键：`1`–`4` 切换页面，`H` 隐藏/显示工具条，`Esc` 关闭弹窗。
 
 ## 截图参数

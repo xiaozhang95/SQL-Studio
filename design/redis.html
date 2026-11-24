@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL Studio · Redis 设计预览</title>
+    <link rel="icon" href="assets/studio.svg" />
+    <link rel="stylesheet" href="redis.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v14c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" /></symbol>
+        <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="12" rx="4" /><path d="M12 7V4" /><circle cx="9" cy="13" r="1" /><circle cx="15" cy="13" r="1" /></symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4" /></symbol>
+        <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3" /><path d="M20 16H7l3 3" /></symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="8" cy="18" r="2" /></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" /></symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 5.3" /><path d="M20 5v6h-6" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13M10 11v6M14 11v6" /></symbol>
+        <symbol id="i-history" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7" /><path d="M4 5v5h5M12 8v4l3 2" /></symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" /></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M4 20h16" /></symbol>
+        <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8M16 4h4v4" /></symbol>
+        <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m5 8 4 4-4 4M12 16h7" /></symbol>
+        <symbol id="i-broadcast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14" /></symbol>
+        <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4" /></symbol>
+        <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M9 4v16" /></symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" /></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></symbol>
+        <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13" /></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6" /></symbol>
+      </defs>
+    </svg>
+
+    <div class="rq-app" id="app" data-theme="dark">
+      <aside class="rq-rail" aria-label="全局导航">
+        <a class="rq-logo" href="index.html" aria-label="SQL Studio" title="SQL Studio"><img src="assets/studio.svg" alt="" /></a>
+        <nav class="rq-rail-nav">
+          <button class="rq-rail-btn is-active" title="工作区"><svg class="rq-icon"><use href="#i-database" /></svg></button>
+          <button class="rq-rail-btn" title="AI 助手"><svg class="rq-icon"><use href="#i-bot" /></svg></button>
+          <button class="rq-rail-btn" title="监控指标"><svg class="rq-icon"><use href="#i-activity" /></svg></button>
+          <button class="rq-rail-btn" title="同步数据库"><svg class="rq-icon"><use href="#i-swap" /></svg></button>
+        </nav>
+        <div class="rq-rail-spacer"></div>
+        <div class="rq-rail-divider"></div>
+        <button class="rq-rail-btn" id="theme-toggle" title="切换亮暗主题"><svg class="rq-icon"><use id="theme-icon" href="#i-sun" /></svg></button>
+        <button class="rq-rail-btn" title="系统设置"><svg class="rq-icon"><use href="#i-sliders" /></svg></button>
+      </aside>
+
+      <div class="rq-shell">
+        <header class="rq-header">
+          <span class="rq-title">工作台</span>
+          <span class="rq-crumb">localhost / db0 / Redis</span>
+          <div class="rq-header-actions">
+            <button class="rq-btn"><svg class="rq-icon is-sm"><use href="#i-plus" /></svg>新建查询</button>
+          </div>
+        </header>
+
+        <div class="rq-tabbar" role="tablist" aria-label="工作区页面">
+          <div class="rq-tab is-active" role="tab" aria-selected="true">
+            <span class="rq-tab-dot"></span><span id="tab-label">Redis · 键详情</span>
+          </div>
+          <div class="rq-tab" role="tab" aria-selected="false"><svg class="rq-icon"><use href="#i-code" /></svg>查询 2</div>
+          <div class="rq-tab" role="tab" aria-selected="false"><svg class="rq-icon"><use href="#i-table" /></svg>customers · 数据</div>
+        </div>
+
+        <div class="rq-toolbar">
+          <span class="rq-select"><span class="rq-engine"><img src="assets/redis.svg" alt="" /></span>localhost <span class="rq-caret">▾</span></span>
+          <span class="rq-select">db0 <span class="rq-caret">▾</span></span>
+          <span class="rq-toolgap"></span>
+          <span class="rq-tag">单机模式</span>
+          <div class="rq-tools" role="group" aria-label="Redis 查询工具">
+            <button class="rq-icon-btn rq-tool is-active" data-tool="keys" title="键详情" aria-pressed="true"><svg class="rq-icon"><use href="#i-key" /></svg></button>
+            <button class="rq-icon-btn rq-tool" data-tool="console" title="命令行" aria-pressed="false"><svg class="rq-icon"><use href="#i-terminal" /></svg></button>
+            <button class="rq-icon-btn rq-tool" data-tool="pubsub" title="发布订阅" aria-pressed="false"><svg class="rq-icon"><use href="#i-broadcast" /></svg></button>
+          </div>
+          <button class="rq-icon-btn" title="导入" disabled><svg class="rq-icon"><use href="#i-upload" /></svg></button>
+          <button class="rq-icon-btn" title="导出" disabled><svg class="rq-icon"><use href="#i-download" /></svg></button>
+          <button class="rq-icon-btn" title="执行历史"><svg class="rq-icon"><use href="#i-history" /></svg></button>
+        </div>
+
+        <div class="rq-content">
+          <section class="rq-panel" data-panel="keys">
+            <div class="rq-split">
+              <aside class="rq-browser">
+                <div class="rq-pane-head">
+                  <span class="rq-pane-title">键浏览</span><span class="rq-count" id="key-count">5</span>
+                  <div class="rq-head-actions">
+                    <button class="rq-icon-btn" id="new-key" title="新增键"><svg class="rq-icon"><use href="#i-plus" /></svg></button>
+                    <button class="rq-icon-btn" id="scan-refresh" title="刷新"><svg class="rq-icon"><use href="#i-refresh" /></svg></button>
+                  </div>
+                </div>
+                <div class="rq-search">
+                  <label class="rq-input"><svg class="rq-icon"><use href="#i-search" /></svg><input id="key-filter" type="text" value="user:*" aria-label="筛选 Redis 键" /></label>
+                  <button class="rq-icon-btn" title="按模式筛选"><svg class="rq-icon"><use href="#i-search" /></svg></button>
+                </div>
+                <div class="rq-scan"><span id="scan-text">已扫描 128 · 游标 0x1A</span><button class="rq-link" id="scan-more">连续扫描</button></div>
+                <div class="rq-tree" id="key-tree">
+                  <div class="rq-tree-group">
+                    <div class="rq-tree-row is-group"><span class="rq-caret">▾</span>user: <span class="rq-ttl">(32)</span></div>
+                    <button class="rq-tree-row is-key" data-key="user:1001"><span class="rq-type-dot string"></span><span class="rq-name rq-mono">user:1001</span><span class="rq-ttl">12m</span></button>
+                    <button class="rq-tree-row is-key" data-key="user:1024:profile"><span class="rq-type-dot hash"></span><span class="rq-name rq-mono">user:1024:profile</span><span class="rq-ttl">2d 03:14</span></button>
+                    <button class="rq-tree-row is-key" data-key="user:2048"><span class="rq-type-dot list"></span><span class="rq-name rq-mono">user:2048</span><span class="rq-ttl">—</span></button>
+                  </div>
+                  <div class="rq-tree-group">
+                    <div class="rq-tree-row is-group"><span class="rq-caret">▾</span>session: <span class="rq-ttl">(18)</span></div>
+                    <button class="rq-tree-row is-key" data-key="session:ab12"><span class="rq-type-dot string"></span><span class="rq-name rq-mono">session:ab12</span><span class="rq-ttl">1h</span></button>
+                  </div>
+                  <div class="rq-tree-group">
+                    <div class="rq-tree-row is-group"><span class="rq-caret">▾</span>queue: <span class="rq-ttl">(7)</span></div>
+                    <button class="rq-tree-row is-key" data-key="queue:jobs"><span class="rq-type-dot zset"></span><span class="rq-name rq-mono">queue:jobs</span><span class="rq-ttl">1h</span></button>
+                  </div>
+                </div>
+                <div class="rq-browser-foot"><span id="loaded-text">匹配 user:* · 已加载 128 个键</span></div>
+              </aside>
+
+              <section class="rq-detail">
+                <div id="detail-content">
+                  <div class="rq-detail-head">
+                    <div style="min-width: 0">
+                      <div class="rq-eyebrow">键详情</div>
+                      <div class="rq-keyname" id="detail-name">user:1024:profile</div>
+                      <div class="rq-chips">
+                        <span class="rq-chip is-type" id="detail-type">hash</span>
+                        <span class="rq-chip" id="detail-size">12 个字段</span>
+                        <span class="rq-chip is-ttl" id="detail-ttl">◷ 剩余 2 天 03:14:52</span>
+                      </div>
+                    </div>
+                    <div class="rq-detail-actions">
+                      <button class="rq-icon-btn" id="detail-refresh" title="刷新键详情"><svg class="rq-icon"><use href="#i-refresh" /></svg></button>
+                      <button class="rq-icon-btn is-danger" id="detail-delete" title="删除键"><svg class="rq-icon"><use href="#i-trash" /></svg></button>
+                    </div>
+                  </div>
+                  <div class="rq-detail-body">
+                    <div class="rq-formrow">
+                      <div class="rq-formlabel">TTL:</div>
+                      <div>
+                        <div class="rq-ttlbox">
+                          <label class="rq-number"><input id="ttl-input" type="number" min="0" max="315360000" value="182213" aria-label="编辑 TTL" /><span class="suffix">秒</span></label>
+                          <span class="rq-countdown" id="ttl-countdown">◷ 剩余 2 天 03:14:52</span>
+                          <button class="rq-btn is-ghost" id="ttl-permanent">永久</button>
+                        </div>
+                        <div class="rq-help">填 0 设为永久有效；保存后新的 TTL 开始倒计时。</div>
+                      </div>
+                    </div>
+                    <div class="rq-formrow">
+                      <div class="rq-formlabel">键值:</div>
+                      <div>
+                        <div class="rq-editor">
+                          <div class="rq-editor-head"><span class="rq-mono" id="value-type">hash</span><span class="rq-badge" id="value-shape">JSON 二元数组 · 12 项</span><span class="rq-badge">UTF-8</span></div>
+                          <div class="rq-code">
+                            <div class="rq-gutter" id="value-gutter"></div>
+                            <textarea id="value-input" spellcheck="false" aria-label="键值"></textarea>
+                          </div>
+                          <div class="rq-editor-foot" id="value-hint">⌁ 使用 JSON 二元数组编辑字段和值</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rq-detail-foot">
+                    <span class="rq-dirty" id="dirty-state" hidden><i></i>有未保存修改</span>
+                    <div class="rq-actions">
+                      <button class="rq-btn" id="cancel-edit" disabled>取消</button>
+                      <button class="rq-btn is-primary" id="save-edit" disabled>保存</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="rq-empty" id="detail-empty" hidden><strong>选择一个键查看详情</strong><span>左侧键列表支持按模式筛选与分层浏览</span></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="rq-panel" data-panel="console" hidden>
+            <div class="rq-console">
+              <div class="rq-console-log" id="console-log">
+                <div class="rq-console-line"><span class="rq-console-prompt">localhost:db0&gt;</span> PING</div>
+                <div class="rq-console-line"><span class="rq-console-answer">PONG</span></div>
+              </div>
+              <div class="rq-console-input">
+                <span class="rq-console-prompt">localhost:db0&gt;</span>
+                <input id="console-input" type="text" placeholder="输入 Redis 命令，Enter 执行" aria-label="Redis 命令输入" />
+              </div>
+            </div>
+          </section>
+
+          <section class="rq-panel" data-panel="pubsub" hidden>
+            <div class="rq-pubwrap">
+              <div class="rq-subbar">
+                <span class="rq-label">频道或模式</span>
+                <label class="rq-input"><svg class="rq-icon"><use href="#i-broadcast" /></svg><input id="channel-input" type="text" value="news:*" aria-label="频道或模式" /></label>
+                <label class="rq-check"><input id="pattern-mode" type="checkbox" checked />按模式订阅</label>
+                <button class="rq-btn" id="subscribe-button">开始订阅</button>
+                <span class="rq-status" id="sub-status">尚未订阅</span>
+              </div>
+              <div class="rq-pubbody">
+                <aside class="rq-channels-pane">
+                  <div class="rq-pane-head">
+                    <span class="rq-pane-title">活跃频道</span><span class="rq-count">6</span>
+                    <div class="rq-head-actions"><button class="rq-icon-btn" id="channel-refresh" title="刷新频道"><svg class="rq-icon"><use href="#i-refresh" /></svg></button></div>
+                  </div>
+                  <div class="rq-search">
+                    <label class="rq-input"><svg class="rq-icon"><use href="#i-search" /></svg><input id="channel-filter" type="text" value="news:*" aria-label="筛选频道" /></label>
+                    <button class="rq-icon-btn" title="筛选"><svg class="rq-icon"><use href="#i-search" /></svg></button>
+                  </div>
+                  <div class="rq-channel-meta">模式订阅数 · 3 · 已发现 24 个频道</div>
+                  <div class="rq-channels" id="channel-list">
+                    <button class="rq-channel-row" data-channel="news:updates"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">news:updates</span></span><span class="rq-num">128</span></button>
+                    <button class="rq-channel-row" data-channel="news:alerts"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">news:alerts</span></span><span class="rq-num">24</span></button>
+                    <button class="rq-channel-row" data-channel="orders:created"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">orders:created</span></span><span class="rq-num">58</span></button>
+                    <button class="rq-channel-row" data-channel="cache:invalidate"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">cache:invalidate</span></span><span class="rq-num">12</span></button>
+                    <button class="rq-channel-row" data-channel="session:events"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">session:events</span></span><span class="rq-num">7</span></button>
+                    <button class="rq-channel-row" data-channel="job:progress"><span class="rq-name"><span class="rq-hash">#</span><span class="rq-mono">job:progress</span></span><span class="rq-num">3</span></button>
+                  </div>
+                  <div class="rq-browser-foot">点击频道带入订阅输入 · 右侧为订阅者数量</div>
+                </aside>
+
+                <section class="rq-stream-pane">
+                  <div class="rq-stream-head">
+                    <strong>消息流</strong><span class="rq-count" id="message-count">0 条</span>
+                    <span class="rq-live" id="live-badge" hidden><i></i>LIVE</span>
+                    <div class="rq-stream-actions">
+                      <button class="rq-icon-btn" id="pause-stream" title="暂停消息"><svg class="rq-icon"><use href="#i-pause" /></svg></button>
+                      <button class="rq-icon-btn" id="clear-stream" title="清空消息"><svg class="rq-icon"><use href="#i-eraser" /></svg></button>
+                    </div>
+                  </div>
+                  <div class="rq-messages" id="messages">
+                    <div class="rq-message-empty" id="messages-empty"><strong>尚未接收消息</strong><span>配置频道或模式后点击「开始订阅」</span></div>
+                  </div>
+                  <div class="rq-stream-foot">
+                    <span id="stream-meta">已连接 · db0</span>
+                    <label class="rq-toggle">自动滚动<input id="auto-scroll" type="checkbox" checked /><span class="rq-switch"></span></label>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <dialog class="rq-dialog" id="create-dialog">
+      <div class="rq-dialog-head">新增键</div>
+      <div class="rq-dialog-body">
+        <label class="rq-dialog-row"><span>键名</span><input class="rq-mono" id="create-name" type="text" placeholder="例如 user:3001" /></label>
+        <label class="rq-dialog-row"><span>键值</span><textarea class="rq-mono" id="create-value" placeholder="输入键值，可留空"></textarea></label>
+        <label class="rq-dialog-row"><span>TTL</span><div style="display: flex; align-items: center; gap: 8px"><input id="create-ttl" class="rq-mono" type="number" min="0" value="0" style="width: 120px" /><span style="color: var(--text-3); font-size: 11px">秒</span></div></label>
+        <div style="margin-left: 88px; color: var(--text-3); font-size: 11px; margin-top: -6px">填 0 设为永久有效</div>
+      </div>
+      <div class="rq-dialog-foot">
+        <button class="rq-btn" data-create-close>取消</button>
+        <button class="rq-btn is-primary" id="confirm-create">保存</button>
+      </div>
+    </dialog>
+
+    <dialog class="rq-dialog" id="delete-dialog">
+      <div class="rq-dialog-head">删除键</div>
+      <div class="rq-dialog-body">
+        <div style="color: var(--text-2); font-size: 12.5px; line-height: 1.7">将删除 <strong id="delete-name" class="rq-mono"></strong> 及其全部键值，操作不可撤销。</div>
+      </div>
+      <div class="rq-dialog-foot">
+        <button class="rq-btn" data-dialog-close>取消</button>
+        <button class="rq-btn is-primary" id="confirm-delete">删除</button>
+      </div>
+    </dialog>
+
+    <div class="rq-review" aria-label="设计预览工具条">
+      <span class="rq-review-brand"><i></i>SQL Studio · Redis 设计预览</span>
+      <span class="rq-review-sep"></span>
+      <button id="review-theme"><svg class="rq-icon is-sm"><use href="#i-sun" id="review-theme-icon" /></svg><span id="review-theme-label">切换到亮色</span></button>
+      <a href="index.html"><svg class="rq-icon is-sm"><use href="#i-arrow-left" /></svg>返回原型</a>
+      <span class="rq-review-hint">键详情 / 命令行 / 发布订阅可直接切换，消息流可实时模拟</span>
+    </div>
+
+    <script>
+      const app = document.getElementById('app');
+      const themeIcon = document.getElementById('theme-icon');
+      const reviewThemeIcon = document.getElementById('review-theme-icon');
+      const reviewThemeLabel = document.getElementById('review-theme-label');
+      function setTheme(theme) {
+        app.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        themeIcon.setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon');
+        reviewThemeIcon.setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon');
+        reviewThemeLabel.textContent = theme === 'dark' ? '切换到亮色' : '切换到暗色';
+        localStorage.setItem('sql-studio-redis-theme', theme);
+      }
+      setTheme(localStorage.getItem('sql-studio-redis-theme') || 'dark');
+      document.getElementById('theme-toggle').addEventListener('click', () => setTheme(app.dataset.theme === 'dark' ? 'light' : 'dark'));
+      document.getElementById('review-theme').addEventListener('click', () => setTheme(app.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+      /* Tool switching */
+      const toolLabels = { keys: '键详情', console: '命令行', pubsub: '发布订阅' };
+      const tabLabel = document.getElementById('tab-label');
+      document.querySelectorAll('.rq-tool').forEach((button) => {
+        button.addEventListener('click', () => {
+          const tool = button.dataset.tool;
+          document.querySelectorAll('.rq-tool').forEach((item) => {
+            const active = item === button;
+            item.classList.toggle('is-active', active);
+            item.setAttribute('aria-pressed', String(active));
+          });
+          document.querySelectorAll('.rq-panel').forEach((panel) => (panel.hidden = panel.dataset.panel !== tool));
+          tabLabel.textContent = 'Redis · ' + toolLabels[tool];
+        });
+      });
+
+      /* Key detail */
+      const keys = {
+        'user:1001': { type: 'string', size: 42, ttl: null, value: '"ada@studio.dev"' },
+        'user:1024:profile': {
+          type: 'hash',
+          size: 12,
+          ttl: 182213,
+          value:
+            '[\n  ["name", "Ada Lovelace"],\n  ["email", "ada@studio.dev"],\n  ["plan", "team"],\n  ["queries", 18240],\n  ["last_seen", "2026-11-24T10:32:18Z"],\n  ["projects", 6],\n  ["seats", 12],\n  ["region", "ap-southeast-1"],\n  ["created_at", "2025-04-18T09:12:00Z"],\n  ["billing", "annual"],\n  ["mfa", true],\n  ["timezone", "Asia/Shanghai"]\n]'
+        },
+        'user:2048': { type: 'list', size: 36, ttl: null, value: '[\n  "checkout:plan",\n  "checkout:address",\n  "checkout:payment",\n  "checkout:confirm"\n]' },
+        'session:ab12': { type: 'string', size: 128, ttl: 3600, value: '"session:{\\"id\\":\\"ab12\\",\\"uid\\":1924,\\"ip\\":\\"10.0.4.18\\"}"' },
+        'queue:jobs': { type: 'zset', size: 7, ttl: 3600, value: '[\n  ["sync:inventory", 12],\n  ["sync:orders", 8],\n  ["email:digest", 3]\n]' }
+      };
+      const shapeByType = { string: '字符串', hash: 'JSON 二元数组', list: 'JSON 数组', zset: 'JSON 二元数组' };
+      const hintByType = { string: '直接编辑字符串内容', hash: '使用 JSON 二元数组编辑字段和值', list: '使用 JSON 字符串数组编辑成员', zset: '使用 JSON 二元数组编辑成员和分数' };
+
+      let selectedKey = 'user:1024:profile';
+      let dirty = false;
+      const nameEl = document.getElementById('detail-name');
+      const typeEl = document.getElementById('detail-type');
+      const sizeEl = document.getElementById('detail-size');
+      const ttlEl = document.getElementById('detail-ttl');
+      const ttlInput = document.getElementById('ttl-input');
+      const ttlCountdown = document.getElementById('ttl-countdown');
+      const valueInput = document.getElementById('value-input');
+      const gutter = document.getElementById('value-gutter');
+      const valueType = document.getElementById('value-type');
+      const valueShape = document.getElementById('value-shape');
+      const valueHint = document.getElementById('value-hint');
+      const dirtyState = document.getElementById('dirty-state');
+      const saveButton = document.getElementById('save-edit');
+      const cancelButton = document.getElementById('cancel-edit');
+      const detailContent = document.getElementById('detail-content');
+      const detailEmpty = document.getElementById('detail-empty');
+      const keyCount = document.getElementById('key-count');
+
+      function formatDuration(seconds) {
+        const days = Math.floor(seconds / 86400);
+        const time = [Math.floor((seconds % 86400) / 3600), Math.floor((seconds % 3600) / 60), seconds % 60].map((value) => String(value).padStart(2, '0')).join(':');
+        return days > 0 ? `剩余 ${days} 天 ${time}` : `剩余 ${time}`;
+      }
+      const ttlText = (ttl) => (ttl == null ? '永久有效' : formatDuration(ttl));
+      function renderGutter() {
+        const lines = valueInput.value.split('\n').length;
+        gutter.innerHTML = Array.from({ length: Math.max(lines, 1) }, (_, index) => index + 1).join('<br>');
+      }
+      function syncGutter() { gutter.style.transform = `translateY(${-valueInput.scrollTop}px)`; }
+      function setDirty(next) {
+        dirty = next;
+        dirtyState.hidden = !next;
+        saveButton.disabled = !next;
+        cancelButton.disabled = !next;
+      }
+      function renderDetail() {
+        document.querySelectorAll('.rq-tree-row.is-key').forEach((row) => row.classList.toggle('is-selected', row.dataset.key === selectedKey));
+        document.querySelectorAll('.rq-tree-row.is-key').forEach((row) => {
+          const data = keys[row.dataset.key];
+          const dot = row.querySelector('.rq-type-dot');
+          const ttl = row.querySelector('.rq-ttl');
+          if (!data || !dot) return;
+          dot.className = 'rq-type-dot ' + data.type;
+          if (ttl) ttl.textContent = data.ttl == null ? '—' : data.ttl >= 86400 ? Math.floor(data.ttl / 86400) + 'd' : Math.floor(data.ttl / 3600) + 'h';
+        });
+        const item = keys[selectedKey];
+        if (!item) {
+          detailContent.hidden = true;
+          detailEmpty.hidden = false;
+          return;
+        }
+        detailContent.hidden = false;
+        detailEmpty.hidden = true;
+        nameEl.textContent = selectedKey;
+        typeEl.textContent = item.type;
+        sizeEl.textContent = (item.type === 'string' ? '字节数 ' : '元素数量 ') + item.size.toLocaleString();
+        ttlEl.textContent = '◷ ' + ttlText(item.ttl);
+        ttlInput.value = item.ttl == null ? 0 : item.ttl;
+        ttlCountdown.textContent = '◷ ' + ttlText(item.ttl);
+        valueInput.value = item.value;
+        valueType.textContent = item.type;
+        valueShape.textContent = shapeByType[item.type] + ' · ' + item.size + ' 项';
+        valueHint.textContent = '⌁ ' + hintByType[item.type];
+        renderGutter();
+        syncGutter();
+        setDirty(false);
+      }
+      document.getElementById('key-tree').addEventListener('click', (event) => {
+        const row = event.target.closest('.rq-tree-row.is-key');
+        if (!row) return;
+        selectedKey = row.dataset.key;
+        renderDetail();
+      });
+      valueInput.addEventListener('input', () => { renderGutter(); setDirty(true); });
+      valueInput.addEventListener('scroll', syncGutter);
+      ttlInput.addEventListener('input', () => setDirty(true));
+      document.getElementById('ttl-permanent').addEventListener('click', () => {
+        ttlInput.value = 0;
+        ttlCountdown.textContent = '◷ 永久有效';
+        setDirty(true);
+      });
+      saveButton.addEventListener('click', () => {
+        const item = keys[selectedKey];
+        if (!item) return;
+        const ttl = Number(ttlInput.value);
+        item.value = valueInput.value;
+        item.ttl = Number.isFinite(ttl) && ttl > 0 ? Math.floor(ttl) : null;
+        item.size = item.type === 'string' ? new Blob([item.value]).size : item.value.trim().split('\n').filter(Boolean).length;
+        setDirty(false);
+        renderDetail();
+      });
+      cancelButton.addEventListener('click', renderDetail);
+      document.getElementById('detail-refresh').addEventListener('click', renderDetail);
+      document.getElementById('detail-delete').addEventListener('click', () => {
+        document.getElementById('delete-name').textContent = selectedKey;
+        document.getElementById('delete-dialog').showModal();
+      });
+      document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => document.getElementById('delete-dialog').close()));
+      document.getElementById('confirm-delete').addEventListener('click', () => {
+        const row = [...document.querySelectorAll('.rq-tree-row.is-key')].find((item) => item.dataset.key === selectedKey);
+        delete keys[selectedKey];
+        row?.remove();
+        selectedKey = document.querySelector('.rq-tree-row.is-key')?.dataset.key || '';
+        keyCount.textContent = String(Object.keys(keys).length);
+        document.getElementById('delete-dialog').close();
+        renderDetail();
+      });
+      document.getElementById('key-filter').addEventListener('input', (event) => {
+        const keyword = event.target.value.trim().toLowerCase().replace(/\*/g, '');
+        document.querySelectorAll('.rq-tree-row.is-key').forEach((row) => {
+          row.hidden = Boolean(keyword) && !row.dataset.key.toLowerCase().includes(keyword);
+        });
+        document.getElementById('loaded-text').textContent = keyword ? `匹配 ${event.target.value} · 已加载 128 个键` : '已加载 128 个键';
+      });
+      document.getElementById('scan-more').addEventListener('click', () => {
+        document.getElementById('scan-text').textContent = '正在连续扫描…';
+        setTimeout(() => { document.getElementById('scan-text').textContent = '已扫描 156 · 游标 0x2F'; }, 900);
+      });
+      document.getElementById('scan-refresh').addEventListener('click', renderDetail);
+
+      /* Create key */
+      const createDialog = document.getElementById('create-dialog');
+      document.getElementById('new-key').addEventListener('click', () => {
+        document.getElementById('create-name').value = '';
+        document.getElementById('create-value').value = '';
+        document.getElementById('create-ttl').value = '0';
+        createDialog.showModal();
+        document.getElementById('create-name').focus();
+      });
+      document.querySelectorAll('[data-create-close]').forEach((button) => button.addEventListener('click', () => createDialog.close()));
+      document.getElementById('confirm-create').addEventListener('click', () => {
+        const name = document.getElementById('create-name').value.trim();
+        if (!name || keys[name]) { document.getElementById('create-name').focus(); return; }
+        const value = document.getElementById('create-value').value;
+        const ttl = Number(document.getElementById('create-ttl').value);
+        keys[name] = { type: 'string', size: new Blob([value]).size, ttl: Number.isFinite(ttl) && ttl > 0 ? Math.floor(ttl) : null, value };
+        let group = document.querySelector('.rq-tree-group[data-custom]');
+        if (!group) {
+          group = document.createElement('div');
+          group.className = 'rq-tree-group';
+          group.dataset.custom = 'true';
+          group.innerHTML = '<div class="rq-tree-row is-group"><span class="rq-caret">▾</span>custom: <span class="rq-ttl">(1)</span></div>';
+          document.getElementById('key-tree').appendChild(group);
+        }
+        const row = document.createElement('button');
+        row.className = 'rq-tree-row is-key';
+        row.dataset.key = name;
+        row.innerHTML = '<span class="rq-type-dot string"></span><span class="rq-name rq-mono"></span><span class="rq-ttl">—</span>';
+        row.querySelector('.rq-name').textContent = name;
+        group.appendChild(row);
+        selectedKey = name;
+        keyCount.textContent = String(Object.keys(keys).length);
+        createDialog.close();
+        renderDetail();
+      });
+
+      /* Console */
+      const consoleLog = document.getElementById('console-log');
+      const consoleInput = document.getElementById('console-input');
+      function appendConsole(command, answer, error = false) {
+        const line = document.createElement('div');
+        line.className = 'rq-console-line';
+        const prompt = document.createElement('span');
+        prompt.className = 'rq-console-prompt';
+        prompt.textContent = 'localhost:db0> ';
+        line.append(prompt, document.createTextNode(command));
+        const result = document.createElement('div');
+        result.className = 'rq-console-line rq-console-answer' + (error ? ' is-error' : '');
+        result.textContent = answer;
+        consoleLog.append(line, result);
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+      }
+      consoleInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        const command = consoleInput.value.trim();
+        if (!command) return;
+        consoleInput.value = '';
+        const [verb, ...rest] = command.split(/\s+/);
+        const upper = verb.toUpperCase();
+        if (upper === 'PING') appendConsole(command, 'PONG');
+        else if (upper === 'ECHO') appendConsole(command, rest.join(' '));
+        else if (upper === 'GET') appendConsole(command, selectedKey && keys[selectedKey] ? keys[selectedKey].value : '(nil)');
+        else if (upper === 'KEYS') appendConsole(command, Object.keys(keys).join('\n') || '(empty array)');
+        else appendConsole(command, `ERR unknown command '${verb}'`, true);
+      });
+
+      /* Pub/Sub */
+      const channels = ['news:updates', 'news:alerts', 'orders:created', 'cache:invalidate', 'session:events', 'job:progress'];
+      const payloads = [
+        '{"id":20481,"title":"Nightly sync completed"}',
+        '{"id":20480,"title":"Index optimized","ms":182}',
+        '{"level":"warn","message":"Replica lag 1.2s"}',
+        '{"id":20479,"title":"Connection pool resized"}',
+        '{"id":20478,"title":"Cache warmed in 1.4s"}'
+      ];
+      const channelInput = document.getElementById('channel-input');
+      const patternMode = document.getElementById('pattern-mode');
+      const subscribeButton = document.getElementById('subscribe-button');
+      const subStatus = document.getElementById('sub-status');
+      const liveBadge = document.getElementById('live-badge');
+      const messages = document.getElementById('messages');
+      const messageCount = document.getElementById('message-count');
+      const streamMeta = document.getElementById('stream-meta');
+      const autoScroll = document.getElementById('auto-scroll');
+      let timer = null;
+      let messageIndex = 0;
+      let paused = false;
+
+      function updateMessageCount() {
+        const count = messages.querySelectorAll('.rq-message').length;
+        messageCount.textContent = count ? count + ' 条' : '0 条';
+        const empty = document.getElementById('messages-empty');
+        if (empty) empty.hidden = count > 0;
+      }
+      function timeLabel() {
+        const date = new Date();
+        return [date.getHours(), date.getMinutes(), date.getSeconds()].map((value) => String(value).padStart(2, '0')).join(':') + '.' + String(date.getMilliseconds()).padStart(3, '0');
+      }
+      function currentChannels() {
+        const pattern = channelInput.value.trim();
+        if (!patternMode.checked) return [pattern];
+        return channels.filter((name) => (pattern.endsWith('*') ? name.startsWith(pattern.slice(0, -1)) : name.includes(pattern)));
+      }
+      function pushMessage() {
+        const pool = currentChannels();
+        if (!pool.length) return;
+        const row = document.createElement('div');
+        row.className = 'rq-message';
+        const time = document.createElement('span');
+        time.className = 'time';
+        time.textContent = timeLabel();
+        const chan = document.createElement('span');
+        chan.className = 'chan rq-mono';
+        chan.textContent = pool[messageIndex % pool.length];
+        const value = document.createElement('span');
+        value.className = 'payload';
+        value.textContent = payloads[messageIndex % payloads.length];
+        messageIndex += 1;
+        row.append(time, chan, value);
+        messages.appendChild(row);
+        while (messages.querySelectorAll('.rq-message').length > 200) messages.querySelector('.rq-message')?.remove();
+        updateMessageCount();
+        if (autoScroll.checked && !paused) messages.scrollTop = messages.scrollHeight;
+      }
+      function setSubscription(active) {
+        subscribeButton.textContent = active ? '停止订阅' : '开始订阅';
+        subscribeButton.classList.toggle('is-danger', active);
+        channelInput.disabled = active;
+        patternMode.disabled = active;
+        liveBadge.hidden = !active;
+        subStatus.classList.toggle('is-live', active);
+        if (active) {
+          subStatus.innerHTML = '<i></i>正在订阅…';
+          timer = setInterval(pushMessage, 1400);
+          setTimeout(() => {
+            if (!timer) return;
+            subStatus.innerHTML = '<i></i>正在接收消息';
+            pushMessage();
+          }, 350);
+          streamMeta.textContent = `已连接 · db0 · ${patternMode.checked ? '模式' : '频道'} ${channelInput.value.trim()}`;
+        } else {
+          if (timer) clearInterval(timer);
+          timer = null;
+          subStatus.innerHTML = '尚未订阅';
+          streamMeta.textContent = '已连接 · db0';
+        }
+      }
+      subscribeButton.addEventListener('click', () => {
+        if (timer) { setSubscription(false); return; }
+        if (!channelInput.value.trim()) { channelInput.focus(); return; }
+        setSubscription(true);
+      });
+      document.getElementById('channel-list').addEventListener('click', (event) => {
+        const row = event.target.closest('.rq-channel-row');
+        if (!row) return;
+        document.querySelectorAll('.rq-channel-row').forEach((item) => item.classList.toggle('is-selected', item === row));
+        channelInput.value = row.dataset.channel;
+        patternMode.checked = false;
+        if (timer) setSubscription(false);
+        subStatus.textContent = '尚未订阅';
+      });
+      document.getElementById('channel-filter').addEventListener('input', (event) => {
+        const keyword = event.target.value.trim().toLowerCase().replace(/\*/g, '');
+        document.querySelectorAll('.rq-channel-row').forEach((row) => {
+          row.hidden = Boolean(keyword) && !row.dataset.channel.toLowerCase().includes(keyword);
+        });
+      });
+      document.getElementById('channel-refresh').addEventListener('click', () => {
+        const meta = document.querySelector('.rq-channel-meta');
+        meta.textContent = '正在读取频道…';
+        setTimeout(() => { meta.textContent = '模式订阅数 · 3 · 已发现 24 个频道'; }, 600);
+      });
+      document.getElementById('pause-stream').addEventListener('click', (event) => {
+        paused = !paused;
+        event.currentTarget.innerHTML = `<svg class="rq-icon"><use href="#${paused ? 'i-play' : 'i-pause'}" /></svg>`;
+        event.currentTarget.title = paused ? '继续接收消息' : '暂停消息';
+      });
+      document.getElementById('clear-stream').addEventListener('click', () => {
+        messages.querySelectorAll('.rq-message').forEach((row) => row.remove());
+        updateMessageCount();
+      });
+      updateMessageCount();
+
+      document.querySelector('.rq-tree-row.is-key[data-key="user:1024:profile"]')?.classList.add('is-selected');
+      renderDetail();
+      setInterval(() => {
+        Object.values(keys).forEach((item) => {
+          if (item.ttl != null && item.ttl > 0) item.ttl -= 1;
+          if (item.ttl === 0) item.ttl = null;
+        });
+        if (!keys[selectedKey] || dirty) return;
+        ttlEl.textContent = '◷ ' + ttlText(keys[selectedKey].ttl);
+        ttlCountdown.textContent = '◷ ' + ttlText(keys[selectedKey].ttl);
+      }, 1000);
+    </script>
+  </body>
+</html>

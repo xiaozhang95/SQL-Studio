@@ -1,8 +1,9 @@
-import { CodeOutlined, DownloadOutlined, HistoryOutlined, IdcardOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
-import { Flex, Tag, theme, Upload } from 'antd'
+import { CodeOutlined, DownloadOutlined, HistoryOutlined, IdcardOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { Button, Flex, Tag, theme, Upload } from 'antd'
 import { useRef, useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
+import StudioIcon from '@/components/studioIcon'
 import { usePageError } from '@/contexts/pageErrors'
 import { redisModeLabel, selectedRedisDatabase } from '@/databases/redis'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -30,6 +31,7 @@ const tools = [
   { id: 'console', label: '命令行', icon: <CodeOutlined /> },
   { id: 'pubsub', label: '发布订阅', icon: <PubSubIcon /> }
 ] as const
+const runShortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵'
 
 export default function RedisQuery({ model, connection, active, themeMode }: Props) {
   const { t } = useTranslation()
@@ -58,7 +60,12 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
         disabled={blocked}
         runActions={
           <>
-            {editorMode && <ToolbarButton label={t('运行')} icon={<PlayCircleOutlined />} onClick={model.runSQL} disabled={blocked || database === undefined} />}
+            {editorMode && (
+              <Button className="query-run-button" type="primary" icon={<StudioIcon name="play" size={14} />} onClick={model.runSQL} disabled={blocked || database === undefined}>
+                {t('运行')}
+                <span style={{ marginInlineStart: 3, opacity: themeMode === 'dark' ? 1 : 0.75 }}>{runShortcut}</span>
+              </Button>
+            )}
             {model.activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={model.cancelQuery} />}
             {status === 'error' && <ToolbarButton label={t('重试连接')} hint={snapshot?.error} icon={<ReloadOutlined />} onClick={() => model.connectionAction('open', connection.id)} />}
           </>
@@ -135,12 +142,12 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
             </>
           )}
           {active && tool === 'keys' && (
-            <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', userSelect: 'text' }}>
-              <KeyBrowser key={`${connection.id}:${database}`} id={connection.id} database={Number(database)} />
+            <div style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
+              <KeyBrowser key={`${connection.id}:${database}`} id={connection.id} database={Number(database)} themeMode={themeMode} />
             </div>
           )}
           {pubSubOpened && (
-            <div hidden={!active || tool !== 'pubsub'} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 'var(--workspace-inset)', userSelect: 'text' }}>
+            <div hidden={!active || tool !== 'pubsub'} style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
               <PubSub id={connection.id} active={active && tool === 'pubsub'} />
             </div>
           )}

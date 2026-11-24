@@ -1,11 +1,13 @@
-import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, Flex, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
+import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { Button, Empty, Flex, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
 import { useState } from 'react'
 
+import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey } from '@/services/redis'
+import type { ThemeMode } from '@/typings/theme'
 
 import ToolbarButton from '../../../toolbarButton'
 import { useKeyBrowser } from '../../hooks/useKeyBrowser'
@@ -13,7 +15,7 @@ import KeyDelete from '../keyDelete'
 import KeyEditor from '../keyEditor'
 import KeyTree from '../keyTree'
 
-export default function KeyBrowser({ id, database }: { id: string; database: number }) {
+export default function KeyBrowser({ id, database, themeMode }: { id: string; database: number; themeMode: ThemeMode }) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const [deleteTarget, setDeleteTarget] = useState<RedisKey>()
@@ -59,6 +61,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
   const currentPage = page?.pattern === request.pattern ? page : undefined
   const needsRestart = currentPage?.cursor === null
   const nextCursor = currentPage?.cursor
+  const loaded = currentPage?.keys.length ?? 0
 
   function requestDelete(item: RedisKey) {
     if (saving || loading) return
@@ -72,95 +75,126 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
-      <Card
-        size="small"
-        title={t('键列表')}
-        style={{ minWidth: 0 }}
-        extra={<ToolbarButton size="small" icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />}
+    <div style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
+      <aside
+        aria-label={t('键浏览')}
+        style={{
+          display: 'flex',
+          flex: 'none',
+          flexDirection: 'column',
+          width: 320,
+          minHeight: 0,
+          borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+          background: token.colorBgContainer
+        }}
       >
-        <Flex vertical gap="small">
-          <Flex gap="small">
-            <Input
-              value={filter}
-              disabled={saving}
-              onChange={(event) => setFilter(event.target.value)}
-              onPressEnter={() => scan(filter)}
-              placeholder={t('按模式匹配键，例如 user:*')}
-              aria-label={t('筛选 Redis 键')}
-              maxLength={256}
-            />
-            <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} loading={loading && !scanningMore} disabled={saving} onClick={() => scan(filter)} />
-            <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} disabled={loading || saving} onClick={() => scan(request.pattern)} />
+        <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: 42, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+          <Typography.Text strong style={{ fontSize: token.fontSize }}>
+            {t('键浏览')}
+          </Typography.Text>
+          <span
+            style={{
+              paddingInline: 6,
+              borderRadius: 4,
+              background: token.colorFillSecondary,
+              color: token.colorTextSecondary,
+              fontSize: token.fontSizeSM,
+              lineHeight: '18px'
+            }}
+          >
+            {loaded}
+          </span>
+          <Flex gap={token.marginXXS} style={{ marginInlineStart: 'auto' }}>
+            <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
+            <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(request.pattern)} />
           </Flex>
-          {page && (
-            <>
-              <Flex align="center" gap="small" wrap>
-                <Typography.Text type="secondary">{t('已加载 {value1} 个键', { value1: page.keys.length })}</Typography.Text>
-                {needsRestart && (
-                  <Button icon={<ReloadOutlined />} disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
-                    {t('重新扫描')}
-                  </Button>
-                )}
-                {nextCursor && nextCursor !== '0' && (
-                  <>
-                    <Button loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
-                      {t('扫描下一批')}
-                    </Button>
-                    <Button loading={scanningContinuously} disabled={(loading && !scanningContinuously) || saving} onClick={() => scan(request.pattern, nextCursor, true)}>
-                      {t('连续扫描')}
-                    </Button>
-                  </>
-                )}
-                {scanningMore && <Button onClick={stopScan}>{t('停止扫描')}</Button>}
-              </Flex>
-              {page.keys.length ? (
-                <KeyTree
-                  expandedKeys={expandedKeys}
-                  onExpand={setExpandedKeys}
-                  keys={page.keys}
-                  selected={selected?.ref}
-                  onSelect={read}
-                  onRequestDelete={requestDelete}
-                  onCreate={() => promptAction('create')}
-                  onRefresh={() => scan(request.pattern)}
-                  disabled={loading || saving || Boolean(deleteTarget)}
-                />
-              ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(page.cursor === '0' ? '没有匹配的键' : '当前扫描页没有匹配的键')} />
-              )}
-            </>
+        </div>
+        <div style={{ display: 'flex', flex: 'none', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+          <Input
+            value={filter}
+            disabled={saving}
+            onChange={(event) => setFilter(event.target.value)}
+            onPressEnter={() => scan(filter)}
+            placeholder={t('按模式匹配键，例如 user:*')}
+            aria-label={t('筛选 Redis 键')}
+            maxLength={256}
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} disabled={saving} onClick={() => scan(filter)} />
+        </div>
+        {(needsRestart || scanningMore || (Boolean(nextCursor) && nextCursor !== '0')) && (
+          <div style={{ display: 'flex', flex: 'none', flexWrap: 'wrap', alignItems: 'center', gap: 4, minHeight: 30, padding: '4px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, color: token.colorTextTertiary, fontSize: token.fontSizeSM }}>
+            {needsRestart && (
+              <Button size="small" type="link" disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
+                {t('重新扫描')}
+              </Button>
+            )}
+            {nextCursor && nextCursor !== '0' && (
+              <>
+                <Button size="small" type="link" loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
+                  {t('扫描下一批')}
+                </Button>
+                <Button size="small" type="link" loading={scanningContinuously} disabled={(loading && !scanningContinuously) || saving} onClick={() => scan(request.pattern, nextCursor, true)}>
+                  {t('连续扫描')}
+                </Button>
+              </>
+            )}
+            {scanningMore && (
+              <Button size="small" type="link" onClick={stopScan}>
+                {t('停止扫描')}
+              </Button>
+            )}
+          </div>
+        )}
+        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, padding: '4px 0 8px' }}>
+          {loading && !currentPage ? (
+            <ContentLoading label={t('正在加载…')} />
+          ) : currentPage?.keys.length ? (
+            <KeyTree
+              expandedKeys={expandedKeys}
+              onExpand={setExpandedKeys}
+              keys={currentPage.keys}
+              selected={selected?.ref}
+              onSelect={read}
+              onRequestDelete={requestDelete}
+              onCreate={() => promptAction('create')}
+              onRefresh={() => scan(request.pattern)}
+              disabled={loading || saving || Boolean(deleteTarget)}
+            />
+          ) : (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(page?.cursor === '0' ? '没有匹配的键' : '当前扫描页没有匹配的键')} style={{ marginTop: 48 }} />
           )}
-        </Flex>
-      </Card>
-      <Card
-        size="small"
-        title={t('键详情')}
-        loading={detailLoading}
-        style={{ minWidth: 0 }}
-        extra={
-          selected && (
-            <Flex gap={2}>
-              <ToolbarButton size="small" icon={<DeleteOutlined />} label={t('删除键')} danger aria-haspopup="dialog" disabled={!detail || loading || saving} onClick={() => requestDelete(selected)} />
-              <ToolbarButton size="small" icon={<ReloadOutlined />} label={t('刷新键详情')} disabled={saving} onClick={() => read(selected, true)} />
-            </Flex>
-          )
-        }
-      >
-        {!selected && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('选择一个键查看详情')} />}
-        {detail && selected && (
+        </div>
+      </aside>
+
+      <section style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
+        {!selected ? (
+          <div style={{ display: 'grid', flex: 1, placeItems: 'center', padding: 24 }}>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('选择一个键查看详情')} />
+          </div>
+        ) : detailLoading ? (
+          <ContentLoading label={t('正在读取键详情…')} />
+        ) : detail ? (
           <KeyEditor
             selected={selected}
             detail={detail}
             saving={saving}
+            themeMode={themeMode}
             onSave={async (change) => {
               await commit(change)
             }}
             clearError={() => setChangeError('')}
             ttlMillis={remainingTTL}
+            onDelete={() => requestDelete(selected)}
+            onRefresh={() => read(selected, true)}
           />
+        ) : (
+          <div style={{ display: 'grid', flex: 1, placeItems: 'center', padding: 24 }}>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('键详情暂不可用')} />
+          </div>
         )}
-      </Card>
+      </section>
+
       <KeyDelete
         item={deleteTarget}
         saving={saving}
@@ -205,9 +239,7 @@ export default function KeyBrowser({ id, database }: { id: string; database: num
                 max={315360000}
                 precision={0}
                 value={ttl}
-                onChange={(next) => {
-                  setTTL(next)
-                }}
+                onChange={(next) => setTTL(next)}
                 style={{ width: '100%' }}
               />
             </Form.Item>

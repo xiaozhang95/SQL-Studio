@@ -68,7 +68,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
         ) : undefined
       }
       size={appearance.navigationSize}
-      tabBarGutter={4}
+      tabBarGutter={8}
       activeKey={activeTab}
       onChange={selectTab}
       onEdit={(key, action) => {
@@ -136,11 +136,11 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
             >
               {queryPageContext(item) ? (
                 <>
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{queryPageContext(item)}</span>
-                  <span style={{ flexShrink: 0, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' }}> · {item.title}</span>
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}>{queryPageContext(item)}</span>
+                  <span style={{ flexShrink: 0, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}> · {item.title}</span>
                 </>
               ) : (
-                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
               )}
               {designerDirty[item.id] && (
                 <span style={{ width: 6, height: 6, flex: 'none', borderRadius: '50%', background: 'var(--ant-color-warning)' }} role="img" aria-label={t('未保存')} title={t('未保存')} />

@@ -4,6 +4,6 @@
 
 连接打开失败或编辑器、命令行复核后确认不可用时，左侧已展开的连接节点下显示原因。Redis 查询工具栏的「重试连接」提示包含完整原因，点击后展开对应连接并重试。
 
-[键浏览](components/keyBrowser/README.md)显示已加载键数，支持按批或连续扫描。停止后可从当前游标继续，集群游标失效时可一键从头扫描。
+[键浏览](components/keyBrowser/README.md)使用满高左右分栏：左侧键浏览显示已加载键数并支持按批或连续扫描，右侧键详情提供头部元信息、TTL 和带行号的键值编辑区。停止扫描后可从当前游标继续，集群游标失效时可一键从头扫描。
 
-[编辑器](components/editor/README.md)复用工作区文档草稿和位置保存，多行编辑器与命令行的本地候选均使用与 SQL 编辑器相同的 Ant Design Select 和字体同步。[终端](components/console/README.md)按标签和连接保存草稿、光标/选区、历史及回执，刷新时恢复原输入位置和当前工具。[键详情](components/keyEditor/README.md)直接编辑名称、TTL 和完整 String/List/Set/Hash/ZSet 值，修改后原位保存/取消。TTL 单独一行，数字框与只读倒计时按钮组合铺满可用空间，左侧输入默认 0，右侧倒计时独立显示实际期限，未编辑 TTL 时保存保留原期限；按钮显示时分秒，超过一天时带天数。[发布订阅](components/pubsub/README.md)在工具切换时保留实时请求。关闭标签或切换连接时释放旧范围的请求。使用 SELECT 更新发起标签的数据库。
+[编辑器](components/editor/README.md)复用工作区文档草稿和位置保存，多行编辑器与命令行的本地候选均使用与 SQL 编辑器相同的 Ant Design Select 和字体同步。[终端](components/console/README.md)按标签和连接保存草稿、光标/选区、历史及回执，刷新时恢复原输入位置和当前工具。[键详情](components/keyEditor/README.md)直接编辑名称、TTL 和完整 String/List/Set/Hash/ZSet 值，修改后原位保存/取消。头部只保留类型、大小、TTL 标签和刷新/删除，键名在下方表单中与 TTL、键值一起编辑；TTL 输入显示读取时的剩余秒数，未编辑 TTL 时保存保留原期限，头部标签显示当前倒计时，倒计时显示时分秒，超过一天时带天数。键值复用 SQL 编辑器的外观和行号。[发布订阅](components/pubsub/README.md)使用频道列表与实时消息流双栏，支持暂停、清空和自动滚动，并在工具切换时保留实时请求。关闭标签或切换连接时释放旧范围的请求。使用 SELECT 更新发起标签的数据库。
