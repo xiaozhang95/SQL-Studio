@@ -54,7 +54,7 @@ Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔
 
 系统设置在 Ant Design xs 断点使用带提示的图标分类栏，新建和编辑连接则将数据库类型移入顶部下拉框。业务 Modal 与确认框使用 Ant Design 默认位置。
 
-主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用 `#f4f6f8` 画布和 `#1c55dc` 主色；暗色使用 `#0a0a0a` 中性近黑画布和 `#5fa8fb` 主色，文字沿用 Ant Design 默认层级。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
+主题集中由 constant/theme 的 createThemeConfig 提供：亮色使用 `#f4f6f8` 画布，暗色使用 `#0a0a0a` 中性近黑画布；亮暗主题主色统一为 `#1c55dc`，文字沿用 Ant Design 默认层级。字号 small/standard/large 为 12/14/16px；普通文本、表头、编辑器、设置卡片等统一跟随全局字号，不再单独写固定小字号。Tag、Badge 等组件内部的小号文字沿用 Ant Design 默认比例，不强制拉到基础字号。普通布局及重复卡片/图标分别归组件 style/styles 与公共组件，app.scss 只保留基础、原生结构与交互覆盖。
 
 Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme/README.md)。转储和同步的说明使用无可见描边的信息提示。
 
@@ -64,6 +64,6 @@ Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme
 
 连接类型、设置分类、对象树、AI 会话、下拉选项和表格选中行共用中性选中底。工作区页签使用 28px 芯片，选中页签使用内容区底色、细边框和 2px 主色活动线。消息、摘要与结果使用独立的线形导航，左右边距与工具栏对齐。主题、字号和语言卡片统一使用中性边框，通过原生单选圆点展示选中状态。
 
-全局主色由 constant/theme 的 colorPrimary 统一配置（亮色 `#1c55dc`、暗色 `#5fa8fb`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
+全局主色由 constant/theme 的 colorPrimary 统一配置（亮暗主题均为 `#1c55dc`），Radio、Switch 等主色元素自动跟随亮暗算法。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
 原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置为 default；写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。

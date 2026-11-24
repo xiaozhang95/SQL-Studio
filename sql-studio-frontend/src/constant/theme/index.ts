@@ -42,7 +42,7 @@ const palettes: Record<ThemeMode, Palette> = {
     mask: 'rgba(17, 24, 39, 0.38)'
   },
   dark: {
-    primary: '#5fa8fb',
+    primary: '#1c55dc',
     success: '#42d47c',
     warning: '#fbbf24',
     error: '#f87171',
@@ -98,29 +98,7 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgActiveHover: palette.active,
       controlItemBgHover: palette.hover
     },
-    components: {
-      Alert: {
-        colorInfoBg: tint(palette.primary, 12),
-        colorInfoBorder: tint(palette.primary, 24),
-        colorSuccessBg: tint(palette.success, 12),
-        colorSuccessBorder: tint(palette.success, 24),
-        colorWarningBg: tint(palette.warning, 12),
-        colorWarningBorder: tint(palette.warning, 24),
-        colorErrorBg: tint(palette.error, 12),
-        colorErrorBorder: tint(palette.error, 24)
-      },
-      Steps: { colorPrimaryBg: tint(palette.primary, 12) },
-      Modal: { contentBg: palette.surface, headerBg: palette.surface, footerBg: palette.surface },
-      // 文本按钮与默认按钮的悬停/按下背景与树、下拉、表格共用同一档。
-      Button: {
-        primaryShadow: 'none',
-        defaultShadow: 'none',
-        dangerShadow: 'none',
-        textHoverBg: palette.hover,
-        defaultHoverBg: palette.hover,
-        defaultActiveBg: palette.active
-      }
-    },
+    components: {},
     cssVar: { key: 'sql-studio-theme' }
   }
 }
