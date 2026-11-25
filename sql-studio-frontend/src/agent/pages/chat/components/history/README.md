@@ -14,7 +14,7 @@ useSessionRename管理弹窗选中项、Form、busy/error。重命名弹窗使�
 
 selecting表示当前会话内容加载中：暂停新建、删除和重命名，但允许继续选择其他会话；busy用于模型执行、初始化与管理操作，禁止选择。列表loading仅表示轻量索引刷新，不代替会话内容加载。
 
-历史侧栏与会话主区域使用 colorBgContainer。侧栏右沿与问答分隔线共用 `1px solid var(--border)`。列表悬停和选中状态沿用 Ant Design 主题。
+历史侧栏与会话主区域使用 `colorBgContainer`。侧栏右沿使用 `--layout-divider`，问答分隔线使用 `--border`。列表悬停和选中状态沿用 Ant Design 主题。
 
 历史列表独立滚动，搜索分隔线下方与列表底部各留 8px，同组会话间隔 4px，分组间隔 8px。有日期标题和无日期标题时沿用同一列表留白。分组标题使用弱化文字和 600 字重，字号跟随全局界面字号，会话项最小高度 34px。侧栏和抽屉水平内边距统一为 token.padding（16px）；桌面侧栏固定显示。
 

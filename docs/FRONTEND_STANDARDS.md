@@ -4,7 +4,7 @@
 
 ## Ant Design 与样式
 
-Electron 标题栏下沿、SQL 工作区与 AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design colorBorderSecondary），随亮暗主题切换。卡片、页签、表格等原生组件使用主题 token 派生的边框颜色。同一边界只由一处绘制分隔线，Tabs 栏底沿用原生分隔线。
+Electron 标题栏、全局导航、工作区与 AI 助手侧栏的布局边界共用 `--layout-divider`。暗色使用 `colorBorderSecondary`，亮色取 `colorBorderSecondary` 与 `colorBorder` 的中间色。弹窗内部分隔线使用 `--border`（`colorBorderSecondary`）。同一边界由一处绘制，工作区 Tabs 的原生栏底分隔线共用布局边界颜色。
 
 1. 以 Ant Design 组件为底座，使用 [主题 token](../sql-studio-frontend/src/constant/theme/README.md) 和项目设计令牌统一颜色、字号、间距与状态。主色使用 Logo 放大镜的蓝色 `#2569DF` 作为种子，由主题算法派生亮暗与交互色。信息色沿用 Ant Design 默认令牌。全局页面切换、主题切换和系统设置由 AppRail 承载，业务操作放入对应工具栏、页签栏或侧栏。
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；组件内的颜色、圆角、间距和尺寸优先读取 `theme.useToken()`，简单排版优先使用 Flex、Space 等原生组件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。

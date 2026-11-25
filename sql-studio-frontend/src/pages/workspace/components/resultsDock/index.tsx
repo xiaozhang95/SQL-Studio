@@ -56,7 +56,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
         flexDirection: 'column',
         background: token.colorBgContainer,
         overflow: 'hidden',
-        borderBlockStart: resizable ? token.lineWidth + 'px solid ' + token.colorBorderSecondary : undefined,
+        borderBlockStart: resizable ? `${token.lineWidth}px solid var(--layout-divider)` : undefined,
         paddingTop: resizable ? 5 : 0,
         userSelect: resizing ? 'none' : 'text'
       }}
@@ -96,7 +96,7 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
           }}
           style={{ position: 'absolute', insetInline: 0, top: 0, height: 6, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'row-resize', touchAction: 'none' }}
         >
-          <span style={{ width: 40, height: 2, borderRadius: token.borderRadiusSM, background: resizing ? token.colorTextTertiary : 'var(--resize-grip-color, var(--border))' }} />
+          <span style={{ width: 40, height: 2, borderRadius: token.borderRadiusSM, background: resizing ? token.colorTextTertiary : 'var(--resize-grip-color, var(--layout-divider))' }} />
         </div>
       )}
       <div className="result-panel-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>

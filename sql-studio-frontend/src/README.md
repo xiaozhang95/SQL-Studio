@@ -17,7 +17,7 @@ App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components
 
 App 先读取界面偏好再挂载业务页面，确保业务请求携带已恢复的语言；偏好读取失败时使用当前默认值。JSON 与 SSE 请求统一发送 Accept-Language，后端按请求语言返回系统提示，响应 Content-Language 标明所选语言。SQL、数据库返回内容和用户命名不参与翻译。
 
-Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。确认按钮使用统一的普通按钮配置。
+Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗）使用 Ant Design 容器外观，暗色下通过 app.scss 添加统一的 1px 主题细边框。常规确认按钮使用普通按钮配置。
 
 删除数据行、Redis 键、AI 会话及清空执行历史使用 [DeleteDialog](components/deleteDialog/README.md) 确认目标与范围。库表对象使用业务弹框，模型和字段草稿使用 [DeleteConfirmation](components/deleteConfirmation/README.md) 气泡。
 
@@ -46,7 +46,7 @@ MySQL 和 MariaDB 对象树按“数据库 → 表 → 表名 → 字段/索引�
 
 Electron 退出由工作区的 useDesktopExit 接入原生关闭事件，从任一功能页回到工作区，按当前标签逐项处理。非空查询分别提示“取消 / 不保存 / 保存”，空白查询直接关闭，每次仅保存该页内容，关闭后切到下一页；未提交对象修改按页确认。准备阶段暂停自动保存并通过 inert 锁定工作区交互，标签保持可见；全部标签处理完后，App 使用统一 ContentLoading 挂起页面并释放全部连接，提交空工作区。取消或失败保留当前和未处理标签，已关闭项不恢复。默认及自定义连接分组保留原展开/收起状态，只收起连接、数据库及后代。普通 Web 不增加退出确认或清理逻辑。
 
-Electron 标题栏下沿、SQL 工作区和 AI 助手侧栏及弹窗内部分隔线共用 Ant Design `colorBorderSecondary`（`--border`）。工作区页签与工具栏选择器共用 `colorBorder`，当前页签显示主色活动线。
+Electron 标题栏、全局导航、对象栏、工具栏、结果区和 AI 助手侧栏共用 `--layout-divider` 分隔线。弹窗内部分隔线使用 `--border`（`colorBorderSecondary`）。工作区页签与工具栏选择器的边框共用 `colorBorder`，当前页签显示主色活动线。
 
 页面导航由 useAppSection 通过 History API 管理，工作区使用 `/`，AI 助手使用 `/agent`，监控指标使用 `/monitor`，同步数据库使用 `/sync`。pushState 切换不刷新整页，popstate 同步前进、后退，工作区保持挂载。开发时由 Vite SPA 入口提供页面，发布时 Go 显式注册这些页面路径，资源缺失及未知 API 仍返回各自的 404。
 
@@ -66,4 +66,4 @@ Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme
 
 Radio、Switch 等主色元素随 Ant Design 亮暗算法派生。侧栏标题与计数、查询工具栏和表单弹窗复用 appearance 与组件令牌。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
-原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 配置为 default；写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。
+原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 默认为 default；桌面退出时的查询保存使用 primary，写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。

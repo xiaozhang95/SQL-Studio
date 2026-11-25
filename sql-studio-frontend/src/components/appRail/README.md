@@ -2,7 +2,7 @@
 
 [源码](index.tsx)
 
-左侧 56px Rail 与右侧面板共用当前亮暗主题的 `colorBgContainer`，右沿使用 `colorBorderSecondary` 分隔。顶部从工作区入口开始排列四个页面入口，底部提供亮暗主题切换和系统设置。
+左侧 56px Rail 与右侧面板共用当前亮暗主题的 `colorBgContainer`，右沿使用 `--layout-divider` 分隔。顶部从工作区入口开始排列四个页面入口，底部提供亮暗主题切换和系统设置。
 
 ## 导出
 

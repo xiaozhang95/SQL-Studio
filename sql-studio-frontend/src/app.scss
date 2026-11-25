@@ -32,6 +32,7 @@ html[data-theme='dark'] {
   --brand: var(--primary);
   --selection: color-mix(in srgb, var(--primary) 14%, transparent);
   --border: var(--ant-color-border-secondary);
+  --layout-divider: var(--border);
   --inactive-icon: var(--ant-color-text-tertiary);
   --code-keyword: #7c3aed;
   --code-string: #0f766e;
@@ -43,6 +44,10 @@ html[data-theme='dark'] {
     color: var(--text);
     background: var(--selection);
   }
+}
+
+html[data-theme='light'] .sql-studio-theme {
+  --layout-divider: color-mix(in srgb, var(--border), var(--ant-color-border));
 }
 
 html[data-theme='dark'] .sql-studio-theme {
@@ -383,8 +388,12 @@ body,
   outline-offset: 2px;
 }
 
-// Tabs 语义样式负责尺寸；选择器仅处理内部标签的交互与激活线。
+// Tabs 保留原生栏底分隔线，与相邻工具栏共用边界颜色。
 :is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
+  .sql-studio-theme &::before {
+    border-color: var(--layout-divider);
+  }
+
   .ant-tabs-nav-list {
     align-items: center;
   }

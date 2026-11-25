@@ -1,6 +1,6 @@
 # 连接与对象侧栏
 
-侧栏右沿与 AI 助手侧栏及弹窗内部分隔线统一使用 `--border`（Ant Design 默认 colorBorderSecondary），随亮暗主题切换。
+侧栏右沿与 AI 助手侧栏共用 `--layout-divider`，随亮暗主题切换。
 
 界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
 

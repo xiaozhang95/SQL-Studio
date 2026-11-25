@@ -59,7 +59,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         alignItems: 'center',
         gap: token.marginXXS,
         paddingBlock: token.paddingSM,
-        borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+        borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
         background: token.colorBgContainer,
         userSelect: 'none'
       }}

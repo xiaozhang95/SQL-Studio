@@ -6,4 +6,6 @@
 
 CSS 变量键为 `sql-studio-theme`。工作区、Agent 与弹窗通过这个作用域读取 Ant Design CSS 变量。字号和主题由 `useThemePreference` 保存后应用。`--selection` 从当前主色派生，供页面文本和 SQL 编辑器选区共用。
 
+`--layout-divider` 用于标题栏、侧栏、工具栏和结果区的布局分隔线。亮色取 `colorBorderSecondary` 和 `colorBorder` 的中间色，暗色使用 `colorBorderSecondary`。
+
 左侧导航、工作区页签、连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表共用 `--surface-selected`（`colorFillSecondary`）中性选中底。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。选中的工作区页签、结果页签和左侧导航图标沿用主题文本色，当前项指示线和已连接引擎底板使用主色。AI 欢迎卡片和助手图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。过程卡片使用中性填充 `colorFillAlter`。

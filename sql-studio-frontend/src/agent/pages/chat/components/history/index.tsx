@@ -91,7 +91,7 @@ export function History(props: Props) {
           height: '100%',
           width: visibleWidth,
           background: token.colorBgContainer,
-          borderRight: '1px solid var(--border)'
+          borderRight: '1px solid var(--layout-divider)'
         }}
       >
         <SidebarHeader

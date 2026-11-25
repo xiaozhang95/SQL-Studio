@@ -28,7 +28,7 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
         flex: 'none',
         minHeight: appearance.panelHeaderHeight,
         paddingInline: token.padding,
-        borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+        borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
         background: token.colorBgContainer,
         userSelect: 'none'
       }}

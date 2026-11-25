@@ -10,7 +10,7 @@ ComponentSize 是 Small/Middle/Large 的 as const 尺寸枚举，类型由值推
 
 - 每个页面或弹窗操作面只设置一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接弹窗「保存」。
 - 常规次级操作使用 default；工具栏和低频操作使用 text/icon，并提供 Tooltip 与可访问名称。
-- Modal 与 AntApp 确认弹窗通过 modalDefaults 统一确认按钮为 default；写入确认可使用 warning 按钮，危险与禁用语义保留。
+- Modal 与 AntApp 确认弹窗通过 modalDefaults 将确认按钮默认为 default；桌面退出时的查询保存确认使用 primary，写入确认可使用 warning 按钮，危险与禁用语义保留。
 - 主按钮的悬停、按下颜色和阴影沿用 [Ant Design 主题算法](../theme/README.md)。
 
 ## 面板与弹窗

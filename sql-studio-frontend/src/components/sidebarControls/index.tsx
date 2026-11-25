@@ -10,7 +10,7 @@ export function SidebarHeader({ title, count, actions, detail }: { title: string
     <Flex
       align="center"
       gap={token.marginXS}
-      style={{ flex: 'none', minHeight: appearance.panelHeaderHeight, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}
+      style={{ flex: 'none', minHeight: appearance.panelHeaderHeight, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)` }}
     >
       <Typography.Text strong>{title}</Typography.Text>
       <Tag style={{ marginInlineEnd: 0 }}>{count}</Tag>
@@ -32,7 +32,7 @@ export function SidebarSearch({ value, onChange, placeholder, label = placeholde
         alignItems: 'center',
         height: appearance.panelHeaderHeight,
         paddingInline: token.padding,
-        borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+        borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
       }}
     >
       <Input style={{ width: '100%' }} prefix={<SearchOutlined />} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={label} allowClear />

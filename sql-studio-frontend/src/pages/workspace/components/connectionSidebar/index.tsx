@@ -49,7 +49,7 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
         minHeight: 0,
         overflow: 'hidden',
         background: token.colorBgContainer,
-        borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+        borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
         width: visibleWidth,
         maxWidth: '45%'
       }}

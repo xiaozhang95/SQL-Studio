@@ -87,6 +87,7 @@ export function useDesktopExit(options: Options) {
                   </div>
                 ),
                 okText: hasSQL ? t('保存') : t('关闭'),
+                okButtonProps: hasSQL ? { type: 'primary' } : undefined,
                 cancelText: t('取消'),
                 onOk: () => {
                   decision = hasSQL ? 'save' : 'exit'

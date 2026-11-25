@@ -391,7 +391,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             flexWrap: 'wrap',
             minHeight: 38,
             padding: '0 var(--workspace-inset)',
-            borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+            borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
             flex: 'none'
           }}
         >
@@ -569,7 +569,7 @@ export default function QueryResults({ model, themeMode }: Props) {
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
         <Typography.Text
           type="secondary"
-          style={{ flex: 'none', textAlign: 'end', paddingBlock: token.paddingXS, paddingInline: token.padding, borderBlockStart: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}
+          style={{ flex: 'none', textAlign: 'end', paddingBlock: token.paddingXS, paddingInline: token.padding, borderBlockStart: `${token.lineWidth}px solid var(--layout-divider)` }}
         >
           {t('共 {count} 条', { count: rowCount })}
         </Typography.Text>

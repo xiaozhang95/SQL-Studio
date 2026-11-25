@@ -33,7 +33,7 @@ export default function DesktopTitleBar({ showTitle = true, title = 'SQL Studio'
         // 与下方侧栏搜索框外边缘共用左右留白。
         paddingInline: windows ? 'var(--workspace-inset)' : undefined,
         background: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
+        borderBottom: '1px solid var(--layout-divider)',
         color: 'var(--text)',
         userSelect: 'none'
       }}
