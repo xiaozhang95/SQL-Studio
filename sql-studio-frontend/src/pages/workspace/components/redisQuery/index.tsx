@@ -86,7 +86,7 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
               label={label}
               icon={icon}
               aria-pressed={tool === id}
-              style={tool === id ? { background: token.controlItemBgActive } : undefined}
+              style={tool === id ? { background: 'var(--surface-selected)' } : undefined}
               onClick={() => {
                 model.getCurrentSQL()
                 model.setHistoryOpen(false)

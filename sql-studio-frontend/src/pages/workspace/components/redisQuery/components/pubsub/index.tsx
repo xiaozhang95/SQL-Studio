@@ -255,7 +255,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
                     paddingInline: token.padding,
                     lineHeight: `${objectTreeLayout.rowHeight}px`,
                     borderRadius: token.borderRadius,
-                    background: selectedChannel === item.ref ? token.controlItemBgActive : undefined,
+                    background: selectedChannel === item.ref ? 'var(--surface-selected)' : undefined,
                     textAlign: 'start'
                   }}
                 >

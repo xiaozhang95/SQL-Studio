@@ -22,7 +22,12 @@ export const sqlEditorAppearance = EditorView.theme({
   },
   '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 20px' },
   '.cm-activeLine': { background: 'transparent' },
-  '.cm-activeLineGutter': { background: 'transparent', color: 'var(--primary)', fontWeight: '500', boxShadow: 'inset 2px 0 0 var(--primary)' },
+  '&.cm-editor .cm-activeLineGutter': {
+    backgroundColor: 'var(--surface-selected)',
+    color: 'var(--primary)',
+    fontWeight: '500',
+    boxShadow: 'inset 2px 0 0 var(--primary)'
+  },
   '.cm-keyword': { color: 'var(--code-keyword)' },
   '.cm-string': { color: 'var(--code-string)' },
   '.cm-number': { color: 'var(--code-number)' },

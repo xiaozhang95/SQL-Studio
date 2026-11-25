@@ -392,6 +392,10 @@ body,
   .ant-tabs-tab-btn {
     text-shadow: none;
   }
+
+  .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) .ant-tabs-tab-btn {
+    color: var(--text);
+  }
 }
 
 .workspace-tabs.ant-tabs-card > .ant-tabs-nav {
@@ -400,14 +404,10 @@ body,
     color: var(--text);
   }
 
-  // 当前页签使用主色活动线，标签与正文共用文本色。
+  // 卡片型页签使用自定义活动线，线形结果页签使用原生活动线。
   .ant-tabs-tab.ant-tabs-tab-active {
     background: var(--surface-selected);
     color: var(--text);
-
-    .ant-tabs-tab-btn {
-      color: var(--text);
-    }
 
     &::after {
       content: '';

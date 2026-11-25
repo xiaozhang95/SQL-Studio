@@ -11,7 +11,7 @@
 - [数据库图标资产](assets/databases/README.md)。
 - [数据库实现与适配器](databases/README.md)。
 
-App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示跟随主题主色。表操作位于对象树右键菜单，主区域按页面标签切换，标签末尾的加号用于新建查询。
+App.tsx/main.tsx 为框架入口；App 组合全局 [DesktopTitleBar](components/desktopTitleBar/README.md)、[AppRail](components/appRail/README.md) 和页面内容。页面及组件布局使用 style/styles，app.scss 保留基础全局、Ant Design 覆盖和确需选择器的交互/媒体查询；组件通过 theme.useToken() 读取颜色、圆角与间距，Flex、Space、Divider 等组件提供通用布局。入口加载 antd/dist/reset.css 和 app.scss，SQL 编辑器与代码预览通过 EditorView.theme 继承系统默认字体并随界面字号偏好缩放。每个操作面只设置一个 primary 主操作，其余使用 default/text/icon；普通标签使用中性色，信息提示沿用 Ant Design 信息色。表操作位于对象树右键菜单，主区域按页面标签切换，标签末尾的加号用于新建查询。
 
 工作台、AI 助手、监控和同步的页面错误由共享 [PageErrorBanner](components/pageErrorBanner/README.md) 在内容上方显示，重复原因合并。打开已保存的数据库连接失败时，左侧对象树在对应连接下方显示原因和重试入口。弹框及抽屉在内容区使用 [ErrorNotice](components/errorNotice/README.md)。[request](utils/request/README.md) 提供请求体超限和服务连接错误的统一文案。
 
