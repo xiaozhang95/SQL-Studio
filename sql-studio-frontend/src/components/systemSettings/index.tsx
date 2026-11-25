@@ -2,6 +2,7 @@ import { SettingOutlined } from '@ant-design/icons'
 import { Button, Grid, Modal, theme, Tooltip, Typography } from 'antd'
 
 import { formModalStyles, railButtonStyle } from '@/constant/appearance'
+import type { DesktopUpdatesModel } from '@/hooks/useDesktopUpdates'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
@@ -12,7 +13,7 @@ import ThemePreview from './components/themePreview'
 import { fontSizeOptions, languageOptions, settingsGroups, settingsLayout, SettingsSection, settingsSections, themeOptions } from './constant/settings'
 import { useSystemSettings } from './hooks/useSystemSettings'
 
-export default function SystemSettings({ variant = 'default', ...preferences }: AppearancePreferences & { variant?: 'default' | 'rail' }) {
+export default function SystemSettings({ variant = 'default', updates, ...preferences }: AppearancePreferences & { variant?: 'default' | 'rail'; updates: DesktopUpdatesModel }) {
   const { t } = useTranslation()
 
   const settings = useSystemSettings(preferences)
@@ -100,7 +101,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
                       <Button
                         type="text"
                         className="settings-section-choice"
-                        icon={<section.icon style={{ fontSize: token.fontSizeLG }} aria-hidden="true" />}
+                        icon={<section.icon style={{ fontSize: token.fontSizeLG, color: active && !settings.busy ? 'var(--primary)' : undefined }} aria-hidden="true" />}
                         aria-label={label}
                         aria-pressed={active}
                         disabled={settings.busy}
@@ -132,7 +133,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
               {sectionTitle}
             </Typography.Title>
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
-            {settings.section === SettingsSection.About && <About disabled={settings.busy} />}
+            {settings.section === SettingsSection.About && <About updates={updates} disabled={settings.busy} />}
             {settings.section === SettingsSection.Appearance && (
               <>
                 <Typography.Text strong style={{ display: 'block', marginBottom: 9 }}>

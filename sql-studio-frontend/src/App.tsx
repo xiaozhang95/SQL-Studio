@@ -136,7 +136,7 @@ export default function App() {
   return (
     <LanguageContext.Provider value={language}>
       <XProvider locale={locale} componentSize={appearance.controlSize} modal={modalDefaults} theme={themeConfig}>
-        <AntApp message={{ styles: { root: { display: 'none' } } }}>
+        <AntApp style={{ background: 'var(--surface)' }} message={{ styles: { root: { display: 'none' } } }}>
           {ready ? (
             <NavigationLockProvider>
               <SidebarWidthProvider>

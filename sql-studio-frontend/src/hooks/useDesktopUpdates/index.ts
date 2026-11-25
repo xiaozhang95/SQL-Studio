@@ -74,13 +74,21 @@ export function useDesktopUpdates() {
     }
   }
 
+  const pending = state.pending ?? actionPending
+  const downloadFailed = state.error?.action === 'download'
+  const progress = pending === 'download' && downloadFailed ? undefined : state.progress
+  const downloadStatus = !progress?.total ? '正在准备下载更新' : progress.percent >= 100 ? '正在校验更新' : '正在下载更新'
+
   return {
     desktop: Boolean(desktop),
     result: state.result,
-    progress: state.progress,
-    pending: state.pending ?? actionPending,
+    progress,
+    pending,
+    downloadStatus,
     error: actionError || (state.error ? errorMessage(state.error.action, state.error.code) : ''),
-    downloadFailed: state.error?.action === 'download',
+    downloadFailed,
     run
   }
 }
+
+export type DesktopUpdatesModel = ReturnType<typeof useDesktopUpdates>

@@ -5,7 +5,7 @@ import { setImmediate as settle } from 'node:timers/promises'
 
 import ts from 'typescript'
 
-const source = readFileSync(new URL('../src/components/systemSettings/hooks/useDesktopUpdates/index.ts', import.meta.url), 'utf8')
+const source = readFileSync(new URL('../src/hooks/useDesktopUpdates/index.ts', import.meta.url), 'utf8')
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
 
 function harness(desktop) {

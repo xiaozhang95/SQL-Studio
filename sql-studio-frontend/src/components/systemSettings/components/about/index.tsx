@@ -2,15 +2,15 @@ import { DownloadOutlined } from '@ant-design/icons'
 import { Button, Flex, Progress, theme, Typography } from 'antd'
 
 import ErrorNotice from '@/components/errorNotice'
+import type { DesktopUpdatesModel } from '@/hooks/useDesktopUpdates'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import { useDesktopConsole } from '../../hooks/useDesktopConsole'
-import { useDesktopUpdates } from '../../hooks/useDesktopUpdates'
 
-export default function About({ disabled }: { disabled: boolean }) {
+export default function About({ disabled, updates }: { disabled: boolean; updates: DesktopUpdatesModel }) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
-  const { desktop, result, pending, progress, downloadFailed, error, run } = useDesktopUpdates()
+  const { desktop, result, pending, progress, downloadStatus, downloadFailed, error, run } = updates
   const desktopConsole = useDesktopConsole()
   const busy = disabled || Boolean(pending) || desktopConsole.opening
   const downloading = pending === 'download'
@@ -47,7 +47,7 @@ export default function About({ disabled }: { disabled: boolean }) {
                       type="circle"
                       size={token.fontSize}
                       strokeWidth={12}
-                      percent={Math.floor((downloading && downloadFailed ? 0 : progress?.percent) ?? 0)}
+                      percent={Math.floor(progress?.percent ?? 0)}
                       showInfo={false}
                       strokeColor={downloading ? token.colorPrimary : token.colorError}
                       railColor={token.colorBorder}
@@ -75,7 +75,7 @@ export default function About({ disabled }: { disabled: boolean }) {
           </Flex>
           <Typography.Text type="secondary" role="status">
             {pending === 'check' && t('正在检查更新')}
-            {downloading && t(!progress?.total ? '正在准备下载更新' : progress.percent >= 100 ? '正在校验更新' : '正在下载更新')}
+            {downloading && t(downloadStatus)}
             {!pending && result && t(status[result.status], result.status === 'upToDate' ? undefined : { version: result.version })}
           </Typography.Text>
           <ErrorNotice errors={[error, desktopConsole.error]} />

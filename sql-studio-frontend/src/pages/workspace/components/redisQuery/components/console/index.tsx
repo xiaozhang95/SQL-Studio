@@ -162,8 +162,7 @@ export default function Console({ page, id, database, databases, visible, themeM
         padding: 'var(--workspace-inset)',
         cursor: 'text',
         lineHeight: 1.65,
-        userSelect: 'text',
-        background: themeMode === 'dark' ? token.colorBgLayout : token.colorBgContainer
+        userSelect: 'text'
       }}
     >
       <div role="log" aria-label={t('命令输出')}>

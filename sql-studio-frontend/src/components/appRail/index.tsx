@@ -6,8 +6,11 @@ import SystemSettings from '@/components/systemSettings'
 import { appearance, railButtonStyle } from '@/constant/appearance'
 import { useNavigationLock } from '@/contexts/navigationLock'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
+import { useDesktopUpdates } from '@/hooks/useDesktopUpdates'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences, ThemeMode } from '@/typings/theme'
+
+import UpdateIndicator from './components/updateIndicator'
 
 export type AppSection = 'workspace' | 'agent' | 'monitor' | 'sync'
 
@@ -25,6 +28,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const { locked } = useNavigationLock()
+  const updates = useDesktopUpdates()
   const navigationDisabled = disabled || locked
   const [savingTheme, setSavingTheme] = useState(false)
   const items = [
@@ -70,7 +74,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
             <Button
               type="text"
               className="app-rail-button"
-              style={section === item.key && !navigationDisabled ? { ...railButtonStyle, background: 'var(--surface-selected)' } : railButtonStyle}
+              style={section === item.key && !navigationDisabled ? { ...railButtonStyle, background: 'var(--surface-selected)', color: 'var(--primary)' } : railButtonStyle}
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}
@@ -81,6 +85,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         ))}
       </nav>
       <div style={{ flex: 1 }} />
+      <UpdateIndicator updates={updates} disabled={disabled} />
       <Divider style={{ width: token.controlHeightSM, minWidth: 0, marginBlock: token.marginXXS }} />
       <Tooltip title={t('切换主题')} placement="right">
         <Button
@@ -94,7 +99,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
           onClick={() => void toggleTheme()}
         />
       </Tooltip>
-      <SystemSettings variant="rail" {...preferences} themeReady={preferences.themeReady} />
+      <SystemSettings variant="rail" updates={updates} {...preferences} themeReady={preferences.themeReady} />
     </aside>
   )
 }

@@ -27,7 +27,7 @@
 - 查看建表语句，转储结构或结构和数据。
 - 亮色、暗色和跟随系统主题，支持简体中文与 English 界面。
 - 用户主目录下的 `~/.sql-studio-dev/state/`（开发）或 `~/.sql-studio/state/`（发行）保存布局、页签、查询草稿、结果快照与历史。
-- DeepSeek SQL 续写、优化与可选模型配置，生成后由用户决定是否运行。
+- DeepSeek SQL 续写、优化与可选模型配置，支持逐个测试模型连接。生成的 SQL 由用户决定是否运行。
 
 ## 安装与启动
 
@@ -74,7 +74,7 @@ pnpm build
 
 `pnpm build` 一次完成前后端构建和桌面打包，将后端程序和网页资源一起分发。产物位于 `sql-studio-electron/release/`；Windows 为绿色版目录和全局 NSIS 安装包，macOS 为 DMG，Linux 为 AppImage。请在目标平台构建。发行版管理自己的 Go 服务和空闲端口，默认配置路径为 `~/.sql-studio/state/`。绿色版须保留整个目录后运行其中的 `SQL Studio.exe`。
 
-「系统设置 → 关于软件」显示当前版本，网页和桌面打包共用 [前端 package.json](sql-studio-frontend/package.json) 的 `version`。桌面端可检查 GitHub 正式版，Windows NSIS 安装版可下载并确认安装更新。发版步骤见 [GitHub Release 与更新](sql-studio-electron/README.md#github-release-与更新)。
+「系统设置 → 关于软件」显示当前版本，网页和桌面打包共用 [前端 package.json](sql-studio-frontend/package.json) 的 `version`。桌面端可检查 GitHub 正式版，Windows NSIS 安装版可在应用内下载更新。左侧主题分隔线上方持续显示下载进度，校验完成后可点击图标重启安装。发版步骤见 [GitHub Release 与更新](sql-studio-electron/README.md#github-release-与更新)。
 
 ### 启动失败与配置保存提示
 

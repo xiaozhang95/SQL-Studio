@@ -17,8 +17,7 @@ export function useTablePagination({ divided = true }: { divided?: boolean } = {
         minHeight: token.controlHeightSM + token.paddingXXS * 2,
         margin: 0,
         padding: `${token.paddingXXS}px ${token.padding}px`,
-        borderTop: divided ? `${token.lineWidth}px solid ${token.colorBorderSecondary}` : undefined,
-        background: token.colorBgContainer
+        borderTop: divided ? `${token.lineWidth}px solid ${token.colorBorderSecondary}` : undefined
       },
       showTotal: (count: number) => t('共 {count} 条', { count })
     }),
