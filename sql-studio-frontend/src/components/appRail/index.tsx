@@ -70,7 +70,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
             <Button
               type="text"
               className="app-rail-button"
-              style={section === item.key ? { ...railButtonStyle, background: 'var(--surface-selected)' } : railButtonStyle}
+              style={section === item.key && !navigationDisabled ? { ...railButtonStyle, background: 'var(--surface-selected)' } : railButtonStyle}
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}

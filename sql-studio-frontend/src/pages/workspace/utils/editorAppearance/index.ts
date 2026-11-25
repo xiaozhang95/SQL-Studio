@@ -28,13 +28,6 @@ export const sqlEditorAppearance = EditorView.theme({
     fontWeight: '500',
     boxShadow: 'inset 2px 0 0 var(--primary)'
   },
-  '.cm-keyword': { color: 'var(--code-keyword)' },
-  '.cm-string': { color: 'var(--code-string)' },
-  '.cm-number': { color: 'var(--code-number)' },
-  '.cm-comment': { color: 'var(--code-comment)', fontStyle: 'italic' },
-  '.cm-variableName, .cm-propertyName, .cm-punctuation': { color: 'var(--text)' },
-  '.cm-operator': { color: 'var(--text-secondary)' },
-  '.cm-typeName, .cm-bool, .cm-atom, .cm-null': { color: 'var(--code-type)' },
   '.cm-selectionBackground': { background: 'var(--selection)' },
   '&.cm-focused .cm-selectionBackground': { background: 'var(--selection)' },
   '.ai-ghost': { color: 'var(--ant-color-text-tertiary)', whiteSpace: 'pre-wrap', pointerEvents: 'none' }

@@ -34,11 +34,6 @@ html[data-theme='dark'] {
   --border: var(--ant-color-border-secondary);
   --layout-divider: var(--border);
   --inactive-icon: var(--ant-color-text-tertiary);
-  --code-keyword: #7c3aed;
-  --code-string: #0f766e;
-  --code-number: #b45309;
-  --code-comment: #909a90;
-  --code-type: #8a5a00;
 
   ::selection {
     color: var(--text);
@@ -46,17 +41,8 @@ html[data-theme='dark'] {
   }
 }
 
-html[data-theme='light'] .sql-studio-theme {
-  --layout-divider: color-mix(in srgb, var(--border), var(--ant-color-border));
-}
-
 html[data-theme='dark'] .sql-studio-theme {
   --selection: color-mix(in srgb, var(--primary) 20%, transparent);
-  --code-keyword: #c4a7ff;
-  --code-string: #7dd3a8;
-  --code-number: #fbbf24;
-  --code-comment: #6c766b;
-  --code-type: #e0b25a;
 }
 * {
   // 保留 WebKit 像素尺寸与悬停样式，避免标准属性覆盖伪元素。
@@ -393,22 +379,24 @@ body,
   outline-offset: 2px;
 }
 
-// Tabs 保留原生栏底分隔线，与相邻工具栏共用边界颜色。
-:is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
-  .sql-studio-theme &::before {
-    border-color: var(--layout-divider);
-  }
+// 页签与全局导航共用选中颜色，保持禁用项的原生反馈。
+.ant-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) {
+  background: var(--surface-selected);
+  border-color: var(--border);
+  color: var(--text);
 
+  .ant-tabs-tab-btn {
+    color: inherit;
+  }
+}
+
+:is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
   .ant-tabs-nav-list {
     align-items: center;
   }
 
   .ant-tabs-tab-btn {
     text-shadow: none;
-  }
-
-  .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) .ant-tabs-tab-btn {
-    color: var(--text);
   }
 }
 
@@ -419,18 +407,13 @@ body,
   }
 
   // 卡片型页签使用自定义活动线，线形结果页签使用原生活动线。
-  .ant-tabs-tab.ant-tabs-tab-active {
-    background: var(--surface-selected);
-    color: var(--text);
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset-inline: 8px;
-      bottom: -5px;
-      height: 2px;
-      background: var(--primary);
-    }
+  .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled)::after {
+    content: '';
+    position: absolute;
+    inset-inline: 8px;
+    bottom: -5px;
+    height: 2px;
+    background: var(--primary);
   }
 
   .ant-tabs-tab:not(:hover, :focus-within, .ant-tabs-tab-active) .ant-tabs-tab-remove {

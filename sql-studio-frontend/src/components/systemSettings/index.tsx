@@ -88,7 +88,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
             {settingsGroups.map((group) => (
               <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS, flexShrink: 0 }}>
                 {!compact && (
-                  <Typography.Text strong style={{ padding: '4px 10px 6px', color: token.colorText }}>
+                  <Typography.Text strong style={{ padding: '4px 10px 6px' }}>
                     {t(group.label)}
                   </Typography.Text>
                 )}

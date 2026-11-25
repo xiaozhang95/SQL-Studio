@@ -55,7 +55,6 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           height: 28,
           flex: 'none',
           padding: '0 10px',
-          borderColor: 'var(--ant-color-border)',
           borderRadius: 'var(--ant-border-radius)'
         },
         remove: { width: 20, height: 20, marginInlineStart: 6 }

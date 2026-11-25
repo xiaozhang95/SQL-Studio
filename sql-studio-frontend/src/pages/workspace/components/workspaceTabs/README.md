@@ -14,7 +14,7 @@ model 提供 tabs/activeTab、runs、运行状态和切换/关闭回调，childr
 
 主页面的导航和内容高度覆盖仅作用于直属导航栏及内容容器，不影响结果区的嵌套 Tabs。
 
-主页面使用 28px 页签，边框和圆角与下方选择器共用 `colorBorder` 和 `borderRadius`。普通项悬停时使用 `controlItemBgHover`，选中项使用 `--surface-selected` 中性底、默认正文色和 2px 主色活动线。导航栏高 42px，与对象栏标题栏同高，保证左侧搜索行与右侧连接工具栏对齐；栏底由 Tabs 绘制单条主题分隔线，左右使用 workspace-inset（16px）内边距。末尾的 `+` 调用 `model.newQuery()`，使用与对象栏「新建连接」一致的无边框小号图标样式，带可访问名称和悬停提示。页签溢出时加号随原生 Tabs 操作区显示。执行期间隐藏新增入口，后台查询的取消操作位于栏右侧。加载遮罩限制在页签正文。原生样式覆盖限定在 app.scss 的直属导航范围。
+主页面使用 28px 页签、主题中性边框和 `borderRadius` 圆角。普通项悬停时使用 `controlItemBgHover`，当前项沿用默认文字色并使用与连接类型一致的淡中性底，底部 2px 活动线使用主题主色。导航栏高 42px，与对象栏标题栏同高，保证左侧搜索行与右侧连接工具栏对齐；栏底由 Tabs 绘制单条主题分隔线，左右使用 workspace-inset（16px）内边距。末尾的 `+` 调用 `model.newQuery()`，使用与对象栏「新建连接」一致的无边框小号图标样式，带可访问名称和悬停提示。页签溢出时加号随原生 Tabs 操作区显示。执行期间隐藏新增入口，后台查询的取消操作位于栏右侧。加载遮罩限制在页签正文。原生样式覆盖限定在 app.scss 的直属导航范围。
 
 Ant Design 6 主页面的 body-holder → body → content → workspace-page 连续传递高度。body 和 content 通过 Tabs.styles 继承高度，外层 holder 的溢出限制仅用于主页面，避免编辑器和结果区塌缩。
 

@@ -2,12 +2,12 @@
 
 `createThemeConfig(themeMode, fontSizeMode = 'standard')` 返回 App 使用的 Ant Design `ThemeConfig`。`themeMode` 选择亮色或暗色算法，`fontSizeMode` 通过主题和设置预览共用的 `uiFontSizes` 选择 12、14 或 16px。控件高度为 30px。函数无状态、请求和持久化。
 
-主色种子取自 [Logo 放大镜描边](../../../public/studio.svg) 的蓝色 `#2569DF`。Ant Design 按当前算法派生主色、悬浮色、按下色、信息色和其他语义色。亮色容器使用 `#fafafa`，统一工作台和编辑器等大面积底色。暗色容器底色、布局底色和浮层底色沿用 Ant Design 默认令牌。字体族、文本层级、圆角及表单焦点状态沿用组件默认值。弹窗遮罩沿用 Ant Design 默认样式，暗色弹窗边框取自 `colorBorder`。
+亮暗主题的 `colorPrimary` 都使用 [Logo 放大镜描边](../../../public/studio.svg) 的蓝色 `#2569DF`。Ant Design 按当前算法派生悬浮色、按下色、信息色和其他语义色。亮色容器使用 `#fafafa`，统一工作台和编辑器等大面积底色。暗色容器底色、布局底色和浮层底色沿用 Ant Design 默认令牌。字体族、圆角及表单焦点状态沿用组件默认值。Typography 的普通正文、标题和次级说明，以及 Statistic 的指标标签，使用当前系统配色的 `CanvasText`。链接和状态文字使用各自的语义色。弹窗遮罩沿用 Ant Design 默认样式，暗色弹窗边框取自 `colorBorder`。
 
 CSS 变量键为 `sql-studio-theme`。工作区、Agent 与弹窗通过这个作用域读取 Ant Design CSS 变量。字号和主题由 `useThemePreference` 保存后应用。`--selection` 从当前主色派生，供页面文本和 SQL 编辑器选区共用。
 
 Modal、Drawer 的内容区继承对应浮层底色 `colorBgElevated`。工作区常规分栏继承容器底色 `colorBgContainer`。只读 SQL 预览使用透明背景，随弹窗、表格或卡片的承载面显示。
 
-`--layout-divider` 用于标题栏、侧栏、工具栏和结果区的布局分隔线。亮色取 `colorBorderSecondary` 和 `colorBorder` 的中间色，暗色使用 `colorBorderSecondary`。
+`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用中性边框色，亮色为 `#dedede`，暗色为 `#404040`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。输入焦点和校验状态使用各自的语义色。
 
-左侧导航、工作区页签、连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表共用 `--surface-selected`（`colorFillSecondary`）中性选中底。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。选中的工作区页签、结果页签和左侧导航图标沿用主题文本色，当前项指示线和已连接引擎底板使用主色。AI 欢迎卡片和助手图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。过程卡片使用中性填充 `colorFillAlter`。
+左侧主导航、页签和连接类型共用 `--surface-selected` 淡中性选中底。选中标签和图标沿用默认文字色，卡片页签使用中性轮廓，选中指示线使用 `colorPrimary`。设置分类、对象树、会话列表、Redis 工具和频道列表也使用该中性选中底。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。AI 欢迎卡片和助手图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。过程卡片使用中性填充 `colorFillAlter`。
