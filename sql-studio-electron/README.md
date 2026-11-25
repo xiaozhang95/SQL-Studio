@@ -37,13 +37,13 @@ Windows 在 `release/` 下生成两份分发产物。
 
 ### GitHub Release 与更新
 
-「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源；网页端隐藏该入口。Electron 可手动检查 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，发现更高的正式版本后可打开对应的下载页。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，可在应用内下载整个安装包，点击“重启并安装”后先完成同一退出确认与连接清理流程，再退出本地 Go 服务并启动安装；取消退出不会安装。绿色版、调试版和其他平台通过 Release 页面下载安装；网页端仅显示构建时的版本号。
+「系统设置 → 关于软件」显示当前版本。Electron 额外提供“查看控制台”，通过无参数 `openConsole` 桥接打开当前工作台的独立开发者工具窗口，主进程校验当前窗口、主 frame 与页面来源。Electron 在工作台启动完成后后台检查一次 [SQL Studio 的公开 GitHub Releases](https://github.com/xiaozhang95/SQL-Studio/releases)，关于页也可手动检查。只有发现更高的正式版本时，侧栏主题分隔线上方才显示下载图标。Windows NSIS 安装版在该版本同时包含对应架构的安装包与 `latest.yml` 时，点击图标才下载整个安装包。点击“重启并安装”后先完成同一退出确认与连接清理流程，再退出本地 Go 服务并启动安装。绿色版、调试版和其他平台通过 Release 页面下载安装。网页端仅显示构建时的版本号。
 
 检查读取公开 `/releases/latest` 的 JSON 响应，允许 GitHub 跳转到具体发行版页面，设置 Accept 与产品 User-Agent，禁用响应缓存，版本查询超时 15 秒；与 electron-updater 的 GitHub 正式版检查方式一致，不依赖 `api.github.com` 的匿名 REST 配额。仅接受有效的正式语义版本。Windows 安装版再由 electron-updater 读取更新清单，核对目标版本、当前架构安装包名称、单文件记录与 SHA-512；清单缺失、不可读取或不匹配时仍显示发现的新版本并保留手动下载。下载前再次验证清单，下载本身继续使用 updater 的完整文件与校验流程。
 
 主进程记录详细异常，更新 IPC 仅返回固定错误码，preload 解包为原有 Promise 接口。界面区分限流、HTTP 403 拒绝、无公开正式版、超时、网络、服务故障、响应格式与清单不匹配，不把所有失败归为无法访问 GitHub。共享检查/下载任务与退出后安装流程保持不变。
 
-应用内下载通过 electron-updater 的 `download-progress` 事件更新设置页和左侧主题分隔线上方的圆形进度。关闭设置后侧栏继续显示进度，校验成功后切换为「重启并安装」图标，点击沿用同一个退出和安装流程。主进程保留递增 revision 的状态快照，`getState`/`onState` 桥接仅供同源工作台读取和订阅。下载失败后设置页保留最后进度与安全错误码，重试清零。应用内进度适用于支持自动下载的安装版。
+应用内下载先在侧栏显示圆形加载，随后通过 electron-updater 的 `download-progress` 事件更新设置页和侧栏的进度环。关闭设置后侧栏继续显示进度，校验成功后切换为「重启并安装」图标。主进程保留递增 revision 的状态快照，`getState`/`onState` 桥接仅供同源工作台读取和订阅。下载失败后侧栏恢复下载图标，设置页保留最后进度与安全错误码，重试清零。
 
 1. 修改 [前端 package.json](../sql-studio-frontend/package.json) 的 `version`，在本目录运行 `pnpm build`。Vite 将版本写入网页，electron-builder 将同一个值写入桌面应用元数据，并用于安装包名称和更新清单。
 2. 按版本号创建 GitHub Release，例如 `1.0.0`。把 `release/` 下同一次构建的 `SQL-Studio-Setup-1.0.0-x64.exe` 和 `latest.yml` 一起上传，保持生成的文件名，发布为正式版本。一个 Windows 自动更新清单对应同一次构建的安装包；其他架构的包可供手动下载。

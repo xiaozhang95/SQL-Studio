@@ -309,7 +309,8 @@ if (dataError) {
       if (!app.isPackaged) await checkDevelopmentServices(startupAbort.signal)
       const [appearance, { icon, appIcon }] = await Promise.all([readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors), loadIcons()])
       startupAbort.signal.throwIfAborted()
-      const desktop = createWindow(appearance.dark, appIcon, createDesktopUpdates(trace))
+      const updates = createDesktopUpdates(trace)
+      const desktop = createWindow(appearance.dark, appIcon, updates)
       startupScreen = await createStartupScreen(desktop.window, { icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
       startupAbort.signal.throwIfAborted()
       if (app.isPackaged) {
@@ -329,7 +330,10 @@ if (dataError) {
       startupScreen.setStage('workspace')
       await desktop.loadWorkbench(backend?.url ?? developmentURL)
       await startupScreen.complete()
-      if (!desktop.window.isDestroyed()) desktop.window.webContents.focus()
+      if (!quitting && !desktop.window.isDestroyed()) {
+        desktop.window.webContents.focus()
+        void updates.check().catch((error) => trace(`启动后检查更新失败: ${error.stack ?? error.message}`))
+      }
     })
     .catch((error) => {
       trace(`启动失败: ${error?.stack || error?.message || error}`)

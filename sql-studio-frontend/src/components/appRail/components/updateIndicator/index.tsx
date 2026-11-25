@@ -1,4 +1,4 @@
-import { ReloadOutlined } from '@ant-design/icons'
+import { DownloadOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Flex, Progress, theme, Tooltip } from 'antd'
 
 import { appearance, railButtonStyle } from '@/constant/appearance'
@@ -21,36 +21,43 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
     return (
       <Tooltip title={label} placement="right">
         <Flex align="center" justify="center" style={{ width: railButtonStyle.width, height: railButtonStyle.height, flex: 'none' }}>
-          <Progress
-            type="circle"
-            size={token.controlHeight}
-            percent={Math.floor(progress?.percent ?? 0)}
-            showInfo={false}
-            status="active"
-            strokeColor={token.colorPrimary}
-            railColor={token.colorBorder}
-            aria-label={t('更新下载进度')}
-            aria-valuetext={label}
-          />
+          {progress?.total ? (
+            <Progress
+              type="circle"
+              size={token.controlHeight}
+              percent={Math.floor(progress.percent)}
+              showInfo={false}
+              status="active"
+              strokeColor={token.colorPrimary}
+              railColor={token.colorBorder}
+              aria-label={t('更新下载进度')}
+              aria-valuetext={label}
+            />
+          ) : (
+            <LoadingOutlined spin role="status" aria-label={label} style={{ fontSize: token.controlHeight, color: token.colorPrimary }} />
+          )}
         </Flex>
       </Tooltip>
     )
   }
 
-  if (result?.status !== 'downloaded') return null
-  const installLabel = t('重启并安装')
-  const tooltip = error ? `${t(error)} · ${installLabel}` : `${t('已下载版本 {version}', { version: result.version })} · ${installLabel}`
+  if (result?.status !== 'available' && result?.status !== 'downloaded') return null
+
+  const installReady = result.status === 'downloaded'
+  const action = installReady ? 'install' : result.canDownload ? 'download' : 'openRelease'
+  const label = t(installReady ? '重启并安装' : result.canDownload ? '下载更新' : '手动下载')
+  const ActionIcon = installReady ? ReloadOutlined : DownloadOutlined
   return (
-    <Tooltip title={tooltip} placement="right" trigger={['hover', 'focus']}>
+    <Tooltip title={error ? t(error) : label} placement="right" trigger={['hover', 'focus']}>
       <Button
         type="text"
         className="app-rail-button"
         style={{ ...railButtonStyle, color: token.colorPrimary }}
-        icon={<ReloadOutlined aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
-        aria-label={installLabel}
-        loading={pending === 'install'}
+        icon={<ActionIcon aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
+        aria-label={label}
+        loading={pending === action}
         disabled={disabled || Boolean(pending)}
-        onClick={() => void run('install')}
+        onClick={() => void run(action)}
       />
     </Tooltip>
   )
