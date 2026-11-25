@@ -10,4 +10,4 @@
 - `connectionError` / `retryConnections`：连接读取失败时的错误与重试操作。
 - `onBack`：供同步页的返回工作区操作使用。
 
-正文背景使用 `colorBgContainer`，与工作台及 AI 助手的主内容区一致，随亮暗主题切换。正文铺满主区域宽度，左右和顶部内边距 16px，底部 30px，区块间距 14px。错误通栏位于正文上方，正文独立滚动，加载提示在主体中居中。
+正文背景使用 `colorBgContainer`，与工作台及 AI 助手的主内容区一致。正文铺满主区域宽度，内边距和区块间距分别使用 Ant Design `padding`、`margin`，底部使用 `paddingXL`。错误通栏位于正文上方，正文独立滚动。

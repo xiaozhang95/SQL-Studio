@@ -104,7 +104,7 @@ async function loadIcons() {
 
 function createWindow(dark, appIcon, updates) {
   let origin = ''
-  const background = dark ? '#141414' : '#ffffff'
+  const background = dark ? '#131313' : '#ffffff'
   // 原生按钮透出渲染层背景，弹窗遮罩出现时也与标题栏连成一体。
   const titleBarOverlay = { color: 'rgba(0, 0, 0, 0)', height: 32 }
   mainWindow = new BrowserWindow({

@@ -2,7 +2,7 @@
 
 加载及保存错误通过共享 ErrorNotice 展示，保留当前草稿。
 
-SystemSettings 接收 AppearancePreferences（已应用主题、字号、语言、异步 onAppearanceSave 和可选 themeReady，默认 true），由 AppRail 在全局导航底部挂载。`variant="rail"` 时使用 18px 线框齿轮图标和 Tooltip，点击区域沿用 40px 导航按钮。默认 variant 使用同一图标加文字，供独立调用。界面文案通过 useTranslation 跟随已保存语言。
+SystemSettings 接收 AppearancePreferences（已应用主题、字号、语言、异步 onAppearanceSave 和可选 themeReady，默认 true），由 AppRail 在全局导航底部挂载。`variant="rail"` 时使用同 Rail 的 20px 齿轮图标和 Tooltip，点击区域沿用 40px 导航按钮。默认 variant 使用同一图标加文字，供独立调用。界面文案通过 useTranslation 跟随已保存语言。
 
 ## 弹窗
 

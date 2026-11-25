@@ -1,6 +1,7 @@
 import { EyeOutlined, ReloadOutlined, SaveOutlined } from '@ant-design/icons'
-import { Alert, Space, Spin, Typography } from 'antd'
+import { Alert, Space, Spin, theme, Typography } from 'antd'
 
+import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
@@ -17,6 +18,7 @@ type Props = TableDesignerOptions & {
 }
 export default function TableDesigner({ themeMode, available, active, ...options }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   const manager = useTableDesigner(options)
   usePageError(active ? manager.error : undefined)
@@ -29,16 +31,16 @@ export default function TableDesigner({ themeMode, available, active, ...options
           flex: 'none',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: token.marginXS,
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          minHeight: 38,
-          padding: '0 var(--workspace-inset)',
+          minHeight: appearance.panelHeaderHeight,
+          paddingInline: token.padding,
           borderBottom: '1px solid var(--border)',
           userSelect: 'none'
         }}
       >
-        <Space wrap size={4}>
+        <Space wrap size={token.marginXXS}>
           <ToolbarButton label={t('保存表结构')} icon={<SaveOutlined />} loading={manager.saving} disabled={!manager.ready || manager.loading || options.blocked} onClick={manager.save} />
           <ToolbarButton label={t('预览 SQL')} icon={<EyeOutlined />} disabled={!manager.ready || manager.loading || manager.saving || options.blocked} onClick={manager.preview} />
           <ToolbarButton label={t('重新加载表结构')} icon={<ReloadOutlined />} disabled={manager.loading || manager.saving || options.blocked} onClick={manager.reload} />

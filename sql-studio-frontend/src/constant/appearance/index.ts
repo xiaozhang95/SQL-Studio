@@ -1,4 +1,4 @@
-import type { ButtonProps, ConfigProviderProps, TableProps, TabsProps } from 'antd'
+import type { ButtonProps, ConfigProviderProps, ModalProps, TableProps, TabsProps } from 'antd'
 
 export const ComponentSize = { Small: 'small', Middle: 'middle', Large: 'large' } as const
 export type ComponentSize = (typeof ComponentSize)[keyof typeof ComponentSize]
@@ -8,16 +8,43 @@ export const appearance = {
   controlSize: ComponentSize.Middle,
   tableSize: ComponentSize.Small,
   navigationSize: ComponentSize.Small,
-  selectWidth: 220
+  selectWidth: 220,
+  panelHeaderHeight: 42,
+  railIconSize: 20
 } as const satisfies {
   controlSize: NonNullable<ButtonProps['size']>
   tableSize: NonNullable<TableProps['size']>
   navigationSize: NonNullable<TabsProps['size']>
   selectWidth: number
+  panelHeaderHeight: number
+  railIconSize: number
 }
 
 /** 原生 Modal 与 AntApp 确认弹窗的操作按钮统一使用 default。 */
 export const modalDefaults = { okButtonProps: { type: 'default' } } as const satisfies NonNullable<ConfigProviderProps['modal']>
+
+/** 含独立滚动内容区的表单弹窗共用边界、行高与内边距。 */
+export const formModalStyles = {
+  container: { padding: 0, overflow: 'hidden' },
+  header: {
+    margin: 0,
+    minHeight: 52,
+    paddingInline: 'var(--ant-padding)',
+    display: 'flex',
+    alignItems: 'center',
+    borderBlockEnd: 'var(--ant-line-width) solid var(--ant-color-border-secondary)'
+  },
+  body: { padding: 0 },
+  footer: {
+    margin: 0,
+    minHeight: 58,
+    paddingBlock: 'var(--ant-padding-xs)',
+    paddingInline: 'var(--ant-padding)',
+    display: 'flex',
+    alignItems: 'center',
+    borderBlockStart: 'var(--ant-line-width) solid var(--ant-color-border-secondary)'
+  }
+} as const satisfies NonNullable<ModalProps['styles']>
 
 export const railButtonStyle = {
   position: 'relative',

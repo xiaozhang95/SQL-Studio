@@ -25,7 +25,7 @@ export default function EngineIcon({
         flex: 'none',
         width: size,
         height: size,
-        borderRadius: originalBrand ? 0 : size === 20 ? 4 : 6,
+        borderRadius: originalBrand ? undefined : size === 20 ? 'var(--ant-border-radius-sm)' : 'var(--ant-border-radius)',
         position: 'relative',
         display: 'inline-grid',
         placeItems: 'center',

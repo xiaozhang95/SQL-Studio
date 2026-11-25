@@ -1,6 +1,8 @@
 import { Flex, theme } from 'antd'
 import type { ReactNode } from 'react'
 
+import { appearance } from '@/constant/appearance'
+
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ScopeSelects from '../scopeSelects'
 
@@ -24,7 +26,7 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
       wrap
       style={{
         flex: 'none',
-        minHeight: 42,
+        minHeight: appearance.panelHeaderHeight,
         paddingInline: token.padding,
         borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,

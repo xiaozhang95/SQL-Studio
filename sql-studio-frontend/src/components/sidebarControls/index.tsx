@@ -2,12 +2,19 @@ import { SearchOutlined } from '@ant-design/icons'
 import { Flex, Input, Tag, theme, Typography } from 'antd'
 import type { ReactNode } from 'react'
 
-export function SidebarHeader({ title, count, actions }: { title: string; count: number; actions: ReactNode }) {
+import { appearance } from '@/constant/appearance'
+
+export function SidebarHeader({ title, count, actions, detail }: { title: string; count: number; actions: ReactNode; detail?: ReactNode }) {
   const { token } = theme.useToken()
   return (
-    <Flex align="center" gap="small" style={{ flex: 'none', minHeight: 42, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}>
+    <Flex
+      align="center"
+      gap={token.marginXS}
+      style={{ flex: 'none', minHeight: appearance.panelHeaderHeight, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}
+    >
       <Typography.Text strong>{title}</Typography.Text>
       <Tag style={{ marginInlineEnd: 0 }}>{count}</Tag>
+      {detail}
       <Flex align="center" gap={token.marginXXS} style={{ marginInlineStart: 'auto' }}>
         {actions}
       </Flex>
@@ -23,7 +30,7 @@ export function SidebarSearch({ value, onChange, placeholder, label = placeholde
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
-        height: 42,
+        height: appearance.panelHeaderHeight,
         paddingInline: token.padding,
         borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
       }}

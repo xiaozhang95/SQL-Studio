@@ -24,7 +24,17 @@ export function Welcome() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: token.marginSM, width: '100%' }}>
         {examples.map((example) => (
           <Card key={example.title} size="small">
-            <span style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: token.borderRadius, background: 'var(--primary-soft)', color: token.colorPrimary }}>
+            <span
+              style={{
+                display: 'grid',
+                placeItems: 'center',
+                width: token.controlHeightSM,
+                height: token.controlHeightSM,
+                borderRadius: token.borderRadius,
+                background: 'var(--primary-soft)',
+                color: 'var(--primary-foreground)'
+              }}
+            >
               {example.icon}
             </span>
             <Typography.Text strong style={{ display: 'block', marginTop: 11 }}>

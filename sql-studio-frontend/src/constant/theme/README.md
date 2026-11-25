@@ -1,10 +1,10 @@
 # 主题配置
 
-createThemeConfig(themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig 为 App 提供统一主题。模式为 light/dark，字号支持 small（12px）、standard（14px）和 large（16px）；普通文本、表头、编辑器和设置控件统一随全局字号变化，Tag 等组件的小号文字继续沿用 Ant Design 默认比例。无状态、请求和持久化。
+createThemeConfig(themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig 为 App 提供统一主题。模式为 light/dark。`uiFontSizes` 共供主题与设置预览使用，以 Ant Design 默认字号 14px 为标准，保留 ±2px 的字号偏好。普通文本、表头与编辑器随全局字号变化，Tag 等组件沿用自身默认层级。无状态、请求和持久化。
 
 正文、标题、标签、次级说明及占位文本沿用 Ant Design 默认文本层级（亮色为 88% 黑、暗色为 85% 白，次级 65%、三级 45%、四级 25%），不覆盖文字色 token；布局背景为 `#f4f6f8` / `#0a0a0a`，面板为 `#ffffff` / `#131313`，次级面板为 `#f8fafc` / `#1a1a1a`。暗色背景、边框和填充使用中性黑灰；亮色中性色使用冷灰，不掺绿色调。主色为应用蓝，绿色仅保留在成功状态等语义。Typography 沿用当前 Ant Design 主题的文本层级和链接样式。字体族不覆盖，圆角沿用组件默认值。
 
-主色亮色和暗色统一为 `#1c55dc`；success 为 `#16a34a` / `#42d47c`，warning 为 `#b45309` / `#fbbf24`，error 为 `#dc2626` / `#f87171`。实底按钮和 Tooltip 的文字沿用 Ant Design 默认 `colorTextLightSolid`。已连接引擎底板使用当前主题主色 `--brand`（`var(--primary)`），与主按钮、Rail 激活项和页签活动线使用同一主色。Rail 活动项、AI 欢迎卡和助手图标共用 `--primary-soft`。该底色取当前主题主色，亮暗模式的不透明度均为 12%。信息色 colorInfo 与主色共用应用蓝。
+亮暗主题的主色和信息色种子取自 [Logo 放大镜描边](../../../public/studio.svg) 的蓝色 `#2569DF`。Ant Design 派生按钮及交互色，实底按钮和 Tooltip 的文本沿用 `colorTextLightSolid`。已连接引擎底板与页签活动线使用 `--primary`，Rail 选中项和 AI 图标使用 12% 的主色浅底，暗色图标和代码前景使用同色系较亮的 `colorPrimaryHover`。文本选区也从主色派生。成功、警告和错误继续使用各自的语义色。
 
 保留 CSS 变量 key，工作区、Agent 与 AntApp 弹框共用此配置。字号与主题由现有 useThemePreference 保存后应用。Button、Alert、Steps、Modal 等组件 token 不单独覆盖，使用 Ant Design 按当前主题算法派生的默认实色、状态底色、阴影和悬停反馈。
 

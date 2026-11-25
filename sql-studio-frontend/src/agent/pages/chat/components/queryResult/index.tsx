@@ -65,7 +65,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
 
   const cardTitle = showHeader ? (
     <Space size="small">
-      <DatabaseOutlined style={{ color: 'var(--ant-color-primary)' }} />
+      <DatabaseOutlined style={{ color: 'var(--primary-foreground)' }} />
       <Typography.Text>{title ?? t('查询结果')}</Typography.Text>
     </Space>
   ) : undefined

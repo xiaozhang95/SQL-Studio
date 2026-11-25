@@ -132,7 +132,7 @@ export default function KeyTree({ keys, selected, expandedKeys, onExpand, onSele
               <span aria-hidden="true" style={{ display: 'flex', flex: 'none' }}>
                 {node.item ? <FileOutlined /> : expanded.has(String(node.key)) ? <FolderOpenOutlined /> : <FolderOutlined />}
               </span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: node.item ? token.fontFamilyCode : undefined }}>{node.title}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.title}</span>
             </span>
           )}
           selectedKeys={selected ? ['key:' + selected] : []}

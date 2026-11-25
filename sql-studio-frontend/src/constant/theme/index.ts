@@ -3,7 +3,6 @@ import { theme as antdTheme, type ThemeConfig } from 'antd'
 import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 
 type Palette = {
-  primary: string
   success: string
   warning: string
   error: string
@@ -21,10 +20,12 @@ type Palette = {
   mask: string
 }
 
+// 来自 public/studio.svg 的放大镜描边渐变。
+const logoPrimary = '#2569df'
+
 /** 与工作区、Agent 和上下文弹窗共用的主题入口。 */
 const palettes: Record<ThemeMode, Palette> = {
   light: {
-    primary: '#1c55dc',
     success: '#16a34a',
     warning: '#b45309',
     error: '#dc2626',
@@ -42,7 +43,6 @@ const palettes: Record<ThemeMode, Palette> = {
     mask: 'rgba(17, 24, 39, 0.38)'
   },
   dark: {
-    primary: '#1c55dc',
     success: '#42d47c',
     warning: '#fbbf24',
     error: '#f87171',
@@ -61,24 +61,24 @@ const palettes: Record<ThemeMode, Palette> = {
   }
 }
 
-const baseFontSize = { small: 12, standard: 14, large: 16 } as const satisfies Record<FontSizePreference, number>
+const defaultFontSize = antdTheme.defaultSeed.fontSize
+export const uiFontSizes = { small: defaultFontSize - 2, standard: defaultFontSize, large: defaultFontSize + 2 } as const satisfies Record<FontSizePreference, number>
 
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
   const palette = palettes[themeMode]
-  const tint = (color: string, weight: number, background = palette.surface) => `color-mix(in srgb, ${color} ${weight}%, ${background})`
+  const outline = (color: string) => `color-mix(in srgb, ${color} 20%, transparent)`
   return {
     algorithm: themeMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
-      fontSize: baseFontSize[fontSizeMode],
+      fontSize: uiFontSizes[fontSizeMode],
       controlHeight: 30,
       // 保留原生焦点边框和键盘轮廓，统一减弱控件边框外的焦点阴影。
       controlOutlineWidth: 1,
-      controlOutline: tint(palette.primary, 20, 'transparent'),
-      colorWarningOutline: tint(palette.warning, 20, 'transparent'),
-      colorErrorOutline: tint(palette.error, 20, 'transparent'),
-      // 主色与信息色共用应用蓝，亮暗及交互色由算法派生。
-      colorPrimary: palette.primary,
-      colorInfo: palette.primary,
+      controlOutline: outline(logoPrimary),
+      colorWarningOutline: outline(palette.warning),
+      colorErrorOutline: outline(palette.error),
+      colorPrimary: logoPrimary,
+      colorInfo: logoPrimary,
       colorSuccess: palette.success,
       colorWarning: palette.warning,
       colorError: palette.error,
@@ -98,7 +98,6 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       controlItemBgActiveHover: palette.active,
       controlItemBgHover: palette.hover
     },
-    components: {},
     cssVar: { key: 'sql-studio-theme' }
   }
 }

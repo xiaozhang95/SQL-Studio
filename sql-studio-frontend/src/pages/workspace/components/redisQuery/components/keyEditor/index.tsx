@@ -5,11 +5,11 @@ import CodeMirror from '@uiw/react-codemirror'
 import { Button, Flex, Form, Input, InputNumber, Tag, theme, Typography } from 'antd'
 import { useMemo } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail } from '@/services/redis'
 import type { ThemeMode } from '@/typings/theme'
 
-import { redisPanelLayout } from '../../../../constant/layout'
 import { sqlEditorAppearance } from '../../../../utils/editorAppearance'
 import ToolbarButton from '../../../toolbarButton'
 import { useKeyEditor } from '../../hooks/useKeyEditor'
@@ -42,10 +42,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
   const countdown = !remaining ? t('永久有效') : remaining.days > 0 ? t('剩余 {days} 天 {time}', remaining) : t('剩余 {time}', remaining)
   const initialTTL = detail.ttlMillis < 0 ? 0 : Math.ceil(detail.ttlMillis / 1000)
   const valueHint = t(detail.type === 'string' ? '输入键值，可留空' : '输入 JSON 格式的键值')
-  const valueExtensions = useMemo(
-    () => [sqlEditorAppearance, EditorState.changeFilter.of((transaction) => transaction.newDoc.length <= valueLimit), placeholder(valueHint)],
-    [valueHint]
-  )
+  const valueExtensions = useMemo(() => [sqlEditorAppearance, EditorState.changeFilter.of((transaction) => transaction.newDoc.length <= valueLimit), placeholder(valueHint)], [valueHint])
   return (
     <Flex vertical style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
       <div
@@ -53,14 +50,14 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           display: 'flex',
           flex: 'none',
           alignItems: 'center',
-          gap: 14,
-          height: redisPanelLayout.headerHeight,
-          paddingInline: 16,
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          gap: token.marginSM,
+          minHeight: appearance.panelHeaderHeight,
+          paddingInline: token.padding,
+          borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
         }}
       >
-        <Flex align="center" gap={6} wrap style={{ minWidth: 0 }}>
+        <Flex align="center" gap={token.marginXXS} wrap style={{ minWidth: 0 }}>
           <Tag style={{ marginInlineEnd: 0 }}>{detail.type}</Tag>
           <Tag style={{ marginInlineEnd: 0 }}>
             {detail.type === 'string' ? t('字节数') : t('元素数量')} {detail.size.toLocaleString()}
@@ -75,16 +72,9 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
         </Flex>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '16px', background: token.colorBgLayout }}>
-        <Form
-          layout="horizontal"
-          colon={false}
-          labelCol={{ flex: '48px' }}
-          labelAlign="left"
-          wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}
-          disabled={saving}
-        >
-          <Form.Item label={`${t('键名')}:`} htmlFor="redis-detail-name" style={{ marginBottom: 16 }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: token.padding, background: token.colorBgLayout }}>
+        <Form layout="horizontal" colon={false} labelCol={{ flex: '48px' }} labelAlign="right" wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={saving}>
+          <Form.Item label={t('键名')} htmlFor="redis-detail-name" style={{ marginBlockEnd: token.margin }}>
             <Input
               id="redis-detail-name"
               aria-label={t('键名')}
@@ -93,16 +83,15 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
               maxLength={16384}
               spellCheck={false}
               onChange={(event) => editor.changeName(event.target.value)}
-              style={{ fontFamily: token.fontFamilyCode }}
             />
           </Form.Item>
 
           <Form.Item
-            label="TTL:"
+            label="TTL"
             htmlFor="redis-detail-ttl"
             validateStatus={editor.ttlInvalid ? 'error' : undefined}
             help={editor.ttlInvalid ? t('Redis TTL 秒数无效') : undefined}
-            style={{ marginBottom: 16 }}
+            style={{ marginBlockEnd: token.margin }}
           >
             <InputNumber
               id="redis-detail-ttl"
@@ -119,8 +108,8 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
             />
           </Form.Item>
 
-          <Form.Item label={`${t('键值')}:`} style={{ marginBottom: 16 }}>
-            <div style={{ overflow: 'hidden', border: `1px solid ${token.colorBorder}`, borderRadius: token.borderRadius }}>
+          <Form.Item label={t('键值')} style={{ marginBlockEnd: token.margin }}>
+            <div style={{ overflow: 'hidden', border: `${token.lineWidth}px solid ${token.colorBorder}`, borderRadius: token.borderRadius }}>
               <div style={{ height: 286 }}>
                 <CodeMirror
                   key={selected.ref}
@@ -137,8 +126,8 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
                 />
               </div>
               {detail.truncated && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderTop: `1px solid ${token.colorBorderSecondary}`, color: token.colorTextTertiary, fontSize: token.fontSizeSM }}>
-                  {t('仅显示部分内容')}
+                <div style={{ padding: token.paddingXS, borderBlockStart: `${token.lineWidth}px solid ${token.colorBorderSecondary}` }}>
+                  <Typography.Text type="secondary">{t('仅显示部分内容')}</Typography.Text>
                 </div>
               )}
             </div>
@@ -151,20 +140,20 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           display: 'flex',
           flex: 'none',
           alignItems: 'center',
-          gap: 8,
-          height: 44,
-          paddingInline: 16,
-          borderTop: `1px solid ${token.colorBorderSecondary}`,
+          gap: token.marginXS,
+          minHeight: appearance.panelHeaderHeight,
+          paddingInline: token.padding,
+          borderBlockStart: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
         }}
       >
         {editor.dirty && (
-          <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: token.marginXXS }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: token.colorWarning }} />
             {t('有未保存修改')}
           </Typography.Text>
         )}
-        <Flex gap={6} style={{ marginInlineStart: 'auto' }}>
+        <Flex gap={token.marginXS} style={{ marginInlineStart: 'auto' }}>
           <Button disabled={saving || !editor.dirty} onClick={editor.cancel}>
             {t('取消')}
           </Button>

@@ -24,6 +24,6 @@ scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹
 
 objectTreeLayout.rowHeight=30 由连接对象树和 Redis 键树共用，与 28px 节点内容和 2px 行距一致；switcherWidth=20 用于 Redis 键树统一分组箭头与叶节点占位列宽，使同层文件夹和键图标、文字对齐；scrollSaveDelay=150ms 在连接对象树滚动结束后保存位置。
 
-redisPanelLayout.sidebarWidth=320、headerHeight=42 由 Redis 键浏览、键详情和发布订阅双栏共用，保证侧栏宽度和两侧标题栏高度一致。
+redisPanelLayout.sidebarWidth=320 由 Redis 键浏览和发布订阅共用。标题栏与搜索行沿用 `appearance.panelHeaderHeight`，与工作区其他工具栏对齐。
 
 sqlCompletionLayout.width=360、height=256：Ant Design 语法候选下拉的最大尺寸，实际宽度受窗口限制。

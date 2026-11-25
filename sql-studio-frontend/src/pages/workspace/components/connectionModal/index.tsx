@@ -1,8 +1,9 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Grid, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, Tooltip, Typography } from 'antd'
+import { Alert, AutoComplete, Button, Form, Grid, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, theme, Tooltip, Typography } from 'antd'
 
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
+import { appearance, formModalStyles } from '@/constant/appearance'
 import { connectionGroupLabel, connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'
 import { redisModeLabels } from '@/databases/redis'
@@ -22,6 +23,7 @@ type Props = {
 export default function ConnectionModal({ open, connection, groups, onClose, onSaved }: Props) {
   const { t } = useTranslation()
   const compact = Grid.useBreakpoint().xs
+  const { token } = theme.useToken()
 
   const { form, selectEngine, selectRedisMode, redisMode, saving, testing, status, section, engine, busy, setStatus, setSection, test, save } = useConnectionForm({ open, connection, groups, onSaved })
   const redis = engine.value === DatabaseEngine.Redis
@@ -31,12 +33,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
       forceRender
       rootClassName="sql-studio-theme"
       width={960}
-      styles={{
-        container: { padding: 0, overflow: 'hidden' },
-        header: { margin: 0, height: 52, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' },
-        body: { padding: 0 },
-        footer: { margin: 0, minHeight: 58, padding: '8px 16px 8px 20px', display: 'flex', alignItems: 'center', borderTop: '1px solid var(--border)' }
-      }}
+      styles={formModalStyles}
       title={connection ? t('编辑连接') : t('新建连接')}
       open={open}
       onCancel={busy ? undefined : onClose}
@@ -49,11 +46,11 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         }
       }}
       footer={
-        <div className="modal-footer" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'space-between' }}>
+        <div className="modal-footer" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: token.marginXS, width: '100%', justifyContent: 'space-between' }}>
           <Button icon={<LinkOutlined />} onClick={test} loading={testing} disabled={saving}>
             {t('测试连接')}
           </Button>
-          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, marginInlineStart: 'auto' }}>
+          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, marginInlineStart: 'auto' }}>
             <Button onClick={onClose} disabled={busy}>
               {t('取消')}
             </Button>
@@ -66,7 +63,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
     >
       <div className="connection-dialog-body" style={{ display: 'flex', flexDirection: compact ? 'column' : 'row', height: 'min(532px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
         {compact ? (
-          <div style={{ flex: 'none', padding: '8px 12px', borderBlockEnd: '1px solid var(--border)' }}>
+          <div style={{ flex: 'none', paddingBlock: token.paddingXS, paddingInline: token.paddingSM, borderBlockEnd: '1px solid var(--border)' }}>
             <Select
               aria-label={t('数据库类型')}
               value={engine.value}
@@ -83,7 +80,8 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             style={{
               width: 210,
               flex: 'none',
-              padding: '14px 10px',
+              paddingBlock: token.paddingSM,
+              paddingInline: token.paddingXS,
               borderInlineEnd: '1px solid var(--border)',
               display: 'flex',
               flexDirection: 'column',
@@ -104,7 +102,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                 disabled={busy || Boolean(connection && profile.value !== engine.value)}
                 onClick={() => selectEngine(profile.value)}
                 style={{
-                  height: 42,
+                  height: appearance.panelHeaderHeight,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-start',
@@ -119,7 +117,19 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           </aside>
         )}
         <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
-          <div className={`connection-engine-header ${engine.className}`} style={{ flex: 'none', display: 'flex', alignItems: 'center', flexWrap: compact ? 'wrap' : undefined, gap: compact ? 8 : 12, minHeight: 62, padding: compact ? '8px 12px' : '0 20px', borderBottom: '1px solid var(--border)' }}>
+          <div
+            className={`connection-engine-header ${engine.className}`}
+            style={{
+              flex: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: compact ? 'wrap' : undefined,
+              gap: compact ? 8 : 12,
+              minHeight: 62,
+              padding: compact ? '8px 12px' : '0 20px',
+              borderBottom: '1px solid var(--border)'
+            }}
+          >
             <EngineIcon type={engine.value} variant="logo" />
             <span>{engine.label}</span>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -134,7 +144,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               </Tooltip>
             </div>
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: token.padding }}>
             <Form form={form} layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
               <Form.Item name="type" hidden>
                 <Input />

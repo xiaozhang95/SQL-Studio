@@ -1,7 +1,7 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { Button, Grid, Modal, theme, Tooltip, Typography } from 'antd'
 
-import { railButtonStyle } from '@/constant/appearance'
+import { appearance, formModalStyles, railButtonStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
@@ -30,7 +30,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
             aria-label={t('系统设置')}
             aria-haspopup="dialog"
             aria-expanded={settings.open}
-            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: 18 }} />}
+            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
             disabled={preferences.themeReady === false}
             onClick={settings.show}
           />
@@ -58,28 +58,9 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
         mask={{ closable: !settings.busy }}
         keyboard={!settings.busy}
         destroyOnHidden
-        styles={{
-          container: { padding: 0, overflow: 'hidden' },
-          header: {
-            margin: 0,
-            height: 52,
-            padding: '0 16px 0 20px',
-            display: 'flex',
-            alignItems: 'center',
-            borderBottom: `1px solid ${token.colorBorderSecondary}`
-          },
-          body: { padding: 0 },
-          footer: {
-            margin: 0,
-            height: 56,
-            padding: '0 16px 0 20px',
-            display: 'flex',
-            alignItems: 'center',
-            borderTop: `1px solid ${token.colorBorderSecondary}`
-          }
-        }}
+        styles={formModalStyles}
         footer={
-          <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: token.marginXS, width: '100%', justifyContent: 'flex-end' }}>
             <Button disabled={settings.busy} onClick={settings.close}>
               {t('取消')}
             </Button>
@@ -97,14 +78,15 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
               flex: 'none',
               display: 'flex',
               flexDirection: 'column',
-              gap: compact ? token.marginXS : 16,
-              padding: compact ? '14px 4px' : '14px 10px',
-              borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+              gap: compact ? token.marginXS : token.margin,
+              paddingBlock: token.paddingSM,
+              paddingInline: compact ? token.paddingXXS : token.paddingXS,
+              borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
               overflowY: 'auto'
             }}
           >
             {settingsGroups.map((group) => (
-              <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+              <div key={group.label} role="group" aria-label={t(group.label)} style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS, flexShrink: 0 }}>
                 {!compact && (
                   <Typography.Text strong style={{ padding: '4px 10px 6px', color: token.colorText }}>
                     {t(group.label)}

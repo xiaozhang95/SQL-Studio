@@ -22,12 +22,9 @@ export default function DatabasePage({ title, connectionError, retryConnections,
   const { token } = theme.useToken()
   return (
     <Flex vertical style={{ height: '100%', minWidth: 0, color: token.colorText, background: token.colorBgContainer }}>
-      <PageErrorBanner
-        errors={[connectionError, ...errors]}
-        errorAction={connectionError ? <Button onClick={retryConnections}>{t('重试')}</Button> : undefined}
-      />
-      <main aria-label={title} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 16px 30px' }}>
-        <Flex vertical gap={14} style={{ width: '100%', minWidth: 0, minHeight: '100%' }}>
+      <PageErrorBanner errors={[connectionError, ...errors]} errorAction={connectionError ? <Button onClick={retryConnections}>{t('重试')}</Button> : undefined} />
+      <main aria-label={title} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: token.padding, paddingBlockEnd: token.paddingXL }}>
+        <Flex vertical gap={token.margin} style={{ width: '100%', minWidth: 0, minHeight: '100%' }}>
           {children}
         </Flex>
       </main>

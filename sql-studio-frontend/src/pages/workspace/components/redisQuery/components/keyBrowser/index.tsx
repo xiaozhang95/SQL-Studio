@@ -1,17 +1,18 @@
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import { Button, Empty, Flex, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
+import { Button, Empty, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
 import { useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
+import { SidebarHeader } from '@/components/sidebarControls'
+import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey } from '@/services/redis'
 import type { ThemeMode } from '@/typings/theme'
 
-import ToolbarButton from '../../../toolbarButton'
-import CountBadge from '../../../countBadge'
 import { redisPanelLayout } from '../../../../constant/layout'
+import ToolbarButton from '../../../toolbarButton'
 import { useKeyBrowser } from '../../hooks/useKeyBrowser'
 import KeyDelete from '../keyDelete'
 import KeyEditor from '../keyEditor'
@@ -90,17 +91,27 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
           background: token.colorBgContainer
         }}
       >
-        <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
-          <Typography.Text strong style={{ fontSize: token.fontSize }}>
-            {t('键浏览')}
-          </Typography.Text>
-          <CountBadge count={loaded} />
-          <Flex gap={token.marginXXS} style={{ marginInlineStart: 'auto' }}>
-            <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
-            <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(request.pattern)} />
-          </Flex>
-        </div>
-        <div style={{ display: 'flex', flex: 'none', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+        <SidebarHeader
+          title={t('键浏览')}
+          count={loaded}
+          actions={
+            <>
+              <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
+              <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(request.pattern)} />
+            </>
+          }
+        />
+        <div
+          style={{
+            display: 'flex',
+            flex: 'none',
+            alignItems: 'center',
+            gap: token.marginXS,
+            minHeight: appearance.panelHeaderHeight,
+            paddingInline: token.padding,
+            borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+          }}
+        >
           <Input
             value={filter}
             disabled={saving}
@@ -114,7 +125,19 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
           <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} disabled={saving} onClick={() => scan(filter)} />
         </div>
         {(needsRestart || scanningMore || (Boolean(nextCursor) && nextCursor !== '0')) && (
-          <div style={{ display: 'flex', flex: 'none', flexWrap: 'wrap', alignItems: 'center', gap: 4, minHeight: 30, padding: '4px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, color: token.colorTextTertiary, fontSize: token.fontSizeSM }}>
+          <div
+            style={{
+              display: 'flex',
+              flex: 'none',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: token.marginXXS,
+              minHeight: token.controlHeight,
+              paddingBlock: token.paddingXXS,
+              paddingInline: token.padding,
+              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+            }}
+          >
             {needsRestart && (
               <Button size="small" type="link" disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
                 {t('重新扫描')}
@@ -137,7 +160,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
             )}
           </div>
         )}
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, padding: '4px 0 8px' }}>
+        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, paddingBlockStart: token.paddingXXS, paddingBlockEnd: token.paddingXS }}>
           {loading && !currentPage ? (
             <ContentLoading label={t('正在加载…')} />
           ) : currentPage?.keys.length ? (

@@ -256,7 +256,7 @@ function HistoryContents({
                       disabled: busy,
                       label: (
                         <Flex className="chat-history-row" align="center" justify="space-between" gap="small">
-                          <MessageOutlined className="chat-history-icon" style={{ flexShrink: 0, fontSize: 14 }} />
+                          <MessageOutlined className="chat-history-icon" style={{ flexShrink: 0 }} />
                           <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
                             {i.title}
                           </Typography.Text>

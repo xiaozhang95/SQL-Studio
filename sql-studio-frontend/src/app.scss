@@ -5,7 +5,6 @@
 html[data-theme='light'] {
   --thumb: rgba(144, 147, 153, 0.5);
   --thumb-hover: rgba(144, 147, 153, 0.8);
-  --selection: rgba(28, 85, 220, 0.14);
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
   --composer-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
   --card-shadow: var(--shadow-xs);
@@ -14,7 +13,6 @@ html[data-theme='light'] {
 html[data-theme='dark'] {
   --thumb: rgba(255, 255, 255, 0.2);
   --thumb-hover: rgba(255, 255, 255, 0.35);
-  --selection: rgba(95, 168, 251, 0.2);
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
   --composer-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   --card-shadow: var(--shadow-xs);
@@ -22,7 +20,7 @@ html[data-theme='dark'] {
 }
 // App 与弹窗/抽屉门户共享 Ant Design 变量作用域，所有颜色从当前主题派生。
 .sql-studio-theme {
-  --workspace-inset: 16px;
+  --workspace-inset: var(--ant-padding);
   --text: var(--ant-color-text);
   --text-secondary: var(--ant-color-text-secondary);
   --text-tertiary: var(--ant-color-text-tertiary);
@@ -31,17 +29,19 @@ html[data-theme='dark'] {
   --surface-subtle: #f8fafc;
   --surface-hover: var(--ant-control-item-bg-hover);
   --primary: var(--ant-color-primary);
+  --primary-foreground: var(--primary);
   // 已连接引擎图标的底板跟随当前主题主色。
   --brand: var(--primary);
   // 导航激活项与 AI 图标的底色统一使用当前主色的 12% 不透明度。
   --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
+  --selection: color-mix(in srgb, var(--primary-foreground) 14%, transparent);
   --border: var(--ant-color-border-secondary);
   --inactive-icon: var(--ant-color-text-tertiary);
   --code-keyword: #7c3aed;
   --code-string: #0f766e;
   --code-number: #b45309;
   --code-comment: #909a90;
-  --code-func: #1d4ed8;
+  --code-func: var(--primary-foreground);
   --code-type: #8a5a00;
 
   ::selection {
@@ -64,12 +64,13 @@ html[data-theme='dark'] :is(.ant-dropdown, .ant-dropdown-menu-submenu) .ant-drop
 }
 
 html[data-theme='dark'] .sql-studio-theme {
+  --primary-foreground: var(--ant-color-primary-hover);
+  --selection: color-mix(in srgb, var(--primary-foreground) 20%, transparent);
   --surface-subtle: #1a1a1a;
   --code-keyword: #c4a7ff;
   --code-string: #7dd3a8;
   --code-number: #fbbf24;
   --code-comment: #6c766b;
-  --code-func: #82aaff;
   --code-type: #e0b25a;
 }
 * {
@@ -98,7 +99,7 @@ html[data-theme='dark'] .ant-modal-container {
 }
 
 .chat-history-list .ant-conversations-item-active .chat-history-icon {
-  color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .chat-history-actions {
@@ -336,7 +337,7 @@ body,
 }
 
 .settings-section-choice[aria-pressed='true'] .anticon {
-  color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .chat-history-list .ant-conversations-item-active {

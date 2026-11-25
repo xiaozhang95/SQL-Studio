@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
 import { readStartupAppearance } from '../src/startup/appearance.mjs'
+
+test('启动页仅允许声明哈希对应的内联样式，应用蓝取自 Logo', async () => {
+  const html = (await readFile(new URL('../src/startup/index.html', import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)?.[1]
+  assert.ok(css)
+  const hash = createHash('sha256').update(css).digest('base64')
+  assert.ok(html.includes(`style-src 'sha256-${hash}'`))
+  const logo = await readFile(new URL('../../sql-studio-frontend/public/studio.svg', import.meta.url), 'utf8')
+  const color = css.match(/--brand:\s*(#[0-9a-f]{6})/i)?.[1]
+  assert.ok(color && logo.toLowerCase().includes(color.toLowerCase()))
+})
 
 test('固定亮暗主题优先于系统，system 与未配置时跟随系统', async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'sql-studio-startup-theme-'))

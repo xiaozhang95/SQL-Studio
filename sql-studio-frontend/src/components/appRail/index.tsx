@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import StudioIcon, { databaseSectionIconNames } from '@/components/studioIcon'
 import SystemSettings from '@/components/systemSettings'
-import { railButtonStyle } from '@/constant/appearance'
+import { appearance, railButtonStyle } from '@/constant/appearance'
 import { useNavigationLock } from '@/contexts/navigationLock'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -28,10 +28,10 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
   const navigationDisabled = disabled || locked
   const [savingTheme, setSavingTheme] = useState(false)
   const items = [
-    { key: 'workspace', label: '工作区', icon: <StudioIcon name="database" size={20} />, onClick: onOpenWorkspace },
-    { key: 'agent', label: 'AI 助手', icon: <StudioIcon name="bot" size={20} />, onClick: onOpenAgent },
-    { key: 'monitor', label: '监控指标', icon: <StudioIcon name={databaseSectionIconNames.monitor} size={20} />, onClick: () => onOpenDatabaseSection('monitor') },
-    { key: 'sync', label: '同步数据库', icon: <StudioIcon name={databaseSectionIconNames.sync} size={20} />, onClick: () => onOpenDatabaseSection('sync') }
+    { key: 'workspace', label: '工作区', icon: <StudioIcon name="database" size={appearance.railIconSize} />, onClick: onOpenWorkspace },
+    { key: 'agent', label: 'AI 助手', icon: <StudioIcon name="bot" size={appearance.railIconSize} />, onClick: onOpenAgent },
+    { key: 'monitor', label: '监控指标', icon: <StudioIcon name={databaseSectionIconNames.monitor} size={appearance.railIconSize} />, onClick: () => onOpenDatabaseSection('monitor') },
+    { key: 'sync', label: '同步数据库', icon: <StudioIcon name={databaseSectionIconNames.sync} size={appearance.railIconSize} />, onClick: () => onOpenDatabaseSection('sync') }
   ] as const
 
   async function toggleTheme() {
@@ -57,20 +57,20 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         flex: 'none',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 4,
-        padding: '10px 0 12px',
+        gap: token.marginXXS,
+        paddingBlock: token.paddingSM,
         borderInlineEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,
         userSelect: 'none'
       }}
     >
-      <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }} aria-label={t('工作区')}>
+      <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginXXS, width: '100%' }} aria-label={t('工作区')}>
         {items.map((item) => (
           <Tooltip key={item.key} title={navigationDisabled ? t('请等待当前操作完成') : t(item.label)} placement="right">
             <Button
               type="text"
               className="app-rail-button"
-              style={section === item.key ? { ...railButtonStyle, background: 'var(--primary-soft)', color: token.colorPrimary } : railButtonStyle}
+              style={section === item.key ? { ...railButtonStyle, background: 'var(--primary-soft)', color: 'var(--primary-foreground)' } : railButtonStyle}
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}
@@ -87,7 +87,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
           type="text"
           className="app-rail-button"
           style={railButtonStyle}
-          icon={<StudioIcon name={themeMode === 'dark' ? 'sun' : 'moon'} size={20} />}
+          icon={<StudioIcon name={themeMode === 'dark' ? 'sun' : 'moon'} size={appearance.railIconSize} />}
           aria-label={t('切换主题')}
           loading={savingTheme}
           disabled={!preferences.themeReady}

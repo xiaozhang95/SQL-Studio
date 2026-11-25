@@ -1,5 +1,6 @@
 import { GlobalOutlined, InfoCircleOutlined, RobotOutlined, SunOutlined } from '@ant-design/icons'
 
+import { uiFontSizes } from '@/constant/theme'
 import type { FontSizePreference, Language, ThemePreference } from '@/typings/theme'
 
 export const SettingsSection = { Model: 'model', Appearance: 'appearance', Language: 'language', About: 'about' } as const
@@ -17,7 +18,6 @@ export const settingsGroups = [
   { label: '通用', sections: [settingsSections[1], settingsSections[2], settingsSections[3]] }
 ] as const
 
-
 export const themeOptions = [
   { value: 'system', label: '跟随系统' },
   { value: 'light', label: '亮色' },
@@ -25,9 +25,9 @@ export const themeOptions = [
 ] as const satisfies readonly { value: ThemePreference; label: string }[]
 
 export const fontSizeOptions = [
-  { value: 'small', label: '较小（12px）', fontSize: 12 },
-  { value: 'standard', label: '标准（14px）', fontSize: 14 },
-  { value: 'large', label: '稍大（16px）', fontSize: 16 }
+  { value: 'small', label: '较小（12px）', fontSize: uiFontSizes.small },
+  { value: 'standard', label: '标准（14px）', fontSize: uiFontSizes.standard },
+  { value: 'large', label: '稍大（16px）', fontSize: uiFontSizes.large }
 ] as const satisfies readonly { value: FontSizePreference; label: string; fontSize: number }[]
 
 export const settingsLayout = { width: 920, height: 532, sidebarWidth: 208, compactSidebarWidth: 48, previewHeight: 96, cardMinWidth: 132 } as const

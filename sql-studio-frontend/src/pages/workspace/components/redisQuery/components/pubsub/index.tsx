@@ -2,13 +2,14 @@ import { CaretRightOutlined, ClearOutlined, PauseOutlined, ReloadOutlined, Searc
 import { Button, Checkbox, Empty, Flex, Input, Switch, theme, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
+import { SidebarHeader } from '@/components/sidebarControls'
+import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import { getChannels, subscribe } from '@/services/redis'
 import type { RedisChannel, RedisChannels } from '@/services/redis'
 
 import { objectTreeLayout, redisPanelLayout } from '../../../../constant/layout'
-import CountBadge from '../../../countBadge'
 import ToolbarButton from '../../../toolbarButton'
 
 type Message = { id: number; channel: string; payload: string; truncated?: boolean; receivedAt: number }
@@ -149,9 +150,10 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
           flex: 'none',
           flexWrap: 'wrap',
           alignItems: 'center',
-          gap: 8,
-          padding: '10px 16px',
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          gap: token.marginXS,
+          paddingBlock: token.paddingXS,
+          paddingInline: token.padding,
+          borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
           background: token.colorBgContainer
         }}
       >
@@ -198,21 +200,29 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             background: token.colorBgContainer
           }}
         >
+          <SidebarHeader
+            title={t('活跃频道')}
+            count={channels?.channels.length ?? 0}
+            detail={
+              channels?.truncated && (
+                <Typography.Text type="secondary" ellipsis={{ tooltip: t('仅显示部分内容') }} style={{ minWidth: 0 }}>
+                  {t('仅显示部分内容')}
+                </Typography.Text>
+              )
+            }
+            actions={<ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} onClick={() => setRequest({ pattern: filter })} />}
+          />
           <div
-            style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}
+            style={{
+              display: 'flex',
+              flex: 'none',
+              alignItems: 'center',
+              gap: token.marginXS,
+              minHeight: appearance.panelHeaderHeight,
+              paddingInline: token.padding,
+              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+            }}
           >
-            <Typography.Text strong>{t('活跃频道')}</Typography.Text>
-            <CountBadge count={channels?.channels.length ?? 0} />
-            {channels?.truncated && (
-              <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                {t('仅显示部分内容')}
-              </Typography.Text>
-            )}
-            <Flex gap={token.marginXXS} style={{ marginInlineStart: 'auto' }}>
-              <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} onClick={() => setRequest({ pattern: filter })} />
-            </Flex>
-          </div>
-          <div style={{ display: 'flex', flex: 'none', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
             <Input
               value={filter}
               aria-label={t('筛选频道')}
@@ -223,9 +233,9 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             />
             <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} onClick={() => setRequest({ pattern: filter })} />
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '4px 0 8px' }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlockStart: token.paddingXXS, paddingBlockEnd: token.paddingXS }}>
             {loading && !channels ? (
-              <Typography.Text type="secondary" style={{ display: 'block', padding: '16px 8px' }}>
+              <Typography.Text type="secondary" style={{ display: 'block', padding: token.padding }}>
                 {t('正在读取频道…')}
               </Typography.Text>
             ) : channels?.channels.length ? (
@@ -240,9 +250,9 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
                     display: 'flex',
                     justifyContent: 'flex-start',
                     alignItems: 'center',
-                    gap: 8,
+                    gap: token.marginXS,
                     height: objectTreeLayout.rowHeight,
-                    paddingInline: 16,
+                    paddingInline: token.padding,
                     lineHeight: `${objectTreeLayout.rowHeight}px`,
                     borderRadius: token.borderRadius,
                     background: selectedChannel === item.ref ? token.controlItemBgActive : undefined,
@@ -267,10 +277,10 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               display: 'flex',
               flex: 'none',
               alignItems: 'center',
-              gap: 8,
-              height: redisPanelLayout.headerHeight,
-              paddingInline: 16,
-              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+              gap: token.marginXS,
+              minHeight: appearance.panelHeaderHeight,
+              paddingInline: token.padding,
+              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
               background: token.colorBgContainer
             }}
           >
@@ -278,8 +288,8 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {t('{value1} 条', { value1: messages.length })}
             </Typography.Text>
-            <Flex align="center" gap={8} style={{ marginInlineStart: 'auto' }}>
-              <Flex align="center" gap={6}>
+            <Flex align="center" gap={token.marginXS} style={{ marginInlineStart: 'auto' }}>
+              <Flex align="center" gap={token.marginXXS}>
                 <Typography.Text type="secondary">{t('自动滚动')}</Typography.Text>
                 <Switch size="small" checked={autoScroll} onChange={setAutoScroll} aria-label={t('自动滚动')} />
               </Flex>
@@ -289,21 +299,22 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               </Flex>
             </Flex>
           </div>
-          <div ref={log} role="log" aria-label={t('订阅消息')} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '2px 0', background: token.colorBgLayout }}>
+          <div ref={log} role="log" aria-label={t('订阅消息')} style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlock: token.paddingXXS, background: token.colorBgLayout }}>
             {messages.length ? (
               messages.map((message) => (
                 <div
                   key={message.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '82px 112px minmax(0, 1fr)',
+                    gridTemplateColumns: '12ch minmax(0, 7em) minmax(0, 1fr)',
                     alignItems: 'baseline',
-                    gap: 10,
-                    padding: '8px 16px',
-                    borderBottom: `1px solid ${token.colorBorderSecondary}`
+                    gap: token.marginXS,
+                    paddingBlock: token.paddingXS,
+                    paddingInline: token.padding,
+                    borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
                   }}
                 >
-                  <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM, fontVariantNumeric: 'tabular-nums' }}>
+                  <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {timeLabel(message.receivedAt)}
                   </Typography.Text>
                   <Typography.Text ellipsis>{message.channel}</Typography.Text>
