@@ -22,12 +22,21 @@ export function pageExecutionError(run?: RunState) {
   return run.error
 }
 
-/** 导航只展示返回数据列的结果，保留原语句索引用于选择、刷新与恢复。 */
-export const resultOutputs = (run: RunState) => statementOutputs(run).flatMap((item, index) => (item.result?.columns.length ? [{ item, index }] : []))
+/** 导航保留语句位置和该语句内的数据集位置。 */
+export const resultOutputKey = (index: number, resultSetIndex = 0) => (resultSetIndex ? `${index}:${resultSetIndex}` : String(index))
 
-export const defaultOutputView = (run: RunState, index: number, running: boolean): string => {
+export const resultOutputs = (run: RunState) =>
+  statementOutputs(run).flatMap((item, index) =>
+    item.result?.columns.length
+      ? [item.result, ...(item.result.additionalResults ?? [])].map((_, resultSetIndex) => ({ item, index, key: resultOutputKey(index, resultSetIndex) }))
+      : []
+  )
+
+export const defaultOutputView = (run: RunState, index: number, running: boolean, resultSetIndex = 0): string => {
   if (run.error) return 'messages'
-  if (resultOutputs(run).some((entry) => entry.index === index)) return String(index)
+  const statements = statementOutputs(run)
+  const result = statements[index]?.result
+  if (result?.columns.length) return resultOutputKey(index, result.additionalResults?.[resultSetIndex - 1] ? resultSetIndex : 0)
   if (executionCancelled(run)) return 'messages'
-  return running || !statementOutputs(run).length ? 'messages' : 'summary'
+  return running || !statements.length ? 'messages' : 'summary'
 }

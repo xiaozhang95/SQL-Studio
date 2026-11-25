@@ -15,7 +15,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases`
 
 每个查询页独立保存连接、数据库、表和 SQL。编辑器执行与重新执行按原 SQL 读取结果，行数由 SQL 决定，仍受每条约 8 MiB 的结果大小预算和 30 秒执行期限约束。首行超出结果预算时改为单独的只读预览。双击表、右键「查询数据」或刷新表数据页使用 `LIMIT 1000` 的只读预览。右键「新建查询」生成可编辑的普通 SELECT。编辑器显式允许查询、DDL 和 DML，API 默认只读。单语句和批次 JSON 请求最大 32 MiB。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。语句错误在发起页的消息和摘要中显示，执行请求和对象加载错误显示在顶部。打开已保存连接失败时，具体原因显示在左侧对应连接下方，可就地重试。主动取消在消息、摘要和历史中显示为「执行已取消」。失败或取消停止后续语句，保留已完成结果及已提交写入。
 
-MySQL、MariaDB 和 PostgreSQL 的每个多语句批次使用独立会话，批次内共享会话设置、临时表及事务。PostgreSQL 的 `BEGIN`、事务内容、`COMMIT` 或 `ROLLBACK` 在同一次运行中提交。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。普通运行仍遵循数据库的提交方式。
+MySQL、MariaDB 和 PostgreSQL 的每个多语句批次使用独立会话，批次内共享会话设置、临时表及事务。请将事务控制语句和事务内 SQL 放在同一次运行中。临时表和 SQL 预处理语句只在创建它们的批次内可用。批次结果的单条重跑已禁用，可核对原脚本后在编辑器中运行。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。`CALL` 和 `EXECUTE` 返回的数据集各自显示为结果页签，执行历史按语句记录。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。普通运行仍遵循数据库的提交方式。
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 

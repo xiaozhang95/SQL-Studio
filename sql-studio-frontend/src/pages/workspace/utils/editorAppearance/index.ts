@@ -17,14 +17,13 @@ export const sqlEditorAppearance = EditorView.theme({
   '.cm-line': { padding: '0 20px 0 8px' },
   '&.cm-editor .cm-gutters': {
     background: 'var(--surface)',
-    color: 'var(--ant-color-text-tertiary)',
+    color: 'var(--text)',
     borderRight: '1px solid var(--border)'
   },
   '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 20px' },
   '.cm-activeLine': { background: 'transparent' },
   '&.cm-editor .cm-activeLineGutter': {
     backgroundColor: 'var(--surface-selected)',
-    color: 'var(--primary)',
     fontWeight: '500',
     boxShadow: 'inset 2px 0 0 var(--primary)'
   },

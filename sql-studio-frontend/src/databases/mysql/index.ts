@@ -12,6 +12,7 @@ import { splitSQLStatements, useDatabaseSQL } from './statements'
 /** MySQL 的实际实现归属本目录；外层只依赖统一数据库契约。 */
 const mysql = {
   sessionBatch: true,
+  batchStatementRequiresSession: true,
   isSQLColumn,
   dumpFile: {
     metadataSQL: mysqlObjects.databaseInfoSQL,

@@ -133,6 +133,21 @@ func (r *fixtureRows) Next(values []driver.Value) error {
 func (fixtureResult) LastInsertId() (int64, error) { return 9007199254740993, nil }
 func (fixtureResult) RowsAffected() (int64, error) { return 2, nil }
 
+type fixtureResultSets struct {
+	fixtureRows
+	remaining []*queryFixture
+}
+
+func (r *fixtureResultSets) HasNextResultSet() bool { return len(r.remaining) > 0 }
+func (r *fixtureResultSets) NextResultSet() error {
+	if !r.HasNextResultSet() {
+		return io.EOF
+	}
+	r.fixtureRows = fixtureRows{fixture: r.remaining[0]}
+	r.remaining = r.remaining[1:]
+	return nil
+}
+
 func fixtureDB(t *testing.T, fixture *queryFixture) *sql.DB {
 	t.Helper()
 	db := sql.OpenDB(fixtureConnector{fixture})
@@ -249,12 +264,46 @@ func TestWriteFeedbackPreservesInsertID(t *testing.T) {
 	}
 }
 
-func TestReadOnlyDDLIsRejectedBeforeDatabaseAccess(t *testing.T) {
-	for _, statement := range []string{"CREATE TABLE blocked (id INT)", "DROP TABLE sample", "/*!80000 CREATE TABLE blocked AS */ SELECT 1"} {
+func TestUnsafeReadOnlyStatementsAreRejectedBeforeDatabaseAccess(t *testing.T) {
+	for _, statement := range []string{"CREATE TABLE blocked (id INT)", "DROP TABLE sample", "/*!80000 CREATE TABLE blocked AS */ SELECT 1", "CALL fixture()", "EXECUTE fixture"} {
 		// A nil DB proves rejection happens before beginning a transaction or sending SQL.
 		if _, err := execute(context.Background(), nil, statement, 1000, false); err == nil {
 			t.Fatalf("read-only statement reached the database: %s", statement)
 		}
+	}
+}
+
+func TestCallAndExecuteReadMultipleResults(t *testing.T) {
+	for _, statement := range []string{"CALL fixture()", "EXECUTE fixture"} {
+		t.Run(statement, func(t *testing.T) {
+			first := &queryFixture{columns: []string{"first"}, types: []string{"BIGINT"}, rows: [][]driver.Value{{int64(42)}}}
+			second := &queryFixture{columns: []string{"second"}, types: []string{"VARCHAR"}, rows: [][]driver.Value{{"data"}}}
+			invocations := 0
+			first.queryRows = func(string, []driver.NamedValue) (driver.Rows, error) {
+				invocations++
+				return &fixtureResultSets{fixtureRows: fixtureRows{fixture: first}, remaining: []*queryFixture{second}}, nil
+			}
+			db := fixtureDB(t, first)
+			result, err := execute(context.Background(), db, statement, 2, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(result.Rows, [][]any{{"42"}}) || len(result.AdditionalResults) != 1 ||
+				!reflect.DeepEqual(result.AdditionalResults[0].Rows, [][]any{{"data"}}) {
+				t.Fatalf("unexpected result sets: %+v", result)
+			}
+
+			result, err = execute(context.Background(), db, statement, 1, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(result.AdditionalResults) != 1 || result.AdditionalResults[0].RowCount != 0 || result.AdditionalResults[0].TruncatedBy != model.QueryRowLimit {
+				t.Fatalf("expected a shared row limit: %+v", result)
+			}
+			if invocations != 2 || first.executed {
+				t.Fatalf("expected one driver operation per request, got %d queries, exec=%t", invocations, first.executed)
+			}
+		})
 	}
 }
 

@@ -23,14 +23,15 @@ func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, 
 		return err
 	}
 	defer release()
-	setupCtx, cancelSetup := context.WithTimeout(ctx, timeout)
+	setupCtx, cancelSetup := context.WithTimeoutCause(ctx, timeout, model.QuerySessionTimeout)
 	conn, err := db.Conn(setupCtx)
 	if err != nil {
+		err = model.QueryContextError(setupCtx, err)
 		cancelSetup()
 		return err
 	}
 	defer conn.Close()
-	err = setQuerySchema(setupCtx, conn, input.Schema)
+	err = model.QueryContextError(setupCtx, setQuerySchema(setupCtx, conn, input.Schema))
 	cancelSetup()
 	if err != nil {
 		return err
@@ -39,8 +40,9 @@ func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, 
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		statementCtx, cancelStatement := context.WithTimeout(ctx, timeout)
+		statementCtx, cancelStatement := context.WithTimeoutCause(ctx, timeout, model.QueryStatementTimeout)
 		result, err := executeQuery(statementCtx, conn, statement, input.Limit, true, true)
+		err = model.QueryContextError(statementCtx, err)
 		cancelStatement()
 		step := model.QueryBatchStep{Index: index}
 		if err != nil {

@@ -54,9 +54,10 @@ body {
   overflow-x: auto;
 }
 
-// 按钮聚焦时沿用自身外观，移除 Ant Design 默认焦点轮廓。
-html .ant-btn:not(:disabled, .ant-btn-disabled):focus-visible {
-  outline: none;
+// 键盘焦点显示在按钮内，使用当前文字色适配各按钮变体。
+.sql-studio-theme .ant-btn:not(:disabled, .ant-btn-disabled):focus-visible {
+  outline: var(--ant-line-width) solid currentColor;
+  outline-offset: -3px;
 }
 
 // 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。
@@ -351,11 +352,6 @@ body,
   outline-offset: 2px;
 }
 
-// 选中页签文字使用默认正文色，线形页签沿用原生活动线。
-.ant-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) .ant-tabs-tab-btn {
-  color: var(--text);
-}
-
 :is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
   .ant-tabs-nav-list {
     align-items: center;
@@ -366,16 +362,28 @@ body,
   }
 }
 
+// 结果页签和执行状态位于可换行的同一栏，分隔线由外层统一绘制。
+.statement-result-tabs.ant-tabs > .ant-tabs-nav::before {
+  border: 0;
+}
+
 .workspace-tabs.ant-tabs-card > .ant-tabs-nav {
+  // 页面列表使用栏右侧独立入口，原生操作区只保留溢出后的新增按钮。
+  .ant-tabs-nav-more {
+    display: none;
+  }
+
+  .ant-tabs-nav-operations {
+    align-items: center;
+  }
+
   .ant-tabs-tab:not(.ant-tabs-tab-active, .ant-tabs-tab-disabled):hover {
     background: var(--surface-hover);
-    color: var(--text);
   }
 
   .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) {
     background: var(--ant-color-fill-alter);
     border-color: var(--border);
-    color: var(--text);
 
     &::after {
       content: '';
@@ -395,6 +403,8 @@ body,
 // Tabs 未提供新增按钮的语义样式入口，这里与对象栏的 small text 图标按钮对齐。
 .workspace-tabs.ant-tabs.ant-tabs-editable-card > .ant-tabs-nav .ant-tabs-nav-add {
   display: inline-flex;
+  box-sizing: border-box;
+  flex: none;
   align-items: center;
   justify-content: center;
   inline-size: var(--ant-control-height-sm);
@@ -405,9 +415,25 @@ body,
   border: 0;
   border-radius: var(--ant-border-radius-sm);
   font-size: var(--ant-font-size);
+  line-height: 1;
 
   &:is(:hover, :active) {
     background: var(--surface-hover);
+  }
+}
+
+// 「更多」面板的页签行统一绘制悬停底色，覆盖标题和关闭按钮所在区域。
+.workspace-open-page:is(:hover, :has(:focus-visible)) {
+  background: var(--ant-control-item-bg-hover);
+}
+
+// 「更多」的关闭图标沿用原生页签关闭按钮的前景色。
+.workspace-open-page .workspace-open-page-close:not(:disabled, .ant-btn-disabled) {
+  color: var(--ant-color-icon);
+
+  &:hover,
+  &:active,
+  &:focus:not(:focus-visible) {
     color: var(--text);
   }
 }

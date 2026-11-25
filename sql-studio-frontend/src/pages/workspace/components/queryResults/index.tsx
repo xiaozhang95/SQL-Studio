@@ -69,6 +69,7 @@ type Props = {
     | 'resultSearch'
     | 'setResultSearch'
     | 'resultIndex'
+    | 'resultSetIndex'
     | 'selectResult'
     | 'resultHeight'
     | 'setResultHeight'
@@ -108,7 +109,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
 
-  const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, resultIndex, selectResult } = model
+  const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, resultIndex, resultSetIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
   usePageError(pageExecutionError(batch), batch?.id ?? batch?.startedAt)
   const editingBlocked = model.running || result?.truncatedBy === 'oversized-row' || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
@@ -215,7 +216,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   } | null>(null)
   // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
   const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
-  const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning) : 'messages')
+  const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning, resultSetIndex) : 'messages')
   const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
   const databaseType = model.savedConnections.find((connection) => connection.id === tab.connectionId)?.type
@@ -337,7 +338,8 @@ export default function QueryResults({ model, themeMode }: Props) {
   const shownOutput = showingResult ? run : batch
   const stopped = shownOutput ? executionCancelled(shownOutput) || Boolean(shownOutput.interrupted) : false
   const failed = !stopped && Boolean(shownOutput?.error)
-  const durationMs = result?.durationMs ?? batch?.statements?.[resultIndex]?.durationMs
+  const statement = batch?.statements?.[resultIndex]
+  const durationMs = statement?.result?.durationMs ?? result?.durationMs ?? statement?.durationMs
   const status = activeRunning
     ? { icon: <LoadingOutlined spin />, label: t('执行中'), color: token.colorTextSecondary }
     : stopped
@@ -349,13 +351,13 @@ export default function QueryResults({ model, themeMode }: Props) {
           : undefined
   const showMetrics = !activeRunning && !stopped && !failed
   const resultStatus = status && (
-    <Flex align="center" gap={token.marginXS} wrap>
+    <Flex align="center" gap={token.marginXS} wrap style={{ minWidth: 0, maxWidth: '100%' }}>
       <Space size={token.marginXXS} style={{ color: status.color, whiteSpace: 'nowrap' }}>
         {status.icon}
         {status.label}
       </Space>
       {showMetrics && (durationMs !== undefined || result?.columns.length || result?.isQuery) ? (
-        <Space size={token.marginXXS} separator={<Typography.Text type="secondary">·</Typography.Text>} style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <Space size={token.marginXXS} wrap separator={<Typography.Text type="secondary">·</Typography.Text>} style={{ fontVariantNumeric: 'tabular-nums' }}>
           {durationMs !== undefined && <Typography.Text type="secondary">{durationMs} ms</Typography.Text>}
           {result?.isQuery && <Typography.Text type="secondary">{t('{value1} 行', { value1: result.rows.length })}</Typography.Text>}
           {Boolean(result?.columns.length) && <Typography.Text type="secondary">{t('{value1} 列', { value1: result?.columns.length ?? 0 })}</Typography.Text>}
@@ -368,14 +370,15 @@ export default function QueryResults({ model, themeMode }: Props) {
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title={t('上次执行因页面刷新中断，已完成结果保留；未自动继续执行。')} />}
       <ResultTabs
-        run={run}
+        run={batch ?? run}
         running={activeRunning}
         activeKey={activeKey}
         status={resultStatus}
         onChange={(key) => {
           if (key === 'messages' || key === 'summary') setSelectedView({ pageId: tab.id, runId: run.id, view: key })
           else {
-            selectResult(Number(key))
+            const [index, setIndex = '0'] = key.split(':')
+            selectResult(Number(index), Number(setIndex))
             setSelectedView(null)
           }
         }}
@@ -480,6 +483,9 @@ export default function QueryResults({ model, themeMode }: Props) {
             </div>
           </div>
         </div>
+      )}
+      {showingResult && !activeRunning && (statement?.result ?? batch?.result)?.resultSetsTruncated && (
+        <Alert type="warning" banner title={t('语句返回的结果超过 8 MiB，部分结果集未加载。')} />
       )}
       {showingResult && !activeRunning && result?.truncated && (
         <Alert

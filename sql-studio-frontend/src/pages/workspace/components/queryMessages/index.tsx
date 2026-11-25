@@ -76,7 +76,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
                 )}
                 {!item.error && !cancelled && (
                   <Typography.Paragraph type="success" style={{ whiteSpace: 'pre-wrap', marginBlock: '8px 0' }}>
-                    {item.result?.columns.length ? 'OK' : t('OK，影响 {value1} 行', { value1: item.result?.affectedRows ?? 0 })}
+                    {item.result?.columns.length || item.result?.writeFeedbackUnavailable ? 'OK' : t('OK，影响 {value1} 行', { value1: item.result?.affectedRows ?? 0 })}
                   </Typography.Paragraph>
                 )}
               </section>

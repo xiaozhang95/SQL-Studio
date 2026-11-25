@@ -61,6 +61,16 @@ func isQuery(s string) bool {
 	return false
 }
 
+// These statements can return rows or write. Only the explicit write path uses this classification.
+func mayReturnMultipleResults(s string) bool {
+	switch firstKeyword(s) {
+	case "CALL", "EXECUTE":
+		return true
+	default:
+		return false
+	}
+}
+
 // 只读事务不能阻止会隐式提交的 DDL。仅接受查询及 USE，并拒绝可能改变语句含义的版本注释。
 func isReadOnlyStatement(s string) bool {
 	if hasExecutableComment(s, true) || hasExecutableComment(s, false) {

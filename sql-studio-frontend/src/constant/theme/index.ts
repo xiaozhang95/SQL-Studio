@@ -3,6 +3,7 @@ import { theme as antdTheme, type ThemeConfig } from 'antd'
 import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 
 const logoPrimary = '#2569df'
+const defaultTextColor = 'var(--ant-color-text)'
 const darkAlgorithm: typeof antdTheme.darkAlgorithm = (seed, map) => ({
   ...antdTheme.darkAlgorithm(seed, map),
   colorPrimary: seed.colorPrimary
@@ -31,8 +32,9 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
         : {})
     },
     components: {
-      Typography: { colorTextDescription: 'var(--ant-color-text)' },
-      Statistic: { colorTextDescription: 'var(--ant-color-text)' }
+      Typography: { colorTextDescription: defaultTextColor },
+      Statistic: { colorTextDescription: defaultTextColor },
+      Tabs: { itemHoverColor: defaultTextColor, itemActiveColor: defaultTextColor, itemSelectedColor: defaultTextColor }
     },
     cssVar: { key: 'sql-studio-theme' }
   }

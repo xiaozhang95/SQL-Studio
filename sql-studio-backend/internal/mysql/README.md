@@ -32,6 +32,8 @@ Schemas 返回空数组：MySQL 数据库本身即 schema，不引入额外的 s
 
 readRows 按返回结果列数量设置 IsQuery：无列成功是执行回执，有列但零行仍是查询结果；不改动只读事务或执行权限。
 
+显式允许写入的单条请求及批次通过游标执行 `CALL` 和 `EXECUTE`。每条语句仅执行一次，按服务器顺序保留第一个结果与 `AdditionalResults`，共享行数和约 8 MiB 的大小预算。无列回执带 `WriteFeedbackUnavailable`，游标接口无法提供受影响行数及插入 ID。读取完成或截断时在语句期限内排空游标，保留同一会话供后续语句使用。
+
 QueryRequest.Schema 非空明确拒绝，避免把 PostgreSQL 范围静默用于 MySQL；省略/空值保持兼容。
 
 export.go 的 StreamTableData(ctx,connection,ref,emit) 在指定库表创建只读 REPEATABLE READ 事务，按字段顺序显式读取可访问列（含不可见列），通过 rowstream 分批回调，无总行数限制；继承连接/库关闭租约、请求取消及超时。单表数据快照不等于整个数据库一致性备份，DDL/其他表由其他请求读取。

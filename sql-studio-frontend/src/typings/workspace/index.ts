@@ -33,7 +33,7 @@ export type RunState = {
   durationMs?: number
   interrupted?: boolean
 }
-export type ResultView = { search: string; resultIndex: number }
+export type ResultView = { search: string; resultIndex: number; resultSetIndex?: number }
 export type EditorLayout = { anchor: number; head: number; top: number; left: number }
 export type ExplorerLayout = { expanded: string[]; selected: string[]; search: string; top: number }
 export type WorkspaceSnapshot = {

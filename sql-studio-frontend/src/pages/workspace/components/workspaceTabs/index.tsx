@@ -1,5 +1,5 @@
 import { CloseCircleOutlined, CloseOutlined, CodeOutlined, EditOutlined, FileTextOutlined, LoadingOutlined, PlusOutlined, ProfileOutlined, RightOutlined, StopOutlined, TableOutlined } from '@ant-design/icons'
-import { Button, Dropdown, Tabs, Tooltip } from 'antd'
+import { Button, Dropdown, Flex, Tabs, Tooltip } from 'antd'
 import type { ReactNode } from 'react'
 
 import { appearance } from '@/constant/appearance'
@@ -8,9 +8,10 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { WorkspaceTab } from '@/typings/workspace'
 
-import { workspaceTabBarStyle, workspaceTabLayout } from '../../constant/layout'
+import { workspaceTabBarInset, workspaceTabBarSpacer, workspaceTabBarStyle, workspaceTabLayout } from '../../constant/layout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
+import OpenPagesMenu from './openPagesMenu'
 
 type Props = {
   model: Pick<
@@ -42,11 +43,30 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
   const { savedConnections: connections, designerDirty, tabs, activeTab, runs, tabBusy, runningTabId, selectTab, closeTab, closeTabs } = model
   const canAdd = model.workspaceReady && !model.running
   const addLabel = t('新建查询')
+  const pages = tabs.map((item) => {
+    const connection = connections.find((value) => value.id === item.connectionId)
+    const designer = item.kind === 'table-create' || item.kind === 'table-design'
+    const icon = runningTabId === item.id ? (
+      <LoadingOutlined spin />
+    ) : designer ? (
+      <EditOutlined />
+    ) : item.kind === 'query' ? (
+      <CodeOutlined />
+    ) : item.kind === 'data' ? (
+      <TableOutlined />
+    ) : item.kind === 'ddl' ? (
+      <FileTextOutlined />
+    ) : (
+      <ProfileOutlined />
+    )
+    return { item, connection, designer, icon }
+  })
+
   return (
     <Tabs
       className="workspace-tabs"
       styles={{
-        header: workspaceTabBarStyle,
+        header: { ...workspaceTabBarStyle, userSelect: 'none' },
         body: { height: '100%' },
         content: { height: '100%' },
         item: {
@@ -66,14 +86,35 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           <PlusOutlined />
         </Tooltip>
       }
-      locale={{ addAriaLabel: addLabel }}
-      tabBarExtraContent={
-        runningTabId && !model.activeRunning ? (
-          <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
-            {t('取消执行')}
-          </Button>
-        ) : undefined
-      }
+      locale={{ addAriaLabel: addLabel, removeAriaLabel: t('关闭当前') }}
+      tabBarExtraContent={{
+        left: <span aria-hidden="true" style={workspaceTabBarSpacer} />,
+        right: (
+          <Flex align="center" gap="small" style={{ paddingInlineEnd: workspaceTabBarInset }}>
+            {runningTabId && !model.activeRunning && (
+              <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
+                {t('取消执行')}
+              </Button>
+            )}
+            {pages.length > 0 && (
+              <OpenPagesMenu
+                pages={pages.map(({ item, connection, icon }) => ({
+                  id: item.id,
+                  title: item.title,
+                  context: [connection?.name, item.database, item.schema, item.table].filter(Boolean).join(' / '),
+                  icon,
+                  dirty: designerDirty[item.id]
+                }))}
+                activeTab={activeTab}
+                tabBusy={tabBusy}
+                selectTab={selectTab}
+                closeTab={closeTab}
+                closeOthers={() => closeTabs(activeTab, 'others')}
+              />
+            )}
+          </Flex>
+        )
+      }}
       size={appearance.navigationSize}
       tabBarGutter={8}
       activeKey={activeTab}
@@ -110,26 +151,11 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           }}
         </DefaultTabBar>
       )}
-      items={tabs.map((item) => {
-        const connection = connections.find((value) => value.id === item.connectionId)
+      items={pages.map(({ item, connection, designer, icon }) => {
         const redis = item.kind === 'query' && connection?.type === DatabaseEngine.Redis
-        const designer = item.kind === 'table-create' || item.kind === 'table-design'
         return {
           key: item.id,
-          icon:
-            runningTabId === item.id ? (
-              <LoadingOutlined spin />
-            ) : item.kind === 'table-create' || item.kind === 'table-design' ? (
-              <EditOutlined />
-            ) : item.kind === 'query' ? (
-              <CodeOutlined />
-            ) : item.kind === 'data' ? (
-              <TableOutlined />
-            ) : item.kind === 'ddl' ? (
-              <FileTextOutlined />
-            ) : (
-              <ProfileOutlined />
-            ),
+          icon,
           label: (
             <span
               style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}
@@ -166,7 +192,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           )
         }
       })}
-      style={{ flex: 1, minHeight: 0, userSelect: 'none' }}
+      style={{ flex: 1, minHeight: 0 }}
     />
   )
 }

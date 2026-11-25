@@ -21,6 +21,7 @@ import { resultPanelLayout, scopeCloseDialogLayout } from '../../constant/layout
 import { buildExplorerTree, explorerQueryScope } from '../../utils/explorerTree'
 import { canExportDatabase } from '../../utils/exportAvailability'
 import { objectNodeKey } from '../../utils/objectTree'
+import { resultOutputKey } from '../../utils/queryOutput'
 import { pagesForScope, sqlForPages } from '../../utils/scopeClose'
 import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import {
@@ -197,10 +198,14 @@ export const useWorkspace = (active = true) => {
     if (tab.kind === 'query' && !redisConnection && objects.connected && database) void loadTables(database, connectionId).catch(() => {})
   }, [tab.kind, redisConnection, objects.connected, database, connectionId, loadTables])
   const resultIndex = resultViews[activeTab]?.resultIndex || 0
+  const resultSetIndex = resultViews[activeTab]?.resultSetIndex ?? 0
   const batch = runs[activeTab]
   const statementRun = batch?.statements?.[resultIndex]
-  const run = statementRun ? { ...batch, result: statementRun.result, error: statementRun.error, cancelled: statementRun.cancelled, id: `${batch.id}:${resultIndex}` } : batch
-  const result = run?.result
+  const statementResult = statementRun ? statementRun.result : batch?.result
+  const result = statementResult?.additionalResults?.[resultSetIndex - 1] ?? statementResult
+  const run = statementRun
+    ? { ...batch, result, error: statementRun.error, cancelled: statementRun.cancelled, id: `${batch.id}:${resultOutputKey(resultIndex, resultSetIndex)}` }
+    : batch
   const resultSearch = resultViews[activeTab]?.search || ''
   const openedKey = JSON.stringify(
     Object.keys(objects.snapshots)
@@ -387,11 +392,11 @@ export const useWorkspace = (active = true) => {
     setStructureLoading(loading)
   }
   function setResultSearch(search: string) {
-    setResultViews((previous) => ({ ...previous, [activeTab]: { search, resultIndex: previous[activeTab]?.resultIndex || 0 } }))
+    setResultViews((previous) => ({ ...previous, [activeTab]: { ...(previous[activeTab] ?? { resultIndex: 0 }), search } }))
   }
-  function selectResult(index: number) {
+  function selectResult(index: number, resultSetIndex = 0) {
     if (activeRunning || !batch?.statements?.[index]) return
-    setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', resultIndex: index } }))
+    setResultViews((previous) => ({ ...previous, [activeTab]: { search: '', resultIndex: index, ...(resultSetIndex ? { resultSetIndex } : {}) } }))
   }
   function updateTab(patch: Partial<WorkspaceTab>) {
     if (!tab.id || tab.kind !== 'query' || !storage.pageReady) return
@@ -1179,6 +1184,7 @@ export const useWorkspace = (active = true) => {
     run,
     result,
     resultIndex,
+    resultSetIndex,
     selectResult,
     resultSearch,
     setResultSearch,

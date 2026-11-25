@@ -24,9 +24,10 @@ func (s *Service) Query(ctx context.Context, id string, input model.QueryRequest
 	if err != nil {
 		return model.QueryResult{}, err
 	}
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeoutCause(ctx, queryTimeout, model.QueryStatementTimeout)
 	defer cancel()
-	return s.database.Execute(ctx, c, input)
+	result, err := s.database.Execute(ctx, c, input)
+	return result, model.QueryContextError(ctx, err)
 }
 
 func rowLimit(limit int, unlimited bool) int {
@@ -68,7 +69,7 @@ func (s *Service) Batch(ctx context.Context, id string, input model.QueryBatchRe
 		return err
 	}
 	input.Limit = rowLimit(input.Limit, input.UnlimitedRows)
-	ctx, cancel := context.WithTimeout(ctx, batchTimeout)
+	ctx, cancel := context.WithTimeoutCause(ctx, batchTimeout, model.QueryBatchTimeout)
 	defer cancel()
-	return executor.ExecuteBatch(ctx, connection, input, queryTimeout, emit)
+	return model.QueryContextError(ctx, executor.ExecuteBatch(ctx, connection, input, queryTimeout, emit))
 }

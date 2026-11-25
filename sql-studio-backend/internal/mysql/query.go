@@ -116,6 +116,9 @@ func executeResult(ctx context.Context, db *sql.DB, statement string, limit int,
 		defer tx.Rollback()
 		return readRows(ctx, tx, statement, limit, start)
 	}
+	if mayReturnMultipleResults(statement) {
+		return scanRows(ctx, db, statement, limit, time.Now(), false, true)
+	}
 	return executeAutocommit(ctx, db, statement, limit, isQuery(statement) || returning)
 }
 
@@ -152,10 +155,10 @@ type querier interface {
 }
 
 func readRows(ctx context.Context, q querier, statement string, limit int, start time.Time) (model.QueryResult, error) {
-	return scanRows(ctx, q, statement, limit, start, false)
+	return scanRows(ctx, q, statement, limit, start, false, false)
 }
 
-func scanRows(ctx context.Context, q querier, statement string, limit int, start time.Time, keepConnection bool) (result model.QueryResult, err error) {
+func scanRows(ctx context.Context, q querier, statement string, limit int, start time.Time, keepConnection, multipleResults bool) (result model.QueryResult, err error) {
 	result = model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}, IsQuery: true}
 	queryCtx, cancel := context.WithCancel(ctx)
 	rows, err := q.QueryContext(queryCtx, statement)
@@ -164,8 +167,8 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 		return result, err
 	}
 	defer func() {
-		if keepConnection {
-			// Drain under the statement deadline so the batch can reuse the session.
+		if keepConnection || multipleResults {
+			// Drain under the statement deadline and surface late server errors.
 			err = errors.Join(err, rows.Close(), queryCtx.Err())
 			cancel()
 			return
@@ -173,25 +176,73 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 		cancel()
 		_ = rows.Close()
 	}()
+	budget := resultBudget{rows: limit, bytes: maxResultBytes, chargeRowSlots: multipleResults || limit == model.UnlimitedQueryRows}
 	types, err := rows.ColumnTypes()
 	if err != nil {
 		return result, err
 	}
-	result.IsQuery = len(types) > 0
+	if multipleResults {
+		budget.bytes -= resultSetSize(types)
+	}
+	result, err = scanResultSet(rows, types, &budget)
+	if err != nil {
+		return result, err
+	}
+	if multipleResults {
+		// The driver's QueryContext path does not expose the protocol OK counters.
+		result.WriteFeedbackUnavailable = !result.IsQuery
+		for rows.NextResultSet() {
+			types, err = rows.ColumnTypes()
+			if err != nil {
+				return result, err
+			}
+			budget.bytes -= resultSetSize(types)
+			if budget.bytes < 0 {
+				result.ResultSetsTruncated = true
+				break
+			}
+			additional, err := scanResultSet(rows, types, &budget)
+			if err != nil {
+				return result, err
+			}
+			result.AdditionalResults = append(result.AdditionalResults, additional)
+		}
+		if err = rows.Err(); err != nil {
+			return result, err
+		}
+	}
+	result.DurationMS = time.Since(start).Milliseconds()
+	for i := range result.AdditionalResults {
+		result.AdditionalResults[i].DurationMS = result.DurationMS
+	}
+	return result, nil
+}
+
+type resultBudget struct {
+	rows           int
+	bytes          int
+	chargeRowSlots bool
+}
+
+// Charge for retained result and column metadata even when a result set has no rows.
+func resultSetSize(types []*sql.ColumnType) int {
+	size := 192 + 32*len(types)
+	for _, column := range types {
+		size += len(column.Name()) + len(column.DatabaseTypeName())
+	}
+	return size
+}
+
+func scanResultSet(rows *sql.Rows, types []*sql.ColumnType, budget *resultBudget) (result model.QueryResult, err error) {
+	result = model.QueryResult{Columns: []model.ResultColumn{}, Rows: [][]any{}, IsQuery: len(types) > 0}
 	for _, column := range types {
 		result.Columns = append(result.Columns, model.ResultColumn{Name: column.Name(), Type: column.DatabaseTypeName()})
 	}
-	size := 0
-	unlimitedRows := limit == model.UnlimitedQueryRows
 	for rows.Next() {
-		if !unlimitedRows && len(result.Rows) >= limit {
+		if budget.rows == 0 {
 			result.Truncated = true
 			result.TruncatedBy = model.QueryRowLimit
 			break
-		}
-		if unlimitedRows {
-			// Charge for the retained row and value slots, even when the values are empty.
-			size += 24 + 16*len(types)
 		}
 		values := make([]any, len(types))
 		pointers := make([]any, len(types))
@@ -200,6 +251,10 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 		}
 		if err = rows.Scan(pointers...); err != nil {
 			return result, err
+		}
+		size := 0
+		if budget.chargeRowSlots {
+			size = 24 + 16*len(types)
 		}
 		for i, value := range values {
 			switch v := value.(type) {
@@ -222,9 +277,14 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 				size += len(fmt.Sprint(value))
 			}
 		}
-		if size > maxResultBytes {
+		if size > budget.bytes {
 			result.OmitOversizedRow(values)
+			budget.bytes = 0
 			break
+		}
+		budget.bytes -= size
+		if budget.rows > 0 {
+			budget.rows--
 		}
 		result.Rows = append(result.Rows, values)
 	}
@@ -232,6 +292,5 @@ func scanRows(ctx context.Context, q querier, statement string, limit int, start
 		return result, err
 	}
 	result.RowCount = len(result.Rows)
-	result.DurationMS = time.Since(start).Milliseconds()
 	return result, nil
 }

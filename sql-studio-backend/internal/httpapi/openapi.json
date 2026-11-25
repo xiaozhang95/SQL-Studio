@@ -2590,7 +2590,7 @@
         },
         "responses": {
           "200": {
-            "description": "逐行返回语句回执",
+            "description": "逐行返回语句回执。成功事件的 result 为 QueryResult，可含同条语句的 additionalResults。超时错误按请求语言展示。",
             "content": {
               "application/x-ndjson": {
                 "schema": {
@@ -4480,6 +4480,21 @@
           },
           "isQuery": {
             "type": "boolean"
+          },
+          "additionalResults": {
+            "type": "array",
+            "description": "MySQL 或 MariaDB 的 CALL、EXECUTE 返回的后续数据集，按服务器顺序排列。",
+            "items": {
+              "$ref": "#/components/schemas/QueryResult"
+            }
+          },
+          "resultSetsTruncated": {
+            "type": "boolean",
+            "description": "同条语句的大小预算导致后续数据集省略。"
+          },
+          "writeFeedbackUnavailable": {
+            "type": "boolean",
+            "description": "语句已成功，驱动游标未提供影响行数或插入 ID。"
           }
         },
         "required": [

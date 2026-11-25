@@ -12,13 +12,13 @@ resultSQLLayout 仅定义普通查询 SQL 单元格列宽 520px；只读 SQL 完
 
 resultTableLayout 定义结果表的行号列 64px、普通数据列 200px、复选框列 32px、列宽拖拽下限 80px；虚拟表格据此合计数值横向滚动宽度，避免表头、固定列与虚拟表体宽度不一致。
 
-resultTabLayout.maximumVisibleTabs=8：超过 8 个数据结果集时使用 Select 切换，仅显示当前结果标签，避免批量 SELECT 产生无限增长的标签导航。执行回执不占结果标签。
+resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。wrapBasis 为 260px，导航与右侧执行状态不足以并排时，状态和选择器换行。
 
 resultToolbarIconInset 由默认按钮尺寸与图标字号计算，用于对齐结果页签、行选择计数、执行状态与操作图标的可见边缘。
 
 workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
 
-workspaceTabBarStyle 为主页面签栏和结果页签栏提供统一的 42px 栏高、页面内边距和表面底色，栏底分隔线沿用 Ant Design Tabs；与对象栏标题行、搜索行和编辑器工具栏同高，左右两栏的搜索框和工具栏保持同一水平线。
+workspaceTabBarStyle 为主页面签栏和结果页签栏提供统一的 42px 栏高和表面底色。workspaceTabBarInset 与 workspaceTabBarSpacer 通过 Tabs 两侧额外内容提供页内留白，让组件按实际可见宽度定位选中页签。workspaceTabLayout 同时约定主页面签宽和更多面板的宽度及滚动区域上限。
 
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 

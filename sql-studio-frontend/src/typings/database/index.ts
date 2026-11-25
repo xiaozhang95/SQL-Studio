@@ -65,6 +65,9 @@ export type QueryResult = {
   truncatedBy?: 'row-limit' | 'byte-limit' | 'oversized-row'
   rowPreview?: { value: string | null; shortened?: boolean }[]
   isQuery: boolean
+  additionalResults?: QueryResult[]
+  resultSetsTruncated?: boolean
+  writeFeedbackUnavailable?: boolean
 }
 export type QueryRequest = { database: string; schema?: string; sql: string; allowWrite?: boolean; matchRows?: boolean; limit?: number; unlimitedRows?: boolean }
 

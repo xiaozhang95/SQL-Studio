@@ -86,7 +86,11 @@ PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参�
 
 SQL 编辑器运行及重新执行传 `allowWrite: true` 和 `unlimitedRows: true`，按原 SQL 执行，包括语句自带的 `LIMIT`。打开或刷新表数据使用带 `LIMIT 1000` 的只读预览。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL、MariaDB 和 PostgreSQL 多语句走同一会话批次。`truncatedBy` 可区分行数上限（`row-limit`）、结果大小上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
+MySQL 和 MariaDB 在显式写入路径读取 `CALL` 和 `EXECUTE` 的结果集。第一个数据集使用常规结果字段，后续数据集按顺序放在可选的 `additionalResults` 中。同条语句的结果集共享行数与大小预算，超限导致整个后续数据集省略时返回 `resultSetsTruncated: true`。这两类语句成功但没有数据列时，`writeFeedbackUnavailable: true` 表示驱动游标未提供影响行数和插入 ID，调用者应把该结果显示为成功回执。
+
 批次接收 `{database, schema?, statements, allowWrite: true, limit?, unlimitedRows?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。`unlimitedRows` 的默认值及行数策略与单语句一致，作用于批次中的每条语句。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
+
+单条请求与批次按请求语言展示应用设置的语句超时、批次超时或会话初始化超时。单条请求或批次流开启前的超时返回 HTTP 400。批次流内沿用对应语句或批次错误事件。
 
 MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数据库访问前拒绝 DDL、事务控制、SET、CALL 等非查询语句和可执行版本注释（含 MariaDB 的 `/*M!`），避免 DDL 隐式提交绕过只读事务。字符串内的注释文本、普通注释及优化器提示保持可查询。显式 allowWrite=true 的对象/数据操作不受此只读入口限制。
 

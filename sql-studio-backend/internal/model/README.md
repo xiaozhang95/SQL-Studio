@@ -36,6 +36,8 @@ QueryError 为引擎识别的失败附加统一类别，Cause 保留原始错误
 
 StatementError 为特定 SQL 或 Redis 命令的失败保留错误归属与原始错误链。JSON 错误和 QueryBatchStep 可用 statementError 标记给工作台。
 
+查询使用带原因的上下文区分语句、批次与会话初始化超时。QueryContextError 保留 context.DeadlineExceeded 错误身份，HTTP 层本地化对应消息。MySQL 和 MariaDB 的 QueryResult 可携带 AdditionalResults、ResultSetsTruncated 和 WriteFeedbackUnavailable，批次仍每条语句一个回执。
+
 workspace.go 定义v2 WorkspacePage/WorkspaceIndex/WorkspaceDocument/WorkspaceCommit：标签元数据与草稿/结果散列引用、布局、修订号及仅变化部分的提交。结果为不执行的JSON对象，草稿为文本；不包含连接密码。
 
 TypeMariaDB=mariadb，TypeGreptimeDB=greptimedb，各自保留独立连接身份。IsMySQLProtocol 描述三个引擎的线协议复用。GreptimeDB 的 Connection.Database 是维护库，缺省为 public。

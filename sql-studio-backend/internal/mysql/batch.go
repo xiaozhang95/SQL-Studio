@@ -23,8 +23,9 @@ func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, 
 		return err
 	}
 	defer release()
-	connectCtx, cancelConnect := context.WithTimeout(ctx, timeout)
+	connectCtx, cancelConnect := context.WithTimeoutCause(ctx, timeout, model.QuerySessionTimeout)
 	conn, err := db.Conn(connectCtx)
+	err = model.QueryContextError(connectCtx, err)
 	cancelConnect()
 	if err != nil {
 		return err
@@ -47,14 +48,14 @@ func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, 
 }
 
 func (c *Client) batchStep(ctx context.Context, conn *sql.Conn, lease *requestLease, index int, statement string, limit int, timeout time.Duration, returnsRows bool) model.QueryBatchStep {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeoutCause(ctx, timeout, model.QueryStatementTimeout)
 	defer cancel()
 	started := time.Now()
 	step := model.QueryBatchStep{Index: index}
 	var result model.QueryResult
 	var err error
-	if returnsRows {
-		result, err = scanRows(ctx, conn, statement, limit, started, true)
+	if multipleResults := mayReturnMultipleResults(statement); returnsRows || multipleResults {
+		result, err = scanRows(ctx, conn, statement, limit, started, true, multipleResults)
 	} else {
 		result, err = execStatement(ctx, conn, statement)
 		if err == nil && firstKeyword(statement) == "USE" {
@@ -75,7 +76,7 @@ func (c *Client) batchStep(ctx context.Context, conn *sql.Conn, lease *requestLe
 	}
 	result.DurationMS = time.Since(started).Milliseconds()
 	if err != nil {
-		err = queryError(err)
+		err = queryError(model.QueryContextError(ctx, err))
 		step.Error = err.Error()
 		step.StatementError = model.IsStatementError(err)
 		return step

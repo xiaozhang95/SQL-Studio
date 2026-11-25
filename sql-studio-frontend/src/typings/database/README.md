@@ -4,6 +4,8 @@
 
 Connection/ConnectionInput、DBTable、Column、QueryRequest、QueryResult 与服务端 API 契约一致。DatabaseType 引用 [数据库能力契约](../../databases/typings/README.md) 中的枚举推导类型，不重复定义。行数据为二维数组，密码只用于输入。
 
+QueryResult 的首个数据集使用 columns/rows，MySQL 和 MariaDB 的后续数据集位于可选的 additionalResults。resultSetsTruncated 表示整体预算省略了后续数据集。writeFeedbackUnavailable 标示无列的成功回执未携带影响行数和插入 ID。
+
 Connection.group 为可选分组名称，与连接配置一起保存；界面收到空分组值时按“默认分组”展示。
 
 导入使用 `@/typings/database`，不追加 /index 或扩展名；改契约时同步调用方及本说明。

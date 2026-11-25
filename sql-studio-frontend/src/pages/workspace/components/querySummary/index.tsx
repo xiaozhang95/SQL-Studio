@@ -44,7 +44,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
           </Typography.Text>
         ) : (
           <Typography.Text type="success" style={{ whiteSpace: 'pre-wrap' }}>
-            {item.result && !item.result.columns.length ? t('OK，影响 {value1} 行', { value1: item.result.affectedRows }) : 'OK'}
+            {item.result && !item.result.columns.length && !item.result.writeFeedbackUnavailable ? t('OK，影响 {value1} 行', { value1: item.result.affectedRows }) : 'OK'}
           </Typography.Text>
         )
     },

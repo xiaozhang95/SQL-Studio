@@ -12,7 +12,7 @@
 - [Redis 查询工具](redisQuery/README.md)
 - [工具栏图标按钮](toolbarButton/README.md)：查询、结果、表设计、历史和 SQL 预览等操作共用，仅图标并保留悬停说明和可访问名称。
 - [运行按钮](runButton/README.md)：SQL 窗口与 Redis 编辑器共用的唯一 primary 运行操作，统一快捷键提示。
-- [主区域页面标签](workspaceTabs/README.md)统一切换查询、对象和设计页。
+- [主区域页面标签](workspaceTabs/README.md)统一切换查询、对象和设计页，右侧「更多」可搜索和管理全部已打开的页面。
 - [结果、字段与 DDL](queryResults/README.md)
 - [查询结果导出弹框](resultExport/README.md)
 - [结果视图标签](resultTabs/README.md)使用线形 Tabs 切换消息、摘要和数据结果。
