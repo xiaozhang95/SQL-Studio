@@ -111,8 +111,8 @@ function AssistantHead({ model }: { model?: string }) {
           height: 22,
           flex: 'none',
           borderRadius: token.borderRadius,
-          background: 'var(--primary-soft)',
-          color: 'var(--primary-foreground)'
+          background: 'var(--ant-color-primary-bg)',
+          color: 'var(--primary)'
         }}
       >
         <StudioIcon name="bot" size={12} />

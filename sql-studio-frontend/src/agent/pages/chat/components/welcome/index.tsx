@@ -31,8 +31,8 @@ export function Welcome() {
                 width: token.controlHeightSM,
                 height: token.controlHeightSM,
                 borderRadius: token.borderRadius,
-                background: 'var(--primary-soft)',
-                color: 'var(--primary-foreground)'
+                background: 'var(--ant-color-primary-bg)',
+                color: 'var(--primary)'
               }}
             >
               {example.icon}

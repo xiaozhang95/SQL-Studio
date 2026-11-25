@@ -323,13 +323,11 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             }
             style={{
               color:
-                node.databaseState === 'open'
-                  ? 'var(--primary-foreground)'
-                  : node.databaseState === 'opening'
-                    ? 'var(--primary-foreground)'
-                    : node.databaseState === 'error'
-                      ? 'var(--ant-color-error)'
-                      : 'var(--inactive-icon)'
+                node.databaseState === 'open' || node.databaseState === 'opening'
+                  ? 'var(--primary)'
+                  : node.databaseState === 'error'
+                    ? 'var(--ant-color-error)'
+                    : 'var(--inactive-icon)'
             }}
           />
         )

@@ -27,7 +27,7 @@ export function ProcessCard({ title, expanded, onExpand, children, icon }: Props
             overflow: 'hidden',
             border: '1px solid var(--border)',
             borderRadius: token.borderRadiusLG,
-            background: 'var(--surface-subtle)',
+            background: token.colorFillAlter,
             boxShadow: 'var(--shadow-xs)'
           },
           content: { marginInlineStart: 0, marginBlockStart: 0, padding: token.paddingSM, borderInlineStart: 0 }

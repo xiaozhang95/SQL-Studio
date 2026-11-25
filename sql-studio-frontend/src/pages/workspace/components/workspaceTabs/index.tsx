@@ -49,7 +49,15 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
         header: workspaceTabBarStyle,
         body: { height: '100%' },
         content: { height: '100%' },
-        item: { position: 'relative', width: workspaceTabLayout.width, height: 28, flex: 'none', padding: '0 10px', borderRadius: 'var(--ant-border-radius)' },
+        item: {
+          position: 'relative',
+          width: workspaceTabLayout.width,
+          height: 28,
+          flex: 'none',
+          padding: '0 10px',
+          borderColor: 'var(--ant-color-border)',
+          borderRadius: 'var(--ant-border-radius)'
+        },
         remove: { width: 20, height: 20, marginInlineStart: 6 }
       }}
       type="editable-card"
