@@ -1,10 +1,8 @@
 import { CodeOutlined, EditOutlined, LoadingOutlined } from '@ant-design/icons'
 import { Bubble } from '@ant-design/x'
-import { Alert, Button, Divider, Flex, Tag, theme, Tooltip, Typography } from 'antd'
+import { Alert, Button, Divider, Flex, theme, Tooltip, Typography } from 'antd'
 import { Fragment, useMemo } from 'react'
-import type { ReactNode } from 'react'
 
-import StudioIcon from '@/components/studioIcon'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { Entry } from '../../../../typings/chat'
@@ -12,7 +10,6 @@ import { readSQL } from '../../../../utils/queryResult'
 import { CHAT } from '../../constant/chat'
 import { AnswerContent } from '../answerContent'
 import { CodeBlock } from '../codeBlock'
-import { DeepSeekLogo } from '../deepseekLogo'
 import { ProcessCard } from '../processCard'
 import { QueryResult } from '../queryResult'
 import { RoundFooter } from '../roundFooter'
@@ -92,50 +89,19 @@ interface Props {
   locked: boolean
   busy: boolean
   status: string
-  assistantModel?: string
   expanded: string[]
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
 }
 
-function AssistantHead({ model }: { model?: string }) {
-  const { token } = theme.useToken()
-  return (
-    <Flex align="center" gap={8} style={{ marginBottom: token.marginSM }}>
-      <span
-        className="agent-icon-badge"
-        aria-hidden="true"
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          width: 22,
-          height: 22,
-          flex: 'none',
-          borderRadius: token.borderRadius
-        }}
-      >
-        <StudioIcon name="bot" size={12} />
-      </span>
-      <Typography.Text strong>SQL Studio AI</Typography.Text>
-      {model && (
-        <Tag icon={<DeepSeekLogo size={11} />} style={{ marginInlineEnd: 0, maxWidth: '100%', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>
-          {model}
-        </Tag>
-      )}
-    </Flex>
-  )
-}
-
-export function TurnContent({ entries, busy, waiting, locked, status, assistantModel, expanded, onExpanded, onEdit }: Props) {
+export function TurnContent({ entries, busy, waiting, locked, status, expanded, onExpanded, onEdit }: Props) {
   const { t, language } = useTranslation()
 
   const { token } = theme.useToken()
   const sections = blocks(entries)
-  const assistantBody = (content: ReactNode) => <div style={{ paddingInlineStart: 30, minWidth: 0 }}>{content}</div>
-  const headSection = sections.findIndex((block) => block.type !== 'footer' && block.entries[0]?.role !== 'user')
   return (
     <Flex vertical gap={CHAT.spacing.block} style={{ width: '100%', minWidth: 0, paddingBottom: token.padding }}>
-      {sections.map((block, sectionIndex) => {
+      {sections.map((block) => {
         const first = block.entries[0]
         if (block.type === 'footer')
           return (
@@ -145,7 +111,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, assistantM
                 .map((entry) => (
                   <Alert key={entry.id} type="info" showIcon title={t(entry.text)} />
                 ))}
-              {assistantBody(<RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />)}
+              <RoundFooter entries={block.entries} ongoing={busy && block === sections[sections.length - 1]} waiting={waiting} />
             </Fragment>
           )
         if (block.type === 'process') {
@@ -157,22 +123,18 @@ export function TurnContent({ entries, busy, waiting, locked, status, assistantM
           else if (block.entries.some((entry) => entry.streaming)) title = t('DeepSeek 正在思考…')
           else if (block.entries.some((entry) => entry.incomplete)) title = t('思考过程（未完成）')
           return (
-            <Fragment key={key}>
-              {sectionIndex === headSection && <AssistantHead model={assistantModel} />}
-              {assistantBody(
-                <ProcessCard
-                  title={title}
-                  icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
-                  expanded={expanded.includes(key)}
-                  onExpand={(open) => {
-                    const remaining = expanded.filter((id) => id !== key)
-                    onExpanded(open ? [...remaining, key] : remaining)
-                  }}
-                >
-                  <ProcessDetails entries={block.entries} />
-                </ProcessCard>
-              )}
-            </Fragment>
+            <ProcessCard
+              key={key}
+              title={title}
+              icon={hasThinking ? undefined : <CodeOutlined style={{ color: token.colorTextSecondary, fontSize: token.fontSize, width: token.fontSize, height: token.fontSize }} />}
+              expanded={expanded.includes(key)}
+              onExpand={(open) => {
+                const remaining = expanded.filter((id) => id !== key)
+                onExpanded(open ? [...remaining, key] : remaining)
+              }}
+            >
+              <ProcessDetails entries={block.entries} />
+            </ProcessCard>
           )
         }
         return block.entries.map((e) => {
@@ -182,8 +144,13 @@ export function TurnContent({ entries, busy, waiting, locked, status, assistantM
               <Flex key={e.id} className="user-message" vertical gap={CHAT.spacing.detail} style={{ width: '100%', minWidth: 0 }}>
                 <Bubble
                   placement="end"
-                  variant="outlined"
-                  styles={{ root: { width: '100%' }, body: { maxWidth: '78%', minWidth: 0 } }}
+                  variant="filled"
+                  shape="round"
+                  styles={{
+                    root: { width: '100%' },
+                    body: { maxWidth: '78%', minWidth: 0 },
+                    content: { minHeight: 0, paddingBlock: token.paddingXS }
+                  }}
                   content={
                     <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0, maxWidth: '100%' }}>
                       {e.text}
@@ -200,23 +167,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, assistantM
                 </Flex>
               </Flex>
             )
-          return (
-            <Fragment key={e.id}>
-              {sectionIndex === headSection && <AssistantHead model={assistantModel} />}
-              {assistantBody(
-                <Bubble
-                  placement="start"
-                  variant="borderless"
-                  styles={{
-                    root: { width: '100%' },
-                    body: { width: '100%', maxWidth: '100%', minWidth: 0 },
-                    content: { padding: 0, maxWidth: '100%', width: '100%' }
-                  }}
-                  content={<AnswerContent text={e.text} streaming={e.streaming} />}
-                />
-              )}
-            </Fragment>
-          )
+          return <AnswerContent key={e.id} text={e.text} streaming={e.streaming} />
         })
       })}
       {busy && !waiting && (

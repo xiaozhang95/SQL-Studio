@@ -35,7 +35,7 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
   const sql = sqlPart?.kind === 'code' ? sqlPart.text : undefined
   const table = tablePart?.kind === 'table' ? tablePart.value : undefined
   return (
-    <>
+    <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
       {errors.length > 0 && (
         <Collapse
           size="small"
@@ -53,7 +53,7 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
         />
       )}
       {(sql || table) && (
-        <Flex align="center" gap={6} wrap>
+        <Flex align="center" gap={CHAT.spacing.detail} wrap>
           {sql && (
             <Typography.Text copyable={{ text: sql, tooltips: [t('复制 SQL'), t('已复制')] }} type="secondary">
               {t('复制 SQL')}
@@ -64,7 +64,7 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
               {t('在查询页打开')}
             </Button>
           )}
-          {table && <ExportExcel value={table} title={t('查询结果')} variant="link" />}
+          {table && <ExportExcel value={table} title={t('查询结果')} />}
         </Flex>
       )}
       <Flex align="center" gap={CHAT.spacing.detail} wrap>
@@ -79,6 +79,6 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
           </Tooltip>
         )}
       </Flex>
-    </>
+    </Flex>
   )
 }

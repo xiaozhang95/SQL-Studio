@@ -27,13 +27,12 @@ interface Props {
   entries: Entry[]
   busy: boolean
   status: string
-  assistantModel?: string
   expanded: string[]
   onExpanded: (keys: string[]) => void
   onEdit: (text: string) => void
   confirmation?: ReactNode
 }
-export function Transcript({ entries, busy, status, assistantModel, expanded, onExpanded, onEdit, confirmation }: Props) {
+export function Transcript({ entries, busy, status, expanded, onExpanded, onEdit, confirmation }: Props) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -85,7 +84,6 @@ export function Transcript({ entries, busy, status, assistantModel, expanded, on
                 busy={busy && isLatest}
                 waiting={isLatest && Boolean(confirmation)}
                 status={status}
-                assistantModel={assistantModel}
                 expanded={expanded}
                 onExpanded={onExpanded}
                 onEdit={onEdit}

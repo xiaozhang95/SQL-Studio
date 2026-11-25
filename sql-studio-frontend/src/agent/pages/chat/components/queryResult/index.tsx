@@ -133,7 +133,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
                   <Typography.Text type="secondary">{result.durationMs} ms</Typography.Text>
                 </>
               )}
-              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} />}
             </Space>
           ) : undefined
         }
@@ -205,7 +205,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
           showHeader || showExport ? (
             <Space size="middle">
               {showHeader && <Typography.Text type="secondary">{t('{value1} 项', { value1: value.length })}</Typography.Text>}
-              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} />}
             </Space>
           ) : undefined
         }
@@ -254,7 +254,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
           showHeader || showExport ? (
             <Space size="middle">
               {showHeader && <Typography.Text type="secondary">{t('{value1} 项', { value1: value.length })}</Typography.Text>}
-              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" />}
+              {showExport && <ExportExcel value={value} title={title ?? t('查询结果')} />}
             </Space>
           ) : undefined
         }
@@ -283,7 +283,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
     )
   }
   return (
-    <ContentCard title={cardTitle} extra={showExport ? <ExportExcel value={value} title={title ?? t('查询结果')} variant="icon" /> : undefined}>
+    <ContentCard title={cardTitle} extra={showExport ? <ExportExcel value={value} title={title ?? t('查询结果')} /> : undefined}>
       <Typography.Paragraph
         style={{
           whiteSpace: 'pre-wrap',

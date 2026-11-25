@@ -22,9 +22,7 @@ waiting为true时由轮次页脚显示等待确认状态，确认卡片由Transc
 
 渲染单轮 entries、回答底部复制和状态。`busy/status` 为本轮生成状态，`locked` 禁用所有用户问题编辑，`expanded/onExpanded` 管理折叠，`onEdit` 回填问题。执行过程内展示工具参数、调用说明和结果。切换轮次卸载后由外部 `expanded` 恢复折叠。
 
-每轮助手内容前显示 22px 助手图标、「SQL Studio AI」和模型 Tag。助手图标与欢迎卡片共用 `agent-icon-badge` 样式。正文缩进 30px；用户气泡靠右、最大宽 78%，沿用 Ant Design X Bubble 的 outlined 外观，编辑与复制操作只在悬停/聚焦时出现。轮次之间由 Transcript 使用 26px 间距和 1px 分隔线隔开。
-
-助手Bubble的root/body/content均满宽，避免表格按内容宽度收缩；用户气泡继续靠右并自适应。
+用户提问靠右，使用紧凑的圆角填充样式，最大宽度为会话内容的 78%。编辑与复制操作在悬停或聚焦时出现。助手正文、过程入口与页脚沿同一左边线排列，回答中的表格占用完整内容宽度。当前模型在输入区的模型选择入口显示。轮次之间由 Transcript 使用 26px 间距和 1px 分隔线隔开。
 
 执行过程内的QueryResult传showHeader=false，隐藏结果上方的图标、标题、条目数及行列/耗时栏；保留操作说明、表格列头、滚动、截断提示、SQL展开和Excel导出。title仍传入用于导出文件名。
 

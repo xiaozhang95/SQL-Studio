@@ -1,15 +1,15 @@
 import { DownloadOutlined } from '@ant-design/icons'
-import { Button, Flex, Tooltip } from 'antd'
+import { Button, Tooltip } from 'antd'
 import { useState } from 'react'
 
+import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import { exportXlsx } from '@/utils/xlsx'
 
 import { excelData } from '../../../../utils/excelData'
-import { CHAT } from '../../constant/chat'
 
-export function ExportExcel({ value, title, variant = 'button' }: { value: unknown; title: string; variant?: 'button' | 'icon' | 'link' }) {
+export function ExportExcel({ value, title }: { value: unknown; title: string }) {
   const { t } = useTranslation()
 
   const [busy, setBusy] = useState(false)
@@ -29,18 +29,13 @@ export function ExportExcel({ value, title, variant = 'button' }: { value: unkno
       setBusy(false)
     }
   }
-  const label = `${t('导出 Excel')}${data.truncated ? t('（当前截断结果）') : ''}`
-  if (variant === 'icon')
-    return (
-      <Tooltip title={label}>
-        <Button type="text" size="small" aria-label={label} icon={<DownloadOutlined />} loading={busy} onClick={() => void download()} />
-      </Tooltip>
-    )
+  const label = t('导出 Excel')
+  const truncatedLabel = data.truncated ? `${label}${t('（当前截断结果）')}` : undefined
   return (
-    <Flex vertical align="start" gap={CHAT.spacing.detail}>
-      <Button type={variant === 'link' ? 'text' : 'default'} size={variant === 'link' ? 'small' : undefined} icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
+    <Tooltip title={truncatedLabel} trigger={['hover', 'focus']}>
+      <Button type="primary" size={appearance.controlSize} aria-label={truncatedLabel} icon={<DownloadOutlined />} loading={busy} onClick={() => void download()}>
         {label}
       </Button>
-    </Flex>
+    </Tooltip>
   )
 }

@@ -1,5 +1,5 @@
 import { Think } from '@ant-design/x'
-import { Flex, theme } from 'antd'
+import { theme } from 'antd'
 import type { ReactNode } from 'react'
 
 import { DeepSeekLogo } from '../deepseekLogo'
@@ -14,27 +14,18 @@ interface Props {
 export function ProcessCard({ title, expanded, onExpand, children, icon }: Props) {
   const { token } = theme.useToken()
   return (
-    <Flex align="start">
-      <Think
-        icon={icon ?? <DeepSeekLogo size={token.fontSize} />}
-        title={title}
-        expanded={expanded}
-        onExpand={onExpand}
-        styles={{
-          root: {
-            flex: 1,
-            minWidth: 0,
-            overflow: 'hidden',
-            border: '1px solid var(--border)',
-            borderRadius: token.borderRadiusLG,
-            background: token.colorFillAlter,
-            boxShadow: 'var(--shadow-xs)'
-          },
-          content: { marginInlineStart: 0, marginBlockStart: 0, padding: token.paddingSM, borderInlineStart: 0 }
-        }}
-      >
-        <div style={{ minWidth: 0 }}>{children}</div>
-      </Think>
-    </Flex>
+    <Think
+      icon={icon ?? <DeepSeekLogo size={token.fontSize} />}
+      title={title}
+      expanded={expanded}
+      onExpand={onExpand}
+      styles={{
+        root: { minWidth: 0 },
+        status: { maxWidth: '100%', minHeight: token.controlHeightSM },
+        content: { marginBlockStart: token.marginXS, minWidth: 0 }
+      }}
+    >
+      {children}
+    </Think>
   )
 }

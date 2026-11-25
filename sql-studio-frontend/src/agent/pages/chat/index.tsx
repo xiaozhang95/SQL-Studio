@@ -99,7 +99,6 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                     entries={chat.entries}
                     busy={chat.busy}
                     status={chat.status}
-                    assistantModel={ai.status?.model}
                     expanded={workspace.state.expanded}
                     onExpanded={(expanded) => workspace.update({ expanded })}
                     onEdit={chat.editQuestion}
