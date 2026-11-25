@@ -38,7 +38,6 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
             minWidth: 0,
             borderRadius: token.borderRadiusLG,
             border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
-            background: token.colorBgContainer,
             cursor: disabled ? 'not-allowed' : 'pointer'
           },
           icon: { gridColumn: 1, gridRow: 2 },

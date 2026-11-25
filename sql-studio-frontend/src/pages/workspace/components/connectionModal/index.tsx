@@ -116,7 +116,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             ))}
           </aside>
         )}
-        <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
+        <div className="connection-settings" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div
             className={`connection-engine-header ${engine.className}`}
             style={{

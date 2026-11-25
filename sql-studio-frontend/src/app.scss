@@ -68,6 +68,11 @@ body {
   overflow-x: auto;
 }
 
+// 按钮聚焦时沿用自身外观，移除 Ant Design 默认焦点轮廓。
+html .ant-btn:not(:disabled, .ant-btn-disabled):focus-visible {
+  outline: none;
+}
+
 // 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。
 .desktop-titlebar {
   -webkit-app-region: drag;

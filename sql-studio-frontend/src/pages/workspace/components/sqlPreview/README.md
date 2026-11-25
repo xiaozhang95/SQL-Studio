@@ -12,6 +12,6 @@ memo 复用相同内容/主题的预览，basicSetup 保持稳定，避免输入
 
 compact 将复制按钮垂直居中对齐 SQL 的第一行，位置随预览字体大小变化。panel 使用 small Card 标题栏放置 title 和复制按钮，与 Agent 代码卡片共用公共 ContentCard 的外框。默认展示在 SQL 上方显示标题与复制按钮。复制使用原始全文，Electron 通过 [桌面桥接](../../../../typings/desktop/README.md) 写入系统剪贴板，网页使用浏览器剪贴板接口。复制成功后按钮显示绿色对勾，1.5 秒后恢复复制图标。连续复制成功会重新计时，失败时按钮保持当前状态。
 
-复制入口复用 ToolbarButton 的 small 无边框图标按钮，aria-label 和默认 Tooltip 为「复制 SQL」或「复制命令」。成功时 Tooltip 显示「已复制」。
+复制入口复用 ToolbarButton 的 small 无边框图标按钮，aria-label 和默认 Tooltip 为「复制 SQL」或「复制命令」。成功时 Tooltip 显示「已复制」。只读编辑区使用透明背景，随表格行、弹窗或卡片的底色显示。
 
 面板模式复用公共 ContentCard 的 code 模式，外框和正文布局通过 style/styles 管理。

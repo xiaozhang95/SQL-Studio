@@ -4,4 +4,4 @@ AppearanceCards<T extends string> 提供主题、字号与语言共用的受控�
 
 预览放在上方占满整行，底行左侧为原生 Radio 圆点、右侧为选项名称。布局通过 Radio 公开 styles 与主题 token 设置，圆角使用 `borderRadiusLG`。卡片按可用宽度自动换行，预览仅作装饰，不重复向辅助技术朗读。尺寸定义见 [settings](../../constant/settings/README.md)。
 
-选择状态由原生 Radio 圆点表达。卡片统一使用中性边框，保留原生键盘、表单及禁用状态。标签字号继承全局界面字号，边框与背景使用 theme.useToken()。
+选择状态由原生 Radio 圆点表达。卡片统一使用中性边框并沿用弹窗底色，保留原生键盘、表单及禁用状态。标签字号继承全局界面字号。

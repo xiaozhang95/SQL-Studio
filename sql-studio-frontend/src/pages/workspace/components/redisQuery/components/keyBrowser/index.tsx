@@ -87,7 +87,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
           flexDirection: 'column',
           width: redisPanelLayout.sidebarWidth,
           minHeight: 0,
-          borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+          borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           background: token.colorBgContainer
         }}
       >
@@ -109,7 +109,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
             gap: token.marginXS,
             minHeight: appearance.panelHeaderHeight,
             paddingInline: token.padding,
-            borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+            borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
           }}
         >
           <Input
@@ -135,7 +135,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
               minHeight: token.controlHeight,
               paddingBlock: token.paddingXXS,
               paddingInline: token.padding,
-              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
             }}
           >
             {needsRestart && (

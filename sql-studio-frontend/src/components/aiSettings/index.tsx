@@ -41,7 +41,7 @@ export default function AISettings({ model, disabled }: Props) {
                 padding: '11px 12px',
                 borderRadius: token.borderRadiusLG,
                 border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
-                background: model.activeId === entry.id ? token.colorFillAlter : token.colorBgContainer
+                background: model.activeId === entry.id ? token.colorFillAlter : undefined
               }}
             >
               <span
@@ -53,7 +53,7 @@ export default function AISettings({ model, disabled }: Props) {
                   flex: 'none',
                   border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
                   borderRadius: token.borderRadiusLG,
-                  background: token.colorBgContainer
+                  background: token.colorBgElevated
                 }}
               >
                 <AIProviderIcon provider={entry.provider} size={18} />

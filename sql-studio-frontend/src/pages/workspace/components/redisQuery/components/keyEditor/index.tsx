@@ -53,7 +53,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           gap: token.marginSM,
           minHeight: appearance.panelHeaderHeight,
           paddingInline: token.padding,
-          borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+          borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           background: token.colorBgContainer
         }}
       >
@@ -72,7 +72,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
         </Flex>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: token.padding, background: token.colorBgLayout }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: token.padding }}>
         <Form layout="horizontal" colon={false} labelCol={{ flex: '48px' }} labelAlign="right" wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={saving}>
           <Form.Item label={t('键名')} htmlFor="redis-detail-name" style={{ marginBlockEnd: token.margin }}>
             <Input
@@ -143,7 +143,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
           gap: token.marginXS,
           minHeight: appearance.panelHeaderHeight,
           paddingInline: token.padding,
-          borderBlockStart: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+          borderBlockStart: `${token.lineWidth}px solid var(--layout-divider)`,
           background: token.colorBgContainer
         }}
       >

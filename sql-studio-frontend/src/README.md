@@ -66,4 +66,4 @@ Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme
 
 Radio、Switch 等主色元素随 Ant Design 亮暗算法派生。侧栏标题与计数、查询工具栏和表单弹窗复用 appearance 与组件令牌。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
-原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 默认为 default；桌面退出时的查询保存使用 primary，写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，不再通过 Button token 或 primary CSS 重写悬停、按下和默认颜色。工具栏 text/link 类型及危险/禁用语义保留。
+原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 默认为 default；桌面退出时的查询保存使用 primary，写入确认可使用 warning 按钮。主按钮颜色由主题算法派生，按钮聚焦时仅显示按钮自身样式。工具栏 text/link 类型及危险/禁用语义保留。

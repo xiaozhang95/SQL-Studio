@@ -70,7 +70,7 @@ export default function SystemSettings({ variant = 'default', ...preferences }: 
           </div>
         }
       >
-        <div style={{ display: 'flex', height: `min(${settingsLayout.height}px, calc(100dvh - 240px))`, minHeight: 0, overflow: 'hidden', background: token.colorBgContainer }}>
+        <div style={{ display: 'flex', height: `min(${settingsLayout.height}px, calc(100dvh - 240px))`, minHeight: 0, overflow: 'hidden' }}>
           <nav
             aria-label={t('设置分类')}
             style={{

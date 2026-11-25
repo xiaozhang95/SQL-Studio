@@ -43,7 +43,7 @@ export const sqlEditorAppearance = EditorView.theme({
 /** 只读文本按全文展开，滚动归属外层表格或弹窗。 */
 export const sqlPreviewAppearance = EditorView.theme({
   '&.cm-editor': {
-    background: 'var(--surface)',
+    background: 'transparent',
     color: 'var(--text)',
     fontFamily: 'inherit',
     fontSize: 'var(--ant-font-size)'

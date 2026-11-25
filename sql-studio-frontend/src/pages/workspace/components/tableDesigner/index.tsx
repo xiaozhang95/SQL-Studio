@@ -36,7 +36,7 @@ export default function TableDesigner({ themeMode, available, active, ...options
           flexWrap: 'wrap',
           minHeight: appearance.panelHeaderHeight,
           paddingInline: token.padding,
-          borderBottom: '1px solid var(--border)',
+          borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           userSelect: 'none'
         }}
       >

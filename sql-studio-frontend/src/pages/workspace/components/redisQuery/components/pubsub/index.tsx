@@ -153,7 +153,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
           gap: token.marginXS,
           paddingBlock: token.paddingXS,
           paddingInline: token.padding,
-          borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+          borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           background: token.colorBgContainer
         }}
       >
@@ -196,7 +196,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             flexDirection: 'column',
             width: redisPanelLayout.sidebarWidth,
             minHeight: 0,
-            borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+            borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
             background: token.colorBgContainer
           }}
         >
@@ -220,7 +220,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               gap: token.marginXS,
               minHeight: appearance.panelHeaderHeight,
               paddingInline: token.padding,
-              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`
+              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
             }}
           >
             <Input
@@ -280,7 +280,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               gap: token.marginXS,
               minHeight: appearance.panelHeaderHeight,
               paddingInline: token.padding,
-              borderBlockEnd: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
+              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
               background: token.colorBgContainer
             }}
           >
@@ -299,7 +299,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               </Flex>
             </Flex>
           </div>
-          <div ref={log} role="log" aria-label={t('订阅消息')} style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlock: token.paddingXXS, background: token.colorBgLayout }}>
+          <div ref={log} role="log" aria-label={t('订阅消息')} style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlock: token.paddingXXS }}>
             {messages.length ? (
               messages.map((message) => (
                 <div
