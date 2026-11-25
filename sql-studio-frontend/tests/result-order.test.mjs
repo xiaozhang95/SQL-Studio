@@ -20,7 +20,7 @@ test('sorting spans the full virtual result without changing original keys or so
   assert.deepEqual(matches, [0, 50, 119])
   const visibleRows = resultTableRows(rows, [], sortResultRows(rows, null, { column: 0, order: 'ascend' }, 'int'))
   assert.equal(visibleRows[50].key, 69)
-  assert.deepEqual(page[0].cells, ['51'])
+  assert.deepEqual(visibleRows[50].cells, ['51'])
   assert.deepEqual(rows, original)
   assert.equal(sortResultRows(rows, null), null)
 })

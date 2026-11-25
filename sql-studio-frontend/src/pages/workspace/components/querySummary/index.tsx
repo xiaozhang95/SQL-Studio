@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
-import { executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
+import { batchRequestError, executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
@@ -22,6 +22,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
   const [errorsOnly, setErrorsOnly] = useState(false)
   const [page, setPage] = useState(1)
   const statements = statementOutputs(run)
+  const batchError = batchRequestError(run)
   const cancelled = statements.filter(executionCancelled).length
   const failed = statements.filter((item) => item.error && !executionCancelled(item)).length
   const columns: TableColumnsType<StatementRun> = [
@@ -52,11 +53,10 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
   return (
     <div>
       <Flex wrap gap={24} align="center" style={{ padding: 12 }}>
-        <div>
+        <div title={batchError ? t(batchError) : undefined}>
           {t('已处理：')}
           {statements.length} / {run.statementCount ?? statements.length}　{t('　成功：')}
-          {statements.length - failed - cancelled}　{t('　错误：')}
-          {failed}
+          {statements.length - failed - cancelled}　{batchError ? t('批次失败，语句错误 {count}', { count: failed }) : t('　错误：') + failed}
           {executionCancelled(run) && <>　{t('执行已取消')}</>}
         </div>
         <div>

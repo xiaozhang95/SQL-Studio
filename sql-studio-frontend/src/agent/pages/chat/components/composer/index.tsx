@@ -18,6 +18,7 @@ interface Props {
   onModeChange: (mode: 'readonly' | 'write') => void
   form: FormInstance<{ question: string }>
   busy: boolean
+  conversationLoading: boolean
   settingsBusy: boolean
   modelPlaceholder: string
   aiStatus: AIStatus | null
@@ -28,7 +29,7 @@ interface Props {
   onOpenHistory?: () => void
   usage: TokenUsage | null
 }
-export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPlaceholder, aiStatus, onSend, onStop, onModelChange, onDraftChange, onOpenHistory, usage }: Props) {
+export function Composer({ mode, onModeChange, form, busy, conversationLoading, settingsBusy, modelPlaceholder, aiStatus, onSend, onStop, onModelChange, onDraftChange, onOpenHistory, usage }: Props) {
   const { t } = useTranslation()
 
   const { token } = theme.useToken()
@@ -36,8 +37,9 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
   const question = Form.useWatch('question', form) ?? ''
   const tooLong = new TextEncoder().encode(question).length > CHAT.maxQuestionBytes
   const selectedModel = aiStatus?.configured ? aiStatus.models.find((model) => model.id === aiStatus.configId) : undefined
+  const controlsDisabled = busy || conversationLoading || settingsBusy
   function submit(text: string) {
-    if (!busy && !settingsBusy && aiStatus?.configured && text.trim() && new TextEncoder().encode(text).length <= CHAT.maxQuestionBytes) void onSend({ question: text })
+    if (!controlsDisabled && aiStatus?.configured && text.trim() && new TextEncoder().encode(text).length <= CHAT.maxQuestionBytes) void onSend({ question: text })
   }
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -78,7 +80,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
             aria-label={t('消息')}
             onSubmit={submit}
             onCancel={onStop}
-            readOnly={busy}
+            readOnly={busy || conversationLoading}
             loading={busy}
             submitType="enter"
             onKeyDown={(event) => {
@@ -135,12 +137,12 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                     <Button
                       type="text"
                       aria-label={t('操作模式')}
-                      disabled={busy || settingsBusy}
+                      disabled={controlsDisabled}
                       icon={mode === 'write' ? <EditOutlined /> : <LockOutlined />}
-                      style={mode === 'write' && !busy && !settingsBusy ? { color: token.colorWarningText } : undefined}
+                      style={mode === 'write' && !controlsDisabled ? { color: token.colorWarningText } : undefined}
                     >
                       {mode === 'write' ? t('完全访问模式') : t('只读模式')}
-                      <DropdownChevron disabled={busy || settingsBusy} />
+                      <DropdownChevron disabled={controlsDisabled} />
                     </Button>
                   </Dropdown>
                   <Tooltip
@@ -166,13 +168,13 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                     <Button
                       type="text"
                       aria-label={t('当前模型')}
-                      disabled={busy || settingsBusy || !aiStatus?.models.length}
+                      disabled={controlsDisabled || !aiStatus?.models.length}
                       title={aiStatus && !aiStatus.models.length ? t('请在右上角系统设置中添加模型') : undefined}
                       icon={selectedModel && <DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
                       style={{ paddingInline: token.paddingXS }}
                     >
                       {selectedModel?.name ?? t(modelPlaceholder)}
-                      <DropdownChevron disabled={busy || settingsBusy || !aiStatus?.models.length} />
+                      <DropdownChevron disabled={controlsDisabled || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>
                   {busy ? (
@@ -192,7 +194,7 @@ export function Composer({ mode, onModeChange, form, busy, settingsBusy, modelPl
                       onClick={() => submit(question)}
                       aria-label={t('发送消息')}
                       icon={<ArrowUpOutlined />}
-                      disabled={settingsBusy || !aiStatus?.configured || tooLong}
+                      disabled={controlsDisabled || !aiStatus?.configured || tooLong}
                     />
                   )}
                 </Flex>

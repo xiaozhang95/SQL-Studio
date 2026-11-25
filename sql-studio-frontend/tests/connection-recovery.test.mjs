@@ -54,7 +54,14 @@ function harness(sessionRequest) {
     calls,
     render: () => {
       cursor = 0
-      return create('offline', '', () => {}, () => {}, [], [])
+      return create(
+        'offline',
+        '',
+        () => {},
+        () => {},
+        [],
+        []
+      )
     },
     unmount: () => cleanups.forEach((cleanup) => cleanup?.())
   }
@@ -68,10 +75,10 @@ function connectionMenu(status, running = false) {
   const dependencies = {
     React: { createElement: () => null },
     DatabaseEngine,
+    StudioIcon: 'StudioIcon',
+    databaseSectionIconNames: { monitor: 'activity', sync: 'swap' },
     t: (text) => text,
-    ...Object.fromEntries(
-      ['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'DashboardOutlined', 'SwapOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])
-    ),
+    ...Object.fromEntries(['PlusOutlined', 'CloseOutlined', 'LinkOutlined', 'EditOutlined', 'FolderOutlined', 'DeleteOutlined', 'ReloadOutlined'].map((name) => [name, name])),
     connections: [{ id: 'offline' }],
     objects: { snapshots: status ? { offline: { status } } : {}, closedDatabases: {} },
     getDatabaseAdapter: () => ({ objects: {} }),

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
-import { defaultOutputView, executionCancelled, resultOutputs, statementOutputs } from '../src/pages/workspace/utils/queryOutput/index.ts'
+import { batchRequestError, defaultOutputView, executionCancelled, resultOutputs, statementOutputs } from '../src/pages/workspace/utils/queryOutput/index.ts'
 
 const result = (columns = [], rows = [], affectedRows = 1) => ({ columns, rows, affectedRows, rowCount: rows.length, durationMs: 1, truncated: false, isQuery: columns.length > 0, lastInsertId: '' })
 
@@ -13,6 +13,15 @@ test('104 command receipts retain all messages but create no dataset navigation'
   assert.equal(resultOutputs(run).length, 0)
   assert.equal(defaultOutputView(run, 103, false), 'summary')
   assert.equal(defaultOutputView(run, 103, true), 'messages')
+})
+
+test('batch-final errors remain separate from successful receipts and statement failures', () => {
+  const error = 'SQL 批次未结束 PostgreSQL 事务，未提交的更改已回滚'
+  const statements = [{ sql: 'BEGIN' }, { sql: 'SELECT 1' }]
+  assert.equal(batchRequestError({ statements, error }), error)
+  assert.equal(batchRequestError({ statements: [...statements, { sql: 'SELECT 2', error }], error }), undefined)
+  assert.equal(batchRequestError({ statements, error, cancelled: true }), undefined)
+  assert.equal(batchRequestError({ error }), undefined)
 })
 
 test('mixed results preserve original statement indexes including empty SELECT and RETURNING', () => {

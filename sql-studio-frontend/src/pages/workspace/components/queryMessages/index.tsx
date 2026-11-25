@@ -9,7 +9,7 @@ import type { ThemeMode } from '@/typings/theme'
 import type { RunState } from '@/typings/workspace'
 
 import { useQueryMessageScroll } from '../../hooks/useQueryMessageScroll'
-import { executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
+import { batchRequestError, executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
@@ -19,7 +19,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
   const { t } = useTranslation()
 
   const statements = statementOutputs(run)
-  const batchError = run.error && !executionCancelled(run) && !statements.some((item) => item.error === run.error && !executionCancelled(item)) ? run.error : undefined
+  const batchError = batchRequestError(run)
   const identity = run.startedAt ?? run.id
   const [selection, setSelection] = useState<{ identity: typeof identity; page: number }>()
   const latestPage = Math.max(1, Math.ceil(statements.length / 50))

@@ -7,6 +7,11 @@ export const statementDuration = (item: StatementRun) => item.result?.durationMs
 
 export const executionCancelled = ({ cancelled, error }: { cancelled?: boolean; error?: string }) => Boolean(cancelled || /^(?:请求已取消|Request cancelled)[。.]?(?:\n|$)/.test(error ?? ''))
 
+/** 批次流结束时的错误独立于已收到的逐条回执。 */
+export function batchRequestError(run: RunState) {
+  if (run.statements?.length && run.error && !executionCancelled(run) && !run.statements.some((item) => item.error === run.error)) return run.error
+}
+
 /** Older snapshots stored individual failures without their classification. */
 export const statementErrorDetail = (item: StatementRun) => ((item.statementError ?? Boolean(item.sql)) && !executionCancelled(item) ? item.error : undefined)
 

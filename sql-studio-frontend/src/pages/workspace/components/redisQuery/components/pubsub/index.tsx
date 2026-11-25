@@ -12,15 +12,19 @@ import CountBadge from '../../../countBadge'
 import ToolbarButton from '../../../toolbarButton'
 
 type Message = { id: number; channel: string; payload: string; truncated?: boolean; receivedAt: number }
+type ChannelRequest = { pattern: string }
+type ChannelResponse = { request: ChannelRequest; channels?: RedisChannels; error?: string }
+const messageLimit = 100
 
 export default function PubSub({ id, active }: { id: string; active: boolean }) {
   const { t, language } = useTranslation()
   const { token } = theme.useToken()
   const [filter, setFilter] = useState('')
-  const [request, setRequest] = useState({ pattern: '' })
-  const [channels, setChannels] = useState<RedisChannels>()
-  const [channelError, setChannelError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [request, setRequest] = useState<ChannelRequest>({ pattern: '' })
+  const [response, setResponse] = useState<ChannelResponse>()
+  const channels = response?.channels
+  const loading = response?.request !== request
+  const channelError = !loading ? response?.error : undefined
   const [channel, setChannel] = useState('')
   const [pattern, setPattern] = useState(false)
   const [status, setStatus] = useState<'idle' | 'connecting' | 'ready'>('idle')
@@ -39,33 +43,40 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
 
   useEffect(() => {
     const controller = new AbortController()
-    setLoading(true)
-    setChannelError('')
     void getChannels(id, request.pattern, controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted) setChannels(value)
+      .then((channels) => {
+        if (!controller.signal.aborted) setResponse({ request, channels })
       })
       .catch((error: Error) => {
-        if (!controller.signal.aborted) setChannelError(error.message)
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
+        if (!controller.signal.aborted) setResponse((previous) => ({ request, channels: previous?.channels, error: error.message }))
       })
     return () => controller.abort()
   }, [id, request])
 
-  useEffect(() => () => stream.current?.abort(), [])
+  useEffect(
+    () => () => {
+      stream.current?.abort()
+      stream.current = null
+    },
+    []
+  )
   useEffect(() => {
-    if (autoScroll && log.current) log.current.scrollTop = log.current.scrollHeight
-  }, [messages, autoScroll])
+    if (active && autoScroll && log.current) log.current.scrollTop = log.current.scrollHeight
+  }, [active, messages, autoScroll])
+
+  function resumeMessages() {
+    pausedRef.current = false
+    setPaused(false)
+    const pending = buffer.current
+    buffer.current = []
+    if (pending.length) setMessages((previous) => [...previous, ...pending].slice(-messageLimit))
+  }
 
   function stop() {
     stream.current?.abort()
     stream.current = null
     setStatus('idle')
-    pausedRef.current = false
-    setPaused(false)
-    buffer.current = []
+    resumeMessages()
     setRequest((previous) => ({ ...previous }))
   }
 
@@ -88,10 +99,10 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
         } else {
           const message = { ...event, id: ++counter.current, receivedAt: Date.now() }
           if (pausedRef.current) {
-            buffer.current = [...buffer.current.slice(-99), message]
+            buffer.current = [...buffer.current.slice(-(messageLimit - 1)), message]
             return
           }
-          setMessages((previous) => [...previous.slice(-99), message])
+          setMessages((previous) => [...previous.slice(-(messageLimit - 1)), message])
         }
       })
     } catch (error) {
@@ -100,6 +111,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
       if (stream.current === controller) {
         stream.current = null
         setStatus('idle')
+        resumeMessages()
         setRequest((previous) => ({ ...previous }))
       }
     }
@@ -107,11 +119,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
 
   function togglePause() {
     if (paused) {
-      pausedRef.current = false
-      setPaused(false)
-      const pending = buffer.current
-      buffer.current = []
-      if (pending.length) setMessages((previous) => [...previous, ...pending].slice(-100))
+      resumeMessages()
     } else {
       pausedRef.current = true
       setPaused(true)
@@ -190,7 +198,9 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             background: token.colorBgContainer
           }}
         >
-          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+          <div
+            style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 7, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}
+          >
             <Typography.Text strong>{t('活跃频道')}</Typography.Text>
             <CountBadge count={channels?.channels.length ?? 0} />
             {channels?.truncated && (
@@ -252,7 +262,18 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
         </aside>
 
         <section style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
-          <div style={{ display: 'flex', flex: 'none', alignItems: 'center', gap: 8, height: redisPanelLayout.headerHeight, paddingInline: 16, borderBottom: `1px solid ${token.colorBorderSecondary}`, background: token.colorBgContainer }}>
+          <div
+            style={{
+              display: 'flex',
+              flex: 'none',
+              alignItems: 'center',
+              gap: 8,
+              height: redisPanelLayout.headerHeight,
+              paddingInline: 16,
+              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+              background: token.colorBgContainer
+            }}
+          >
             <Typography.Text strong>{t('消息流')}</Typography.Text>
             <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {t('{value1} 条', { value1: messages.length })}
@@ -264,7 +285,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
               </Flex>
               <Flex gap={token.marginXXS}>
                 <ToolbarButton icon={paused ? <CaretRightOutlined /> : <PauseOutlined />} label={paused ? t('继续接收消息') : t('暂停消息')} disabled={status === 'idle'} onClick={togglePause} />
-                <ToolbarButton icon={<ClearOutlined />} label={t('清空消息')} disabled={!messages.length} onClick={clearMessages} />
+                <ToolbarButton icon={<ClearOutlined />} label={t('清空消息')} disabled={!messages.length && !paused} onClick={clearMessages} />
               </Flex>
             </Flex>
           </div>

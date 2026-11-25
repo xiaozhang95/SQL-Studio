@@ -16,7 +16,8 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
   const controller = new AbortController()
   const calls = [],
     histories = [],
-    results = []
+    results = [],
+    verifiedConnections = []
   let pages = [
     { id: 'page', kind: 'query', connectionId: 'a', database: '', table: '' },
     { id: 'other', kind: 'query', connectionId: 'a', database: 'kept', table: 't' }
@@ -25,7 +26,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
     DatabaseEngine,
     RequestError,
     connections: [{ id: 'a', name: 'fixture', type: schema ? 'postgresql' : 'mysql' }],
-    objects: { snapshots: { a: { status: 'connected' } } },
+    objects: { snapshots: { a: { status: 'connected' } }, verifyConnection: (id) => verifiedConnections.push(id) },
     running: false,
     request: { current: null },
     getDatabaseAdapter: () => ({ sessionBatch, splitStatements: splitSQLStatements, useDatabase: useDatabaseSQL, tableLabel: (table) => table }),
@@ -59,7 +60,7 @@ async function run(script, failSQL, cancelSQL, schema, kind = 'query', sessionBa
   }
   const execute = new Function(...Object.keys(dependencies), stripTypeScriptTypes(implementation) + '; return executeSQL')(...Object.values(dependencies))
   await execute(script, { connectionId: 'a', database: '', schema, table: '' }, 'page', kind, singleStatement)
-  return { calls, histories, results, pages }
+  return { calls, histories, results, pages, verifiedConnections }
 }
 
 test('statement errors stay in the output; request failures stay in the top banner', async () => {
@@ -70,12 +71,14 @@ test('statement errors stay in the output; request failures stay in the top bann
     assert.equal(pageExecutionError(result), undefined)
     assert.equal(statementErrorDetail(result.statements[1]), missingTable.message)
     assert.equal(output.histories[1].error, missingTable.message)
+    assert.deepEqual(output.verifiedConnections, [])
   }
   const tooLarge = new RequestError('request body too large', 413)
   const output = await run('SELECT 1;', 'SELECT 1;', undefined, undefined, 'query', false, false, tooLarge)
   const result = output.results.at(-1)
   assert.equal(pageExecutionError(result), tooLarge.message)
   assert.equal(statementErrorDetail(result.statements[0]), undefined)
+  assert.deepEqual(output.verifiedConnections, [])
 })
 
 test('MySQL selection can send a routine without splitting its inner semicolons', async () => {
@@ -109,6 +112,7 @@ test('failed USE stops the batch and retains the last successful scope', async (
   const output = await run('USE first; USE denied; SELECT 1;', 'USE denied;')
   assert.equal(output.calls.length, 2)
   assert.equal(output.pages[0].database, 'first')
+  assert.deepEqual(output.verifiedConnections, ['a'])
   assert.match(output.results.at(-1).statements[1].error, /后续 1 条语句未执行/)
 })
 
@@ -144,6 +148,34 @@ test('schema follows the originating batch into requests, histories and refresh 
   assert.ok(output.calls.every((call) => call.schema === 'cron'))
   assert.ok(output.histories.every((item) => item.schema === 'cron'))
   assert.ok(output.results.at(-1).statements.every((item) => item.schema === 'cron'))
+})
+
+test('result refresh requires the original PostgreSQL batch session, including older saved results', () => {
+  const start = source.indexOf('  const refreshScope = ')
+  const code = source.slice(start, source.indexOf('  async function refreshResult()', start))
+  const scope = { connectionId: 'a', database: 'db', schema: 'public' }
+  const statement = { sql: 'SELECT 1' }
+  const check = (type, batch) => {
+    const context = {
+      DatabaseEngine,
+      savedConnections: [{ id: 'a', type }],
+      getDatabaseAdapter(engine) {
+        assert.notEqual(engine, DatabaseEngine.Redis)
+        return { batchStatementRequiresSession: engine === DatabaseEngine.PostgreSQL }
+      },
+      objects: { snapshots: { a: { status: 'connected' } } },
+      tab: { kind: 'query', ...scope },
+      batch: { scope, ...batch },
+      run: { scope },
+      statementRun: statement
+    }
+    return new Function(...Object.keys(context), code + '; return canRefreshResult')(...Object.values(context))
+  }
+  assert.equal(check(DatabaseEngine.PostgreSQL, { statementCount: 2, statements: [statement] }), false)
+  assert.equal(check(DatabaseEngine.PostgreSQL, { statements: [statement, statement] }), false)
+  assert.equal(check(DatabaseEngine.PostgreSQL, { statementCount: 1, statements: [statement] }), true)
+  assert.equal(check(DatabaseEngine.MySQL, { statementCount: 2, statements: [statement, statement] }), true)
+  assert.equal(check(DatabaseEngine.Redis, { statementCount: 2, statements: [statement, statement] }), true)
 })
 
 test('refresh reuses the executed statement schema instead of the current selector', async () => {

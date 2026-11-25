@@ -909,7 +909,12 @@ export const useWorkspace = (active = true) => {
     appendHistory
   })
   const refreshScope = tab.kind === 'query' ? batch?.scope : tab
-  const canRefreshResult = Boolean(run && refreshScope && objects.snapshots[refreshScope.connectionId]?.status === 'connected' && (tab.kind !== 'query' || statementRun?.sql))
+  const replayConnection = savedConnections.find((item) => item.id === refreshScope?.connectionId)
+  const replayAdapter = replayConnection && replayConnection.type !== DatabaseEngine.Redis ? getDatabaseAdapter(replayConnection.type) : undefined
+  const replayRequiresSession = tab.kind === 'query' && Boolean(replayAdapter?.batchStatementRequiresSession) && (batch?.statementCount ?? batch?.statements?.length ?? 0) > 1
+  const canRefreshResult = Boolean(
+    run && refreshScope && objects.snapshots[refreshScope.connectionId]?.status === 'connected' && (tab.kind !== 'query' || (statementRun?.sql && !replayRequiresSession))
+  )
   async function refreshResult() {
     if (running || !canRefreshResult || !refreshScope) return
     if (tab.kind === 'query') {
@@ -1129,6 +1134,7 @@ export const useWorkspace = (active = true) => {
     replaceTableResult,
     refreshResult,
     canRefreshResult,
+    replayRequiresSession,
     setTableDesignerDirty,
     tableDesignerCommitted,
     isTableDesignerBlocked,

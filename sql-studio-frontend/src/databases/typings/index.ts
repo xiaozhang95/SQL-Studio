@@ -54,6 +54,7 @@ export type RowCellChange = { columnIndex: number; value: string | null }
 
 export interface DatabaseAdapter {
   readonly sessionBatch?: boolean
+  readonly batchStatementRequiresSession?: boolean
   readonly foreignKeys?: boolean
   readonly dumpFile?: {
     metadataSQL?: (database: string) => string

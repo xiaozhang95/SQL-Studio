@@ -13,6 +13,7 @@ import { tableDesign } from './tableDesign'
 
 const postgresql = {
   sessionBatch: true,
+  batchStatementRequiresSession: true,
   profile: postgresqlProfile,
   foreignKeys: true,
   dumpFile: {

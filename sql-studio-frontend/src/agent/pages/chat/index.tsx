@@ -78,17 +78,20 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
           <Flex vertical className="agent-conversation-column" style={{ width: '100%', flex: 1, minHeight: 0 }}>
             <div
               className="chat-transcript-region"
+              aria-busy={chat.loading}
               style={{
                 padding: 0,
                 flex: 1,
                 minHeight: 0,
                 overflow: 'hidden',
                 display: 'flex',
-                alignItems: chat.entries.length === 0 ? 'center' : 'stretch'
+                alignItems: chat.loading || chat.entries.length ? 'stretch' : 'center'
               }}
             >
               <div style={chat.loading || chat.entries.length ? { width: '100%', minWidth: 0, height: '100%' } : CHAT.content}>
-                {chat.loading ? null : chat.loadError ? null : chat.entries.length === 0 ? (
+                {chat.loading ? (
+                  <ContentLoading label={t('正在加载会话…')} />
+                ) : chat.loadError ? null : chat.entries.length === 0 ? (
                   <Welcome />
                 ) : (
                   <Transcript
@@ -121,6 +124,7 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
                   onModeChange={operation.change}
                   form={chat.form}
                   busy={chat.busy}
+                  conversationLoading={chat.loading}
                   settingsBusy={ai.busy}
                   modelPlaceholder={ai.loading ? '正在加载模型…' : ai.readError ? '读取模型配置失败' : '请选择模型'}
                   aiStatus={ai.status}
@@ -136,11 +140,6 @@ export function ChatPage({ dark, workspace }: { dark: boolean; workspace: Worksp
             </div>
           </Flex>
         </Flex>
-        {chat.loading && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', background: 'var(--surface)' }}>
-            <ContentLoading label={t('正在加载会话…')} />
-          </div>
-        )}
       </Flex>
     </Flex>
   )

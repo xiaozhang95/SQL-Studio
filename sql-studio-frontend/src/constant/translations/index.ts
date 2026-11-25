@@ -763,6 +763,8 @@ export const englishMessages: Readonly<Record<string, string>> = {
   结果操作: 'Result actions',
   重新执行: 'Run again',
   '重新执行当前结果对应的 SQL，写入语句也会再次执行': 'Run the SQL for this result again, including any write operations',
+  '单条重跑无法还原批次会话，请在编辑器中核对原脚本': 'Running this statement alone cannot restore the batch session. Review the original script in the editor',
+  '批次失败，语句错误 {count}': 'Batch failed, statement errors: {count}',
   刷新当前结果: 'Refresh current results',
   导出全部: 'Export all',
   '导出 CSV': 'Export CSV',

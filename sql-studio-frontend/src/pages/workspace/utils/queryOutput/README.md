@@ -6,4 +6,4 @@ statementOutputs(run: RunState) 返回本批 StatementRun[]；优先使用 state
 
 `resultOutputs(run)` 返回包含数据列的结果及原始语句索引 `{item,index}`，包括零行 SELECT 和 RETURNING。`executionCancelled(item)` 支持新的取消标记和旧记录的取消文案。`defaultOutputView(run,index,running)` 让失败和取消落在消息视图，用户可切回已完成的数据集。成功无列回执默认进入摘要。
 
-`statementErrorDetail(item)` 返回语句失败原因，兼容已关联 SQL 的旧结果。`pageExecutionError(run)` 将查询的请求级错误交给顶部，保留对象加载错误提示。
+`statementErrorDetail(item)` 返回语句失败原因，兼容已关联 SQL 的旧结果。`batchRequestError(run)` 返回未包含在逐条回执中的批次失败原因，供消息和摘要共用。`pageExecutionError(run)` 将查询的请求级错误交给顶部，保留对象加载错误提示。

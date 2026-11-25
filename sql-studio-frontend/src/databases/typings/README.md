@@ -20,6 +20,8 @@ DatabaseAdapter.isSQLColumn(name:string):boolean 判断结果列是否明确承�
 
 DatabaseAdapter.useDatabase(statement):string|undefined 识别完整切库语句；仅在请求成功后应用返回库名。
 
+`sessionBatch` 表示多条语句可以通过同一会话执行。`batchStatementRequiresSession` 为 true 时，结果工具栏禁止将该批中的一条语句单独重新执行。
+
 `DatabaseAdapter.tableDataSQL` 默认生成带 `LIMIT 1000` 的表预览 SQL，传 `{ preview: false }` 时生成查询编辑器的普通 SELECT 草稿。
 
 DatabaseProfile.database 为可选维护库默认值，PostgreSQL 为 `postgres`，GreptimeDB 为 `public`。optionalUsername 表示连接表单允许省略用户名。适配器以 objects、dataEditing 和 dumpFile 声明可视化对象管理、网格行编辑及 SQL 转储能力。exportDDL 提供结构定义文本。

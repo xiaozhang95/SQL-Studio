@@ -14,7 +14,7 @@ import {
   UndoOutlined
 } from '@ant-design/icons'
 import { Alert, Button, Flex, Input, Space, Table, theme, Typography } from 'antd'
-import { useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ThHTMLAttributes } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
@@ -53,6 +53,7 @@ type Props = {
     | 'setTableDesignerDirty'
     | 'refreshResult'
     | 'canRefreshResult'
+    | 'replayRequiresSession'
     | 'running'
     | 'setTableDesignerBusy'
     | 'replaceTableResult'
@@ -150,41 +151,53 @@ export default function QueryResults({ model, themeMode }: Props) {
   const columnSizingKey = `${run?.id ?? ''}:${resultIndex}:${result?.columns.length ?? 0}`
   const [columnSizing, setColumnSizing] = useState<{ key: string; widths: Record<number, number> }>({ key: '', widths: {} })
   const columnWidths = columnSizing.key === columnSizingKey ? columnSizing.widths : {}
+  const columnResizeCleanup = useRef<() => void>(undefined)
+  useEffect(() => () => columnResizeCleanup.current?.(), [columnSizingKey])
 
-  function setColumnWidth(index: number, width: number) {
-    const lastIndex = (result?.columns.length ?? 0) - 1
-    const widths = { ...columnWidths, [index]: width }
-    // 首次拖拽其他列时固定最后一列的实际宽度，避免自动伸展突然回落到默认值。
-    if (lastIndex >= 0 && index !== lastIndex && widths[lastIndex] === undefined) {
-      const lastCell = viewport.current?.querySelectorAll<HTMLElement>('.ant-table-thead th.data-resizable-header')[lastIndex]
-      const measured = lastCell?.getBoundingClientRect().width
-      if (measured) widths[lastIndex] = Math.max(resultTableLayout.minColumnWidth, Math.round(measured))
-    }
-    setColumnSizing({ key: columnSizingKey, widths })
+  function measureColumnWidths() {
+    if (columnSizing.key === columnSizingKey) return columnWidths
+    // 固定拖拽起始时的各列宽度，避免虚拟表格继续摊分视口余量。
+    const cells = viewport.current?.querySelectorAll<HTMLElement>('.ant-table-thead th.data-resizable-header')
+    return Object.fromEntries(Array.from(cells ?? [], (cell, position) => [position, Math.round(cell.getBoundingClientRect().width)]))
+  }
+
+  function setColumnWidth(index: number, width: number, measured: Record<number, number>) {
+    setColumnSizing((previous) => {
+      const widths = previous.key === columnSizingKey ? previous.widths : measured
+      return { key: columnSizingKey, widths: { ...widths, [index]: width } }
+    })
   }
 
   function startColumnResize(event: ReactPointerEvent<HTMLTableCellElement>, index: number) {
     if (event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
+    columnResizeCleanup.current?.()
+    const element = viewport.current
+    const measured = measureColumnWidths()
     const startWidth = event.currentTarget.getBoundingClientRect().width
     const startX = event.clientX
+    const pointerId = event.pointerId
     const handleMove = (moveEvent: PointerEvent) => {
-      setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(startWidth + moveEvent.clientX - startX)))
+      if (moveEvent.pointerId !== pointerId) return
+      setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(startWidth + moveEvent.clientX - startX)), measured)
     }
-    const stop = () => {
+    const stop = (endEvent?: PointerEvent) => {
+      if (endEvent && endEvent.pointerId !== pointerId) return
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', stop)
       window.removeEventListener('pointercancel', stop)
-      viewport.current?.style.removeProperty('cursor')
-      viewport.current?.style.removeProperty('user-select')
+      element?.style.removeProperty('cursor')
+      element?.style.removeProperty('user-select')
+      columnResizeCleanup.current = undefined
     }
     window.addEventListener('pointermove', handleMove)
     window.addEventListener('pointerup', stop)
     window.addEventListener('pointercancel', stop)
-    if (viewport.current) {
-      viewport.current.style.cursor = 'col-resize'
-      viewport.current.style.userSelect = 'none'
+    columnResizeCleanup.current = stop
+    if (element) {
+      element.style.cursor = 'col-resize'
+      element.style.userSelect = 'none'
     }
   }
 
@@ -193,7 +206,7 @@ export default function QueryResults({ model, themeMode }: Props) {
     event.preventDefault()
     event.stopPropagation()
     const currentWidth = event.currentTarget.getBoundingClientRect().width
-    setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(currentWidth + (event.key === 'ArrowRight' ? 16 : -16))))
+    setColumnWidth(index, Math.max(resultTableLayout.minColumnWidth, Math.round(currentWidth + (event.key === 'ArrowRight' ? 16 : -16))), measureColumnWidths())
   }
   const [selectedView, setSelectedView] = useState<{
     pageId: string
@@ -320,6 +333,7 @@ export default function QueryResults({ model, themeMode }: Props) {
     })
   ]
   const scrollWidth = columns.reduce<number>((total, column) => total + (column.width ?? resultTableLayout.columnWidth), resultTableLayout.selectionWidth)
+  const columnsSized = Object.keys(columnWidths).length > 0
   const shownOutput = showingResult ? run : batch
   const stopped = shownOutput ? executionCancelled(shownOutput) || Boolean(shownOutput.interrupted) : false
   const failed = !stopped && Boolean(shownOutput?.error)
@@ -442,7 +456,15 @@ export default function QueryResults({ model, themeMode }: Props) {
                 icon={<ReloadOutlined />}
                 loading={activeRunning}
                 disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-                hint={editing.dirty ? t('请先保存或放弃修改') : tab.kind === 'query' ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行') : t('刷新当前结果')}
+                hint={
+                  model.replayRequiresSession
+                    ? t('单条重跑无法还原批次会话，请在编辑器中核对原脚本')
+                    : editing.dirty
+                      ? t('请先保存或放弃修改')
+                      : tab.kind === 'query'
+                        ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行')
+                        : t('刷新当前结果')
+                }
                 onClick={model.refreshResult}
               />
               {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
@@ -503,15 +525,15 @@ export default function QueryResults({ model, themeMode }: Props) {
         ) : result ? (
           <>
             <Table
-              style={{ visibility: editing.saving ? 'hidden' : undefined }}
+              style={{ visibility: editing.saving ? 'hidden' : undefined, width: columnsSized ? scrollWidth : undefined, maxWidth: '100%' }}
               ref={table}
               virtual
               size={appearance.tableSize}
-              className={`data-table${Object.keys(columnWidths).length ? ' data-table-sized' : ''}`}
+              className={`data-table${columnsSized ? ' data-table-sized' : ''}`}
               components={{ header: { cell: ColumnResizeHeaderCell } }}
               showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}
               styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
-              tableLayout={run.kind === 'ddl' ? 'fixed' : undefined}
+              tableLayout={run.kind === 'ddl' || columnsSized ? 'fixed' : undefined}
               rowSelection={{
                 columnWidth: resultTableLayout.selectionWidth,
                 selectedRowKeys: selectedRows,
