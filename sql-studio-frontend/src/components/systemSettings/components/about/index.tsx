@@ -49,6 +49,8 @@ export default function About({ disabled }: { disabled: boolean }) {
                       strokeWidth={12}
                       percent={Math.floor((downloading && downloadFailed ? 0 : progress?.percent) ?? 0)}
                       showInfo={false}
+                      strokeColor={downloading ? token.colorPrimary : token.colorError}
+                      railColor={token.colorBorder}
                       status={downloading ? 'active' : 'exception'}
                       aria-label={t('更新下载进度')}
                     />
@@ -62,7 +64,7 @@ export default function About({ disabled }: { disabled: boolean }) {
             )}
             {result?.status === 'available' && (
               <Button disabled={busy} onClick={() => void run('openRelease')}>
-                {t('前往下载')}
+                {t('手动下载')}
               </Button>
             )}
             {result?.status === 'downloaded' && (

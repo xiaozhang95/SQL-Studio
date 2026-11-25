@@ -18,7 +18,7 @@ SystemSettings 接收 AppearancePreferences（已应用主题、字号、语言�
 - 首条已添加记录自动成为默认模型。模型卡展示品牌图标、名称、模型 ID、默认模型单选项、编辑和删除。卡片统一使用中性边框，默认卡使用浅色底和「默认」单选标记。列表上方为「已添加模型」标题，下方为左对齐虚线「添加模型」。删除需确认。
 - 主题提供 system/light/dark 三张带工作区缩略预览的卡片，依次为「跟随系统/亮色/暗色」，跟随系统预览并列展示亮暗两套；字号为 small/standard/large，对应「较小（12px）/标准（14px）/稍大（16px）」，预览使用 96px 高的 SQL Studio / 数据查询示例。
 - 语言卡片使用「你好，世界 / 数据库工作区」和「Hello, world / Database workspace」预览，底部为原生单选和语言名称。主题、字号和语言卡片均可整张点击，保留原生 Radio 的键盘操作，并随宽度换行。卡片统一使用中性边框，原生 Radio 圆点标记当前选项。选择只更新弹框草稿，切换左侧选项保留输入。
-- [关于软件](components/about/README.md)只展示「当前版本 + 版本号」，仅 Electron 提供检查更新和查看控制台。安装版下载时用圆形进度环替换下载按钮的图标，重新打开设置会恢复当前下载状态。
+- [关于软件](components/about/README.md)展示当前版本，Electron 提供检查更新、手动下载和查看控制台。安装版下载时用主题色圆形进度环替换下载按钮的图标，重新打开设置会恢复当前下载状态。
 - 总保存仅提交有变化的分区，保存完成后关闭。冲突时读取对应分区最新设置，其他失败保留可编辑草稿。忙碌时禁用控件、关闭按钮、遮罩关闭和 Escape。
 
 [useSystemSettings](hooks/useSystemSettings/README.md) 管理草稿、模型加载与统一提交；[settings](constant/settings/README.md) 集中导航类型和弹框布局尺寸。

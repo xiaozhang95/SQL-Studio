@@ -379,15 +379,9 @@ body,
   outline-offset: 2px;
 }
 
-// 页签与全局导航共用选中颜色，保持禁用项的原生反馈。
-.ant-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) {
-  background: var(--surface-selected);
-  border-color: var(--border);
+// 选中页签文字使用默认正文色，线形页签沿用原生活动线。
+.ant-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) .ant-tabs-tab-btn {
   color: var(--text);
-
-  .ant-tabs-tab-btn {
-    color: inherit;
-  }
 }
 
 :is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
@@ -406,14 +400,19 @@ body,
     color: var(--text);
   }
 
-  // 卡片型页签使用自定义活动线，线形结果页签使用原生活动线。
-  .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled)::after {
-    content: '';
-    position: absolute;
-    inset-inline: 8px;
-    bottom: -5px;
-    height: 2px;
-    background: var(--primary);
+  .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) {
+    background: var(--ant-color-fill-alter);
+    border-color: var(--border);
+    color: var(--text);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset-inline: 8px;
+      bottom: -5px;
+      height: 2px;
+      background: var(--primary);
+    }
   }
 
   .ant-tabs-tab:not(:hover, :focus-within, .ant-tabs-tab-active) .ant-tabs-tab-remove {

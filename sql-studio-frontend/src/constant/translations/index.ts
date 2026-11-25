@@ -242,7 +242,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   正在准备下载更新: 'Preparing to download the update',
   正在校验更新: 'Verifying the update',
   更新下载进度: 'Update download progress',
-  前往下载: 'Open release',
+  手动下载: 'Manual download',
   重启并安装: 'Restart and install',
   '检查更新失败，请稍后重试。': 'Could not check for updates. Try again later.',
   'GitHub 已限制更新请求，请稍后重试。': 'GitHub has rate-limited update requests. Try again later.',

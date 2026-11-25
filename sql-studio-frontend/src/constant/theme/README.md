@@ -10,4 +10,4 @@ Modal、Drawer 的内容区继承对应浮层底色 `colorBgElevated`。工作�
 
 `colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用中性边框色，亮色为 `#dedede`，暗色为 `#404040`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。输入焦点和校验状态使用各自的语义色。
 
-左侧主导航、页签和连接类型共用 `--surface-selected` 淡中性选中底。选中标签和图标沿用默认文字色，卡片页签使用中性轮廓，选中指示线使用 `colorPrimary`。设置分类、对象树、会话列表、Redis 工具和频道列表也使用该中性选中底。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。AI 欢迎卡片和助手图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。过程卡片使用中性填充 `colorFillAlter`。
+左侧主导航、连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表共用 `--surface-selected` 淡中性选中底。工作区卡片页签的选中底与结果表表头共用 `colorFillAlter` 叠加在容器底色上的效果，边框采用中性色。选中标签和图标沿用默认文字色，选中指示线使用 `colorPrimary`。线形页签由原生活动线标记当前项。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。AI 欢迎卡片和助手图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。过程卡片使用中性填充 `colorFillAlter`。
