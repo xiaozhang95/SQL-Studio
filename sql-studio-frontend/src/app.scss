@@ -479,6 +479,15 @@ body,
   background: var(--primary);
 }
 
+.agent-icon-badge {
+  background: var(--ant-color-primary-bg);
+  color: var(--primary);
+
+  html[data-theme='dark'] & {
+    color: var(--text);
+  }
+}
+
 // Sender 的默认边框在亮色下对比度较低，聚焦时沿同一条边框显示主题色。
 .agent-composer.ant-sender.ant-sender-main {
   border-color: var(--ant-color-border);

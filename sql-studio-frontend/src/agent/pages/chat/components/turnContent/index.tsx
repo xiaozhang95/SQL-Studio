@@ -103,6 +103,7 @@ function AssistantHead({ model }: { model?: string }) {
   return (
     <Flex align="center" gap={8} style={{ marginBottom: token.marginSM }}>
       <span
+        className="agent-icon-badge"
         aria-hidden="true"
         style={{
           display: 'grid',
@@ -110,9 +111,7 @@ function AssistantHead({ model }: { model?: string }) {
           width: 22,
           height: 22,
           flex: 'none',
-          borderRadius: token.borderRadius,
-          background: 'var(--ant-color-primary-bg)',
-          color: 'var(--primary)'
+          borderRadius: token.borderRadius
         }}
       >
         <StudioIcon name="bot" size={12} />

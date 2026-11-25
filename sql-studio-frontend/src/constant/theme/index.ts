@@ -13,7 +13,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
     token: {
       colorPrimary: logoPrimary,
       fontSize: uiFontSizes[fontSizeMode],
-      controlHeight: 30
+      controlHeight: 30,
+      ...(themeMode === 'light' ? { colorBgContainer: '#fafafa' } : {})
     },
     cssVar: { key: 'sql-studio-theme' }
   }

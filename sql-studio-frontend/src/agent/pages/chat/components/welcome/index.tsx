@@ -25,14 +25,13 @@ export function Welcome() {
         {examples.map((example) => (
           <Card key={example.title} size="small">
             <span
+              className="agent-icon-badge"
               style={{
                 display: 'grid',
                 placeItems: 'center',
                 width: token.controlHeightSM,
                 height: token.controlHeightSM,
-                borderRadius: token.borderRadius,
-                background: 'var(--ant-color-primary-bg)',
-                color: 'var(--primary)'
+                borderRadius: token.borderRadius
               }}
             >
               {example.icon}
