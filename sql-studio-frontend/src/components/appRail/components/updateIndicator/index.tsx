@@ -17,15 +17,15 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
   if (!desktop) return null
 
   if (pending === 'download') {
-    const percent = Math.floor(progress?.percent ?? 0)
-    const label = `${t(downloadStatus)} · ${percent}%`
+    const label = t(downloadStatus)
     return (
       <Tooltip title={label} placement="right">
         <Flex align="center" justify="center" style={{ width: railButtonStyle.width, height: railButtonStyle.height, flex: 'none' }}>
           <Progress
             type="circle"
             size={token.controlHeight}
-            percent={percent}
+            percent={Math.floor(progress?.percent ?? 0)}
+            showInfo={false}
             status="active"
             strokeColor={token.colorPrimary}
             railColor={token.colorBorder}
