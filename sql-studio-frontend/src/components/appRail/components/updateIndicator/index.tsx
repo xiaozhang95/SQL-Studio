@@ -28,13 +28,13 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
               percent={Math.floor(progress.percent)}
               showInfo={false}
               status="active"
-              strokeColor={token.colorPrimary}
+              strokeColor={token.colorText}
               railColor={token.colorBorder}
               aria-label={t('更新下载进度')}
               aria-valuetext={label}
             />
           ) : (
-            <LoadingOutlined spin role="status" aria-label={label} style={{ fontSize: token.controlHeight, color: token.colorPrimary }} />
+            <LoadingOutlined spin role="status" aria-label={label} style={{ fontSize: token.controlHeight }} />
           )}
         </Flex>
       </Tooltip>
@@ -52,7 +52,7 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
       <Button
         type="text"
         className="app-rail-button"
-        style={{ ...railButtonStyle, color: token.colorPrimary }}
+        style={railButtonStyle}
         icon={<ActionIcon aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
         aria-label={label}
         loading={pending === action}
