@@ -31,8 +31,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
         : {})
     },
     components: {
-      Typography: { colorText: 'CanvasText', colorTextHeading: 'CanvasText', colorTextDescription: 'CanvasText' },
-      Statistic: { colorTextDescription: 'CanvasText' }
+      Typography: { colorTextDescription: 'var(--ant-color-text)' },
+      Statistic: { colorTextDescription: 'var(--ant-color-text)' }
     },
     cssVar: { key: 'sql-studio-theme' }
   }

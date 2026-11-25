@@ -75,15 +75,15 @@ html[data-theme='dark'] .ant-modal-container {
 }
 
 .chat-history-actions {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
 }
-.chat-history-row:hover .chat-history-actions,
-.chat-history-row:focus-within .chat-history-actions {
-  display: flex;
+.chat-history-row:is(:hover, :focus-within) .chat-history-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
-.chat-history-row:hover .chat-history-time,
-.chat-history-row:focus-within .chat-history-time {
-  display: none;
+.chat-history-row:is(:hover, :focus-within) .chat-history-time {
+  visibility: hidden;
 }
 // 当前会话使用统一选中背景，避免与普通 hover 混淆。
 .chat-history-list .ant-conversations-item-active,
@@ -222,8 +222,8 @@ body,
 .database-object-name > .anticon {
   flex: none;
 }
-// 共享表格列宽手柄覆盖表头右边缘的命中区，透明外观不干扰排序图标与文字。
-.resizable-table .resizable-column-resizer {
+// 查询结果和通用表格共用列宽手柄外观，透明命中区不影响排序图标与文字。
+:is(.resizable-table .resizable-column-resizer, .data-table .data-column-resizer) {
   position: absolute;
   inset-block: 4px;
   inset-inline-end: 0;
@@ -231,56 +231,28 @@ body,
   width: 8px;
   cursor: col-resize;
   touch-action: none;
-}
-.resizable-table .resizable-column-resizer::after {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 3px;
-  width: 1px;
-  border-radius: 1px;
-  background: transparent;
-}
-.resizable-table .resizable-column-resizer:hover::after,
-.resizable-table .resizable-column-resizer:focus-visible::after {
-  background: var(--ant-color-text-tertiary);
-}
-.resizable-table .resizable-column-resizer:focus-visible {
-  outline: 1px solid var(--ant-color-primary);
-  outline-offset: -1px;
-}
-// 手动调整列宽后按实际宽度布局，允许最后一列收窄并保留横向滚动。
-.resizable-table.resizable-table-sized > .ant-table-wrapper table {
-  min-width: 0 !important;
-}
-// 列宽手柄覆盖表头右边缘的命中区，透明外观不干扰排序图标与文字。
-.data-table .data-column-resizer {
-  position: absolute;
-  inset-block: 4px;
-  inset-inline-end: 0;
-  z-index: 2;
-  width: 8px;
-  cursor: col-resize;
-  touch-action: none;
-}
-.data-table .data-column-resizer::after {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 3px;
-  width: 1px;
-  border-radius: 1px;
-  background: transparent;
-}
-.data-table .data-column-resizer:hover::after,
-.data-table .data-column-resizer:focus-visible::after {
-  background: var(--ant-color-text-tertiary);
-}
-.data-table .data-column-resizer:focus-visible {
-  outline: 1px solid var(--ant-color-primary);
-  outline-offset: -1px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 3px;
+    width: 1px;
+    border-radius: 1px;
+    background: transparent;
+  }
+
+  &:is(:hover, :focus-visible)::after {
+    background: var(--ant-color-text-tertiary);
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--ant-color-primary);
+    outline-offset: -1px;
+  }
 }
 // 手动调整列宽后按实际宽度布局，允许最后一列收窄并保留横向滚动。
+.resizable-table.resizable-table-sized > .ant-table-wrapper table,
 .data-table.data-table-sized table {
   min-width: 0 !important;
 }

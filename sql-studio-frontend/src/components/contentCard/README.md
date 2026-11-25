@@ -4,4 +4,4 @@ ContentCard(props: ContentCardProps) 统一工作区 SQL 预览与 Agent 内容�
 
 无受控业务状态、回调副作用、请求或缓存。折叠、复制和代码渲染由调用方处理。表格 section 外框仍由 app.scss 管理。
 
-阴影通过 style 引用 app.scss 的 --card-shadow，亮色为 shadow-xs `0 1px 2px rgba(17,24,18,.05)`，暗色使用同结构黑色 40% 阴影。不增加悬停上移或点击语义；调用方 style 可覆盖阴影。
+轻阴影通过 style 引用 app.scss 的 `--card-shadow`，随亮暗主题更新。调用方 style 可覆盖阴影。

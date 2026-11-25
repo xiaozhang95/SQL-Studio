@@ -260,21 +260,23 @@ function HistoryContents({
                           <Typography.Text ellipsis title={i.title} style={{ minWidth: 0, flex: 1 }}>
                             {i.title}
                           </Typography.Text>
-                          <span className="chat-history-time" style={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                            {timeLabel(i.updatedAt)}
-                          </span>
-                          <span className="chat-history-actions" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                            <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
-                            <Button
-                              danger
-                              type="text"
-                              size="small"
-                              aria-label={t('删除会话 ') + i.title}
-                              aria-haspopup="dialog"
-                              disabled={busy || selecting}
-                              icon={<DeleteOutlined />}
-                              onClick={() => onDeleteOpen(i)}
-                            />
+                          <span style={{ display: 'grid', flex: 'none', alignItems: 'center', justifyItems: 'end' }}>
+                            <span className="chat-history-time" style={{ gridArea: '1 / 1', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                              {timeLabel(i.updatedAt)}
+                            </span>
+                            <span className="chat-history-actions" style={{ gridArea: '1 / 1', display: 'flex' }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                              <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
+                              <Button
+                                danger
+                                type="text"
+                                size="small"
+                                aria-label={t('删除会话 ') + i.title}
+                                aria-haspopup="dialog"
+                                disabled={busy || selecting}
+                                icon={<DeleteOutlined />}
+                                onClick={() => onDeleteOpen(i)}
+                              />
+                            </span>
                           </span>
                         </Flex>
                       )

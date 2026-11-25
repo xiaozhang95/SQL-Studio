@@ -49,7 +49,7 @@ export default function TrendChart({ title, series, history }: Props) {
           <Flex wrap gap="middle">
             {tracks.map((track) => (
               <Flex key={track.key} align="center" gap="small">
-                <span aria-hidden style={{ width: token.sizeSM, height: token.lineWidthBold, background: colors[track.tone] }} />
+                <span aria-hidden style={{ width: token.sizeSM, borderBlockStart: `${token.lineWidthBold}px ${track.tone === 'link' ? 'dashed' : 'solid'} ${colors[track.tone]}` }} />
                 <Typography.Text>
                   {t(track.label)}: {formatMetric(sampleValue(samples, currentIndex, track), track.format, language)}
                 </Typography.Text>
@@ -111,7 +111,7 @@ export default function TrendChart({ title, series, history }: Props) {
                     return (
                       <g key={index}>
                         <polygon points={`${x(first.index)},${y(0)} ${points} ${x(last.index)},${y(0)}`} fill={colors[track.tone]} fillOpacity={0.14} />
-                        <polyline points={points} fill="none" stroke={colors[track.tone]} strokeWidth={2} strokeLinejoin="round" />
+                        <polyline points={points} fill="none" stroke={colors[track.tone]} strokeWidth={2} strokeLinejoin="round" strokeDasharray={track.tone === 'link' ? '6 4' : undefined} />
                       </g>
                     )
                   })}

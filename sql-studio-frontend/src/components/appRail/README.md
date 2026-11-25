@@ -19,7 +19,7 @@
 
 ## 行为
 
-- 导航按钮使用 `aria-current="page"` 标记当前页面。当前项与连接类型共用淡中性选中底，图标和左侧竖线使用主题主色。当前项悬停时保持选中样式，其余项沿用 Ant Design 文本按钮的悬停填充。悬停均显示 Tooltip。
+- 导航按钮使用 `aria-current="page"` 标记当前页面。当前项与连接类型共用淡中性选中底，左侧竖线使用主题主色。激活图标在亮色模式用 `colorPrimary`，暗色模式用全局正文色 `colorText`。当前项悬停时保持选中样式，其余项沿用 Ant Design 文本按钮的悬停填充。悬停均显示 Tooltip。
 - 监控指标和同步数据库入口与连接右键菜单共用 [StudioIcon](../studioIcon/README.md) 的图标定义。
 - 主题按钮保存与当前相反的主题，保留现有字号和语言；保存期间显示加载态。
 - Windows 安装版下载更新时，[侧栏更新入口](components/updateIndicator/README.md)在主题分隔线上方显示进度。校验完成后点击图标可重启安装。侧栏和设置页共用 [桌面更新状态](../../hooks/useDesktopUpdates/README.md)。
