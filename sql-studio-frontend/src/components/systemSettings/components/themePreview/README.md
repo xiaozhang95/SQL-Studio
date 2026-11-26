@@ -4,4 +4,4 @@ ThemePreview({preference: ThemePreference}) 为主题卡片绘制 SQL 工作区�
 
 组件无状态和回调，仅用于 [appearanceCards](../appearanceCards/README.md) 的装饰预览，固定高度来自 [settings](../../constant/settings/README.md)。普通界面文字与字体不受预览影响。
 
-缩略图 token 由 constant/theme 的 createThemeConfig 生成，与应用实际的近黑/近白文字和画布底色一致，不应用或保存偏好。
+缩略图 token 由 constant/theme 的 createThemeConfig 生成，与应用实际的文字和画布底色一致。当前页签使用 `controlItemBgActive` 中性底和主色活动线。预览不应用或保存偏好。

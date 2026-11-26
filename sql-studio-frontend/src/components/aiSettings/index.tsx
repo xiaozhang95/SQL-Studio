@@ -31,6 +31,7 @@ export default function AISettings({ model, disabled }: Props) {
       <Spin spinning={model.loading}>
         <Flex vertical gap="small" role="list" aria-label={t('已添加模型')}>
           {model.entries.map((entry) => {
+            const isDefault = model.activeId === entry.id
             const test = model.connectionTests[entry.id]
             const testStatus = t(test?.loading ? '正在测试连接…' : (test?.message ?? ''))
             const testLabel = t('测试连接 {value1}', { value1: entry.modelName })
@@ -74,17 +75,16 @@ export default function AISettings({ model, disabled }: Props) {
                 <Flex align="center" gap={4} style={{ flexShrink: 0 }}>
                   <Radio
                     name={defaultModelGroup}
-                    checked={model.activeId === entry.id}
+                    checked={isDefault}
                     disabled={locked}
                     aria-label={t('默认模型 {value1}', { value1: entry.modelName })}
                     onChange={() => model.selectActive(entry.id)}
                   >
-                    {model.activeId === entry.id ? t('默认') : t('设为默认')}
+                    {isDefault ? t('默认') : t('设为默认')}
                   </Radio>
                   <Tooltip title={testStatus || t('测试连接')} trigger={['hover', 'focus']}>
                     <Button
                       type="text"
-                      size="small"
                       icon={test?.success === true ? <CheckCircleOutlined /> : test?.success === false ? <CloseCircleOutlined /> : <LinkOutlined />}
                       aria-label={testStatus ? `${testLabel} · ${testStatus}` : testLabel}
                       loading={test?.loading}
@@ -95,7 +95,7 @@ export default function AISettings({ model, disabled }: Props) {
                     />
                   </Tooltip>
                   <Tooltip title={t('编辑模型')}>
-                    <Button type="text" size="small" icon={<EditOutlined />} aria-label={t('编辑模型 {value1}', { value1: entry.model })} disabled={locked} onClick={() => editor.show(entry)} />
+                    <Button type="text" icon={<EditOutlined />} aria-label={t('编辑模型 {value1}', { value1: entry.model })} disabled={locked} onClick={() => editor.show(entry)} />
                   </Tooltip>
                   <DeleteConfirmation
                     title={t('删除这个模型？')}
@@ -103,7 +103,7 @@ export default function AISettings({ model, disabled }: Props) {
                     disabled={locked}
                     onConfirm={() => model.removeEntry(entry.id)}
                   >
-                    <Button type="text" danger size="small" icon={<DeleteOutlined />} aria-label={t('删除模型 {value1}', { value1: entry.modelName })} title={t('删除模型')} disabled={locked} />
+                    <Button type="text" danger icon={<DeleteOutlined />} aria-label={t('删除模型 {value1}', { value1: entry.modelName })} title={t('删除模型')} disabled={locked} />
                   </DeleteConfirmation>
                 </Flex>
               </Flex>

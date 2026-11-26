@@ -3,11 +3,35 @@ import test from 'node:test'
 
 import { CompletionContext } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
+import { keymap } from '@codemirror/view'
 
 import { mysqlCompletion } from '../src/databases/mysql/completion/index.ts'
 import { postgresqlCompletion } from '../src/databases/postgresql/completion/index.ts'
 import { buildAIContext } from '../src/pages/workspace/utils/aiContext/index.ts'
+import { editorTabKeymap } from '../src/pages/workspace/utils/editorKeymap/index.ts'
 import { normalizeHistories, retainConnectionHistories } from '../src/pages/workspace/utils/queryHistory/index.ts'
+
+test('editor Tab inserts at the end of the last line and still indents selected lines', () => {
+  const doc = 'SELECT 1;\nSELECT 2;'
+  const extensions = [editorTabKeymap]
+  const editor = {
+    state: EditorState.create({ doc, selection: { anchor: doc.length }, extensions }),
+    dispatch: (transaction) => {
+      editor.state = transaction.state
+    }
+  }
+  const binding = editor.state.facet(keymap).flat().find((entry) => entry.key === 'Tab')
+  assert.ok(binding)
+  assert.equal(binding.run(editor), true)
+  assert.equal(editor.state.doc.toString(), `${doc}\t`)
+  assert.equal(editor.state.selection.main.head, doc.length + 1)
+
+  editor.state = EditorState.create({ doc, selection: { anchor: 0, head: doc.length }, extensions })
+  assert.equal(binding.run(editor), true)
+  assert.equal(editor.state.doc.toString(), '  SELECT 1;\n  SELECT 2;')
+  assert.equal(binding.shift(editor), true)
+  assert.equal(editor.state.doc.toString(), doc)
+})
 
 test('restored histories retain the latest 50 per connection and remove deleted owners only', () => {
   const records = Array.from({ length: 85 }, (_, i) => ({ id: String(i), connectionId: 'a', sql: `-- 历史记录\nSELECT ${i};` }))

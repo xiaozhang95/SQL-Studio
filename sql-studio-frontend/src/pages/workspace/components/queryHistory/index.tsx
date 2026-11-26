@@ -1,22 +1,20 @@
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, HistoryOutlined, ImportOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons'
 import { Drawer, Empty, Input, Space, Tag } from 'antd'
-import type { TableColumnsType } from 'antd'
-import { useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { TableColumnsType, TableRef } from 'antd'
+import { useRef, useState } from 'react'
 
 import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
 import { ResizableTable } from '@/components/resizableTable'
-import { appearance, ComponentSize } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
-import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
+import { workspaceConnectionIconSize } from '../../constant/layout'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { executionCancelled } from '../../utils/queryOutput'
@@ -33,10 +31,10 @@ type Props = {
   onLoad?: (item: HistoryItem) => void
   onClosed?: () => void
 }
+const detailColumnWidth = 72
+
 /** 表格提供执行概览，展开查看完整 SQL；载入追加到当前 SQL 页。 */
 export default function QueryHistory({ model, themeMode, terminal = false, onLoad, onClosed }: Props) {
-  const tablePagination = useTablePagination()
-
   const { t, language } = useTranslation()
 
   const { history, clearHistory, historyOpen, setHistoryOpen, historySearch, setHistorySearch, running, savedConnections: connections, connectionId, loadHistory } = model
@@ -44,10 +42,11 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
   const redis = connection?.type === DatabaseEngine.Redis
   // 历史属于创建的连接；同一连接下切库仍可查看全部记录，不用库名或显示名称匹配。
   const connectionHistory = history
-  const [page, setPage] = useState(1)
+  const table = useRef<TableRef>(null)
   const [drawerReady, setDrawerReady] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
-  const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${drawerReady}:${connectionId}:${connectionHistory.length}:${historySearch}`)
+  const { viewport, bodyHeight } = useTableViewportLayout(`${historyOpen}:${drawerReady}:${connectionId}`)
+  const search = historySearch.toLowerCase()
   const columns: TableColumnsType<HistoryItem> = [
     {
       title: t('状态'),
@@ -100,7 +99,6 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
               label={t(terminal ? '载入命令行' : '载入编辑器')}
               hint={missing ? t('原连接已删除') : undefined}
               icon={<ImportOutlined />}
-              size={ComponentSize.Small}
               disabled={running || missing}
               onClick={() => (onLoad ?? loadHistory)(item)}
             />
@@ -109,22 +107,22 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
       }
     }
   ]
+  const scrollWidth = columns.reduce((total, column) => total + (typeof column.width === 'number' ? column.width : 0), detailColumnWidth)
   return (
     <Drawer
       title={
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, maxWidth: '100%' }}>
-          <HistoryOutlined />
-          <span style={{ flexShrink: 0 }}>{t('执行历史')}</span>
-          {connection && (
-            <>
-              <span>·</span>
-              <EngineIcon type={connection.type} connected={model.objects.snapshots[connection.id]?.status === 'connected'} />
-              <span title={connection.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {connection.name}
-              </span>
-            </>
-          )}
-        </span>
+        connection ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--ant-margin-xs)', minWidth: 0, maxWidth: '100%' }}>
+            <EngineIcon type={connection.type} connected={model.objects.snapshots[connection.id]?.status === 'connected'} size={workspaceConnectionIconSize} />
+            <span title={connection.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {connection.name}
+            </span>
+            <span aria-hidden="true" style={{ flexShrink: 0 }}>·</span>
+            <span style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>{t('执行历史')}</span>
+          </span>
+        ) : (
+          t('执行历史')
+        )
       }
       open={historyOpen}
       onClose={() => {
@@ -134,13 +132,14 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
       focusable={terminal ? { focusTriggerAfterClose: false } : undefined}
       afterOpenChange={(open) => {
         setDrawerReady(open)
+        if (open) table.current?.scrollTo({ top: 0 })
         if (!open) {
           setConfirmClear(false)
           onClosed?.()
         }
       }}
       size="min(1080px, 100vw)"
-      styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
+      styles={{ title: { minWidth: 0 }, body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       extra={<ToolbarButton label={t('清空执行历史')} icon={<DeleteOutlined />} danger aria-haspopup="dialog" disabled={!connectionHistory.length} onClick={() => setConfirmClear(true)} />}
     >
       <Input
@@ -151,25 +150,23 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
         value={historySearch}
         onChange={(event) => {
           setHistorySearch(event.target.value)
-          setPage(1)
+          table.current?.scrollTo({ top: 0 })
         }}
         allowClear
       />
       <div ref={viewport} style={{ flex: 1, minHeight: 0, minWidth: 0, marginTop: 16, overflow: 'hidden' }}>
         <ResizableTable<HistoryItem>
-          size={appearance.tableSize}
-          className="history-table"
+          ref={table}
+          virtual
           resizeKey={connectionId ?? ''}
-          style={{ '--history-body-height': `${bodyHeight || 24}px` } as CSSProperties}
           rowKey="id"
           columns={columns}
-          dataSource={connectionHistory.filter((item) => `${item.sql} ${item.database} ${item.schema || ''}`.toLowerCase().includes(historySearch.toLowerCase()))}
-          scroll={{ x: 1200, y: bodyHeight || 24 }}
-          pagination={{ ...tablePagination, current: page, pageSize: 10 }}
-          onChange={(pagination) => setPage(pagination.current || 1)}
+          dataSource={search ? connectionHistory.filter((item) => `${item.sql} ${item.database} ${item.schema || ''}`.toLowerCase().includes(search)) : connectionHistory}
+          scroll={{ x: scrollWidth, y: bodyHeight || 24 }}
+          pagination={false}
           expandable={{
             columnTitle: <span style={{ whiteSpace: 'nowrap' }}>{t('详情')}</span>,
-            columnWidth: 72,
+            columnWidth: detailColumnWidth,
             expandedRowRender: (item) => (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <SQLPreview compact sql={item.sql} themeMode={themeMode} databaseType={connections.find((value) => value.id === item.connectionId)?.type} />
@@ -200,7 +197,6 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
         onConfirm={() => {
           if (!historyOpen || !confirmClear || !connectionHistory.length) return
           clearHistory(connectionId)
-          setPage(1)
           setConfirmClear(false)
         }}
       >

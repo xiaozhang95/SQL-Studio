@@ -72,7 +72,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
           <Sender
             className="agent-composer"
             styles={{
-              root: { height, display: 'flex', flexDirection: 'column', borderRadius: token.borderRadiusLG, background: token.colorBgContainer, boxShadow: 'var(--composer-shadow)' },
+              root: { height, display: 'flex', flexDirection: 'column', borderRadius: token.borderRadius, background: token.colorBgContainer, boxShadow: 'var(--composer-shadow)' },
               content: { padding: token.paddingSM, ...(height === undefined ? {} : { flex: 1, minHeight: 0 }) },
               input: { border: 0, outline: 'none', boxShadow: 'none', ...(height === undefined ? {} : { height: '100%', overflowY: 'auto' }) },
               footer: { paddingInline: token.paddingSM, paddingBlockEnd: token.paddingSM }
@@ -150,7 +150,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
                       value1: usage ? t(' 1M上下文 · 输入 {tokens} token', { tokens: usage.promptTokens || '—' }) : ''
                     })}
                   >
-                    <Button type="text" size="small" aria-label={t('模式说明')} icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
+                    <Button type="text" aria-label={t('模式说明')} icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
                   </Tooltip>
                 </Flex>
                 <Flex align="center" gap={token.marginXS}>

@@ -30,7 +30,6 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
   const { locked } = useNavigationLock()
   const updates = useDesktopUpdates()
   const navigationDisabled = disabled || locked
-  const activeIconColor = themeMode === 'dark' ? token.colorText : token.colorPrimary
   const [savingTheme, setSavingTheme] = useState(false)
   const items = [
     { key: 'workspace', label: '工作区', icon: <StudioIcon name="database" size={appearance.railIconSize} />, onClick: onOpenWorkspace },
@@ -66,6 +65,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
         paddingBlock: token.paddingSM,
         borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
         background: token.colorBgContainer,
+        color: token.colorTextSecondary,
         userSelect: 'none'
       }}
     >
@@ -75,7 +75,11 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
             <Button
               type="text"
               className="app-rail-button"
-              style={section === item.key && !navigationDisabled ? { ...railButtonStyle, background: 'var(--surface-selected)', color: activeIconColor } : railButtonStyle}
+              style={
+                section === item.key
+                  ? { ...railButtonStyle, background: 'var(--surface-selected)', color: navigationDisabled ? token.colorTextDisabled : 'var(--navigation-icon-selected)' }
+                  : railButtonStyle
+              }
               icon={item.icon}
               aria-label={t(item.label)}
               aria-current={section === item.key ? 'page' : undefined}

@@ -66,7 +66,7 @@ function WorkspacePreview({ mode }: { mode: ThemeMode }) {
             background: token.colorBgContainer
           }}
         >
-          <span style={{ width: 20, height: 4, borderRadius: 1, background: token.colorPrimaryBg, border: `1px solid ${token.colorPrimary}` }} />
+          <span style={{ width: 20, height: 4, borderRadius: 1, background: token.controlItemBgActive, borderBottom: `1px solid ${token.colorPrimary}` }} />
           <span style={{ width: 16, height: 4, borderRadius: 1, background: token.colorFillTertiary }} />
           <span style={{ width: 12, height: 4, borderRadius: 1, background: token.colorPrimary, marginInlineStart: 'auto' }} />
         </div>

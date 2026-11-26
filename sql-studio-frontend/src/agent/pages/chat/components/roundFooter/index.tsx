@@ -38,7 +38,6 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
     <Flex vertical gap={CHAT.spacing.detail} style={{ minWidth: 0 }}>
       {errors.length > 0 && (
         <Collapse
-          size="small"
           items={[
             {
               key: 'error',
@@ -60,7 +59,7 @@ export function RoundFooter({ entries, ongoing, waiting }: Props) {
             </Typography.Text>
           )}
           {sql && (
-            <Button type="text" size="small" icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(sql)}>
+            <Button type="text" icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(sql)}>
               {t('在查询页打开')}
             </Button>
           )}

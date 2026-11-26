@@ -41,7 +41,6 @@ export function WriteConfirmation({ value, submitting, onDecide }: Props) {
             <Typography.Text>{t('确认后将实际修改数据库，操作可能不可撤销。请核对目标和 SQL。')}</Typography.Text>
             <Descriptions
               column={1}
-              size="small"
               styles={{ content: { overflowWrap: 'anywhere' } }}
               items={[
                 { key: 'connection', label: t('连接'), children: value.connection },

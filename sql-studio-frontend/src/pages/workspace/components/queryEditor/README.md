@@ -42,4 +42,4 @@ Schema 选择通过 selectObject 的第四参数传入显式连接/库范围；A
 
 编辑器value仅提供挂载初始SQL，后续输入由CodeMirror持有；不注册逐字onChange全文序列化，onUpdate提交不可变文档和布局到useWorkspaceEditor缓冲。hasSQL只在空/非空之间变化，按钮使用当前实例执行/导出。历史和AI应用继续走事务；失焦、卸载及切页同步草稿。组件仅按页面ID重挂载，连接/库变化只更新补全扩展，保留当前文本和撤销。
 
-SQL 语法候选使用 sqlCompletionSelect 的 Ant Design Select；useSQLCompletionPopup 将 CodeMirror 候选、当前项及光标位置同步给下拉，保留 Ctrl+Space、上下键、Enter、Escape 和鼠标选择；不会替换补全来源或编辑器焦点。
+SQL 语法候选使用 sqlCompletionSelect 的 Ant Design Select；useSQLCompletionPopup 将 CodeMirror 候选、当前项及光标位置同步给下拉，保留 Ctrl+Space、上下键、Enter、Escape 和鼠标选择；不会替换补全来源或编辑器焦点。Tab 的普通编辑行为由 [editorKeymap](../../utils/editorKeymap/README.md) 提供，空选区在光标处插入制表符，有选区时缩进所选行。

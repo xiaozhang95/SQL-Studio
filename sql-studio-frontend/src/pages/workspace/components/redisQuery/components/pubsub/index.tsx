@@ -202,7 +202,6 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
         >
           <SidebarHeader
             title={t('活跃频道')}
-            count={channels?.channels.length ?? 0}
             detail={
               channels?.truncated && (
                 <Typography.Text type="secondary" ellipsis={{ tooltip: t('仅显示部分内容') }} style={{ minWidth: 0 }}>
@@ -285,13 +284,10 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             }}
           >
             <Typography.Text strong>{t('消息流')}</Typography.Text>
-            <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {t('{value1} 条', { value1: messages.length })}
-            </Typography.Text>
             <Flex align="center" gap={token.marginXS} style={{ marginInlineStart: 'auto' }}>
               <Flex align="center" gap={token.marginXXS}>
                 <Typography.Text type="secondary">{t('自动滚动')}</Typography.Text>
-                <Switch size="small" checked={autoScroll} onChange={setAutoScroll} aria-label={t('自动滚动')} />
+                <Switch checked={autoScroll} onChange={setAutoScroll} aria-label={t('自动滚动')} />
               </Flex>
               <Flex gap={token.marginXXS}>
                 <ToolbarButton icon={paused ? <CaretRightOutlined /> : <PauseOutlined />} label={paused ? t('继续接收消息') : t('暂停消息')} disabled={status === 'idle'} onClick={togglePause} />

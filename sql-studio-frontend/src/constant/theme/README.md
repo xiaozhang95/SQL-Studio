@@ -8,6 +8,8 @@ CSS 变量键为 `sql-studio-theme`。工作区、Agent 与弹窗通过这个作
 
 工作区（含 SQL 编辑器、结果区和 Redis 工具）、AI 助手、监控和同步的主内容区共用 `colorBgContainer`。Modal、Drawer 的内容区继承浮层底色 `colorBgElevated`。只读 SQL 预览与共用分页底栏随所在页面、浮层或卡片显示背景。
 
-`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用中性边框色，亮色为 `#dedede`，暗色为 `#363636`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。输入焦点和校验状态使用各自的语义色。
+`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用低对比度的中性边框色，亮色为 `#e2e2e2`，暗色为 `#242424`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。在各主题的布局、容器和浮层背景上保留细微的分隔线。输入焦点和校验状态使用各自的语义色。
 
-左侧主导航、连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表共用 `--surface-selected` 淡中性选中底。左侧主导航和设置分类的选中指示线使用 `colorPrimary`。主导航激活图标在亮色下使用 `colorPrimary`、暗色下使用全局正文色 `colorText`，设置分类的激活图标使用 `colorPrimary`。工作区卡片页签的选中底与结果表表头共用 `colorFillAlter` 叠加在容器底色上的效果，边框采用中性色，标签和图标沿用默认文字色。线形页签由原生活动线标记当前项。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底。AI 欢迎卡片图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。助手正文与行内过程入口沿用会话容器底色。
+`controlItemBgActive` 和 `controlItemBgActiveHover` 使用同一个不透明的中性选中底，亮色为 `#e6e6e6`，暗色为 `#303030`。Ant Design 下拉选项、树节点和表格选中行沿用这组令牌。自定义的左侧主导航、连接类型、设置分类、外观与语言卡片、对象树、工作区卡片页签、会话列表、Redis 工具和频道列表通过 `--surface-selected` 引用同一颜色。
+
+左侧主导航与设置分类的选中图标共用 `--navigation-icon-selected`，在暗色模式使用白色，在亮色模式使用主题正文色。主导航普通入口的图标使用次级文字色，悬停或按下时使用正文色。工作区卡片页签采用中性边框，标签和图标沿用默认文字色。线形页签由原生活动线标记当前项。普通导航项和工作区页签使用 `controlItemBgHover` 悬浮底，结果表表头使用 `colorFillAlter`。AI 欢迎卡片图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。助手正文与行内过程入口沿用会话容器底色。

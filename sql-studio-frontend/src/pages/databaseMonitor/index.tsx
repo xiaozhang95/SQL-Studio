@@ -41,7 +41,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     <DatabasePage title={t('监控指标')} errors={[sampleError]} {...pageProps}>
       {connections.length ? (
         <>
-          <Card size="small">
+          <Card>
             <Flex align="center" gap="small" wrap>
               <Select
                 aria-label={t('选择连接')}

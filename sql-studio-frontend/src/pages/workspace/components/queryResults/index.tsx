@@ -13,7 +13,7 @@ import {
   TableOutlined,
   UndoOutlined
 } from '@ant-design/icons'
-import { Alert, Button, Flex, Input, Space, Table, theme, Typography } from 'antd'
+import { Alert, Button, Flex, Input, Table, theme, Typography } from 'antd'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ThHTMLAttributes } from 'react'
 
@@ -21,14 +21,13 @@ import ContentLoading from '@/components/contentLoading'
 import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
-import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
-import { resultSQLLayout, resultTableLayout, resultToolbarIconInset, workspaceEmptyStyle } from '../../constant/layout'
+import { resultControlProps, resultSQLLayout, resultTableLayout, resultToolbarSpacing, workspaceEmptyStyle, workspaceTabBarInset } from '../../constant/layout'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
@@ -111,6 +110,7 @@ export default function QueryResults({ model, themeMode }: Props) {
 
   const { result, run, activeRunning, tab, cancelQuery, resultSearch, setResultSearch, resultIndex, resultSetIndex, selectResult } = model
   const batch = model.runs[tab.id] ?? run
+  const batchKey = batch?.startedAt ?? batch?.id
   usePageError(pageExecutionError(batch), batch?.id ?? batch?.startedAt)
   const editingBlocked = model.running || result?.truncatedBy === 'oversized-row' || model.objects.snapshots[tab.connectionId]?.status !== 'connected'
   const editing = useDataEditing({
@@ -211,17 +211,17 @@ export default function QueryResults({ model, themeMode }: Props) {
   }
   const [selectedView, setSelectedView] = useState<{
     pageId: string
-    runId?: string
+    batchKey?: string
     view: 'messages' | 'summary'
   } | null>(null)
-  // 消息/摘要选择只属于当前这次输出；新输出立即回到工作区选中的最新结果。
-  const view = selectedView?.pageId === tab.id && selectedView.runId === run?.id ? selectedView.view : null
+  // 批次内的逐条回执共享同一视图；重新执行后按新批次选择默认视图。
+  const view = selectedView?.pageId === tab.id && selectedView.batchKey === batchKey ? selectedView.view : null
   const activeKey = view ?? (run ? defaultOutputView(run, resultIndex, activeRunning, resultSetIndex) : 'messages')
   const showingResult = activeKey !== 'messages' && activeKey !== 'summary'
   const hasTable = Boolean(result?.columns.length)
   const databaseType = model.savedConnections.find((connection) => connection.id === tab.connectionId)?.type
   const adapter = databaseType === DatabaseEngine.Redis ? undefined : getDatabaseAdapter(databaseType)
-  const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${view}`)
+  const { viewport, bodyHeight } = useTableViewportLayout(`${run?.id}:${activeKey}:${hasTable}:${activeRunning}`)
   const table = useResultTableScroll({ result, runId: run?.id, view, search: resultSearch, sortKey: sort ? `${sort.column}:${sort.order}` : '', added: editing.newRows.length })
   const deferredSearch = useDeferredValue(resultSearch)
   const matches = useMemo(() => (showingResult ? matchResultRows(editing.rows, deferredSearch) : null), [editing.rows, deferredSearch, showingResult])
@@ -246,7 +246,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         row: {
           key: number
         }
-      ) => (row.key < 0 ? <ToolbarButton label={t('移除新增行')} size="small" icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
+      ) => (row.key < 0 ? <ToolbarButton label={t('移除新增行')} icon={<CloseOutlined />} disabled={editingBlocked} onClick={() => editing.removeNewRow(row.key)} /> : row.key + 1)
     },
     ...(result?.columns || []).map((column, index) => {
       const numeric = isNumericResultType(column.type ?? '')
@@ -339,151 +339,156 @@ export default function QueryResults({ model, themeMode }: Props) {
   const stopped = shownOutput ? executionCancelled(shownOutput) || Boolean(shownOutput.interrupted) : false
   const failed = !stopped && Boolean(shownOutput?.error)
   const statement = batch?.statements?.[resultIndex]
-  const durationMs = statement?.result?.durationMs ?? result?.durationMs ?? statement?.durationMs
+  const durationMs = failed
+    ? (statement?.error === shownOutput?.error ? statement?.durationMs : undefined) ?? shownOutput?.durationMs
+    : result?.durationMs ?? statement?.durationMs ?? shownOutput?.durationMs
   const status = activeRunning
     ? { icon: <LoadingOutlined spin />, label: t('执行中'), color: token.colorTextSecondary }
     : stopped
       ? { icon: <StopOutlined />, label: t(shownOutput?.interrupted ? '执行已中断' : '执行已取消'), color: token.colorTextSecondary }
       : failed
-        ? { icon: <CloseCircleOutlined />, label: t('失败'), color: token.colorErrorText }
+        ? { icon: <CloseCircleOutlined />, label: t('失败'), color: token.colorError }
         : result
-          ? { icon: <CheckCircleOutlined />, label: t('成功'), color: token.colorSuccessText }
+          ? { icon: <CheckCircleOutlined />, label: t('成功'), color: token.colorSuccess }
           : undefined
-  const showMetrics = !activeRunning && !stopped && !failed
   const resultStatus = status && (
-    <Flex align="center" gap={token.marginXS} wrap style={{ minWidth: 0, maxWidth: '100%' }}>
-      <Space size={token.marginXXS} style={{ color: status.color, whiteSpace: 'nowrap' }}>
+    <Flex align="center" style={{ whiteSpace: 'nowrap' }}>
+      {!activeRunning && !stopped && durationMs !== undefined && (
+        <Typography.Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {durationMs} ms
+        </Typography.Text>
+      )}
+      <span
+        role="img"
+        aria-label={status.label}
+        title={status.label}
+        style={{ display: 'inline-grid', placeItems: 'center', flex: 'none', inlineSize: token.controlHeight, blockSize: token.controlHeight, color: status.color }}
+      >
         {status.icon}
-        {status.label}
-      </Space>
-      {showMetrics && (durationMs !== undefined || result?.columns.length || result?.isQuery) ? (
-        <Space size={token.marginXXS} wrap separator={<Typography.Text type="secondary">·</Typography.Text>} style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {durationMs !== undefined && <Typography.Text type="secondary">{durationMs} ms</Typography.Text>}
-          {result?.isQuery && <Typography.Text type="secondary">{t('{value1} 行', { value1: result.rows.length })}</Typography.Text>}
-          {Boolean(result?.columns.length) && <Typography.Text type="secondary">{t('{value1} 列', { value1: result?.columns.length ?? 0 })}</Typography.Text>}
-        </Space>
-      ) : null}
+      </span>
+      {(activeRunning || stopped) && (
+        <Typography.Text type="secondary" aria-hidden="true">
+          {status.label}
+        </Typography.Text>
+      )}
     </Flex>
   )
   if (!run) return null
+  const output = batch ?? run
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title={t('上次执行因页面刷新中断，已完成结果保留；未自动继续执行。')} />}
-      <ResultTabs
-        run={batch ?? run}
-        running={activeRunning}
-        activeKey={activeKey}
-        status={resultStatus}
-        onChange={(key) => {
-          if (key === 'messages' || key === 'summary') setSelectedView({ pageId: tab.id, runId: run.id, view: key })
-          else {
-            const [index, setIndex = '0'] = key.split(':')
-            selectResult(Number(index), Number(setIndex))
-            setSelectedView(null)
-          }
-        }}
-      />
-      {(showingResult || (activeRunning && tab.kind !== 'query')) && (
-        <div
-          className="result-toolbar"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            minHeight: 38,
-            padding: '0 var(--workspace-inset)',
-            borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
-            flex: 'none'
+      <div className="result-bars" style={{ flex: 'none' }}>
+        <ResultTabs
+          run={output}
+          running={activeRunning}
+          activeKey={activeKey}
+          status={resultStatus}
+          onChange={(key) => {
+            if (key === 'messages' || key === 'summary') setSelectedView({ pageId: tab.id, batchKey, view: key })
+            else {
+              const [index, setIndex = '0'] = key.split(':')
+              selectResult(Number(index), Number(setIndex))
+              setSelectedView(null)
+            }
           }}
-        >
-          <div className="result-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: '1 0 auto', flexWrap: 'wrap' }}>
+        />
+        {(showingResult || (activeRunning && tab.kind !== 'query')) && (
+          <Flex
+            className="result-toolbar"
+            align="center"
+            justify="space-between"
+            wrap
+            style={{
+              ...resultToolbarSpacing,
+              paddingInlineStart: workspaceTabBarInset,
+              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
+            }}
+          >
             {tab.kind !== 'data' && showingResult && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, paddingInlineStart: resultToolbarIconInset, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              <Flex className="result-meta" align="center" gap={token.marginXXS} style={{ color: token.colorTextSecondary, fontVariantNumeric: 'tabular-nums' }}>
                 <CheckCircleOutlined />
                 {t('已选择 {value1} 行', { value1: selectedRows.length })}
-              </span>
+              </Flex>
             )}
-            {tab.kind === 'data' && adapter?.dataEditing && (
-              <>
-                <ToolbarButton
-                  label={t('新增行')}
-                  icon={<PlusOutlined />}
-                  disabled={editingBlocked}
-                  onClick={() => {
-                    setResultSearch('')
-                    void editing.addRow()
-                  }}
-                />
-                <ToolbarButton
-                  label={t('删除行')}
-                  icon={<DeleteOutlined />}
-                  danger
-                  disabled={rowDeletionDisabled || !selectedRows.length}
-                  hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
-                  aria-haspopup="dialog"
-                  onClick={() => setDeleteOpen(true)}
-                />
-                <ToolbarButton
-                  label={t('保存')}
-                  icon={<SaveOutlined />}
-                  loading={editing.saving}
-                  disabled={editingBlocked || !editing.dirty}
-                  onClick={() => {
-                    void editing.save()
-                  }}
-                />
-                <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
-              </>
-            )}
-          </div>
-          <div className="result-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 1 auto', minWidth: 0, marginInlineStart: 'auto' }}>
-            {showingResult && (
-              <Input
-                style={{ width: 160, flex: '0 1 160px', minWidth: 0 }}
-                prefix={<SearchOutlined />}
-                placeholder={t('筛选当前结果')}
-                aria-label={t('筛选查询结果')}
-                value={resultSearch}
-                onChange={(event) => {
-                  setResultSearch(event.target.value)
-                }}
-                allowClear
-                disabled={!result || result.truncatedBy === 'oversized-row'}
-              />
-            )}
-            <div role="group" aria-label={t('结果操作')} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <ToolbarButton
-                label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
-                icon={<ReloadOutlined />}
-                loading={activeRunning}
-                disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-                hint={
-                  model.replayRequiresSession
-                    ? t('单条重跑无法还原批次会话，请在编辑器中核对原脚本')
-                    : editing.dirty
-                      ? t('请先保存或放弃修改')
-                      : tab.kind === 'query'
-                        ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行')
-                        : t('刷新当前结果')
-                }
-                onClick={model.refreshResult}
-              />
-              {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
+            <Flex className="result-actions" align="center" justify="end" gap={resultToolbarSpacing.gap} wrap style={{ minWidth: 0, maxWidth: '100%' }}>
               {showingResult && (
-                <ResultExport
-                  key={tab.id}
-                  result={result}
-                  selectedCount={selectedRows.length}
-                  disabled={deferredSearch !== resultSearch}
-                  rows={(selected) => (selected ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result?.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches))}
+                <Input
+                  {...resultControlProps}
+                  className="result-filter"
+                  prefix={<SearchOutlined />}
+                  placeholder={t('筛选当前结果')}
+                  aria-label={t('筛选查询结果')}
+                  value={resultSearch}
+                  onChange={(event) => setResultSearch(event.target.value)}
+                  allowClear
+                  disabled={!result || result.truncatedBy === 'oversized-row'}
                 />
               )}
-            </div>
-          </div>
-        </div>
-      )}
+              <Flex role="group" aria-label={t('结果操作')} align="center" justify="end" gap={token.marginXXS} wrap>
+                {tab.kind === 'data' && adapter?.dataEditing && (
+                  <>
+                    <ToolbarButton
+                      label={t('新增行')}
+                      icon={<PlusOutlined />}
+                      disabled={editingBlocked}
+                      onClick={() => {
+                        setResultSearch('')
+                        void editing.addRow()
+                      }}
+                    />
+                    <ToolbarButton
+                      label={t('删除行')}
+                      icon={<DeleteOutlined />}
+                      danger
+                      disabled={rowDeletionDisabled || !selectedRows.length}
+                      hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
+                      aria-haspopup="dialog"
+                      onClick={() => setDeleteOpen(true)}
+                    />
+                    <ToolbarButton
+                      label={t('保存')}
+                      icon={<SaveOutlined />}
+                      loading={editing.saving}
+                      disabled={editingBlocked || !editing.dirty}
+                      onClick={() => {
+                        void editing.save()
+                      }}
+                    />
+                    <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
+                  </>
+                )}
+                <ToolbarButton
+                  label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
+                  icon={<ReloadOutlined />}
+                  loading={activeRunning}
+                  disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
+                  hint={
+                    model.replayRequiresSession
+                      ? t('单条重跑无法还原批次会话，请在编辑器中核对原脚本')
+                      : editing.dirty
+                        ? t('请先保存或放弃修改')
+                        : tab.kind === 'query'
+                          ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行')
+                          : t('刷新当前结果')
+                  }
+                  onClick={model.refreshResult}
+                />
+                {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
+                {showingResult && (
+                  <ResultExport
+                    key={tab.id}
+                    result={result}
+                    selectedCount={selectedRows.length}
+                    disabled={deferredSearch !== resultSearch}
+                    rows={(selected) => (selected ? selectedResultRows(editing.rows, selectedRows, sort, sortType, result?.rows) : exportResultRows(editing.rows, editing.newRows, orderedMatches))}
+                  />
+                )}
+              </Flex>
+            </Flex>
+          </Flex>
+        )}
+      </div>
       {showingResult && !activeRunning && (statement?.result ?? batch?.result)?.resultSetsTruncated && (
         <Alert type="warning" banner title={t('语句返回的结果超过 8 MiB，部分结果集未加载。')} />
       )}
@@ -508,13 +513,13 @@ export default function QueryResults({ model, themeMode }: Props) {
         tabIndex={0}
         aria-label={t('结果数据滚动区域')}
         aria-busy={editing.saving}
-        style={{ position: 'relative', flex: 1, minHeight: 0, overflow: showingResult ? 'hidden' : 'auto', minWidth: 0 }}
+        style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden', minWidth: 0 }}
       >
         {editing.saving && <ContentLoading label={t('正在保存并刷新数据…')} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--surface)' }} />}
         {activeKey === 'messages' ? (
-          <QueryMessages key={tab.id} run={batch ?? run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QueryMessages key={`${tab.id}:${batchKey}`} run={output} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeKey === 'summary' ? (
-          <QuerySummary key={run.id} run={batch ?? run} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
+          <QuerySummary key={`${tab.id}:${batchKey}`} run={output} running={activeRunning} themeMode={themeMode} databaseType={databaseType} />
         ) : activeRunning ? (
           <ContentLoading label={t('正在加载结果…')} />
         ) : result?.rowPreview?.length ? (
@@ -534,7 +539,6 @@ export default function QueryResults({ model, themeMode }: Props) {
               style={{ visibility: editing.saving ? 'hidden' : undefined, width: columnsSized ? scrollWidth : undefined, maxWidth: '100%' }}
               ref={table}
               virtual
-              size={appearance.tableSize}
               className={`data-table${columnsSized ? ' data-table-sized' : ''}`}
               components={{ header: { cell: ColumnResizeHeaderCell } }}
               showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}

@@ -5,7 +5,6 @@ import type { ReactNode } from 'react'
 
 import ContentCard from '@/components/contentCard'
 import { ResizableTable } from '@/components/resizableTable'
-import { appearance } from '@/constant/appearance'
 import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -74,7 +73,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
     return (
       <ContentCard title={cardTitle}>
         <Descriptions
-          size="small"
           column={1}
           items={[
             { key: 'affected', label: t('影响行数'), children: String(value.affectedRows ?? 0) },
@@ -142,7 +140,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         <ResizableTable<Row>
           styles={resultTableStyles}
           aria-label={t('查询结果')}
-          size={appearance.tableSize}
           bordered
           tableLayout="fixed"
           columns={columns}
@@ -155,7 +152,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         {sql && (
           <Collapse
             ghost
-            size="small"
             items={[
               {
                 key: 'sql',
@@ -183,7 +179,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
     return (
       <ContentCard title={cardTitle}>
         <Descriptions
-          size="small"
           column={1}
           items={[
             {
@@ -212,7 +207,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
       >
         <ResizableTable
           styles={resultTableStyles}
-          size={appearance.tableSize}
           bordered
           columns={[{ title: t('名称'), dataIndex: 'name', key: 'name' }]}
           dataSource={value.map((name, i) => ({ key: i, name }))}
@@ -261,7 +255,6 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
       >
         <ResizableTable
           styles={resultTableStyles}
-          size={appearance.tableSize}
           bordered
           tableLayout="fixed"
           columns={columns}

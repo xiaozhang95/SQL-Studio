@@ -1,6 +1,6 @@
 import { Table } from 'antd'
-import type { TableProps } from 'antd'
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ThHTMLAttributes } from 'react'
+import type { TableProps, TableRef } from 'antd'
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, Ref, ThHTMLAttributes } from 'react'
 import { useRef, useState } from 'react'
 
 import { useTranslation } from '@/hooks/useTranslation'
@@ -12,6 +12,7 @@ type ResizeState = { key: string; widths: Record<number, number>; total: number 
 type ResizableTableProps<RecordType extends object> = TableProps<RecordType> & {
   /** 结果或列结构变化时重置列宽。 */
   resizeKey?: string
+  ref?: Ref<TableRef>
 }
 
 /** 表头右缘的列宽手柄与排序点击分离；手柄可通过左右方向键微调。 */

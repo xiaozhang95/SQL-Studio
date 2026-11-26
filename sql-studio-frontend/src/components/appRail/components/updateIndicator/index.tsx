@@ -28,7 +28,7 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
               percent={Math.floor(progress.percent)}
               showInfo={false}
               status="active"
-              strokeColor={token.colorText}
+              strokeColor={token.colorTextSecondary}
               railColor={token.colorBorder}
               aria-label={t('更新下载进度')}
               aria-valuetext={label}

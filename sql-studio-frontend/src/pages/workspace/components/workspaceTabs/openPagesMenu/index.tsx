@@ -4,7 +4,6 @@ import type { GetRef } from 'antd'
 import { useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import { workspaceTabLayout } from '../../../constant/layout'
@@ -74,17 +73,14 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
           role="dialog"
           aria-label={title}
           vertical
-          gap={token.marginXS}
+          gap={token.marginSM}
           onKeyDown={(event) => {
             if (event.key !== 'Escape' || event.nativeEvent.isComposing) return
             event.stopPropagation()
             closePanel()
           }}
         >
-          <Flex align="center" justify="space-between" gap={token.marginXS}>
-            <Typography.Text strong>{title}</Typography.Text>
-            <Typography.Text>{t('共 {value1} 页', { value1: pages.length })}</Typography.Text>
-          </Flex>
+          <Typography.Text strong>{title}</Typography.Text>
           <Input
             autoFocus
             allowClear
@@ -119,7 +115,7 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
                     type="text"
                     aria-current={selected ? 'page' : undefined}
                     title={[page.title, page.context].filter(Boolean).join('\n')}
-                    style={{ minWidth: 0, flex: 1, justifyContent: 'flex-start', height: 'auto', padding: token.paddingXS, background: 'transparent' }}
+                    style={{ minWidth: 0, flex: 1, justifyContent: 'flex-start', minHeight: token.controlHeight, height: 'auto', padding: token.paddingXS, background: 'transparent' }}
                     styles={{ content: { width: '100%', minWidth: 0 } }}
                     onClick={() => selectPage(page)}
                   >
@@ -144,7 +140,6 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
                   </Button>
                   <ToolbarButton
                     className="workspace-open-page-close"
-                    size={appearance.navigationSize}
                     label={t('关闭页面 {value1}', { value1: page.title })}
                     icon={<CloseOutlined />}
                     style={{ background: 'transparent' }}
@@ -158,7 +153,6 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
           </Flex>
           <Button
             block
-            size={appearance.navigationSize}
             disabled={tabBusy || pages.length < 2 || !activeTab}
             onClick={() => {
               closePanel()
@@ -173,14 +167,13 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
       <Button
         ref={trigger}
         type="text"
-        size={appearance.navigationSize}
         icon={<AppstoreOutlined />}
+        title={t('更多')}
+        aria-label={t('更多')}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-      >
-        {t('更多')}
-      </Button>
+      />
     </Popover>
   )
 }

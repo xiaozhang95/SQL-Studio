@@ -2,7 +2,6 @@ import { CloseCircleOutlined, CloseOutlined, CodeOutlined, EditOutlined, FileTex
 import { Button, Dropdown, Flex, Tabs, Tooltip } from 'antd'
 import type { ReactNode } from 'react'
 
-import { appearance } from '@/constant/appearance'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -72,12 +71,20 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
         item: {
           position: 'relative',
           width: workspaceTabLayout.width,
-          height: 28,
+          height: 'var(--ant-control-height)',
           flex: 'none',
           padding: '0 10px',
           borderRadius: 'var(--ant-border-radius)'
         },
-        remove: { width: 20, height: 20, marginInlineStart: 6 }
+        remove: {
+          display: 'inline-grid',
+          placeItems: 'center',
+          width: 'var(--ant-control-height)',
+          height: 'var(--ant-control-height)',
+          padding: 0,
+          marginInlineStart: 'var(--ant-margin-xxs)',
+          fontSize: 'var(--ant-font-size)'
+        }
       }}
       type="editable-card"
       hideAdd={!canAdd}
@@ -115,7 +122,6 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           </Flex>
         )
       }}
-      size={appearance.navigationSize}
       tabBarGutter={8}
       activeKey={activeTab}
       onChange={selectTab}

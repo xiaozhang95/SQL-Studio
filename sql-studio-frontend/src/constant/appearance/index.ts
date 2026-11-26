@@ -1,20 +1,13 @@
-import type { ButtonProps, ConfigProviderProps, ModalProps, TableProps, TabsProps } from 'antd'
-
-export const ComponentSize = { Small: 'small', Middle: 'middle', Large: 'large' } as const
-export type ComponentSize = (typeof ComponentSize)[keyof typeof ComponentSize]
+import type { ButtonProps, ConfigProviderProps, ModalProps } from 'antd'
 
 /** 仅集中已确认的界面约定，其余视觉属性沿用 Ant Design 默认值。 */
 export const appearance = {
-  controlSize: ComponentSize.Middle,
-  tableSize: ComponentSize.Small,
-  navigationSize: ComponentSize.Small,
+  controlSize: 'middle',
   selectWidth: 220,
   panelHeaderHeight: 42,
   railIconSize: 20
 } as const satisfies {
   controlSize: NonNullable<ButtonProps['size']>
-  tableSize: NonNullable<TableProps['size']>
-  navigationSize: NonNullable<TabsProps['size']>
   selectWidth: number
   panelHeaderHeight: number
   railIconSize: number
@@ -22,6 +15,8 @@ export const appearance = {
 
 /** 原生 Modal 与 AntApp 确认弹窗的操作按钮统一使用 default。 */
 export const modalDefaults = { okButtonProps: { type: 'default' } } as const satisfies NonNullable<ConfigProviderProps['modal']>
+
+export const tagDefaults = { variant: 'solid' } as const satisfies NonNullable<ConfigProviderProps['tag']>
 
 /** 含独立滚动内容区的表单弹窗共用边界、行高与内边距。 */
 export const formModalStyles = {
@@ -51,5 +46,5 @@ export const railButtonStyle = {
   width: 40,
   height: 40,
   padding: 0,
-  borderRadius: 'var(--ant-border-radius-lg)'
+  borderRadius: 'var(--ant-border-radius)'
 } as const satisfies NonNullable<ButtonProps['style']>

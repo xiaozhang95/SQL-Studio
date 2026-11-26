@@ -101,7 +101,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
                       <Button
                         type="text"
                         className="settings-section-choice"
-                        icon={<section.icon style={{ fontSize: token.fontSizeLG, color: active && !settings.busy ? 'var(--primary)' : undefined }} aria-hidden="true" />}
+                        icon={<section.icon style={{ fontSize: token.fontSizeLG, color: active && !settings.busy ? 'var(--navigation-icon-selected)' : undefined }} aria-hidden="true" />}
                         aria-label={label}
                         aria-pressed={active}
                         disabled={settings.busy}

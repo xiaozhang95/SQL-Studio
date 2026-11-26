@@ -58,7 +58,6 @@ function SQLPreview({ sql, themeMode, databaseType, compact = false, title = 'SQ
   }, [databaseType, redis])
   const copyButton = (
     <ToolbarButton
-      size="small"
       icon={copied ? <CheckOutlined style={{ color: token.colorSuccessText }} /> : <CopyOutlined />}
       onClick={copySQL}
       label={t(redis ? '复制命令' : '复制 SQL')}

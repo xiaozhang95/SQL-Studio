@@ -64,7 +64,6 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
   const currentPage = page?.pattern === request.pattern ? page : undefined
   const needsRestart = currentPage?.cursor === null
   const nextCursor = currentPage?.cursor
-  const loaded = currentPage?.keys.length ?? 0
 
   function requestDelete(item: RedisKey) {
     if (saving || loading) return
@@ -93,7 +92,6 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
       >
         <SidebarHeader
           title={t('键浏览')}
-          count={loaded}
           actions={
             <>
               <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
@@ -139,22 +137,22 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
             }}
           >
             {needsRestart && (
-              <Button size="small" type="link" disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
+              <Button type="link" disabled={loading || saving} onClick={() => scan(request.pattern, '0', true)}>
                 {t('重新扫描')}
               </Button>
             )}
             {nextCursor && nextCursor !== '0' && (
               <>
-                <Button size="small" type="link" loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
+                <Button type="link" loading={scanningBatch} disabled={(loading && !scanningBatch) || saving} onClick={() => scan(request.pattern, nextCursor)}>
                   {t('扫描下一批')}
                 </Button>
-                <Button size="small" type="link" loading={scanningContinuously} disabled={(loading && !scanningContinuously) || saving} onClick={() => scan(request.pattern, nextCursor, true)}>
+                <Button type="link" loading={scanningContinuously} disabled={(loading && !scanningContinuously) || saving} onClick={() => scan(request.pattern, nextCursor, true)}>
                   {t('连续扫描')}
                 </Button>
               </>
             )}
             {scanningMore && (
-              <Button size="small" type="link" onClick={stopScan}>
+              <Button type="link" onClick={stopScan}>
                 {t('停止扫描')}
               </Button>
             )}

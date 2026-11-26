@@ -145,11 +145,10 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                 <Bubble
                   placement="end"
                   variant="filled"
-                  shape="round"
                   styles={{
                     root: { width: '100%' },
                     body: { maxWidth: '78%', minWidth: 0 },
-                    content: { minHeight: 0, paddingBlock: token.paddingXS }
+                    content: { minHeight: 0, paddingBlock: token.paddingXS, borderRadius: token.borderRadius }
                   }}
                   content={
                     <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0, maxWidth: '100%' }}>
@@ -161,7 +160,7 @@ export function TurnContent({ entries, busy, waiting, locked, status, expanded, 
                 <Flex className="user-message-actions" justify="end" align="center" gap={CHAT.spacing.detail} wrap>
                   {e.createdAt && <Typography.Text type="secondary">{new Date(e.createdAt).toLocaleString(language, { hour12: false })}</Typography.Text>}
                   <Tooltip title={t('编辑问题')}>
-                    <Button type="text" size="small" aria-label={t('编辑问题')} disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
+                    <Button type="text" aria-label={t('编辑问题')} disabled={locked} icon={<EditOutlined />} onClick={() => onEdit(e.text)} />
                   </Tooltip>
                   <Typography.Text copyable={{ text: e.text, tooltips: [t('复制问题'), t('已复制')] }} />
                 </Flex>

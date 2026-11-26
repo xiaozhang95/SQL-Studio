@@ -1,31 +1,30 @@
 import { Checkbox, Flex, Typography } from 'antd'
-import type { TableColumnsType } from 'antd'
-import { useState } from 'react'
+import type { TableColumnsType, TableRef } from 'antd'
+import { useRef, useState } from 'react'
 
 import { ResizableTable } from '@/components/resizableTable'
-import { appearance } from '@/constant/appearance'
 import type { DatabaseType } from '@/databases/typings'
-import { useTablePagination } from '@/hooks/useTablePagination'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
+import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import { batchRequestError, executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
 
 type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseType?: DatabaseType }
+type SummaryRow = StatementRun & { key: number }
 export default function QuerySummary({ run, running, themeMode, databaseType }: Props) {
-  const tablePagination = useTablePagination()
-
   const { t, language } = useTranslation()
 
   const [errorsOnly, setErrorsOnly] = useState(false)
-  const [page, setPage] = useState(1)
+  const table = useRef<TableRef>(null)
+  const { viewport, bodyHeight } = useTableViewportLayout()
   const statements = statementOutputs(run)
   const batchError = batchRequestError(run)
   const cancelled = statements.filter(executionCancelled).length
   const failed = statements.filter((item) => item.error && !executionCancelled(item)).length
-  const columns: TableColumnsType<StatementRun> = [
+  const columns: TableColumnsType<SummaryRow> = [
     {
       title: t('查询'),
       dataIndex: 'sql',
@@ -51,8 +50,8 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
     { title: t('查询耗时'), width: 120, render: (_, item) => (statementDuration(item) === undefined ? t('未记录') : `${statementDuration(item)} ms`) }
   ]
   return (
-    <div>
-      <Flex wrap gap={24} align="center" style={{ padding: 12 }}>
+    <Flex vertical style={{ height: '100%', minHeight: 0 }}>
+      <Flex wrap gap={24} align="center" style={{ padding: 12, flex: 'none', maxHeight: '50%', overflow: 'auto' }}>
         <div title={batchError ? t(batchError) : undefined}>
           {t('已处理：')}
           {statements.length} / {run.statementCount ?? statements.length}　{t('　成功：')}
@@ -73,23 +72,26 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
           checked={errorsOnly}
           onChange={(event) => {
             setErrorsOnly(event.target.checked)
-            setPage(1)
+            table.current?.scrollTo({ top: 0 })
           }}
           style={{ marginInlineStart: 'auto' }}
         >
           {t('仅显示错误')}
         </Checkbox>
       </Flex>
-      <ResizableTable
-        size={appearance.tableSize}
-        resizeKey={run.id}
-        columns={columns}
-        rowKey="key"
-        dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || (item.error && !executionCancelled(item)))}
-        pagination={{ ...tablePagination, pageSize: 50, current: page, onChange: setPage }}
-        scroll={{ x: 920 }}
-        locale={{ emptyText: running ? t('正在执行…') : errorsOnly ? t('没有错误记录') : t('暂无执行记录') }}
-      />
-    </div>
+      <div ref={viewport} style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <ResizableTable<SummaryRow>
+          ref={table}
+          virtual
+          resizeKey={run.id}
+          columns={columns}
+          rowKey="key"
+          dataSource={statements.map((item, index) => ({ ...item, key: index })).filter((item) => !errorsOnly || (item.error && !executionCancelled(item)))}
+          pagination={false}
+          scroll={{ x: 920, y: bodyHeight || 24 }}
+          locale={{ emptyText: running ? t('正在执行…') : errorsOnly ? t('没有错误记录') : t('暂无执行记录') }}
+        />
+      </div>
+    </Flex>
   )
 }

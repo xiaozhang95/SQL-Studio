@@ -99,7 +99,10 @@ export default function ResultsDock({ children, resizable, height, onHeightChang
           <span style={{ width: 40, height: 2, borderRadius: token.borderRadiusSM, background: resizing ? token.colorTextTertiary : 'var(--resize-grip-color, var(--layout-divider))' }} />
         </div>
       )}
-      <div className="result-panel-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      <div
+        className="result-panel-content"
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', container: 'result-panel / inline-size' }}
+      >
         {children}
       </div>
     </section>

@@ -14,7 +14,7 @@ export function useTablePagination({ divided = true }: { divided?: boolean } = {
       style: {
         flex: 'none',
         width: '100%',
-        minHeight: token.controlHeightSM + token.paddingXXS * 2,
+        minHeight: token.controlHeight + token.paddingXXS * 2,
         margin: 0,
         padding: `${token.paddingXXS}px ${token.padding}px`,
         borderTop: divided ? `${token.lineWidth}px solid ${token.colorBorderSecondary}` : undefined

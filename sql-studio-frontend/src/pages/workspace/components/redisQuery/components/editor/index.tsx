@@ -14,6 +14,7 @@ import { useQueryShortcut } from '../../../../hooks/useQueryShortcut'
 import { useSQLCompletionPopup } from '../../../../hooks/useSQLCompletionPopup'
 import type { WorkspaceModel } from '../../../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../../../utils/editorAppearance'
+import { editorTabKeymap } from '../../../../utils/editorKeymap'
 import SQLCompletionSelect from '../../../sqlCompletionSelect'
 
 export type RedisEditorModel = Pick<WorkspaceModel, 'onEditorReady' | 'onEditorUpdate' | 'onEditorDispose' | 'rememberEditor' | 'getCurrentSQL' | 'getEditorHistory' | 'tab'>
@@ -80,7 +81,7 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
   const { t } = useTranslation()
   const completion = useSQLCompletionPopup()
   const { update: updateCompletion } = completion
-  const [initial] = useState(() => ({ value: model.tab.sql, extensions: [sqlEditorAppearance, ...model.getEditorHistory(model.tab.id)] }))
+  const [initial] = useState(() => ({ value: model.tab.sql, extensions: [sqlEditorAppearance, editorTabKeymap, ...model.getEditorHistory(model.tab.id)] }))
   const hintLabel = t('命令用法')
   const hints = useMemo(() => commandHints(hintLabel), [hintLabel])
   const extensions = useMemo(() => [...initial.extensions, hintAppearance, hints, localCompletion, ...completion.extensions], [hints, initial.extensions, completion.extensions])
@@ -131,6 +132,7 @@ export default function Editor({ model, themeMode, shortcutEnabled, onRun, onVie
           style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
           aria-label={t('Redis 命令编辑器')}
           basicSetup={editorSetup}
+          indentWithTab={false}
           onCreateEditor={(view) => {
             editor.current = view
             callbacks.current.model.onEditorReady(view)

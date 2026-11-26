@@ -12,7 +12,7 @@
 - [deleteConfirmation](deleteConfirmation/README.md) 为模型和表字段草稿提供按钮旁的确认气泡。
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
-- [sidebarControls](sidebarControls/README.md)：对象栏和会话栏共用的标题、计数、操作与搜索布局。
+- [sidebarControls](sidebarControls/README.md)：对象栏、Redis 工具和会话栏共用的标题、操作与搜索布局。
 
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。

@@ -2,7 +2,6 @@ import { Card, Descriptions, Empty, Flex, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 
 import { ResizableTable } from '@/components/resizableTable'
-import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { MonitorSnapshot } from '@/typings/database'
 import { formatMetric } from '@/utils/monitorMetrics'
@@ -23,9 +22,8 @@ export default function StatusInfo({ detail }: { detail: RedisDetails | undefine
   ]
   return (
     <Flex vertical gap="middle">
-      <Card size="small" title={t('键空间统计')}>
+      <Card title={t('键空间统计')}>
         <ResizableTable<Keyspace>
-          size={appearance.tableSize}
           rowKey="database"
           dataSource={detail?.keyspaces ?? []}
           columns={columns}
@@ -38,12 +36,10 @@ export default function StatusInfo({ detail }: { detail: RedisDetails | undefine
         {detail?.sections.map((section) => (
           <Card
             key={section.key}
-            size="small"
             title={t(sectionLabels[section.key] ?? section.key)}
             style={{ minWidth: 0, breakInside: 'avoid', marginBottom: 'var(--ant-margin-md)' }}
           >
             <Descriptions
-              size="small"
               column={1}
               items={section.fields.map(({ key, value }) => ({
                 key,

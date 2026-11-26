@@ -26,7 +26,7 @@ export function AnswerContent({ text, streaming = false }: { text: string; strea
           ) : (
             <Flex key={index} vertical gap={CHAT.spacing.detail}>
               <Alert type="warning" showIcon title={t('表格内容未完整生成，请在执行过程中查看已返回的查询结果。')} />
-              <Collapse size="small" items={[{ key: 'original', label: t('查看未完成的原始内容'), children: <CodeBlock text={part.text} language="json" /> }]} />
+              <Collapse items={[{ key: 'original', label: t('查看未完成的原始内容'), children: <CodeBlock text={part.text} language="json" /> }]} />
             </Flex>
           )
         const content = part.text.trim()

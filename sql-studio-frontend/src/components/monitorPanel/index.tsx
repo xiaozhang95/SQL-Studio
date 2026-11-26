@@ -87,7 +87,6 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
         <Alert key={warning} type="warning" showIcon title={t(warning)} />
       ))}
       <Card
-        size="small"
         title={t(config.title)}
         extra={
           <Flex gap="small" wrap>
@@ -132,7 +131,7 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
                 </div>
                 <div className="database-monitor-metrics" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: token.marginMD }}>
                   {config.activity.map((metric) => (
-                    <Card key={`${metric.key}:${metric.source ?? 'value'}`} size="small" style={{ minWidth: 0 }}>
+                    <Card key={`${metric.key}:${metric.source ?? 'value'}`} style={{ minWidth: 0 }}>
                       {statistic(metric)}
                     </Card>
                   ))}
@@ -150,12 +149,10 @@ export default function MonitorPanel({ snapshot, history, config }: Props) {
                   {sections.map((section) => (
                     <Card
                       key={section.key}
-                      size="small"
                       title={t(config.sectionLabels[section.key] ?? section.key)}
                       style={{ minWidth: 0, breakInside: 'avoid', marginBottom: token.marginMD }}
                     >
                       <Descriptions
-                        size="small"
                         column={1}
                         items={section.fields.map(({ key, value: raw }) => ({
                           key,

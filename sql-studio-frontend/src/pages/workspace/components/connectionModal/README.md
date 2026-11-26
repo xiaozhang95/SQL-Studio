@@ -18,6 +18,6 @@
 
 弹窗使用共享的暗色 Modal 外框。标题、类型侧栏、表单和底栏共用 `colorBgElevated`，头部和底栏使用主题分隔线。遮罩使用 mask.closable；onCancel、onSaved 由调用者管理开关和保存后刷新。forceRender 预先挂载 Form，确保初始化和字段监听始终使用已连接的表单实例；关闭不销毁表单，每次打开由 useConnectionForm 重置字段及校验状态。
 
-数据库类型选项使用原生 text Button，`aria-pressed` 提供选中语义。选中项使用 `--surface-selected` 中性底和左侧 2px 主色竖条。保存或测试期间，禁用的选中项使用主题禁用填充。
+数据库类型选项使用原生 text Button，`aria-pressed` 提供选中语义。选中项使用 `--surface-selected` 中性底。窄屏下拉框的选中项通过 Ant Design 令牌使用同一底色。保存或测试期间，禁用的选中项使用主题禁用填充。
 
 底部左侧「测试连接」使用 default 按钮，右侧「取消」为 default、「保存连接」为弹窗唯一 primary 按钮；保留原生悬停、按下、焦点和禁用反馈。默认端口和本地加密使用中性 Ant Design 标签展示，加密标签带锁图标和悬停说明。

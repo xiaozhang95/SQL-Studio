@@ -17,6 +17,7 @@ import { useSQLCompletionPopup } from '../../hooks/useSQLCompletionPopup'
 import { useSQLImport } from '../../hooks/useSQLImport'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { sqlEditorAppearance } from '../../utils/editorAppearance'
+import { editorTabKeymap } from '../../utils/editorKeymap'
 import QueryToolbar from '../queryToolbar'
 import RunButton from '../runButton'
 import SQLCompletionSelect from '../sqlCompletionSelect'
@@ -80,7 +81,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
   const ai = useAISQL(tab, objects, running, connections.find((connection) => connection.id === tab.connectionId)?.type)
   const aiModelHint = ai.configured ? undefined : t('请先在系统设置中保存默认模型')
   const editorExtensions = useMemo(
-    () => [sqlEditorAppearance, ...initialHistory, ...extensions, ...completion.extensions, ...ai.extensions],
+    () => [sqlEditorAppearance, editorTabKeymap, ...initialHistory, ...extensions, ...completion.extensions, ...ai.extensions],
     [initialHistory, extensions, completion.extensions, ai.extensions]
   )
   const callbacks = useRef({ onUpdate: model.onEditorUpdate, dispose: model.onEditorDispose })
@@ -140,7 +141,6 @@ export default function QueryEditor({ model, themeMode }: Props) {
                 <StudioIcon name="sparkle" size={14} />
                 <span>{t('AI 补全')}</span>
                 <Switch
-                  size="small"
                   aria-label={t('AI 代码补全')}
                   checked={ai.configured && ai.enabled}
                   disabled={!ai.configured || running || ai.preferenceSaving}
@@ -208,6 +208,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
             }}
             onUpdate={onUpdate}
             basicSetup={editorSetup}
+            indentWithTab={false}
             aria-label={t('SQL 编辑器')}
           />
           {ai.enabled && ai.completionLoading && (

@@ -71,12 +71,12 @@ export function History(props: Props) {
   const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show, onDeleteOpen: requestDelete }
   const refreshAction = (
     <Tooltip title={t('刷新历史')}>
-      <Button type="text" size="small" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
+      <Button type="text" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
     </Tooltip>
   )
   const newAction = (
     <Tooltip title={t('新建会话')}>
-      <Button type="text" size="small" aria-label={t('新建会话')} icon={<PlusOutlined />} onClick={props.onNew} disabled={props.busy || props.selecting || props.loading} />
+      <Button type="text" aria-label={t('新建会话')} icon={<PlusOutlined />} onClick={props.onNew} disabled={props.busy || props.selecting || props.loading} />
     </Tooltip>
   )
   return (
@@ -96,7 +96,6 @@ export function History(props: Props) {
       >
         <SidebarHeader
           title={t('会话')}
-          count={props.items.length}
           actions={
             <>
               {refreshAction}
@@ -249,7 +248,7 @@ function HistoryContents({
                     }}
                     styles={{
                       root: { display: 'flex', flexDirection: 'column', rowGap: token.marginXXS, padding: 0 },
-                      item: { minHeight: 34, padding: '5px 8px' }
+                      item: { minHeight: 34, padding: '5px 8px', borderRadius: token.borderRadius }
                     }}
                     items={group.items.map((i) => ({
                       key: i.id,
@@ -265,11 +264,10 @@ function HistoryContents({
                               {timeLabel(i.updatedAt)}
                             </span>
                             <span className="chat-history-actions" style={{ gridArea: '1 / 1', display: 'flex' }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                              <Button type="text" size="small" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
+                              <Button type="text" aria-label={t('重命名会话 ') + i.title} disabled={busy || selecting} icon={<EditOutlined />} onClick={() => onRenameOpen(i)} />
                               <Button
                                 danger
                                 type="text"
-                                size="small"
                                 aria-label={t('删除会话 ') + i.title}
                                 aria-haspopup="dialog"
                                 disabled={busy || selecting}

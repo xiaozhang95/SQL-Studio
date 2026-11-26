@@ -56,10 +56,9 @@ export default function ConnectionSidebar({ model, layout, onNewConnection, onOp
     >
       <SidebarHeader
         title={t('对象')}
-        count={model.savedConnections.length}
         actions={
           <Tooltip title={t('新建连接')}>
-            <Button type="text" size="small" icon={<PlusOutlined />} aria-label={t('新建连接')} disabled={model.running} onClick={onNewConnection} />
+            <Button type="text" icon={<PlusOutlined />} aria-label={t('新建连接')} disabled={model.running} onClick={onNewConnection} />
           </Tooltip>
         }
       />

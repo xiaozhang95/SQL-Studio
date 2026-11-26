@@ -12,7 +12,7 @@ import DatabasePage from '@/components/databasePage'
 import DesktopTitleBar from '@/components/desktopTitleBar'
 import { PageErrorsProvider } from '@/components/pageErrors'
 import SidebarWidthProvider from '@/components/sidebarWidthProvider'
-import { appearance, modalDefaults } from '@/constant/appearance'
+import { appearance, modalDefaults, tagDefaults } from '@/constant/appearance'
 import { createThemeConfig } from '@/constant/theme'
 import { LanguageContext } from '@/contexts/language'
 import { NavigationLockProvider, useNavigationLock } from '@/contexts/navigationLock'
@@ -126,6 +126,24 @@ export default function App() {
   const { preference, fontSizePreference, language, savePreferences, mode, ready } = useThemePreference()
   const themeConfig = useMemo(() => createThemeConfig(mode, fontSizePreference), [mode, fontSizePreference])
   const locale = useMemo(() => (language === 'en-US' ? { ...enUS, ...xEnUS } : { ...zhCN, ...xZhCN }), [language])
+
+  // 弹窗在独立门户恢复焦点，输入方式需在文档级记录。
+  useEffect(() => {
+    const root = document.documentElement
+    const markPointerInput = () => root.setAttribute('data-pointer-input', '')
+    const markKeyboardInput = (event: KeyboardEvent) => {
+      if (!event.altKey && !event.ctrlKey && !event.metaKey) root.removeAttribute('data-pointer-input')
+    }
+
+    document.addEventListener('pointerdown', markPointerInput, true)
+    document.addEventListener('keydown', markKeyboardInput, true)
+    return () => {
+      document.removeEventListener('pointerdown', markPointerInput, true)
+      document.removeEventListener('keydown', markKeyboardInput, true)
+      root.removeAttribute('data-pointer-input')
+    }
+  }, [])
+
   const appearancePreferences = {
     themePreference: preference,
     fontSizePreference,
@@ -135,7 +153,7 @@ export default function App() {
   }
   return (
     <LanguageContext.Provider value={language}>
-      <XProvider locale={locale} componentSize={appearance.controlSize} modal={modalDefaults} theme={themeConfig}>
+      <XProvider locale={locale} componentSize={appearance.controlSize} modal={modalDefaults} tag={tagDefaults} theme={themeConfig}>
         <AntApp style={{ background: 'var(--surface)' }} message={{ styles: { root: { display: 'none' } } }}>
           {ready ? (
             <NavigationLockProvider>

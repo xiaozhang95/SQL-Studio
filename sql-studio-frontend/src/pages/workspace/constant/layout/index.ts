@@ -8,12 +8,23 @@ export const resultPanelLayout = { defaultHeight: 260, minimumHeight: 260, edito
 export const resultSQLLayout = { columnWidth: 520 } as const
 export const resultTableLayout = { indexWidth: 64, columnWidth: 200, selectionWidth: 32, minColumnWidth: 80 } as const
 export const resultTabLayout = { maximumVisibleTabs: 8, wrapBasis: 260 } as const
+export const resultControlProps = {
+  size: appearance.controlSize,
+  style: { width: appearance.selectWidth, maxWidth: '100%', minWidth: 0 } satisfies CSSProperties
+} as const
+export const workspaceConnectionIconSize = 20
 /** 默认图标按钮从点击边界到居中图标的水平留白。 */
 export const resultToolbarIconInset = 'calc((var(--ant-control-height) - var(--ant-font-size)) / 2)'
 export const workspaceTabLayout = { width: 200, menuWidth: 336, menuListHeight: 320 } as const
 
 export const workspaceTabBarInset = 'var(--workspace-inset)'
 export const workspaceTabBarSpacer = { display: 'block', width: workspaceTabBarInset } as const satisfies CSSProperties
+export const resultToolbarSpacing = {
+  minHeight: appearance.panelHeaderHeight,
+  paddingInlineEnd: workspaceTabBarInset,
+  paddingBlock: 'var(--ant-padding-xxs)',
+  gap: 'var(--ant-margin-xs)'
+} as const satisfies CSSProperties
 
 /** 主页面签栏与结果页签栏共用高度，与对象栏标题行、搜索行和编辑器工具栏一致。 */
 export const workspaceTabBarStyle = {

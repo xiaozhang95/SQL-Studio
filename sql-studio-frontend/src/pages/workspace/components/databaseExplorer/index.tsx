@@ -377,7 +377,6 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             <ToolbarButton
               label={t(connectionFailure ? '重试连接' : '重试加载')}
               icon={<ReloadOutlined />}
-              size="small"
               disabled={running}
               onClick={(event) => {
                 event.stopPropagation()

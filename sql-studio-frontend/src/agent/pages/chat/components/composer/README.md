@@ -4,7 +4,7 @@
 
 实际使用Ant Design X Sender，直接作为Form.Item的受控字段，通过onValuesChange保存最多256 KiB的UTF-8草稿到Go布局。超过上限时保留编辑框原文并提示分段，发送入口禁用。不使用隐藏input加useWatch回填Sender的中转链，避免输入过程中旧值回写；useWatch仅用于发送按钮读取文本。Enter发送、Shift+Enter换行，onKeyDown与Sender共同保护IME候选确认。onSubmit校验配置、忙状态和非空输入；busy显示停止。底部自定义footer保留模式Dropdown、带蓝鲸模型Dropdown与发送按钮；模型菜单只列出已经添加的模型；添加/编辑统一从全局 Rail 底部的系统设置进入。onModelChange交给设置hook保存共享配置，组件无网络请求。usage悬浮区分真实输入token与保守估算。
 
-输入区默认 2 行、最多 8 行（CHAT.composerRows），Sender 的外层圆角、底色、边框和内边距使用主题 token，外侧使用轻微阴影。聚焦时同一条外框切换为主题色，内层文本区保持无描边。拖拽产生的动态高度通过 Sender 的语义 styles 传入。实心停止符号通过 style 和主题 token 设置外观，继承按钮颜色。
+输入区默认 2 行、最多 8 行（CHAT.composerRows），Sender 的外层使用和会话项、用户消息一致的 `borderRadius`，底色、边框和内边距也使用主题 token，外侧使用轻微阴影。聚焦时同一条外框切换为主题色，内层文本区保持无描边。拖拽产生的动态高度通过 Sender 的语义 styles 传入。实心停止符号通过 style 和主题 token 设置外观，继承按钮颜色。
 
 窄屏由页面传入可选 `onOpenHistory`，底部操作区显示带提示的历史会话图标按钮。会话读取期间 `conversationLoading` 暂停编辑、发送和配置选择，历史会话按钮仍可打开抽屉。
 
@@ -17,6 +17,6 @@
 底部模式使用 Ant Design 默认文本按钮加 Dropdown，与文本模型按钮及发送按钮对齐；只读使用默认中性色，完全访问使用主题警示文字色。模式菜单使用单行选项和固定勾选占位，不使用整块选中底色；权限说明集中在旁边的信息提示，完整内容撑宽，保留原有切换风险确认。模式说明独立InfoCircle悬浮按钮，始终展示权限、逐次确认及删除禁令，usage存在时追加上下文用量；不包裹模式菜单。图标尺寸：模型入口20px、菜单18px。切换风险确认保持原行为；未选择可用模型时禁用发送，有已添加模型时允许从模型菜单明确选择；无记录时提示前往全局 Rail 底部的系统设置添加，不使用默认模型。
 输入框顶部 8px 横向手柄支持拖动调整整个输入区高度，向上扩大、向下缩小；手动调整后关闭自动行高，文本区内部滚动，底部操作区保留。双击恢复原 2–8 行自动高度，键盘上下/Home/End 调整。高度受会话区域和 108–560px 边界限制，窄矮窗口可降低最小值；不改变草稿和发送逻辑。
 
-发送使用 Ant Design 的 ArrowUpOutlined 向上箭头，按钮为无投影的 Ant Design 小号圆形 primary，保留原生交互状态。终止生成使用 danger 文本按钮和小实心方块，方块宽高使用 token.sizeXS（默认 8px），保留停止回调，悬停提示「终止生成」。
+发送使用 Ant Design 的 ArrowUpOutlined 向上箭头，按钮为无投影的 Ant Design 标准圆形 primary，保留原生交互状态。终止生成使用 danger 文本按钮和小实心方块，方块宽高使用 token.sizeXS（默认 8px），保留停止回调，悬停提示「终止生成」。
 
 hook返回的DOM/list ref先单独解构为Ref变量，再传给ref属性；尺寸/导航状态与事件回调独立消费，渲染不读取ref.current。

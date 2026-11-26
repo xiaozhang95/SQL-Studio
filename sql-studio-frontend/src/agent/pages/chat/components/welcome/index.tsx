@@ -23,7 +23,7 @@ export function Welcome() {
       </Space>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: token.marginSM, width: '100%' }}>
         {examples.map((example) => (
-          <Card key={example.title} size="small">
+          <Card key={example.title}>
             <span
               className="agent-icon-badge"
               style={{

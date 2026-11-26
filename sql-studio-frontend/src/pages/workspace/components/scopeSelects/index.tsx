@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
+import { workspaceConnectionIconSize } from '../../constant/layout'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
 
 type Props = {
@@ -50,7 +51,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           searchText: connection.name,
           label: (
             <span className="connection-option" style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
-              <EngineIcon type={connection.type} size={20} />
+              <EngineIcon type={connection.type} size={workspaceConnectionIconSize} />
               <span className="connection-option-name" title={connection.name} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {connection.name}
               </span>

@@ -2,4 +2,4 @@
 
 [源码](index.ts)
 
-传入结果 ID 或抽屉布局标识，返回 viewport ref 和 Table body 高度。ResizeObserver 测量容器、表头和容器内的原生分页，扣除表头、分页及其外边距、边界空间；横纵滚动仅留在 Table body。布局标识变化重绑观察，卸载断开。查询结果和执行历史共用。
+接收可选布局标识，返回 viewport ref 和 Table body 高度。ResizeObserver 测量容器及表头，扣除表头和边界空间，供原生虚拟表体双向滚动。结果视图或抽屉布局标识变化时重绑观察，卸载时断开。查询结果、执行历史和摘要共用。

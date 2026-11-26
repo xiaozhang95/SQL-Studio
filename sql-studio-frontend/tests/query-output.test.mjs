@@ -96,8 +96,7 @@ function messageScrollHarness(overrides = {}) {
     .replace('export function', 'function')
   const slots = [],
     effects = [],
-    observers = new Set(),
-    follows = []
+    observers = new Set()
   let cursor = 0
   const viewport = {
     clientHeight: 200,
@@ -155,18 +154,15 @@ function messageScrollHarness(overrides = {}) {
     (callback) => callback,
     Observer
   )
-  let options = { identity: 'run-1', progress: 3, page: 1, latest: true, running: true, onFollowChange: (value) => follows.push(value), ...overrides }
+  let options = { progress: 3, running: true, ...overrides }
   return {
     viewport,
-    follows,
     observers,
     render(patch = {}) {
       options = { ...options, ...patch }
       cursor = 0
-      const result = hook(options)
-      result.content.current = content
+      hook(options).current = content
       effects.splice(0).forEach((callback) => callback())
-      return result
     },
     resize: () => [...observers].forEach((callback) => callback()),
     unmount: () => slots.forEach((slot) => slot?.cleanup?.())
@@ -187,10 +183,8 @@ test('running messages follow appended receipts and measured height; manual read
   h.render({ progress: 5 })
   h.resize()
   assert.equal(h.viewport.scrollTop, 350)
-  assert.deepEqual(h.follows, [false])
   h.viewport.scrollTop = h.viewport.scrollHeight
   h.viewport.dispatch('scroll')
-  assert.deepEqual(h.follows, [false, true])
   h.viewport.scrollHeight = 1200
   h.resize()
   assert.equal(h.viewport.scrollTop, 1000)
@@ -203,46 +197,46 @@ test('running messages follow appended receipts and measured height; manual read
   assert.equal(h.observers.size, 0)
 })
 
-test('scrollbar and keyboard reading pause; old pagination and historical batches do not follow; new runs reset', () => {
+test('scrollbar and keyboard reading pause; mounting a new batch starts at the appropriate end', () => {
   const h = messageScrollHarness()
   h.render()
   h.viewport.scrollTop = 100
   h.viewport.dispatch('scroll')
-  assert.deepEqual(h.follows, [false])
   h.viewport.scrollHeight = 800
   h.render({ progress: 4 })
   assert.equal(h.viewport.scrollTop, 100)
   h.viewport.scrollTop = 800
   h.viewport.dispatch('scroll')
   h.viewport.dispatch('keydown', { key: 'PageUp' })
-  assert.deepEqual(h.follows, [false, true, false])
-  h.render({ page: 2, latest: false, progress: 99 })
-  assert.equal(h.viewport.scrollTop, 0)
+  h.viewport.scrollTop = 250
   h.viewport.scrollHeight = 1000
+  h.render({ progress: 99 })
   h.resize()
-  assert.equal(h.viewport.scrollTop, 0)
-  h.render({ identity: 'next-run', page: 1, latest: true, progress: 1 })
-  assert.equal(h.viewport.scrollTop, 800)
-  h.render({ identity: 'saved-run', running: false, progress: 12 })
-  assert.equal(h.viewport.scrollTop, 0)
-  h.resize()
-  assert.equal(h.viewport.scrollTop, 0)
+  assert.equal(h.viewport.scrollTop, 250)
   h.unmount()
+
+  const next = messageScrollHarness({ progress: 120 })
+  next.render()
+  assert.equal(next.viewport.scrollTop, 400)
+  next.unmount()
+
+  const saved = messageScrollHarness({ progress: 120, running: false })
+  saved.render()
+  saved.resize()
+  assert.equal(saved.viewport.scrollTop, 0)
+  saved.unmount()
 })
 
-test('automatic latest page follows its content while manual pagination starts at the top', () => {
+test('crossing the former 50-message boundary follows the same continuous viewport', () => {
   const h = messageScrollHarness({ progress: 50 })
   h.render()
-  h.viewport.scrollHeight = 100
-  h.render({ progress: 51, page: 2 })
-  assert.equal(h.viewport.scrollTop, 0)
-  h.viewport.scrollHeight = 600
-  h.render({ progress: 60 })
-  assert.equal(h.viewport.scrollTop, 400)
-  h.render().pause()
-  h.render({ page: 1, latest: false })
-  assert.equal(h.viewport.scrollTop, 0)
+  h.viewport.scrollHeight = 650
+  h.render({ progress: 51 })
+  assert.equal(h.viewport.scrollTop, 450)
   h.viewport.scrollTop = 120
+  h.viewport.dispatch('scroll')
+  h.viewport.scrollHeight = 1400
+  h.render({ progress: 104 })
   h.resize()
   assert.equal(h.viewport.scrollTop, 120)
   h.unmount()

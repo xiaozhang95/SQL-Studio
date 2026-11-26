@@ -24,8 +24,7 @@ export const sqlEditorAppearance = EditorView.theme({
   '.cm-activeLine': { background: 'transparent' },
   '&.cm-editor .cm-activeLineGutter': {
     backgroundColor: 'var(--surface-selected)',
-    fontWeight: '500',
-    boxShadow: 'inset 2px 0 0 var(--primary)'
+    fontWeight: '500'
   },
   '.cm-selectionBackground': { background: 'var(--selection)' },
   '&.cm-focused .cm-selectionBackground': { background: 'var(--selection)' },

@@ -61,7 +61,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
           </div>
         }
       >
-        <Button type="text" size="small" aria-label={t('问题列表')} icon={<UnorderedListOutlined />} />
+        <Button type="text" aria-label={t('问题列表')} icon={<UnorderedListOutlined />} />
       </Popover>
       {roundMarkers(rounds.length, activeIndex).map((index) => (
         <Popover

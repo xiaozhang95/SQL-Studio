@@ -87,7 +87,7 @@ export function CodeBlock({ text, language, title, formatJson = false, allowOpen
           <Typography.Text copyable={{ text, tooltips: [t('复制代码'), t('已复制')] }} />
           {sqlLanguage && allowOpen && (
             <Tooltip title={t('在查询页打开')}>
-              <Button type="text" size="small" aria-label={t('在查询页打开')} icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(text)} />
+              <Button type="text" aria-label={t('在查询页打开')} icon={<ExportOutlined />} disabled={locked} onClick={() => requestOpenQuery(text)} />
             </Tooltip>
           )}
         </Space>

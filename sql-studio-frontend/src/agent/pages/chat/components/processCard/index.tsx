@@ -21,7 +21,7 @@ export function ProcessCard({ title, expanded, onExpand, children, icon }: Props
       onExpand={onExpand}
       styles={{
         root: { minWidth: 0 },
-        status: { maxWidth: '100%', minHeight: token.controlHeightSM },
+        status: { maxWidth: '100%', minHeight: token.controlHeight },
         content: { marginBlockStart: token.marginXS, minWidth: 0 }
       }}
     >

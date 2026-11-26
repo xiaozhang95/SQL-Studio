@@ -66,7 +66,6 @@ export default function TemporalInput({ value = '', onChange, fieldType = '', di
         suffix={
           <Button
             type="text"
-            size="small"
             disabled={disabled}
             aria-label={kind === 'time' ? t('选择时间') : t('选择日期和时间')}
             aria-expanded={open && !disabled}

@@ -76,7 +76,6 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
     content: error ? (
       <Collapse
         key={startedAt}
-        size="small"
         items={[
           {
             key: 'error',
@@ -114,7 +113,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
   ]
   return (
     <>
-      <Card size="small">
+      <Card>
         <Flex align="flex-start" gap={12}>
           <span style={{ display: 'inline-flex', flex: 'none', color: statusColor, fontSize: 34 }}>
             {running ? <LoadingOutlined spin /> : done ? <CheckCircleOutlined /> : status === 'cancelled' ? <StopOutlined /> : <CloseCircleOutlined />}
@@ -150,7 +149,6 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
       </Card>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
         <Card
-          size="small"
           styles={{ body: { paddingInlineEnd: 0 } }}
           title={
             <Flex gap="small" align="center">
@@ -169,7 +167,6 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
           </div>
         </Card>
         <Card
-          size="small"
           title={
             <Flex gap="small" align="center">
               <FileTextOutlined />

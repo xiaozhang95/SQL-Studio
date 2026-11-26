@@ -8,7 +8,6 @@ export default function ContentCard({ code = false, style, ...props }: ContentCa
   return (
     <Card
       {...props}
-      size="small"
       style={{
         width: '100%',
         minWidth: 0,

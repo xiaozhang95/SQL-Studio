@@ -45,10 +45,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
 
   return (
     <DatabasePage title={t('同步数据库')} errors={[model.databaseError, model.error, result?.error]} {...pageProps}>
-      <Card size="small">
+      <Card>
         <Flex align="center" gap="middle" wrap>
           <Steps
-            size="small"
             current={done ? steps.length : result ? 2 : plan || checking ? 1 : 0}
             status={status === 'error' ? 'error' : 'process'}
             items={steps}
@@ -78,7 +77,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             <Flex vertical gap="middle">
               <div style={{ display: 'grid', gridTemplateColumns: screens.lg ? 'minmax(0, 1fr) auto minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: token.marginSM }}>
                 <Card
-                  size="small"
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -89,7 +87,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     <Button
                       key="external"
                       type="link"
-                      size="small"
                       icon={<LinkOutlined />}
                       onClick={() => model.choose('source', externalSource ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
                     >
@@ -160,7 +157,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   onClick={model.swap}
                 />
                 <Card
-                  size="small"
                   title={
                     <Flex gap="small" align="center">
                       <EngineIcon type={model.profile.value} variant="logo" size={18} />
@@ -171,7 +167,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     <Button
                       key="external"
                       type="link"
-                      size="small"
                       icon={<LinkOutlined />}
                       onClick={() => model.choose('target', externalTarget ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
                     >
@@ -204,7 +199,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                 </Card>
               </div>
               <Card
-                size="small"
                 title={
                   <Flex gap="small" align="center">
                     <SettingOutlined />

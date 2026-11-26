@@ -16,10 +16,10 @@
 - [结果、字段与 DDL](queryResults/README.md)
 - [查询结果导出弹框](resultExport/README.md)
 - [结果视图标签](resultTabs/README.md)使用线形 Tabs 切换消息、摘要和数据结果。
-- [执行历史抽屉](queryHistory/README.md)
+- [执行历史抽屉](queryHistory/README.md)在标题中标明当前连接，列表按连接展示历史。
 - [底部可伸缩面板](resultsDock/README.md)
 
-- [逐条执行消息](queryMessages/README.md)
+- [逐条执行消息](queryMessages/README.md)在标题显示状态和耗时，展开可查看 SQL、错误详情及已记录的影响行数。
 - [批次执行摘要](querySummary/README.md)
 - [只读 SQL 高亮与复制](sqlPreview/README.md)，复制成功后按钮短暂显示绿色对勾。
 

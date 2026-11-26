@@ -28,7 +28,7 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
       </div>
       <div className="database-monitor-metrics" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: token.marginMD }}>
         {activityMetrics.map((metric) => (
-          <Card key={metric.key} size="small" style={{ minWidth: 0 }}>
+          <Card key={metric.key} style={{ minWidth: 0 }}>
             <Statistic
               title={t(metric.label)}
               value={metricValue(snapshot, metric.key) ?? '—'}
@@ -43,7 +43,6 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
   return (
     <Flex vertical gap="middle">
       <Card
-        size="small"
         title={t(detail?.node ? '主节点概览' : '实例概览')}
         extra={
           <Flex gap="small" wrap>
@@ -73,7 +72,7 @@ export default function RedisMonitor({ snapshot, history }: DatabaseMonitorPanel
             <Typography.Text type="secondary">
               {t('内存上限使用率')}: {formatMetric(String(memoryPercent), 'percent', language)} · {t('内存上限')}: {formatMetric(String(maximum), 'bytes', language)}
             </Typography.Text>
-            <Progress percent={Math.min(100, memoryPercent)} showInfo={false} size="small" status={memoryPercent >= 100 ? 'exception' : 'normal'} />
+            <Progress percent={Math.min(100, memoryPercent)} showInfo={false} status={memoryPercent >= 100 ? 'exception' : 'normal'} />
           </Flex>
         )}
       </Card>

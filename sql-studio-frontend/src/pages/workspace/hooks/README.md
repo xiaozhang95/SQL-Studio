@@ -12,7 +12,7 @@
 
 每个 hook 使用独立入口及文档；组件只消费其公开返回值。
 
-- [结果表格尺寸](useTableViewportLayout/README.md)：分配表头/表体高度，保证双向滚动条不被分页遮挡。
+- [结果表格尺寸](useTableViewportLayout/README.md)：按视口分配虚拟表体的高度。
 
 - [导入 SQL](useSQLImport/README.md)：本地读取文件并创建独立查询，不自动执行。
 
@@ -33,7 +33,7 @@
 - [useWorkspaceEditor](useWorkspaceEditor/README.md)：当前编辑实例、延迟草稿同步和光标/滚动批量提交。
 
 - [useResultTableScroll](useResultTableScroll/README.md)：新增、保存及虚拟行测量后的定位。
-- [useQueryMessageScroll](useQueryMessageScroll/README.md)：批量执行回执跟随底部、手动阅读暂停及分页边界。
+- [useQueryMessageScroll](useQueryMessageScroll/README.md)：连续执行消息自动跟随与手动阅读暂停。
 - [useSQLCompletionPopup](useSQLCompletionPopup/README.md)：原生补全状态与 Ant Design 候选同步。
 
 - [useQueryShortcut](useQueryShortcut/README.md)：可见查询编辑器内的执行快捷键。

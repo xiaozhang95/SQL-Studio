@@ -8,6 +8,7 @@
 - [AI 表结构上下文](aiContext/README.md)：请求时线性选择当前库表。
 - [执行历史规则](queryHistory/README.md)：每连接 50 条及已删除连接清理。
 - [编辑器外观](editorAppearance/README.md)：CodeMirror 原生样式扩展，隔离编辑与只读预览。
+- [编辑器 Tab 键位](editorKeymap/README.md)：光标插入与选区缩进。
 - [对象树标识与索引说明](objectTree/README.md)。
 
 - [单库请求代](databaseLifecycle/README.md)。

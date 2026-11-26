@@ -43,7 +43,7 @@ export default function TrendChart({ title, series, history }: Props) {
   const time = (sample: MonitorSnapshot) => new Date(sample.sampledAt).toLocaleTimeString(language, { hour12: false })
   const available = tracks.some((track) => track.points.length > 0)
   return (
-    <Card size="small" title={t(title)} style={{ minWidth: 0 }}>
+    <Card title={t(title)} style={{ minWidth: 0 }}>
       <Flex vertical gap="small">
         <Flex justify="space-between" align="center" wrap gap="small" style={{ minHeight: token.controlHeight }}>
           <Flex wrap gap="middle">

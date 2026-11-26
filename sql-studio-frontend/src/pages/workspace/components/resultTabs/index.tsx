@@ -2,11 +2,10 @@ import { LoadingOutlined, MessageOutlined, ProfileOutlined } from '@ant-design/i
 import { Flex, Select, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
-import { appearance } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RunState } from '@/typings/workspace'
 
-import { resultTabLayout, resultToolbarIconInset, workspaceTabBarInset, workspaceTabBarSpacer, workspaceTabBarStyle } from '../../constant/layout'
+import { resultControlProps, resultTabLayout, resultToolbarIconInset, resultToolbarSpacing, workspaceTabBarSpacer, workspaceTabBarStyle } from '../../constant/layout'
 import { resultOutputs } from '../../utils/queryOutput'
 
 type Props = {
@@ -25,16 +24,15 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
   const indexedResults = results.map((entry, resultIndex) => ({ ...entry, resultIndex }))
   const visibleResults = compact ? indexedResults.filter(({ key }) => key === activeKey) : indexedResults
   return (
-    <Flex wrap align="center" style={{ flex: 'none', minWidth: 0, borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)' }}>
+    <Flex className="result-navigation" wrap align="center" style={{ minWidth: 0, borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)' }}>
       <Tabs
         className="statement-result-tabs"
         aria-label={t('输出内容')}
-        size={appearance.navigationSize}
         type="line"
         style={{ flex: `1 1 ${resultTabLayout.wrapBasis}px`, minWidth: 0, maxWidth: '100%' }}
         styles={{
           header: workspaceTabBarStyle,
-          item: { height: 30, paddingBlock: 0, paddingInline: resultToolbarIconInset, borderRadius: 'var(--ant-border-radius)' }
+          item: { height: 'var(--ant-control-height)', paddingBlock: 0, paddingInline: resultToolbarIconInset, borderRadius: 'var(--ant-border-radius)' }
         }}
         tabBarGutter={4}
         activeKey={activeKey}
@@ -58,27 +56,19 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
           }))
         ]}
       />
-      {(status || compact) && (
+      {(compact || status) && (
         <Flex
+          className="result-navigation-actions"
           align="center"
           justify="end"
-          gap="small"
           wrap
-          style={{
-            minWidth: 0,
-            maxWidth: '100%',
-            minHeight: appearance.panelHeaderHeight,
-            marginInlineStart: 'auto',
-            paddingInline: workspaceTabBarInset,
-            paddingBlock: 'var(--ant-padding-xxs)'
-          }}
+          style={{ ...resultToolbarSpacing, minWidth: 0, maxWidth: '100%' }}
         >
-          {status}
           {compact && (
             <Select
+              {...resultControlProps}
+              className="result-picker"
               aria-label={t('选择结果集')}
-              size={appearance.navigationSize}
-              style={{ width: appearance.selectWidth, maxWidth: '100%' }}
               disabled={running}
               placeholder={t('选择结果集（共 {value1} 个）', { value1: results.length })}
               value={results.some(({ key }) => key === activeKey) ? activeKey : undefined}
@@ -86,6 +76,7 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
               onChange={onChange}
             />
           )}
+          {status}
         </Flex>
       )}
     </Flex>

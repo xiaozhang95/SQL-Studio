@@ -47,7 +47,6 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Descriptions
             column={{ xs: 1, sm: 2 }}
-            size="small"
             styles={{ label: { whiteSpace: 'nowrap' }, content: { minWidth: 0, overflowWrap: 'anywhere' } }}
             items={[
               { key: 'server', label: t('连接'), children: state.connection },

@@ -6,7 +6,6 @@ import type { ReactNode } from 'react'
 import DeleteConfirmation from '@/components/deleteConfirmation'
 import ErrorNotice from '@/components/errorNotice'
 import { ResizableTable } from '@/components/resizableTable'
-import { appearance } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -254,7 +253,7 @@ export default function ObjectManagementForm({ manager, themeMode, showErrors = 
               ]
               return (
                 <>
-                  <ResizableTable size={appearance.tableSize} rowKey="key" dataSource={fields} columns={columns} pagination={false} scroll={{ x: 1250 }} />
+                  <ResizableTable rowKey="key" dataSource={fields} columns={columns} pagination={false} scroll={{ x: 1250 }} />
                   <ToolbarButton label={t('添加字段')} icon={<PlusOutlined />} style={{ marginTop: 12 }} onClick={() => add(manager.defaultField())} />
                 </>
               )
