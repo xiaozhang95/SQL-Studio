@@ -1,4 +1,4 @@
-import { BulbOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, OrderedListOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
@@ -174,8 +174,8 @@ export default function QueryEditor({ model, themeMode }: Props) {
             { key: 'run-selection', label: t('运行'), icon: <PlayCircleOutlined />, disabled: !contextSQL.trim() || !objects.connected || running },
             ...(mysqlCompatible && contextSQL.trim()
               ? [
-                  { key: 'run-single-statement', label: t('作为单条 SQL 运行'), disabled: !objects.connected || running },
-                  { key: 'run-insert-transaction', label: t('在事务中运行 INSERT'), disabled: !objects.connected || running }
+                  { key: 'run-single-statement', label: t('作为单条 SQL 运行'), icon: <CodeOutlined />, disabled: !objects.connected || running },
+                  { key: 'run-insert-transaction', label: t('在事务中运行 INSERT'), icon: <OrderedListOutlined />, disabled: !objects.connected || running }
                 ]
               : []),
             ...(ai.configured && contextSQL.trim() ? [{ key: 'optimize-selection', label: t('优化'), icon: <BulbOutlined />, disabled: running }] : [])
