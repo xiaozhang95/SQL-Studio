@@ -145,7 +145,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
             </div>
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: token.padding }}>
-            <Form form={form} layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
+            <Form form={form} layout="horizontal" labelWrap labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy} onValuesChange={() => setStatus(undefined)}>
               <Form.Item name="type" hidden>
                 <Input />
               </Form.Item>

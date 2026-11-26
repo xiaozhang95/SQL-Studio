@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { nativeTheme, WebContentsView } from 'electron'
 
 /** 本地启动层不依赖 HTTP 服务，工作台在它下面加载，避免导航时的白屏。 */
-export async function createStartupScreen(window, { icon, dark, followSystem = false }) {
+export async function createStartupScreen(window, { icon, dark, followSystem = false, language = 'zh-CN' }) {
   const view = new WebContentsView({
     webPreferences: {
       preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
@@ -49,7 +49,7 @@ export async function createStartupScreen(window, { icon, dark, followSystem = f
   resize()
   try {
     await view.webContents.loadFile(fileURLToPath(new URL('./index.html', import.meta.url)), {
-      query: { theme: dark ? 'dark' : 'light', icon: icon.toDataURL() }
+      query: { theme: dark ? 'dark' : 'light', language, icon: icon.toDataURL() }
     })
     if (!window.isDestroyed()) {
       window.show()

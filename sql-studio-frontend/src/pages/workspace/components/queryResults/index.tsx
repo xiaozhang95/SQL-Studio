@@ -27,7 +27,7 @@ import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
-import { resultControlProps, resultSQLLayout, resultTableLayout, resultToolbarSpacing, workspaceEmptyStyle, workspaceTabBarInset } from '../../constant/layout'
+import { resultControlProps, resultSQLLayout, resultTableLayout, resultToolbarSpacing, workspaceEmptyStyle, workspaceInset } from '../../constant/layout'
 import { useDataEditing } from '../../hooks/useDataEditing'
 import { useResultTableScroll } from '../../hooks/useResultTableScroll'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
@@ -401,7 +401,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             wrap
             style={{
               ...resultToolbarSpacing,
-              paddingInlineStart: workspaceTabBarInset,
+              paddingInline: workspaceInset,
               borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
             }}
           >
@@ -523,7 +523,7 @@ export default function QueryResults({ model, themeMode }: Props) {
         ) : activeRunning ? (
           <ContentLoading label={t('正在加载结果…')} />
         ) : result?.rowPreview?.length ? (
-          <div style={{ padding: 'var(--workspace-inset)', overflow: 'auto', maxHeight: '100%' }}>
+          <div style={{ padding: workspaceInset, overflow: 'auto', maxHeight: '100%' }}>
             {result.rowPreview.map(({ value, shortened }, index) => (
               <Typography.Paragraph key={index} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                 <Typography.Text strong>{result.columns[index]?.name}</Typography.Text>
@@ -534,35 +534,33 @@ export default function QueryResults({ model, themeMode }: Props) {
             ))}
           </div>
         ) : result ? (
-          <>
-            <Table
-              style={{ visibility: editing.saving ? 'hidden' : undefined, width: columnsSized ? scrollWidth : undefined, maxWidth: '100%' }}
-              ref={table}
-              virtual
-              className={`data-table${columnsSized ? ' data-table-sized' : ''}`}
-              components={{ header: { cell: ColumnResizeHeaderCell } }}
-              showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}
-              styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
-              tableLayout={run.kind === 'ddl' || columnsSized ? 'fixed' : undefined}
-              rowSelection={{
-                columnWidth: resultTableLayout.selectionWidth,
-                selectedRowKeys: selectedRows,
-                onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
-                preserveSelectedRowKeys: true,
-                getCheckboxProps: (row) => ({ disabled: model.running || row.key < 0 })
-              }}
-              onChange={(_, __, sorter) => {
-                const selected = Array.isArray(sorter) ? sorter[0] : sorter
-                const column = Number(selected.columnKey)
-                setSorting({ result, sort: selected.order && Number.isInteger(column) ? { column, order: selected.order } : undefined })
-              }}
-              columns={columns}
-              dataSource={rows}
-              pagination={false}
-              scroll={{ x: scrollWidth, y: bodyHeight || 24 }}
-              locale={{ emptyText: result.isQuery ? t('查询成功，没有匹配的数据') : t('语句执行成功，影响 {value1} 行', { value1: result.affectedRows }) }}
-            />
-          </>
+          <Table
+            style={{ visibility: editing.saving ? 'hidden' : undefined, width: columnsSized ? scrollWidth : undefined, maxWidth: '100%' }}
+            ref={table}
+            virtual
+            className={`data-table${columnsSized ? ' data-table-sized' : ''}`}
+            components={{ header: { cell: ColumnResizeHeaderCell } }}
+            showSorterTooltip={{ title: t('对当前已加载的结果排序'), target: 'sorter-icon' }}
+            styles={{ header: { cell: { paddingBlock: token.paddingXXS } }, body: { cell: { paddingBlock: token.paddingXXS } } }}
+            tableLayout={run.kind === 'ddl' || columnsSized ? 'fixed' : undefined}
+            rowSelection={{
+              columnWidth: resultTableLayout.selectionWidth,
+              selectedRowKeys: selectedRows,
+              onChange: (keys) => setSelection({ result, keys: keys.filter((key): key is number => typeof key === 'number') }),
+              preserveSelectedRowKeys: true,
+              getCheckboxProps: (row) => ({ disabled: model.running || row.key < 0 })
+            }}
+            onChange={(_, __, sorter) => {
+              const selected = Array.isArray(sorter) ? sorter[0] : sorter
+              const column = Number(selected.columnKey)
+              setSorting({ result, sort: selected.order && Number.isInteger(column) ? { column, order: selected.order } : undefined })
+            }}
+            columns={columns}
+            dataSource={rows}
+            pagination={false}
+            scroll={{ x: scrollWidth, y: bodyHeight || 24 }}
+            locale={{ emptyText: result.isQuery ? t('查询成功，没有匹配的数据') : t('语句执行成功，影响 {value1} 行', { value1: result.affectedRows }) }}
+          />
         ) : (
           <div style={{ ...workspaceEmptyStyle, minHeight: 180 }}>
             <EmptyStateIcon>
@@ -579,7 +577,7 @@ export default function QueryResults({ model, themeMode }: Props) {
       {showingResult && !activeRunning && result && hasTable && result.truncatedBy !== 'oversized-row' && (
         <Typography.Text
           type="secondary"
-          style={{ flex: 'none', textAlign: 'end', paddingBlock: token.paddingXS, paddingInline: token.padding, borderBlockStart: `${token.lineWidth}px solid var(--layout-divider)` }}
+          style={{ flex: 'none', textAlign: 'end', paddingBlock: token.paddingXS, paddingInline: workspaceInset, borderBlockStart: `${token.lineWidth}px solid var(--layout-divider)` }}
         >
           {t('共 {count} 条', { count: rowCount })}
         </Typography.Text>

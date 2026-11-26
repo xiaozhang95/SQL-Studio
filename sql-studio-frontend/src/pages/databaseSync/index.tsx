@@ -73,7 +73,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
       </Card>
       {!result ? (
         <>
-          <Form layout="horizontal" labelCol={{ flex: '88px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
+          <Form layout="horizontal" labelWrap labelCol={{ flex: '0 0 clamp(88px, 30%, 132px)' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={busy}>
             <Flex vertical gap="middle">
               <div style={{ display: 'grid', gridTemplateColumns: screens.lg ? 'minmax(0, 1fr) auto minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: token.marginSM }}>
                 <Card
@@ -104,7 +104,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('source', value)}
                     onCredentials={(patch) => model.updateExternal('source', patch)}
                   />
-                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" style={{ marginBottom: 4 }}>
+                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" extra={t('将复制全部表，自动跳过视图')} style={{ marginBottom: 0 }}>
                     {externalSource ? (
                       <Flex gap="small" wrap>
                         <Input
@@ -143,9 +143,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       />
                     )}
                   </Form.Item>
-                  <Typography.Text type="secondary" style={{ display: 'block', paddingInlineStart: 88 }}>
-                    {t('将复制全部表，自动跳过视图')}
-                  </Typography.Text>
                 </Card>
                 <Button
                   style={{ alignSelf: 'center', justifySelf: 'center', transform: screens.lg ? undefined : 'rotate(90deg)' }}
@@ -184,7 +181,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('target', value)}
                     onCredentials={(patch) => model.updateExternal('target', patch)}
                   />
-                  <Form.Item label={t('目标数据库')} htmlFor="sync-target-db" style={{ marginBottom: 4 }}>
+                  <Form.Item label={t('目标数据库')} htmlFor="sync-target-db" extra={t('检查通过后新建；目标库已存在时立即停止')} style={{ marginBottom: 0 }}>
                     <Input
                       id="sync-target-db"
                       value={values.targetDatabase}
@@ -193,9 +190,6 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                       onChange={(event) => update({ targetDatabase: event.target.value })}
                     />
                   </Form.Item>
-                  <Typography.Text type="secondary" style={{ display: 'block', paddingInlineStart: 88 }}>
-                    {t('检查通过后新建；目标库已存在时立即停止')}
-                  </Typography.Text>
                 </Card>
               </div>
               <Card

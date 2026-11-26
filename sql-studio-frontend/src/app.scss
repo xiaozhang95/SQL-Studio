@@ -349,35 +349,31 @@ body,
   margin-inline-start: auto;
 }
 
-.result-bars .result-navigation-actions {
-  padding-inline-start: var(--workspace-inset);
-}
-
-// 并排时，结果选择器和筛选框共用一列，右栏宽度由状态和操作组共同决定。
+// 结果选择器和筛选框始终共用列宽。空间不足时，只有结果页签占用单独一行。
 @supports (grid-template-columns: subgrid) {
-  @container result-panel (min-width: 640px) {
-    .result-bars:has(.result-picker):has(.result-filter) {
+  .result-bars:has(.result-picker):has(.result-filter) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content) max-content;
+    column-gap: var(--ant-margin-xs);
+
+    > :is(.result-navigation, .result-toolbar) {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) max-content max-content;
-      column-gap: var(--ant-margin-xs);
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+    }
 
-      > :is(.result-navigation, .result-toolbar) {
-        display: grid;
+    :is(.result-navigation-actions, .result-actions) {
+      display: grid;
+      grid-column: 2 / -1;
+      grid-template-columns: subgrid;
+      justify-content: normal;
+      justify-items: end;
+      margin-inline-start: 0;
+    }
+
+    @container result-panel (width < 580px) {
+      > .result-navigation > .statement-result-tabs {
         grid-column: 1 / -1;
-        grid-template-columns: subgrid;
-      }
-
-      :is(.result-navigation-actions, .result-actions) {
-        display: grid;
-        grid-column: 2 / -1;
-        grid-template-columns: subgrid;
-        justify-content: normal;
-        justify-items: end;
-        margin-inline-start: 0;
-      }
-
-      .result-navigation-actions {
-        padding-inline-start: 0;
       }
     }
   }

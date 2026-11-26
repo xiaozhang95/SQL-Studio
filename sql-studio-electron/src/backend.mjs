@@ -4,6 +4,7 @@ import net from 'node:net'
 import path from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
+import { desktopMessages } from './messages.mjs'
 import { backendEnvironment } from './policy.mjs'
 
 async function freePort() {
@@ -17,11 +18,12 @@ async function freePort() {
   return port
 }
 
-export async function waitForService(url, { timeout = 15000, stopped = () => false, signal } = {}) {
+export async function waitForService(url, { timeout = 15000, stopped = () => false, signal, language = 'zh-CN' } = {}) {
+  const messages = desktopMessages[language]
   const deadline = Date.now() + timeout
   while (Date.now() < deadline) {
     signal?.throwIfAborted()
-    if (stopped()) throw new Error('本地服务已退出。')
+    if (stopped()) throw new Error(messages.backendExited)
     try {
       const response = await fetch(`${url}/api/health`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(700)]) : AbortSignal.timeout(700) })
       const body = await response.json()
@@ -31,10 +33,10 @@ export async function waitForService(url, { timeout = 15000, stopped = () => fal
     }
     await delay(100, undefined, { signal })
   }
-  throw new Error(`等待 SQL Studio 服务超时：${url}`)
+  throw new Error(messages.backendTimeout(url))
 }
 
-export async function startBackend(runtime, dataDirectory, onExit, { signal } = {}) {
+export async function startBackend(runtime, dataDirectory, onExit, { signal, language = 'zh-CN' } = {}) {
   signal?.throwIfAborted()
   // 数据根与 Go 服务一致：状态在 <dataDirectory>/state，Electron 自身数据在 <dataDirectory>/electron。
   const stateDirectory = path.join(dataDirectory, 'state')
@@ -91,10 +93,10 @@ export async function startBackend(runtime, dataDirectory, onExit, { signal } = 
   }
   signal?.addEventListener('abort', abort, { once: true })
   try {
-    await waitForService(url, { stopped: () => stopped, signal })
+    await waitForService(url, { stopped: () => stopped, signal, language })
     // 健康检查后再次确认子进程仍在，端口竞争失败不能接管其他服务。
     await delay(100, undefined, { signal })
-    if (stopped) throw failure || new Error('服务启动失败。')
+    if (stopped) throw failure || new Error(desktopMessages[language].backendStartFailed)
     ready = true
     return { url, stop }
   } catch (error) {

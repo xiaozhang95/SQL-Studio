@@ -85,7 +85,8 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         Object.fromEntries(connections.filter((connection) => connection.type !== DatabaseEngine.Redis).map((connection) => [connection.id, getDatabaseAdapter(connection.type).explorer])),
         connectionGroups.groups,
         objects.closedDatabases,
-        (group) => connectionGroupLabel(group, t)
+        (group) => connectionGroupLabel(group, t),
+        t
       ),
     [connections, objects.snapshots, objects.closedDatabases, expanded, search, connectionGroups.groups, t]
   )

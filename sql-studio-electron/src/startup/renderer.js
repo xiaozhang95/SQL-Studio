@@ -1,4 +1,7 @@
 const parameters = new URLSearchParams(location.search)
+const english = parameters.get('language') === 'en-US'
+document.documentElement.lang = english ? 'en-US' : 'zh-CN'
+document.querySelector('.loading').setAttribute('aria-label', english ? 'Starting SQL Studio' : '正在启动 SQL Studio')
 document.documentElement.dataset.theme = parameters.get('theme') === 'dark' ? 'dark' : 'light'
 document.querySelector('.logo').src = parameters.get('icon') || ''
 window.sqlStudioStartup.onTheme((theme) => {

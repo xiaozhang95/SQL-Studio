@@ -12,7 +12,7 @@ resultSQLLayout 仅定义普通查询 SQL 单元格列宽 520px；只读 SQL 完
 
 resultTableLayout 定义结果表的行号列 64px、普通数据列 200px、复选框列 32px、列宽拖拽下限 80px；虚拟表格据此合计数值横向滚动宽度，避免表头、固定列与虚拟表体宽度不一致。
 
-resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。窄布局使用 260px 的 wrapBasis，导航与右侧执行状态不足以并排时，状态和选择器换行。`resultControlProps` 为结果集选择器和筛选框提供同一组中号尺寸（宽 220px，高 30px），`resultToolbarSpacing` 为结果导航右侧和结果工具栏提供共用的 42px 最小高度、16px 行尾留白、4px 垂直留白和 8px 组间距。
+resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。弹性布局使用 260px 的页签基准宽度。选择器与筛选框同时出现时，通过子网格共用列宽，窄布局只单独放置页签栏。`resultControlProps` 为结果集选择器和筛选框提供同一组中号尺寸（宽 220px，高 30px），`resultToolbarSpacing` 提供共用的 42px 最小高度、4px 垂直留白和 8px 组间距。
 
 workspaceConnectionIconSize 为连接选择器与执行历史抽屉标题共用的 20px 引擎图标尺寸。
 
@@ -20,7 +20,7 @@ resultToolbarIconInset 由默认按钮尺寸与图标字号计算，提供结果
 
 workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。
 
-workspaceTabBarStyle 为主页面签栏和结果页签栏提供统一的 42px 栏高和表面底色。workspaceTabBarInset 与 workspaceTabBarSpacer 通过 Tabs 两侧额外内容提供页内留白，让组件按实际可见宽度定位选中页签。workspaceTabLayout 同时约定主页面签宽和更多面板的宽度及滚动区域上限。
+workspaceTabBarStyle 为主页面签栏和结果页签栏提供统一的 42px 栏高和表面底色。workspaceInset 引用 `--workspace-inset`（16px），供页签栏、消息列表、摘要统计、结果工具栏和底部条数栏使用。摘要表和结果表的容器横向贴边。workspaceTabBarSpacer 为主页面签预留滚动边距。workspaceTabLayout 同时约定主页面签宽和更多面板的宽度及滚动区域上限。
 
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 

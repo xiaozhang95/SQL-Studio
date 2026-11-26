@@ -4,6 +4,7 @@ import path from 'node:path'
 /** 服务启动前仅读取当前外观配置，不写回默认值。 */
 export async function readStartupAppearance(stateDirectory, systemDark) {
   let preference = 'system'
+  let language = 'zh-CN'
   let file
   try {
     file = await open(path.join(stateDirectory, 'appearance.json'), 'r')
@@ -15,12 +16,15 @@ export async function readStartupAppearance(stateDirectory, systemDark) {
         ['light', 'dark', 'system'].includes(settings?.theme) &&
         ['small', 'standard', 'large'].includes(settings?.fontSize) &&
         ['zh-CN', 'en-US'].includes(settings?.language)
-      ) preference = settings.theme
+      ) {
+        preference = settings.theme
+        language = settings.language
+      }
     }
   } catch {
     // 首次启动、不可读或损坏时只让开屏沿用系统主题，不影响原配置。
   } finally {
-    await file?.close()
+    await file?.close().catch(() => {})
   }
-  return { preference, dark: preference === 'system' ? systemDark : preference === 'dark' }
+  return { preference, dark: preference === 'system' ? systemDark : preference === 'dark', language }
 }

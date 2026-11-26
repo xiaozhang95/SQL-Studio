@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
+import { workspaceInset } from '../../constant/layout'
 import { useQueryMessageScroll } from '../../hooks/useQueryMessageScroll'
 import { batchRequestError, executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
@@ -20,7 +21,7 @@ const listComponents: Components<StatementRun, MessageContext> = {
   Header: function MessageHeader({ context }) {
     const { t } = useTranslation()
     return context.cancelled ? (
-      <div style={{ padding: 12 }}>
+      <div style={{ paddingBlock: 12, paddingInline: workspaceInset }}>
         <Typography.Text type="secondary">{t('执行已取消')}</Typography.Text>
       </div>
     ) : null
@@ -31,7 +32,7 @@ const listComponents: Components<StatementRun, MessageContext> = {
     if (!batchError && !running && !empty) return null
 
     return (
-      <Flex vertical gap={12} style={{ padding: 12 }}>
+      <Flex vertical gap={12} style={{ paddingBlock: 12, paddingInline: workspaceInset }}>
         {batchError && (
           <Collapse
             destroyOnHidden
@@ -76,7 +77,7 @@ export default function QueryMessages({ run, running, themeMode, databaseType }:
     const affectedRows = !item.error && !cancelled && result && !result.columns.length && !result.writeFeedbackUnavailable ? result.affectedRows : undefined
     const key = String(index)
     return (
-      <div style={{ paddingBlock: 2, paddingInline: 12 }}>
+      <div style={{ paddingBlock: 2, paddingInline: workspaceInset }}>
         <Collapse
           destroyOnHidden
           activeKey={expanded.has(index) ? [key] : []}

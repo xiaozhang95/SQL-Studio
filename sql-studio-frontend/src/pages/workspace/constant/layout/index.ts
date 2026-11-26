@@ -17,11 +17,10 @@ export const workspaceConnectionIconSize = 20
 export const resultToolbarIconInset = 'calc((var(--ant-control-height) - var(--ant-font-size)) / 2)'
 export const workspaceTabLayout = { width: 200, menuWidth: 336, menuListHeight: 320 } as const
 
-export const workspaceTabBarInset = 'var(--workspace-inset)'
-export const workspaceTabBarSpacer = { display: 'block', width: workspaceTabBarInset } as const satisfies CSSProperties
+export const workspaceInset = 'var(--workspace-inset)'
+export const workspaceTabBarSpacer = { display: 'block', width: workspaceInset } as const satisfies CSSProperties
 export const resultToolbarSpacing = {
   minHeight: appearance.panelHeaderHeight,
-  paddingInlineEnd: workspaceTabBarInset,
   paddingBlock: 'var(--ant-padding-xxs)',
   gap: 'var(--ant-margin-xs)'
 } as const satisfies CSSProperties

@@ -38,14 +38,13 @@ export default function AppearanceCards<T extends string>({ label, value, onChan
             minWidth: 0,
             borderRadius: token.borderRadiusLG,
             border: `${token.lineWidth}px solid ${token.colorBorderSecondary}`,
-            backgroundColor: option.value === value ? 'var(--surface-selected)' : undefined,
             cursor: disabled ? 'not-allowed' : 'pointer'
           },
           icon: { gridColumn: 1, gridRow: 2 },
           label: { display: 'contents' }
         } satisfies RadioProps['styles']
         return (
-          <Radio key={option.value} value={option.value} classNames={{ root: 'appearance-option-card' }} styles={styles}>
+          <Radio key={option.value} value={option.value} styles={styles}>
             <div aria-hidden="true" style={{ gridColumn: '1 / -1', gridRow: 1, minWidth: 0, marginBottom: token.marginXS }}>
               {option.preview}
             </div>

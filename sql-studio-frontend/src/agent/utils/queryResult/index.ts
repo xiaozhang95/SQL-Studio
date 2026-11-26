@@ -29,9 +29,9 @@ export function readResult(value: unknown): ResultData | null {
     truncated: value.truncated === true
   }
 }
-export function cellText(value: unknown): string {
+export function cellText(value: unknown, emptyText = '空字符串'): string {
   if (value === null) return 'NULL'
-  if (value === '') return '空字符串'
+  if (value === '') return emptyText
   return typeof value === 'object' ? JSON.stringify(value) : String(value)
 }
 export function readSQL(input?: string): string {

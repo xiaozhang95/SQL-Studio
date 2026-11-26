@@ -1,4 +1,4 @@
-import { Checkbox, Flex, Typography } from 'antd'
+import { Checkbox, Flex, theme, Typography } from 'antd'
 import type { TableColumnsType, TableRef } from 'antd'
 import { useRef, useState } from 'react'
 
@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { RunState, StatementRun } from '@/typings/workspace'
 
+import { workspaceInset } from '../../constant/layout'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import { batchRequestError, executionCancelled, statementDuration, statementErrorDetail, statementOutputs } from '../../utils/queryOutput'
 import SQLPreview from '../sqlPreview'
@@ -16,6 +17,7 @@ type Props = { run: RunState; running: boolean; themeMode: ThemeMode; databaseTy
 type SummaryRow = StatementRun & { key: number }
 export default function QuerySummary({ run, running, themeMode, databaseType }: Props) {
   const { t, language } = useTranslation()
+  const { token } = theme.useToken()
 
   const [errorsOnly, setErrorsOnly] = useState(false)
   const table = useRef<TableRef>(null)
@@ -43,7 +45,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
           </Typography.Text>
         ) : (
           <Typography.Text type="success" style={{ whiteSpace: 'pre-wrap' }}>
-            {item.result && !item.result.columns.length && !item.result.writeFeedbackUnavailable ? t('OK，影响 {value1} 行', { value1: item.result.affectedRows }) : 'OK'}
+            {item.result && !item.result.columns.length && !item.result.writeFeedbackUnavailable ? t('影响 {value1} 行', { value1: item.result.affectedRows }) : t('执行成功')}
           </Typography.Text>
         )
     },
@@ -51,7 +53,7 @@ export default function QuerySummary({ run, running, themeMode, databaseType }: 
   ]
   return (
     <Flex vertical style={{ height: '100%', minHeight: 0 }}>
-      <Flex wrap gap={24} align="center" style={{ padding: 12, flex: 'none', maxHeight: '50%', overflow: 'auto' }}>
+      <Flex wrap gap={24} align="center" style={{ paddingBlock: token.paddingSM, paddingInline: workspaceInset, flex: 'none', maxHeight: '50%', overflow: 'auto' }}>
         <div title={batchError ? t(batchError) : undefined}>
           {t('已处理：')}
           {statements.length} / {run.statementCount ?? statements.length}　{t('　成功：')}

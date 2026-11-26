@@ -1,5 +1,5 @@
 import { AppstoreOutlined, CheckOutlined, CloseOutlined, SearchOutlined } from '@ant-design/icons'
-import { Button, Flex, Input, Popover, theme, Typography } from 'antd'
+import { Button, Flex, Input, Popover, theme, Tooltip, Typography } from 'antd'
 import type { GetRef } from 'antd'
 import { useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -36,6 +36,7 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
   const [search, setSearch] = useState('')
   const query = search.trim().toLocaleLowerCase()
   const filtered = pages.filter((page) => `${page.title} ${page.context}`.toLocaleLowerCase().includes(query))
+  const moreLabel = t('更多')
   const title = t('已打开的页面')
 
   function changeOpen(next: boolean) {
@@ -164,16 +165,19 @@ export default function OpenPagesMenu({ pages, activeTab, tabBusy, selectTab, cl
         </Flex>
       }
     >
-      <Button
-        ref={trigger}
-        type="text"
-        icon={<AppstoreOutlined />}
-        title={t('更多')}
-        aria-label={t('更多')}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-      />
+      <span style={{ display: 'inline-flex' }}>
+        <Tooltip title={open ? undefined : moreLabel} trigger={['hover', 'focus']}>
+          <Button
+            ref={trigger}
+            type="text"
+            icon={<AppstoreOutlined />}
+            aria-label={moreLabel}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            aria-controls={open ? id : undefined}
+          />
+        </Tooltip>
+      </span>
     </Popover>
   )
 }

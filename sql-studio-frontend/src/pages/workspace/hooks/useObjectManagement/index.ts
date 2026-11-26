@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { getDatabaseAdapter } from '@/databases'
 import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { CollationOption, DatabaseDefinition, FieldDefinition, ObjectChange, ObjectFormValues, ObjectTarget } from '@/databases/typings/objectManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 import { executeObjectSQL, executeQuery, getColumns, getDDL } from '@/services/database'
 import type { Connection } from '@/typings/database'
 
@@ -34,6 +35,7 @@ const titles: Record<ObjectAction, string> = {
 }
 /** 元数据、表单和写入均绑定打开菜单时的显式连接与对象；普通编辑器不获得写入权限。 */
 export function useObjectManagement({ connections, blocked, onBusyChange, onChanged, beforeDrop, initial, keepOpen = false, onDirtyChange }: Options) {
+  const { t } = useTranslation()
   const { message } = App.useApp()
   const [form] = Form.useForm<ObjectFormValues>()
   const [dialog, setDialog] = useState<Dialog>()
@@ -287,7 +289,7 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       }
       setDirty(false)
       onDirtyChange?.(false)
-      message.success(titles[action] + '成功')
+      message.success(t('操作成功：{action}', { action: t(titles[action]) }))
       try {
         const engine = getDatabaseAdapter(connection.type)
         const name =
@@ -298,14 +300,14 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
               : (engine.simpleObjects?.resultName(action, target, built.values.name) ?? built.values.name)
         await onChanged({ action, target, name })
       } catch (reason) {
-        refreshFailure = '操作已生效，但对象刷新失败，请手动刷新。' + (reason instanceof Error ? reason.message : '')
+        refreshFailure = [t('操作已生效，但对象刷新失败，请手动刷新。'), reason instanceof Error ? t(reason.message) : ''].filter(Boolean).join('\n')
       }
       if (keepOpen)
         reopen = { ...target, table: action === ObjectAction.CreateTable ? (getDatabaseAdapter(connection.type).tableDesign?.identity(target, built.values.name) ?? built.values.name) : target.table }
     } catch (reason) {
       if (!controller.signal.aborted) {
         const error = reason instanceof Error ? reason.message : '操作失败'
-        setError(error + (submitted ? '；如连接在提交时断开，请刷新核对实际状态后再决定是否重试。' : ''))
+        setError(submitted ? [t(error), t('如连接在提交时断开，请刷新核对实际状态后再决定是否重试。')].join('\n') : error)
       }
     } finally {
       release(controller)

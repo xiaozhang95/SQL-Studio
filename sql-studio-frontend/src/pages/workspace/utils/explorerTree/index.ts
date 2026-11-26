@@ -59,7 +59,8 @@ export function buildExplorerTree(
   layouts: Readonly<Record<string, DatabaseExplorerAdapter | undefined>> = {},
   groupNames: readonly string[] = [],
   closedDatabases: Readonly<Record<string, readonly string[]>> = {},
-  groupLabel: (group: string) => string = (group) => group
+  groupLabel: (group: string) => string = (group) => group,
+  t: (text: string) => string = (text) => text
 ) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
@@ -125,7 +126,7 @@ export function buildExplorerTree(
           databaseNode.isLeaf = false
           databaseNode.databaseState = databaseOpenState(state, closedDatabases[id], db)
           const stateLabel = { closed: '未打开', opening: '正在打开', open: '已打开', error: '打开失败' }[databaseNode.databaseState]
-          databaseNode.tooltip = `${db}\n${stateLabel}`
+          databaseNode.tooltip = `${db}\n${t(stateLabel)}`
           const tables = state.tables[db]
           if (open.has(databaseNode.key) && !tables && !state.tableErrors[db]) ready = false
           if (tables) loadedKeys.push(databaseNode.key)
@@ -202,11 +203,11 @@ export function buildExplorerTree(
                 }
                 addDetails('columns', '字段', '暂无字段', 'column', details.columns, (item, column) => {
                   item.primary = column.key === 'PRI'
-                  item.tooltip = `${column.name} · ${column.type}${item.primary ? ' · 主键' : ''}${column.comment ? `\n${column.comment}` : ''}`
+                  item.tooltip = `${column.name} · ${column.type}${item.primary ? ` · ${t('主键')}` : ''}${column.comment ? `\n${column.comment}` : ''}`
                 })
                 addDetails('indexes', '索引', '暂无索引', 'index', details.indexes, (item, index) => {
                   item.primary = index.primary || index.name === 'PRIMARY'
-                  item.tooltip = `${index.name}\n${indexDescription(index)}`
+                  item.tooltip = `${index.name}\n${indexDescription(index, t)}`
                 })
                 if (details.foreignKeys || details.foreignKeyError)
                   addDetails(

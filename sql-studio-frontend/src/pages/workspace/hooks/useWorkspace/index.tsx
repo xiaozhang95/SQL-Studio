@@ -905,7 +905,7 @@ export const useWorkspace = (active = true) => {
     objects,
     running,
     request,
-    message: { ...message, error: setOperationError },
+    message: { info: (content) => message.info(typeof content === 'string' ? t(content) : content), error: setOperationError },
     startRun,
     finishRun,
     publishResult,

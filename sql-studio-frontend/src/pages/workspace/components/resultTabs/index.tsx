@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RunState } from '@/typings/workspace'
 
-import { resultControlProps, resultTabLayout, resultToolbarIconInset, resultToolbarSpacing, workspaceTabBarSpacer, workspaceTabBarStyle } from '../../constant/layout'
+import { resultControlProps, resultTabLayout, resultToolbarIconInset, resultToolbarSpacing, workspaceInset, workspaceTabBarStyle } from '../../constant/layout'
 import { resultOutputs } from '../../utils/queryOutput'
 
 type Props = {
@@ -24,7 +24,7 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
   const indexedResults = results.map((entry, resultIndex) => ({ ...entry, resultIndex }))
   const visibleResults = compact ? indexedResults.filter(({ key }) => key === activeKey) : indexedResults
   return (
-    <Flex className="result-navigation" wrap align="center" style={{ minWidth: 0, borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)' }}>
+    <Flex className="result-navigation" wrap align="center" style={{ minWidth: 0, paddingInline: workspaceInset, borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)' }}>
       <Tabs
         className="statement-result-tabs"
         aria-label={t('输出内容')}
@@ -37,10 +37,6 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
         tabBarGutter={4}
         activeKey={activeKey}
         onChange={onChange}
-        tabBarExtraContent={{
-          left: <span aria-hidden="true" style={workspaceTabBarSpacer} />,
-          right: <span aria-hidden="true" style={workspaceTabBarSpacer} />
-        }}
         items={[
           { key: 'messages', label: t('消息'), icon: running ? <LoadingOutlined spin /> : <MessageOutlined /> },
           { key: 'summary', label: t('摘要'), icon: <ProfileOutlined /> },
@@ -48,7 +44,7 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
             key,
             disabled: running,
             label: (
-              <span title={t('语句 {value1}\n{value2}', { value1: index + 1, value2: item.sql || run.title || '' })}>
+              <span title={t('语句 {value1}\n{value2}', { value1: index + 1, value2: item.sql || t(run.title ?? '') })}>
                 {t('结果 ')}
                 {resultIndex + 1}
               </span>

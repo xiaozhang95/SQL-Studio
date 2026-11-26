@@ -7,6 +7,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, nativeThem
 
 import { startBackend, waitForService } from './backend.mjs'
 import { createClipboardWriter } from './clipboard.mjs'
+import { desktopMessages } from './messages.mjs'
 import { isAppURL, validTitleBarTheme } from './policy.mjs'
 import { createQuitGuard } from './quit.mjs'
 import { createSQLSaves } from './sql-save.mjs'
@@ -53,6 +54,11 @@ let quitGuard
 const startupAbort = new AbortController()
 const developmentURL = 'http://127.0.0.1:15173'
 
+async function currentDesktopMessages() {
+  const { language } = await readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors)
+  return desktopMessages[language]
+}
+
 function shutdown(afterStop = () => app.quit()) {
   quitting = true
   startupAbort.abort()
@@ -72,7 +78,7 @@ function shutdown(afterStop = () => app.quit()) {
 
 const requestExit = (afterStop) => (quitGuard ? quitGuard.request(afterStop) : shutdown(afterStop))
 
-async function checkDevelopmentServices(signal) {
+async function checkDevelopmentServices(signal, messages) {
   const response = await fetch(`${developmentURL}/@vite/client`, {
     redirect: 'error',
     signal: AbortSignal.any([signal, AbortSignal.timeout(2000)])
@@ -80,14 +86,14 @@ async function checkDevelopmentServices(signal) {
   void response?.body?.cancel().catch(() => {})
   signal.throwIfAborted()
   if (!response?.ok || !response.headers.get('content-type')?.includes('javascript')) {
-    throw new Error(`无法连接前端 Vite 开发服务（${developmentURL}）。请在 sql-studio-frontend 目录运行 pnpm dev 后重试。`)
+    throw new Error(messages.viteUnavailable(developmentURL))
   }
 
   try {
     await waitForService(developmentURL, { signal, timeout: 2000 })
   } catch (error) {
     signal.throwIfAborted()
-    throw new Error('无法通过 Vite 代理连接 Go 后端。请在 sql-studio-backend 目录运行 go run main.go，并确认后端监听 127.0.0.1:18080。', { cause: error })
+    throw new Error(messages.proxyUnavailable, { cause: error })
   }
 }
 
@@ -102,7 +108,7 @@ async function loadIcons() {
   return { icon, appIcon }
 }
 
-function createWindow(dark, appIcon, updates) {
+function createWindow(dark, appIcon, updates, messages) {
   let origin = ''
   const background = dark ? '#141414' : '#f5f5f5'
   // 原生按钮透出渲染层背景，弹窗遮罩出现时也与标题栏连成一体。
@@ -144,12 +150,13 @@ function createWindow(dark, appIcon, updates) {
     send: (id) => contents.send('sql-studio:prepare-quit', id),
     shutdown,
     confirmForce: async () => {
+      const copy = await currentDesktopMessages()
       const result = await dialog.showMessageBox(window, {
         type: 'warning',
-        title: '退出 SQL Studio',
-        message: '工作台没有响应，是否强制退出？',
-        detail: '尚未保存的 SQL 和其他修改可能丢失，连接清理可能无法完成。',
-        buttons: ['取消', '强制退出'],
+        title: copy.quitTitle,
+        message: copy.quitQuestion,
+        detail: copy.quitDetail,
+        buttons: [copy.cancel, copy.forceQuit],
         defaultId: 0,
         cancelId: 0,
         noLink: true
@@ -270,7 +277,7 @@ function createWindow(dark, appIcon, updates) {
         await Promise.race([
           Promise.all([window.loadURL(url), themeReady]),
           delay(20000, undefined, { signal: AbortSignal.any([timeout.signal, startupAbort.signal]) }).then(() => {
-            throw new Error('工作台加载超时，请重新打开应用。')
+            throw new Error(messages.workbenchTimeout)
           })
         ])
         startupAbort.signal.throwIfAborted()
@@ -282,10 +289,11 @@ function createWindow(dark, appIcon, updates) {
 }
 
 if (dataError) {
-  const message = `无法初始化数据目录：\n${dataDirectory}\n\n${dataError}\n\n请检查目录权限，或用 SQL_STUDIO_DATA_DIR 指定一个可写目录后重试。`
+  const copy = await currentDesktopMessages()
+  const message = copy.dataDirectoryError(dataDirectory, dataError)
   console.error(`[electron] ${message}`)
   trace(`fatal: ${dataError}`)
-  dialog.showErrorBox('SQL Studio 无法启动', message)
+  dialog.showErrorBox(copy.startupFailed, message)
   app.exit(1)
 } else if (!app.requestSingleInstanceLock()) {
   // 锁失败既可能是“已有实例在运行”，也可能是数据目录不可写，都写进日志便于排查。
@@ -306,24 +314,33 @@ if (dataError) {
   startupTask = app
     .whenReady()
     .then(async () => {
-      if (!app.isPackaged) await checkDevelopmentServices(startupAbort.signal)
-      const [appearance, { icon, appIcon }] = await Promise.all([readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors), loadIcons()])
+      const appearance = await readStartupAppearance(stateDirectory, nativeTheme.shouldUseDarkColors)
+      const messages = desktopMessages[appearance.language]
+      if (!app.isPackaged) await checkDevelopmentServices(startupAbort.signal, messages)
+      const { icon, appIcon } = await loadIcons()
       startupAbort.signal.throwIfAborted()
       const updates = createDesktopUpdates(trace)
-      const desktop = createWindow(appearance.dark, appIcon, updates)
-      startupScreen = await createStartupScreen(desktop.window, { icon, dark: appearance.dark, followSystem: appearance.preference === 'system' })
+      const desktop = createWindow(appearance.dark, appIcon, updates, messages)
+      startupScreen = await createStartupScreen(desktop.window, {
+        icon,
+        dark: appearance.dark,
+        followSystem: appearance.preference === 'system',
+        language: appearance.language
+      })
       startupAbort.signal.throwIfAborted()
       if (app.isPackaged) {
         backend = await startBackend(
           path.join(process.resourcesPath, 'runtime'),
           dataDirectory,
-          () => {
+          async () => {
+            if (quitting) return
+            const copy = await currentDesktopMessages()
             if (!quitting) {
-              dialog.showErrorBox('SQL Studio 服务已退出', '请重新打开桌面应用。')
+              dialog.showErrorBox(copy.serviceExited, copy.reopen)
               app.quit()
             }
           },
-          { signal: startupAbort.signal }
+          { signal: startupAbort.signal, language: appearance.language }
         )
       }
       startupAbort.signal.throwIfAborted()
@@ -335,12 +352,14 @@ if (dataError) {
         void updates.check().catch((error) => trace(`启动后检查更新失败: ${error.stack ?? error.message}`))
       }
     })
-    .catch((error) => {
+    .catch(async (error) => {
       trace(`启动失败: ${error?.stack || error?.message || error}`)
       if (!quitting) {
         startupScreen?.setStage('error')
         if (!app.isPackaged) console.error(`[electron] ${error.message}`)
-        dialog.showErrorBox('SQL Studio 启动失败', error.message)
+        const copy = await currentDesktopMessages()
+        if (quitting) return
+        dialog.showErrorBox(copy.startupFailed, error.message)
         if (!app.isPackaged) {
           startupScreen?.dispose()
           app.exit(1)

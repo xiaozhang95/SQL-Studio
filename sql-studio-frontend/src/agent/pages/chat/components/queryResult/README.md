@@ -1,6 +1,6 @@
 # 查询结果表格
 
-界面固定文案通过共享 useTranslation 跟随已保存语言切换；SQL、用户输入和数据库返回内容按原文展示。
+界面固定文案及空字符串的占位文本通过共享 useTranslation 跟随已保存语言切换。SQL、用户输入和数据库返回内容按原文展示。
 
 QueryResult({value:unknown,sql?:string,title?:string,tool?:string,showExport?:boolean,showHeader?:boolean})先通过readResult校验真实二维结果，展示主题字体的小尺寸带边框Table：按列位置保留重复列名，固定行号、列类型提示、长文本省略/悬停、横向滚动、连续展示全部返回行、超过 10 行时在固定高度内虚拟滚动、空结果、NULL和空字符串。showHeader默认true，上方显示标题、行列数与耗时；false隐藏整个标题栏。truncated明确提示不能代表全量统计；SQL可展开并复制。原始值不转浮点。showExport默认true，执行工具结果和助手回复中的表格均提供Excel导出；助手回复仅将showHeader传false，隐藏标题栏但保留导出及必要的截断提示。
 

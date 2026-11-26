@@ -61,6 +61,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
   const tablePagination = useTablePagination({ divided: false })
 
   const { t } = useTranslation()
+  const emptyText = t('空字符串')
 
   const cardTitle = showHeader ? (
     <Space size="small">
@@ -103,7 +104,7 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
         width: i === columnWidths.length - 1 ? undefined : columnWidths[i],
         ellipsis: true,
         render: (v: unknown) => {
-          const text = cellText(v)
+          const text = cellText(v, emptyText)
           return (
             <Tooltip title={text}>
               <Typography.Text type={v === null || v === '' ? 'secondary' : undefined}>{text}</Typography.Text>
@@ -184,9 +185,9 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
             {
               key: 'database',
               label: t('数据库'),
-              children: cellText(value.target.database)
+              children: cellText(value.target.database, emptyText)
             },
-            { key: 'engine', label: t('引擎'), children: cellText(value.engine) }
+            { key: 'engine', label: t('引擎'), children: cellText(value.engine, emptyText) }
           ]}
         />
       </ContentCard>
@@ -239,7 +240,10 @@ function ResultContent({ value, sql, title, tool, showHeader = true, showExport 
       dataIndex: String(index),
       ellipsis: true,
       width: key === 'comment' ? 280 : 180,
-      render: (v: unknown) => <Tooltip title={cellText(v)}>{cellText(v)}</Tooltip>
+      render: (v: unknown) => {
+        const text = cellText(v, emptyText)
+        return <Tooltip title={text}>{text}</Tooltip>
+      }
     }))
     return (
       <ResultTable

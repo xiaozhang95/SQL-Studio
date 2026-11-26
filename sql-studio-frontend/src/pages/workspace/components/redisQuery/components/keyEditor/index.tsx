@@ -35,7 +35,7 @@ function formatRemainingTime(seconds: number) {
 }
 
 export default function KeyEditor({ selected, detail, saving, themeMode, onSave, clearError, ttlMillis, onDelete, onRefresh }: Props) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const { token } = theme.useToken()
   const editor = useKeyEditor(selected, detail, ttlMillis, onSave, clearError)
   const remaining = editor.remainingSeconds === undefined ? undefined : formatRemainingTime(editor.remainingSeconds)
@@ -60,7 +60,7 @@ export default function KeyEditor({ selected, detail, saving, themeMode, onSave,
         <Flex align="center" gap={token.marginXXS} wrap style={{ minWidth: 0 }}>
           <Tag style={{ marginInlineEnd: 0 }}>{detail.type}</Tag>
           <Tag style={{ marginInlineEnd: 0 }}>
-            {detail.type === 'string' ? t('字节数') : t('元素数量')} {detail.size.toLocaleString()}
+            {detail.type === 'string' ? t('字节数') : t('元素数量')} {detail.size.toLocaleString(language)}
           </Tag>
           <Tag icon={<ClockCircleOutlined />} style={{ marginInlineEnd: 0 }}>
             {countdown}

@@ -86,9 +86,8 @@ export default function ObjectManagementForm({ manager, themeMode, showErrors = 
             label={t('确认名称')}
             extra={
               <span style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                <span style={{ userSelect: 'none' }}>{t('输入')}</span>
+                <span style={{ userSelect: 'none' }}>{t('输入以下名称以确认')}</span>
                 <span style={{ userSelect: 'all', overflowWrap: 'anywhere', whiteSpace: 'break-spaces' }}>{targetName}</span>
-                <span style={{ userSelect: 'none' }}>{t('确认')}</span>
               </span>
             }
             rules={[{ required: true, message: t('请输入对象名称') }, { validator: (_, value) => (value === targetName ? Promise.resolve() : Promise.reject(new Error(t('对象名称不匹配')))) }]}

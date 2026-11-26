@@ -13,10 +13,11 @@ const defaultFontSize = antdTheme.defaultSeed.fontSize
 export const uiFontSizes = { small: defaultFontSize - 2, standard: defaultFontSize, large: defaultFontSize + 2 } as const satisfies Record<FontSizePreference, number>
 
 export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePreference = 'standard'): ThemeConfig => {
-  const borderColor = themeMode === 'dark' ? '#242424' : '#e2e2e2'
-  const selectedBackground = themeMode === 'dark' ? '#303030' : '#e6e6e6'
+  const dark = themeMode === 'dark'
+  const borderColor = dark ? '#242424' : '#e2e2e2'
+  const selectedBackground = dark ? '#303030' : '#e6e6e6'
   return {
-    algorithm: themeMode === 'dark' ? darkAlgorithm : antdTheme.defaultAlgorithm,
+    algorithm: dark ? darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       colorPrimary: logoPrimary,
       fontSize: uiFontSizes[fontSizeMode],
@@ -24,15 +25,15 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       colorBorder: borderColor,
       colorBorderSecondary: borderColor,
       colorSplit: borderColor,
+      colorBgElevated: dark ? '#181818' : '#f7f7f7',
       controlItemBgActive: selectedBackground,
       controlItemBgActiveHover: selectedBackground,
-      ...(themeMode === 'light'
-        ? {
+      ...(dark
+        ? {}
+        : {
             colorBgLayout: '#f0f0f0',
-            colorBgContainer: '#f5f5f5',
-            colorBgElevated: '#f7f7f7'
-          }
-        : {})
+            colorBgContainer: '#f5f5f5'
+          })
     },
     components: {
       Typography: { colorTextDescription: defaultTextColor },

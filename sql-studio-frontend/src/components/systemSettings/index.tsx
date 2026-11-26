@@ -1,7 +1,7 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { Button, Grid, Modal, theme, Tooltip, Typography } from 'antd'
 
-import { formModalStyles, railButtonStyle } from '@/constant/appearance'
+import { appearance, formModalStyles, railButtonStyle } from '@/constant/appearance'
 import type { DesktopUpdatesModel } from '@/hooks/useDesktopUpdates'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
@@ -31,7 +31,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
             aria-label={t('系统设置')}
             aria-haspopup="dialog"
             aria-expanded={settings.open}
-            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: settingsLayout.railIconSize }} />}
+            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
             disabled={preferences.themeReady === false}
             onClick={settings.show}
           />

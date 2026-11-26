@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { WorkspaceTab } from '@/typings/workspace'
 
-import { workspaceTabBarInset, workspaceTabBarSpacer, workspaceTabBarStyle, workspaceTabLayout } from '../../constant/layout'
+import { workspaceInset, workspaceTabBarSpacer, workspaceTabBarStyle, workspaceTabLayout } from '../../constant/layout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { queryPageContext, workspacePageTitle } from '../../utils/pageTitle'
 import OpenPagesMenu from './openPagesMenu'
@@ -97,7 +97,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
       tabBarExtraContent={{
         left: <span aria-hidden="true" style={workspaceTabBarSpacer} />,
         right: (
-          <Flex align="center" gap="small" style={{ paddingInlineEnd: workspaceTabBarInset }}>
+          <Flex align="center" gap="small" style={{ paddingInlineEnd: workspaceInset }}>
             {runningTabId && !model.activeRunning && (
               <Button type="text" danger icon={<StopOutlined />} onClick={model.cancelQuery}>
                 {t('取消执行')}
