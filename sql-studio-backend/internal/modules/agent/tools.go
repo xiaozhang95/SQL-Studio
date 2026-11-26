@@ -77,7 +77,7 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		if !found {
 			return nil, errors.New("数据库未经发现或不存在，请先列出该连接的数据库")
 		}
-		if connection.Type != "mysql" && connection.Type != "mariadb" && connection.Type != "postgresql" && connection.Type != "" {
+		if !supportedSQLEngine(connection.Type) {
 			return nil, errors.New("该连接引擎尚不支持")
 		}
 		// Revalidate a discovered target; discovery history is not proof that it still exists.
@@ -92,7 +92,7 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		if connection.Type == "" {
 			connection.Type = "mysql"
 		}
-		if connection.Type != "mysql" && connection.Type != "mariadb" && connection.Type != "postgresql" {
+		if !supportedSQLEngine(connection.Type) {
 			return nil, errors.New("该连接引擎尚不支持")
 		}
 		names, err := s.db.Databases(ctx, args.ConnectionID)
@@ -136,13 +136,13 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		if err := decode(call.Function.Arguments, &args); err != nil {
 			return nil, err
 		}
-		if err := ValidateWriteSQL(args.SQL); err != nil {
-			return nil, err
-		}
 		if state.target.ConnectionID == "" || state.target.Database == "" {
 			return nil, errors.New("请先确定数据库")
 		}
 		connection, _ := findConnection(state.connections, state.target.ConnectionID)
+		if err := ValidateEngineWriteSQL(args.SQL, connection.Type); err != nil {
+			return nil, err
+		}
 		if err := ValidateSQLScope(args.SQL, connection.Type, state.target.Database); err != nil {
 			return nil, err
 		}
@@ -174,6 +174,15 @@ func (s *Service) execute(ctx context.Context, state *toolState, call model.Tool
 		return nil, errors.New("不支持的工具")
 	}
 }
+func supportedSQLEngine(engine string) bool {
+	switch engine {
+	case "", "mysql", "mariadb", "postgresql", "oracle":
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Service) run(ctx context.Context, target model.Target, name, table, sql string) (json.RawMessage, error) {
 	if target.ConnectionID == "" || target.Database == "" {
 		return nil, errors.New("尚未确定数据库。先发现连接与数据库；目标不明确时通过聊天追问，再调用use_database")

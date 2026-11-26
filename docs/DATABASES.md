@@ -5,6 +5,7 @@
 | MySQL | mysql | 3306 | 不需要 |
 | MariaDB | mariadb | 3306 | 不需要；Docker 端口映射按宿主机填写 |
 | PolarDB PostgreSQL / PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
+| Oracle | oracle | 1521 | 服务名 FREEPDB1，可改为监听器注册的服务 |
 | GreptimeDB | greptimedb | 4002 | public，可改为账号有权连接的库 |
 
 PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases` 和后端 `internal` 下独立注册，统一入口负责分派。MariaDB 和 GreptimeDB 复用 MySQL 线协议，并各自维护 SQL 与对象能力。
@@ -15,7 +16,7 @@ PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases`
 
 每个查询页独立保存连接、数据库、表和 SQL。编辑器执行与重新执行按原 SQL 读取结果，行数由 SQL 决定，仍受每条约 8 MiB 的结果大小预算和 30 秒执行期限约束。首行超出结果预算时改为单独的只读预览。双击表、右键「查询数据」或刷新表数据页使用 `LIMIT 1000` 的只读预览。右键「新建查询」生成可编辑的普通 SELECT。编辑器显式允许查询、DDL 和 DML，API 默认只读。单语句和批次 JSON 请求最大 32 MiB。整数、DECIMAL 和 NUMERIC 保持文本，二进制转十六进制，保留 NULL 和重复列名。语句错误在发起页的消息和摘要中显示，执行请求和对象加载错误显示在顶部。打开已保存连接失败时，具体原因显示在左侧对应连接下方，可就地重试。主动取消在消息、摘要和历史中显示为「执行已取消」。失败或取消停止后续语句，保留已完成结果及已提交写入。
 
-MySQL、MariaDB 和 PostgreSQL 的每个多语句批次使用独立会话，批次内共享会话设置、临时表及事务。请将事务控制语句和事务内 SQL 放在同一次运行中。临时表和 SQL 预处理语句只在创建它们的批次内可用。批次结果的单条重跑已禁用，可核对原脚本后在编辑器中运行。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。`CALL` 和 `EXECUTE` 返回的数据集各自显示为结果页签，执行历史按语句记录。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。普通运行仍遵循数据库的提交方式。
+MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句批次使用独立会话，批次内共享会话设置、临时对象及事务。请将事务控制语句和事务内 SQL 放在同一次运行中。批次结果通过原脚本重跑。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。这两个引擎的 `CALL` 和 `EXECUTE` 返回的数据集各自显示为结果页签，执行历史按语句记录。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
@@ -34,6 +35,29 @@ PostgreSQL 数据库结构页展示 schema 列表，schema 结构页展示该 sc
 PostgreSQL 支持新建、重命名和删除 Schema；删除采用 RESTRICT，只允许删除空 Schema。重命名更新相关页面范围，但不改写 SQL 草稿或历史结果。
 
 PostgreSQL 查询页可独立选择 schema。物理数据库与 schema 分别保存/请求，未限定表名在所选 schema 中解析；清空使用服务器默认搜索路径。结构列表分列 Schema/表名，对象页标签为 schema.table，历史与刷新记录执行时 schema。工作区恢复直接读取当前结果快照。
+
+## Oracle
+
+新建连接选择 **Oracle**，输入监听地址、端口、服务名和数据库账号。默认端口为 `1521`，Oracle Free 的应用容器数据库服务名为 `FREEPDB1`。其他实例按监听器公布的服务填写。启用 TLS 时使用 Oracle TCPS 监听端口，并验证系统信任链及主机名。应用使用纯 Go 驱动，适配以 Oracle 19c 及之后版本为目标。
+
+以下 PowerShell 命令可在本地 Docker 启动单独的 Oracle Free 实例，并提示输入管理员与应用账号的密码。
+
+```powershell
+$env:ORACLE_PASSWORD = Read-Host "Oracle admin password" -MaskInput
+$env:APP_USER = "SQLSTUDIO"
+$env:APP_USER_PASSWORD = Read-Host "SQLSTUDIO password" -MaskInput
+docker run -d --name sql-studio-oracle -p 127.0.0.1:1521:1521 -e ORACLE_PASSWORD -e APP_USER -e APP_USER_PASSWORD gvenzl/oracle-free:23-slim
+Remove-Item Env:ORACLE_PASSWORD, Env:APP_USER, Env:APP_USER_PASSWORD
+docker logs --tail 30 sql-studio-oracle
+```
+
+日志出现 `DATABASE IS READY TO USE!` 后，在应用中填 `127.0.0.1`、`1521`、`FREEPDB1`、`SQLSTUDIO` 与应用账号密码。宿主机端口已占用时可使用 `127.0.0.1:1522:1521` 映射，并在连接表单填写 `1522`。[Oracle Free 容器说明](https://github.com/gvenzl/oci-oracle-free)
+
+- 对象树按服务 → Schema → 表/视图显示，可展开列、主键、索引和外键。查看 DDL 使用 `DBMS_METADATA`，跨 Schema 读取完整 DDL 由数据库权限决定。
+- SQL 窗口支持 SELECT、DDL、DML、PL/SQL、选区运行、补全、历史、结果导出和取消。表预览使用 `FETCH FIRST 1000 ROWS ONLY`。脚本通过分号切分 SQL，PL/SQL 块及程序定义用独立一行的 `/` 分隔。工作台普通写入逐条提交，显式事务与其语句放在同一次运行。Oracle DDL 会隐式提交，已提交的操作会保留。
+- 支持表设计、重命名、清空、删除表或视图，以及数据网格编辑。复杂字段可通过 SQL 窗口处理。转储包含表和视图 DDL，也可流式导出表数据。恢复前需准备同名 Schema 和外部依赖；完整实例级备份使用 Oracle Data Pump。
+- 同步可以将一个源 Schema 的普通表复制到目标账号所属的已有空 Schema。支持常用字符、数字、日期、时间戳、RAW、CLOB 和 BLOB 数据，保留主键及延后建立的外键。视图跳过，依赖范围外的外键、外部表、分区表和需另行迁移的复杂类型会在检查时被拒绝。数据按表提交，DDL 和已经提交的表数据会保留。
+- 监控包括登录用户的表、视图、索引和无效对象。有 `V$SESSION` 读取权限时显示当前容器的用户会话。AI SQL 使用 Oracle 方言，Agent 支持发现连接、读取元数据和查询，写入沿用逐次确认。
 
 ## MariaDB 11.4
 
@@ -65,7 +89,7 @@ Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.
 
 ## SQL 转储
 
-导出开始时固定连接、数据库、Schema 和对象范围，先按引擎收集结构，再通过专用 SSE 接口逐批读取表数据并写入文件。视图只导出结构。MySQL/MariaDB 先创建占位视图再恢复定义，PostgreSQL 按依赖顺序恢复转储内的视图。关闭所属连接或数据库会取消导出。
+导出开始时固定连接、数据库、Schema 和对象范围，先按引擎收集结构，再通过专用 SSE 接口逐批读取表数据并写入文件。视图只导出结构。MySQL/MariaDB 先创建占位视图再恢复定义，PostgreSQL 和 Oracle 按依赖顺序恢复转储内的视图。关闭所属连接或数据库会取消导出。
 
 每个对象完成后复核 DDL，结构变化或数据列不匹配时停止。后端独立限制为 2 路并发、30 分钟和单行 8 MiB，事件及错误约定见 [流式转储 API](API.md#流式转储)。原生文件流只在全部成功后提交，失败或取消中止写入；兼容下载模式缓存上限 256 MiB，超限不下载部分文件，触发下载也不代表已核验落盘。
 

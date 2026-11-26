@@ -81,7 +81,7 @@ export default function DatabaseSyncConnection({ side, profile, options, value, 
             />
           </Form.Item>
           {profile.database && (
-            <Form.Item label={t('维护数据库')} htmlFor={field + '-maintenance'}>
+            <Form.Item label={t(profile.databaseLabel ?? '维护数据库')} htmlFor={field + '-maintenance'}>
               <Input
                 id={field + '-maintenance'}
                 autoComplete="off"

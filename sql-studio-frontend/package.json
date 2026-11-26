@@ -1,10 +1,10 @@
 {
   "name": "sql-studio-frontend",
   "private": true,
-  "version": "1.4.32",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
-    "test:sql": "node --test tests/mysql.test.mjs",
+    "test:sql": "node --test tests/mysql.test.mjs tests/oracle.test.mjs",
     "test:storage": "node --test tests/user-state.test.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",

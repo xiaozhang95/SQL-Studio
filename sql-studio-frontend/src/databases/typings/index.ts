@@ -6,7 +6,7 @@ import type { Column, DBTable, MonitorSnapshot, QueryResult } from '@/typings/da
 import type { DatabaseDefinition, DatabaseObjectAdapter, ObjectAction, ObjectFormValues, ObjectTarget, TableDesignAdapter } from './objectManagement'
 
 /** 与服务端数据库类型保持一致；常量对象兼容 erasableSyntaxOnly。 */
-export const DatabaseEngine = { MySQL: 'mysql', MariaDB: 'mariadb', PostgreSQL: 'postgresql', GreptimeDB: 'greptimedb', Redis: 'redis' } as const
+export const DatabaseEngine = { MySQL: 'mysql', MariaDB: 'mariadb', PostgreSQL: 'postgresql', Oracle: 'oracle', GreptimeDB: 'greptimedb', Redis: 'redis' } as const
 export type DatabaseType = (typeof DatabaseEngine)[keyof typeof DatabaseEngine]
 export type SQLDatabaseType = Exclude<DatabaseType, 'redis'>
 
@@ -22,6 +22,10 @@ export interface DatabaseProfile {
   readonly className: string
   readonly port: number
   readonly database?: string
+  readonly databaseLabel?: string
+  readonly databaseRequiredMessage?: string
+  readonly databaseHelp?: string
+  readonly syncScope?: 'schema'
   readonly optionalUsername?: boolean
   readonly iconPresentation?: 'brand'
   /** 品牌图形的固定衬底，确保主题及选中背景下对比度稳定。 */
@@ -54,6 +58,7 @@ export type RowCellChange = { columnIndex: number; value: string | null }
 
 export interface DatabaseAdapter {
   readonly sessionBatch?: boolean
+  readonly objectSQLBatch?: boolean
   readonly batchStatementRequiresSession?: boolean
   readonly foreignKeys?: boolean
   readonly dumpFile?: {
@@ -87,6 +92,7 @@ export interface DatabaseAdapter {
   }
   readonly simpleObjects?: {
     readonly actions: readonly ObjectAction[]
+    canApply?: (action: ObjectAction, target: ObjectTarget) => boolean
     sql: (action: ObjectAction, target: ObjectTarget, name: string) => string
     initialName: (action: ObjectAction, target: ObjectTarget) => string
     resultName: (action: ObjectAction, target: ObjectTarget, name: string) => string

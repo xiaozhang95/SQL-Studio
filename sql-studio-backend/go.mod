@@ -7,6 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/redis/go-redis/v9 v9.23.0
+	github.com/sijms/go-ora/v2 v2.9.0
 )
 
 require (

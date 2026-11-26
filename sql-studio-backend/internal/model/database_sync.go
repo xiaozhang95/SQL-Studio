@@ -16,7 +16,7 @@ type DatabaseSyncExternal struct {
 	TLS      bool   `json:"tls,omitempty"`
 }
 
-// DatabaseSyncRequest identifies two endpoints of the same database engine and an unused target name.
+// DatabaseSyncRequest selects two endpoints and the engine's database or schema scope.
 type DatabaseSyncRequest struct {
 	SourceConnectionID string                `json:"sourceConnectionId,omitempty"`
 	SourceExternal     *DatabaseSyncExternal `json:"sourceExternal,omitempty"`
@@ -30,17 +30,19 @@ type DatabaseSyncRequest struct {
 }
 
 type DatabaseSyncPlan struct {
-	Tables       int `json:"tables"`
-	SkippedViews int `json:"skippedViews"`
+	Tables         int  `json:"tables"`
+	SkippedViews   int  `json:"skippedViews"`
+	ExistingTarget bool `json:"existingTarget,omitempty"`
 }
 
 // DatabaseSyncProgress counts confirmed writes, including when a later operation fails.
 type DatabaseSyncProgress struct {
-	Phase        string `json:"phase"`
-	Table        string `json:"table,omitempty"`
-	Created      bool   `json:"created"`
-	Completed    int    `json:"completed"`
-	Tables       int    `json:"tables"`
-	SkippedViews int    `json:"skippedViews"`
-	Rows         int64  `json:"rows"`
+	Phase          string `json:"phase"`
+	Table          string `json:"table,omitempty"`
+	Created        bool   `json:"created"`
+	Completed      int    `json:"completed"`
+	Tables         int    `json:"tables"`
+	SkippedViews   int    `json:"skippedViews"`
+	Rows           int64  `json:"rows"`
+	ExistingTarget bool   `json:"existingTarget,omitempty"`
 }

@@ -21,6 +21,7 @@
 | mariadb               | 独立连接生命周期，组合 MySQL 线协议与 MariaDB 元数据适配           |
 | greptimedb            | 组合 MySQL 线协议，处理 GreptimeDB 语句、表结构和会话 |
 | postgresql            | PostgreSQL 驱动、schema 元数据和结果编码                           |
+| oracle                | Oracle 服务名、Schema 元数据、SQL/PLSQL、监控和同步                |
 | redis                 | Redis 单机、哨兵、集群连接及键、命令、发布订阅                       |
 | database              | 只按连接类型分派，具体实现由 app 注入                              |
 | connection            | AES-GCM 密码与原子落盘                                             |
@@ -44,7 +45,7 @@ Go 服务默认仅监听 127.0.0.1:18080，提供构建网页及 API。退出给
 
 Electron 项目的 `pnpm build` 构建 Vite dist 与 Go 后端，将网页复制到随包的 runtime/web，运行时通过 SQLDESK_WEB_DIR 指定目录。app 调用 webui.Register，以 Gin StaticFS/StaticFileFS 注册前端路由，API 命名空间优先；独立开发运行默认读取 `../sql-studio-frontend/dist`，Go 编译不要求生成网页资源。
 
-rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和 database/sql，不执行 SQL 或访问HTTP/存储；mysql/postgresql 的导出方法负责方言及只读事务，metadata 负责凭据/并发/期限，httpapi 仅编码 SSE。
+rowstream 是引擎共用的导出游标扫描基础设施，只依赖 model 和 database/sql。MySQL、PostgreSQL 和 Oracle 的导出方法负责方言及只读事务，metadata 负责凭据、并发和期限，httpapi 编码 SSE。
 
 modules/workspace 只依赖model和仓库消费接口；statefile 只实现当前分片、CAS索引提交及未引用内容回收。布局/范围是轻量索引，草稿与结果按SHA256独立保存，GET索引不解析返回所有结果，PUT响应也不回传结果。原子性边界为最后的索引替换，崩溃可能留下孤立内容但不会让索引指向尚未写完的内容；只使用当前 workspace-index 与内容分片。未引用内容异步回收，删除前重新核对最新引用。
 

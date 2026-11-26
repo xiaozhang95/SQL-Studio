@@ -209,13 +209,19 @@ func agentRelations(tokens []sqlToken, database string, mysql bool) (sqlRelation
 	return relations, nil
 }
 
-func validateAgentCalls(tokens []sqlToken, relations map[int]bool) error {
+func validateAgentCalls(tokens []sqlToken, relations map[int]bool, engine string) error {
 	for i, token := range tokens {
 		if !token.identifier || i+1 >= len(tokens) || tokens[i+1].text != "(" || relations[i] {
 			continue
 		}
-		if i >= 2 && tokens[i-1].text == "." && !strings.EqualFold(tokens[i-2].text, "pg_catalog") {
+		if i >= 2 && tokens[i-1].text == "." && (engine == "oracle" || !strings.EqualFold(tokens[i-2].text, "pg_catalog")) {
 			return errAgentSQL
+		}
+		if engine == "oracle" && token.quote == 0 {
+			switch token.word() {
+			case "NVL", "NVL2", "LISTAGG", "TO_NUMBER", "TO_TIMESTAMP_TZ", "NUMBER", "VARCHAR2", "NVARCHAR2", "NCHAR", "RAW":
+				continue
+			}
 		}
 		found := false
 		for _, name := range safeAgentCalls {
@@ -243,9 +249,15 @@ func ValidateReadSQL(sql, engine, database string) error {
 	default:
 		return errAgentSQL
 	}
+	if engine == "oracle" && tokens[0].word() != "SELECT" && tokens[0].word() != "WITH" {
+		return errAgentSQL
+	}
 	for _, token := range tokens {
 		if !token.identifier {
 			continue
+		}
+		if engine == "oracle" && (token.word() == "FUNCTION" || token.word() == "PROCEDURE" || token.word() == "NEXTVAL" || token.word() == "CURRVAL") {
+			return errAgentSQL
 		}
 		switch token.word() {
 		case "INSERT", "UPDATE", "DELETE", "DROP", "TRUNCATE", "REPLACE", "CREATE", "ALTER", "INTO", "SET", "CALL", "DO", "EXECUTE", "PREPARE", "LOCK", "OUTFILE", "DUMPFILE", "FOR", "SHARE":
@@ -270,7 +282,7 @@ func validateAgentScope(tokens []sqlToken, engine, database string) error {
 	if err != nil {
 		return err
 	}
-	if err := validateAgentCalls(tokens, relations.columnLists); err != nil {
+	if err := validateAgentCalls(tokens, relations.columnLists, engine); err != nil {
 		return err
 	}
 	if mysql {

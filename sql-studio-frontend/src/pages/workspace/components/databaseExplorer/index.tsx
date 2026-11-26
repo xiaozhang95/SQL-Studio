@@ -291,7 +291,8 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             !('key' in item) ||
             !unavailable.includes(String(item.key)) ||
             Boolean(node.kind === 'database' && item.key === 'edit' && engine.databaseEditor) ||
-            supported.some((action) => action === actionForKey[String(item.key) as keyof typeof actionForKey]) ||
+            supported.some((action) => action === actionForKey[String(item.key) as keyof typeof actionForKey] &&
+              engine.simpleObjects?.canApply?.(action, { connectionId: id, database: db, table: node.table ?? '', schema: node.schema, view: node.view }) !== false) ||
             Boolean(engine.tableDesign && ((item.key === 'create-table' && node.schema) || (node.kind === 'table' && (item.key === 'create' || item.key === 'design'))))
         )
         .map((item) =>

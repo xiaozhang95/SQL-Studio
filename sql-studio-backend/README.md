@@ -52,3 +52,5 @@ PolarDB PostgreSQL 由 internal/postgresql 独立实现，经 internal/database 
 MariaDB 11.4 由 internal/mariadb 独立组装，共用 MySQL 线协议。真实回归：设置 SQLDESK_MARIADB_INTEGRATION=1、SQLDESK_MARIADB_PASSWORD，可选 SQLDESK_MARIADB_HOST/SQLDESK_MARIADB_PORT（测试默认 127.0.0.1:3307），执行 `go test -count=1 -v ./tests/integration -run TestMariaDBIntegration`。仅创建随机 sqldesk_mariadb_ 临时库，覆盖真实元数据、精确值、RETURNING、6102 行流式读取、只读边界、取消及关闭重开，并验证清理；不读取现有业务表。
 
 GreptimeDB 通过 MySQL 线协议读取对象并执行 SQL/TQL。真实回归覆盖视图投影字段及双引号 `USE`，隔离实例和启用方式见[集成测试](tests/integration/README.md)。
+
+Oracle 由 [internal/oracle](internal/oracle/README.md) 使用纯 Go 驱动接入。容器配置和服务名见 [Oracle 连接说明](../docs/DATABASES.md#oracle)。隔离联调运行 `go test -count=1 -v ./internal/oracle -run TestOracleIntegration`，测试账户和端口通过该包文档列出的环境变量指定。

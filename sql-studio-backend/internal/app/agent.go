@@ -139,11 +139,11 @@ func (c agentCredentials) Credentials(ctx context.Context) (agentmodel.AICredent
 }
 
 func (d agentDatabase) Write(ctx context.Context, target agentmodel.Target, sql string) (json.RawMessage, error) {
-	if err := agent.ValidateWriteSQL(sql); err != nil {
-		return nil, err
-	}
 	engine, err := d.agentTargetEngine(target.ConnectionID)
 	if err != nil {
+		return nil, err
+	}
+	if err := agent.ValidateEngineWriteSQL(sql, engine); err != nil {
 		return nil, err
 	}
 	if err := agent.ValidateSQLScope(sql, engine, target.Database); err != nil {

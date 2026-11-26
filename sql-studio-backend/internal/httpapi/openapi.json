@@ -81,7 +81,7 @@
     "/database-sync/check": {
       "post": {
         "operationId": "checkDatabaseSync",
-        "summary": "只读检查同引擎源库、目标库和同步范围",
+        "summary": "只读检查同引擎的源、目标及同步范围",
         "requestBody": {
           "required": true,
           "content": {
@@ -109,6 +109,10 @@
                     },
                     "skippedViews": {
                       "type": "integer"
+                    },
+                    "existingTarget": {
+                      "type": "boolean",
+                      "description": "Oracle 同步使用已有的空目标 Schema"
                     }
                   }
                 }
@@ -136,7 +140,7 @@
     "/database-sync/run": {
       "post": {
         "operationId": "runDatabaseSync",
-        "summary": "重新检查、排他创建目标库并流式同步",
+        "summary": "重新检查后流式同步到新库或 Oracle 空 Schema",
         "requestBody": {
           "required": true,
           "content": {
@@ -1778,7 +1782,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "PostgreSQL 和 GreptimeDB 的可选数据库，省略时使用连接默认库"
+            "description": "PostgreSQL、GreptimeDB 的数据库或 Oracle 的服务名，省略时使用连接默认值"
           }
         ],
         "responses": {
@@ -2526,7 +2530,7 @@
         "tags": [
           "查询"
         ],
-        "description": "支持 MySQL、MariaDB 和 PostgreSQL，同批次使用一个物理会话。JSON 请求最多 32 MiB。每条最多 30 秒，整批最多 30 分钟，共用查询的 4 个并发槽。首个语句错误停止后续执行。按行返回 NDJSON：statement 事件包含从 0 开始的 index、result 或 error，已识别的语句错误附 statementError=true，MySQL/MariaDB 成功 USE 时附 database；随后发送 done。流开始后的会话错误和 PostgreSQL 批次结束时未完成的事务通过 error 事件报告。取消不能撤销已提交写入。",
+        "description": "支持 MySQL、MariaDB、PostgreSQL 和 Oracle。同批次使用一个物理会话，共用查询的 4 个并发槽，单条最多 30 秒、整批最多 30 分钟。JSON 请求最多 32 MiB。首个语句错误后停止。按行返回 NDJSON，statement 附从 0 开始的 index、result 或 error，已识别语句错误附 statementError=true，MySQL/MariaDB 成功 USE 时附 database。流开始后的会话错误及 PostgreSQL、Oracle 批次结束时未完成的事务通过 error 报告。已提交的写入会保留。",
         "parameters": [
           {
             "name": "id",
@@ -2557,7 +2561,7 @@
                   },
                   "schema": {
                     "type": "string",
-                    "description": "PostgreSQL 的初始查询 Schema"
+                    "description": "PostgreSQL 或 Oracle 的初始查询 Schema"
                   },
                   "allowWrite": {
                     "type": "boolean",
@@ -3190,7 +3194,7 @@
             }
           }
         },
-        "description": "按显式连接、数据库、表读取，最长 10 秒。支持 MySQL、MariaDB 和 PostgreSQL（含 PolarDB）。无外键或 GreptimeDB 返回空数组。"
+        "description": "按显式连接、数据库、表读取，最长 10 秒。支持 MySQL、MariaDB、PostgreSQL（含 PolarDB）和 Oracle。无外键或 GreptimeDB 返回空数组。"
       }
     },
     "/connections/{id}/session": {
@@ -3961,13 +3965,14 @@
               "mysql",
               "mariadb",
               "postgresql",
+              "oracle",
               "greptimedb"
             ],
             "default": "mysql"
           },
           "database": {
             "type": "string",
-            "description": "仅 PostgreSQL 和 GreptimeDB 可指定维护库"
+            "description": "PostgreSQL、GreptimeDB 填写维护库，Oracle 填写服务名。"
           },
           "host": {
             "type": "string",
@@ -4063,7 +4068,8 @@
           },
           "sourceDatabase": {
             "type": "string",
-            "maxLength": 64
+            "description": "源数据库，Oracle 使用源 Schema。",
+            "maxLength": 128
           },
           "targetConnectionId": {
             "type": "string"
@@ -4073,7 +4079,8 @@
           },
           "targetDatabase": {
             "type": "string",
-            "maxLength": 64
+            "description": "目标数据库，Oracle 使用目标账号所属的已有空 Schema。",
+            "maxLength": 128
           },
           "structure": {
             "type": "boolean",
@@ -4087,6 +4094,7 @@
           },
           "createDatabase": {
             "type": "boolean",
+            "description": "Oracle 使用 false，其他同步引擎需要 true。",
             "default": false
           }
         }
@@ -4211,6 +4219,7 @@
               "mysql",
               "mariadb",
               "postgresql",
+              "oracle",
               "greptimedb",
               "redis",
               ""
@@ -4220,7 +4229,7 @@
           },
           "database": {
             "type": "string",
-            "description": "PostgreSQL 与 GreptimeDB 的维护库，缺省分别为 postgres 和 public。Redis 填写逻辑库编号，默认 0。"
+            "description": "PostgreSQL 与 GreptimeDB 的维护库缺省分别为 postgres 和 public。Oracle 填写服务名，默认 FREEPDB1。Redis 填写逻辑库编号，默认 0。"
           },
           "tls": {
             "type": "boolean",
@@ -4300,7 +4309,7 @@
           },
           "type": {
             "type": "string",
-            "description": "对象类型 BASE TABLE 或 VIEW；PostgreSQL 表名保留完整双引号 schema/table 身份。"
+            "description": "表或视图的引擎类型。PostgreSQL 和 Oracle 的表名包含完整双引号 Schema 与对象名。"
           },
           "comment": {
             "type": "string"
@@ -4310,7 +4319,7 @@
             "items": {
               "type": "string"
             },
-            "description": "PostgreSQL 视图直接依赖的视图，使用完整双引号 schema/table 身份；无依赖时省略。"
+            "description": "PostgreSQL 或 Oracle 视图直接依赖的视图，使用完整双引号 Schema 与对象名。"
           },
           "extension": {
             "type": "string",
@@ -4376,7 +4385,7 @@
         "properties": {
           "schema": {
             "type": "string",
-            "description": "可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"
+            "description": "可选 PostgreSQL 或 Oracle Schema。省略时使用服务器默认对象范围。"
           },
           "database": {
             "type": "string",
@@ -4597,7 +4606,7 @@
         "properties": {
           "schema": {
             "type": "string",
-            "description": "可选 PostgreSQL schema，未指定沿用服务端默认搜索路径；MySQL/MariaDB 不接受独立 schema。"
+            "description": "可选 PostgreSQL 或 Oracle Schema。省略时使用服务器默认对象范围。"
           },
           "action": {
             "type": "string",

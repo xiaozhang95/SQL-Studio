@@ -3,6 +3,7 @@ package model
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
@@ -30,12 +31,20 @@ type Connection struct {
 const TypeMySQL = "mysql"
 const TypeMariaDB = "mariadb"
 const TypePostgreSQL = "postgresql"
+const TypeOracle = "oracle"
+const DefaultOracleService = "FREEPDB1"
 const TypeGreptimeDB = "greptimedb"
 const TypeRedis = "redis"
 const RedisStandalone = "standalone"
 const RedisSentinel = "sentinel"
 const RedisCluster = "cluster"
 const DefaultConnectionGroup = "默认分组"
+
+var oracleServiceName = regexp.MustCompile(`^[A-Za-z0-9_$#-]+(?:\.[A-Za-z0-9_$#-]+)*$`)
+
+func ValidOracleService(name string) bool {
+	return len(name) <= 255 && oracleServiceName.MatchString(name)
+}
 
 func (c Connection) RedisModeValue() string {
 	if c.RedisMode == "" {
@@ -72,7 +81,7 @@ func NormalizeDatabaseType(value string) string {
 	return value
 }
 func SupportedDatabaseType(value string) bool {
-	return IsMySQLProtocol(value) || value == TypePostgreSQL || value == TypeRedis
+	return IsMySQLProtocol(value) || value == TypePostgreSQL || value == TypeOracle || value == TypeRedis
 }
 
 func IsMySQL(value string) bool { return NormalizeDatabaseType(value) == TypeMySQL }

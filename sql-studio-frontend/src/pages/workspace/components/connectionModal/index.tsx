@@ -221,9 +221,9 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                         {engine.database !== undefined && engine.value !== DatabaseEngine.Redis && (
                           <Form.Item
                             name="database"
-                            label={t('维护数据库')}
-                            rules={[{ required: true, whitespace: true, message: t('请输入可连接的数据库') }]}
-                            extra={t('用于测试连接和读取数据库列表；查询可在顶部切换数据库')}
+                            label={t(engine.databaseLabel ?? '维护数据库')}
+                            rules={[{ required: true, whitespace: true, message: t(engine.databaseRequiredMessage ?? '请输入可连接的数据库') }]}
+                            extra={t(engine.databaseHelp ?? '用于测试连接和读取数据库列表；查询可在顶部切换数据库')}
                           >
                             <Input placeholder={engine.database} />
                           </Form.Item>

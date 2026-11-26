@@ -1,0 +1,277 @@
+package oracle
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"regexp"
+	"strings"
+
+	"sql-studio-backend/internal/model"
+)
+
+func quoteIdentifier(name string) string {
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
+}
+
+var qualifiedName = regexp.MustCompile(`^"((?:""|[^"])+)"\."((?:""|[^"])+)"$`)
+
+func relation(name string) (owner, object string, err error) {
+	match := qualifiedName.FindStringSubmatch(name)
+	if match == nil || strings.ContainsRune(name, 0) {
+		return "", "", errors.New("请使用对象列表中的 Oracle Schema 和表名")
+	}
+	return strings.ReplaceAll(match[1], `""`, `"`), strings.ReplaceAll(match[2], `""`, `"`), nil
+}
+
+func (c *Client) Databases(ctx context.Context, connection model.Connection) ([]string, error) {
+	service, err := configuredService(connection, "")
+	if err != nil {
+		return nil, err
+	}
+	ctx, db, release, err := c.openRequest(ctx, connection, service)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	if err = db.PingContext(ctx); err != nil {
+		return nil, err
+	}
+	return []string{service}, nil
+}
+
+const schemaSQL = `SELECT USERNAME FROM ALL_USERS
+WHERE USERNAME = SYS_CONTEXT('USERENV','SESSION_USER')
+   OR (ORACLE_MAINTAINED = 'N' AND EXISTS (
+       SELECT 1 FROM ALL_OBJECTS o WHERE o.OWNER = ALL_USERS.USERNAME AND o.OBJECT_TYPE IN ('TABLE','VIEW')
+   ))
+ORDER BY USERNAME`
+
+func (c *Client) Schemas(ctx context.Context, connection model.Connection, service string) ([]string, error) {
+	ctx, db, release, err := c.openRequest(ctx, connection, service)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	return metadataRows(ctx, db, schemaSQL, func(rows *sql.Rows) (string, error) {
+		var name string
+		err := rows.Scan(&name)
+		return name, err
+	})
+}
+
+const tablesSQL = `SELECT t.OWNER, t.TABLE_NAME, t.TABLE_TYPE, t.COMMENTS
+FROM ALL_TAB_COMMENTS t
+JOIN ALL_USERS u ON u.USERNAME=t.OWNER
+WHERE (u.ORACLE_MAINTAINED='N' OR u.USERNAME=SYS_CONTEXT('USERENV','SESSION_USER'))
+AND t.TABLE_TYPE IN ('TABLE','VIEW')
+AND NOT EXISTS (SELECT 1 FROM ALL_MVIEWS m WHERE m.OWNER=t.OWNER AND m.MVIEW_NAME=t.TABLE_NAME)
+ORDER BY t.OWNER, t.TABLE_NAME`
+
+func (c *Client) Tables(ctx context.Context, connection model.Connection, service string) ([]model.Table, error) {
+	ctx, db, release, err := c.openRequest(ctx, connection, service)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	tables, err := metadataRows(ctx, db, tablesSQL, func(rows *sql.Rows) (model.Table, error) {
+		var item model.Table
+		var owner, name string
+		var comment sql.NullString
+		err := rows.Scan(&owner, &name, &item.Type, &comment)
+		item.Name = quoteIdentifier(owner) + "." + quoteIdentifier(name)
+		item.Comment = comment.String
+		return item, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	type dependency struct{ view, target string }
+	dependencies, err := metadataRows(ctx, db, `SELECT d.OWNER, d.NAME, d.REFERENCED_OWNER, d.REFERENCED_NAME
+FROM ALL_DEPENDENCIES d JOIN ALL_USERS u ON u.USERNAME=d.OWNER
+WHERE d.TYPE='VIEW' AND d.REFERENCED_TYPE='VIEW' AND d.REFERENCED_LINK_NAME IS NULL
+AND (u.ORACLE_MAINTAINED='N' OR u.USERNAME=SYS_CONTEXT('USERENV','SESSION_USER'))`, func(rows *sql.Rows) (dependency, error) {
+		var owner, name, refOwner, refName string
+		err := rows.Scan(&owner, &name, &refOwner, &refName)
+		return dependency{quoteIdentifier(owner) + "." + quoteIdentifier(name), quoteIdentifier(refOwner) + "." + quoteIdentifier(refName)}, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	byName := make(map[string][]string)
+	for _, ref := range dependencies {
+		byName[ref.view] = append(byName[ref.view], ref.target)
+	}
+	for i := range tables {
+		tables[i].ViewDependencies = byName[tables[i].Name]
+	}
+	return tables, nil
+}
+
+const columnsSQL = `SELECT c.COLUMN_NAME,
+CASE
+  WHEN c.DATA_TYPE_OWNER IS NOT NULL THEN c.DATA_TYPE_OWNER || '.' || c.DATA_TYPE
+  WHEN c.DATA_TYPE IN ('CHAR','VARCHAR2') THEN c.DATA_TYPE || '(' || c.CHAR_LENGTH || CASE c.CHAR_USED WHEN 'C' THEN ' CHAR)' ELSE ' BYTE)' END
+  WHEN c.DATA_TYPE IN ('NCHAR','NVARCHAR2') THEN c.DATA_TYPE || '(' || c.CHAR_LENGTH || ')'
+  WHEN c.DATA_TYPE='RAW' THEN 'RAW(' || c.DATA_LENGTH || ')'
+  WHEN c.DATA_TYPE='NUMBER' AND c.DATA_PRECISION IS NOT NULL THEN 'NUMBER(' || c.DATA_PRECISION || ',' || c.DATA_SCALE || ')'
+  WHEN c.DATA_TYPE='NUMBER' AND c.DATA_SCALE IS NOT NULL THEN 'NUMBER(*,' || c.DATA_SCALE || ')'
+  WHEN c.DATA_TYPE='FLOAT' AND c.DATA_PRECISION IS NOT NULL THEN 'FLOAT(' || c.DATA_PRECISION || ')'
+  ELSE c.DATA_TYPE
+END,
+c.NULLABLE,
+CASE WHEN EXISTS (
+  SELECT 1 FROM ALL_CONSTRAINTS p JOIN ALL_CONS_COLUMNS k
+  ON k.OWNER=p.OWNER AND k.CONSTRAINT_NAME=p.CONSTRAINT_NAME
+  WHERE p.OWNER=c.OWNER AND p.TABLE_NAME=c.TABLE_NAME AND p.CONSTRAINT_TYPE='P' AND p.STATUS='ENABLED' AND k.COLUMN_NAME=c.COLUMN_NAME
+) THEN 'PRI' END,
+c.DATA_DEFAULT,
+CASE WHEN i.GENERATION_TYPE='ALWAYS' THEN 'GENERATED ALWAYS AS IDENTITY'
+     WHEN i.GENERATION_TYPE='BY DEFAULT ON NULL' THEN 'GENERATED BY DEFAULT ON NULL AS IDENTITY'
+     WHEN i.GENERATION_TYPE IS NOT NULL THEN 'GENERATED BY DEFAULT AS IDENTITY'
+     WHEN c.VIRTUAL_COLUMN='YES' THEN 'GENERATED VIRTUAL' END,
+m.COMMENTS
+FROM ALL_TAB_COLS c
+LEFT JOIN ALL_COL_COMMENTS m ON m.OWNER=c.OWNER AND m.TABLE_NAME=c.TABLE_NAME AND m.COLUMN_NAME=c.COLUMN_NAME
+LEFT JOIN ALL_TAB_IDENTITY_COLS i ON i.OWNER=c.OWNER AND i.TABLE_NAME=c.TABLE_NAME AND i.COLUMN_NAME=c.COLUMN_NAME
+WHERE c.OWNER=:1 AND c.TABLE_NAME=:2 AND c.USER_GENERATED='YES'
+ORDER BY c.COLUMN_ID NULLS LAST, c.INTERNAL_COLUMN_ID`
+
+func (c *Client) Columns(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Column, error) {
+	return objectRows(ctx, c, connection, ref, columnsSQL, func(rows *sql.Rows) (model.Column, error) {
+		var item model.Column
+		var nullable string
+		var key, extra, comment sql.NullString
+		err := rows.Scan(&item.Name, &item.Type, &nullable, &key, &item.Default, &extra, &comment)
+		item.Nullable = "NO"
+		if nullable == "Y" {
+			item.Nullable = "YES"
+		}
+		item.Key, item.Extra, item.Comment = key.String, extra.String, comment.String
+		if item.Default != nil {
+			value := strings.TrimSpace(*item.Default)
+			item.Default = &value
+		}
+		return item, err
+	})
+}
+
+const indexesSQL = `SELECT i.INDEX_OWNER, i.INDEX_NAME, n.INDEX_TYPE, n.UNIQUENESS,
+CASE WHEN EXISTS (
+  SELECT 1 FROM ALL_CONSTRAINTS p WHERE p.INDEX_OWNER=i.INDEX_OWNER AND p.INDEX_NAME=i.INDEX_NAME AND p.CONSTRAINT_TYPE='P'
+) THEN 'Y' ELSE 'N' END,
+i.COLUMN_NAME, i.COLUMN_POSITION, i.DESCEND, e.COLUMN_EXPRESSION
+FROM ALL_IND_COLUMNS i
+JOIN ALL_INDEXES n ON n.OWNER=i.INDEX_OWNER AND n.INDEX_NAME=i.INDEX_NAME
+LEFT JOIN ALL_IND_EXPRESSIONS e ON e.INDEX_OWNER=i.INDEX_OWNER AND e.INDEX_NAME=i.INDEX_NAME AND e.COLUMN_POSITION=i.COLUMN_POSITION
+WHERE i.TABLE_OWNER=:1 AND i.TABLE_NAME=:2
+ORDER BY i.INDEX_OWNER, i.INDEX_NAME, i.COLUMN_POSITION`
+
+func (c *Client) Indexes(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.Index, error) {
+	type indexEntry struct {
+		owner string
+		index model.Index
+		field model.IndexColumn
+	}
+	entries, err := objectRows(ctx, c, connection, ref, indexesSQL, func(rows *sql.Rows) (indexEntry, error) {
+		var entry indexEntry
+		var unique, primary string
+		var expr sql.NullString
+		err := rows.Scan(&entry.owner, &entry.index.Name, &entry.index.Type, &unique, &primary, &entry.field.Name, &entry.field.Position, &entry.field.Order, &expr)
+		entry.index.Unique, entry.index.Primary = unique == "UNIQUE", primary == "Y"
+		switch entry.field.Order {
+		case "ASC":
+			entry.field.Order = "A"
+		case "DESC":
+			entry.field.Order = "D"
+		default:
+			entry.field.Order = ""
+		}
+		if expr.Valid {
+			entry.field.Name = expr.String
+		}
+		return entry, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := []model.Index{}
+	var previous [2]string
+	for _, entry := range entries {
+		key := [2]string{entry.owner, entry.index.Name}
+		if key != previous {
+			result = append(result, entry.index)
+			previous = key
+		}
+		last := &result[len(result)-1]
+		last.Columns = append(last.Columns, entry.field)
+	}
+	return result, nil
+}
+
+const foreignKeysSQL = `SELECT f.CONSTRAINT_NAME, p.OWNER, p.TABLE_NAME, f.DELETE_RULE, a.COLUMN_NAME, b.COLUMN_NAME
+FROM ALL_CONSTRAINTS f
+JOIN ALL_CONSTRAINTS p ON p.OWNER=f.R_OWNER AND p.CONSTRAINT_NAME=f.R_CONSTRAINT_NAME
+JOIN ALL_CONS_COLUMNS a ON a.OWNER=f.OWNER AND a.CONSTRAINT_NAME=f.CONSTRAINT_NAME
+JOIN ALL_CONS_COLUMNS b ON b.OWNER=p.OWNER AND b.CONSTRAINT_NAME=p.CONSTRAINT_NAME AND b.POSITION=a.POSITION
+WHERE f.OWNER=:1 AND f.TABLE_NAME=:2 AND f.CONSTRAINT_TYPE='R'
+ORDER BY f.CONSTRAINT_NAME, a.POSITION`
+
+func (c *Client) ForeignKeys(ctx context.Context, connection model.Connection, ref model.TableRef) ([]model.ForeignKey, error) {
+	type keyEntry struct {
+		key   model.ForeignKey
+		field model.ForeignKeyColumn
+	}
+	entries, err := objectRows(ctx, c, connection, ref, foreignKeysSQL, func(rows *sql.Rows) (keyEntry, error) {
+		var entry keyEntry
+		entry.key.OnUpdate = "NO ACTION"
+		err := rows.Scan(&entry.key.Name, &entry.key.ReferencedSchema, &entry.key.ReferencedTable, &entry.key.OnDelete, &entry.field.Name, &entry.field.ReferencedName)
+		return entry, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := []model.ForeignKey{}
+	for _, entry := range entries {
+		if len(result) == 0 || result[len(result)-1].Name != entry.key.Name {
+			result = append(result, entry.key)
+		}
+		last := &result[len(result)-1]
+		last.Columns = append(last.Columns, entry.field)
+	}
+	return result, nil
+}
+
+func objectRows[T any](ctx context.Context, c *Client, connection model.Connection, ref model.TableRef, statement string, scan func(*sql.Rows) (T, error)) ([]T, error) {
+	owner, name, err := relation(ref.Name)
+	if err != nil {
+		return nil, err
+	}
+	ctx, db, release, err := c.openRequest(ctx, connection, ref.Database)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	return metadataRows(ctx, db, statement, scan, owner, name)
+}
+
+type querier interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}
+
+func metadataRows[T any](ctx context.Context, db querier, statement string, scan func(*sql.Rows) (T, error), args ...any) ([]T, error) {
+	rows, err := db.QueryContext(ctx, statement, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := []T{}
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}

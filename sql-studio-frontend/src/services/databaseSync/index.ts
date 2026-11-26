@@ -16,7 +16,7 @@ export type SyncRequest = {
   createDatabase: boolean
 }
 
-export type SyncPlan = { tables: number; skippedViews: number }
+export type SyncPlan = { tables: number; skippedViews: number; existingTarget?: boolean }
 export type SyncProgress = SyncPlan & { phase: 'checking' | 'created' | 'structure' | 'data' | 'table_done'; table?: string; created: boolean; completed: number; rows: number }
 
 export async function listSyncDatabases(input: SyncConnection, signal: AbortSignal) {
@@ -27,7 +27,15 @@ export async function listSyncDatabases(input: SyncConnection, signal: AbortSign
 
 export async function checkDatabaseSync(input: SyncRequest, signal: AbortSignal) {
   const plan = await request<SyncPlan | null>('/database-sync/check', { ...post(input), signal })
-  if (!plan || !Number.isSafeInteger(plan.tables) || plan.tables < 1 || !Number.isSafeInteger(plan.skippedViews) || plan.skippedViews < 0) throw new Error('同步检查结果格式无效')
+  if (
+    !plan ||
+    !Number.isSafeInteger(plan.tables) ||
+    plan.tables < 1 ||
+    !Number.isSafeInteger(plan.skippedViews) ||
+    plan.skippedViews < 0 ||
+    (plan.existingTarget !== undefined && typeof plan.existingTarget !== 'boolean')
+  )
+    throw new Error('同步检查结果格式无效')
   return plan
 }
 
@@ -57,16 +65,22 @@ export async function runDatabaseSync(input: SyncRequest, signal: AbortSignal, o
         buffer = buffer.slice(end + 1)
         if (event?.type === 'heartbeat') continue
         if (event?.type === 'error' && typeof event.error === 'string') throw new Error(event.error)
-        if (event?.type === 'done' && latest?.phase === 'table_done' && latest.created && latest.tables > 0 && latest.completed === latest.tables) return
+        if (event?.type === 'done' && latest?.phase === 'table_done' && (latest.created || latest.existingTarget) && latest.tables > 0 && latest.completed === latest.tables) return
         const progress = event?.progress
         if (
           event?.type !== 'progress' ||
           !progress ||
           !['checking', 'created', 'structure', 'data', 'table_done'].includes(progress.phase) ||
           typeof progress.created !== 'boolean' ||
+          (progress.existingTarget !== undefined && (typeof progress.existingTarget !== 'boolean' || progress.created)) ||
           [progress.tables, progress.rows, progress.completed, progress.skippedViews].some((count) => !Number.isSafeInteger(count) || count < 0) ||
           progress.completed > progress.tables ||
-          (latest && (progress.rows < latest.rows || progress.completed < latest.completed || (latest.created && (!progress.created || progress.tables !== latest.tables)))) ||
+          (latest &&
+            (progress.rows < latest.rows ||
+              progress.completed < latest.completed ||
+              progress.existingTarget !== latest.existingTarget ||
+              (latest.created && (!progress.created || progress.tables !== latest.tables)) ||
+              (latest.existingTarget && latest.tables > 0 && progress.tables !== latest.tables))) ||
           (progress.table !== undefined && typeof progress.table !== 'string')
         )
           throw new Error('同步进度格式无效')

@@ -30,6 +30,8 @@ func TestInternalDependencyDirection(t *testing.T) {
 	allowed["localization"] = map[string]bool{}
 	allowed["app"]["greptimedb"] = true
 	allowed["greptimedb"] = map[string]bool{"mysql": true, "model": true}
+	allowed["app"]["oracle"] = true
+	allowed["oracle"] = map[string]bool{"model": true, "rowstream": true}
 	allowed["agentstate"] = map[string]bool{"model/agent": true}
 	allowed["deepseek/agent"] = map[string]bool{"model/agent": true}
 	allowed["modules/agent"] = map[string]bool{"model/agent": true}
@@ -74,7 +76,7 @@ func TestInternalDependencyDirection(t *testing.T) {
 			if dependency == "net/http" && layer != "httpapi" && layer != "app" && layer != "deepseek" && layer != "deepseek/agent" && layer != "webui" {
 				t.Errorf("%s 不得依赖 HTTP 传输层", relative)
 			}
-			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "greptimedb" && layer != "rowstream" {
+			if dependency == "database/sql" && layer != "mysql" && layer != "postgresql" && layer != "greptimedb" && layer != "oracle" && layer != "rowstream" {
 				t.Errorf("%s 不得直接依赖 SQL 驱动", relative)
 			}
 			if (dependency == "os" || strings.HasPrefix(dependency, "os/")) && (strings.HasPrefix(layer, "modules/") || layer == "httpapi") {
@@ -88,6 +90,9 @@ func TestInternalDependencyDirection(t *testing.T) {
 			}
 			if strings.HasPrefix(dependency, "github.com/jackc/") && layer != "postgresql" {
 				t.Errorf("%s 不得跨引擎依赖 PostgreSQL 驱动", relative)
+			}
+			if strings.HasPrefix(dependency, "github.com/sijms/go-ora/") && layer != "oracle" {
+				t.Errorf("%s 不得跨引擎依赖 Oracle 驱动", relative)
 			}
 		}
 		return nil

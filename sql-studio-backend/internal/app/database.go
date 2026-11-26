@@ -8,6 +8,7 @@ import (
 	"sql-studio-backend/internal/model"
 	"sql-studio-backend/internal/modules/databasesync"
 	"sql-studio-backend/internal/mysql"
+	"sql-studio-backend/internal/oracle"
 	"sql-studio-backend/internal/postgresql"
 	"sql-studio-backend/internal/redis"
 )
@@ -52,6 +53,7 @@ func newDatabaseClient() *database.Client {
 		model.TypeMySQL:      mysql.NewClient(),
 		model.TypeMariaDB:    mariadb.NewClient(),
 		model.TypePostgreSQL: postgresql.NewClient(),
+		model.TypeOracle:     oracle.NewClient(),
 		model.TypeGreptimeDB: greptimedb.NewClient(),
 	})
 }
@@ -61,6 +63,7 @@ func syncDatabaseEngines() map[string]databasesync.Engine {
 		model.TypeMySQL:      mysql.NewClient(),
 		model.TypeMariaDB:    mariadb.NewClient(),
 		model.TypePostgreSQL: postgresql.NewClient(),
+		model.TypeOracle:     oracle.NewClient(),
 		model.TypeGreptimeDB: greptimedb.NewClient(),
 	}
 }

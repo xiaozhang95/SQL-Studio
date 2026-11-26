@@ -6,6 +6,8 @@ import mariadb from './mariadb'
 import MariaDBMonitor from './mariadb/monitor'
 import mysql from './mysql'
 import MySQLMonitor from './mysql/monitor'
+import oracle from './oracle'
+import OracleMonitor from './oracle/monitor'
 import postgresql from './postgresql'
 import PostgreSQLMonitor from './postgresql/monitor'
 import { redisProfile } from './redis'
@@ -13,7 +15,7 @@ import RedisMonitor from './redis/monitor'
 import { DatabaseEngine } from './typings'
 import type { DatabaseAdapter, DatabaseMonitorPanelProps, DatabaseProfile, DatabaseType, SQLDatabaseType } from './typings'
 
-const adapters = { [DatabaseEngine.MySQL]: mysql, [DatabaseEngine.MariaDB]: mariadb, [DatabaseEngine.PostgreSQL]: postgresql, [DatabaseEngine.GreptimeDB]: greptimedb } satisfies Record<
+const adapters = { [DatabaseEngine.MySQL]: mysql, [DatabaseEngine.MariaDB]: mariadb, [DatabaseEngine.PostgreSQL]: postgresql, [DatabaseEngine.Oracle]: oracle, [DatabaseEngine.GreptimeDB]: greptimedb } satisfies Record<
   SQLDatabaseType,
   DatabaseAdapter
 >
@@ -32,6 +34,7 @@ const monitorPanels = {
   [DatabaseEngine.MySQL]: MySQLMonitor,
   [DatabaseEngine.MariaDB]: MariaDBMonitor,
   [DatabaseEngine.PostgreSQL]: PostgreSQLMonitor,
+  [DatabaseEngine.Oracle]: OracleMonitor,
   [DatabaseEngine.GreptimeDB]: GreptimeMonitor,
   [DatabaseEngine.Redis]: RedisMonitor
 } satisfies Record<DatabaseType, ComponentType<DatabaseMonitorPanelProps>>

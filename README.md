@@ -1,6 +1,6 @@
 # SQL Studio
 
-本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、GreptimeDB 和 Redis。各引擎的连接、查询、对象管理和导出能力见 [数据库说明](docs/DATABASES.md)。
+本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、Oracle、GreptimeDB 和 Redis。各引擎的连接、查询、对象管理和导出能力见 [数据库说明](docs/DATABASES.md)。
 
 项目显示名称统一为 **SQL Studio**，仓库目录为 `SQL-Studio`。各模块目录、项目标识和 skill 使用相同名称：
 
@@ -14,13 +14,13 @@
 
 内置[数据库 Agent](docs/AGENT.md)：从左侧导航的「AI 助手」进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。默认只读，完全访问模式下的新增、修改及非删除结构操作逐次确认。
 
-左侧全局导航提供「监控指标」和「同步数据库」入口。支持对应功能的连接也可从右键菜单打开，监控带入所选连接，同步将其作为源连接。监控页可手动刷新，也可选择自动刷新间隔，默认关闭。MySQL、MariaDB 和 Redis 显示实例统计，PostgreSQL 和 GreptimeDB 可切换数据库。全部引擎采用概览、四组趋势及分类状态。MySQL/MariaDB 展示语句/连接/网络/InnoDB，PostgreSQL 展示事务/会话/块访问/行变更，GreptimeDB 展示表/分片/估算行数/存储，Redis 展示命令/客户端/内存/网络及键空间。趋势仅记录当前页面的实际采样。
+左侧全局导航提供「监控指标」和「同步数据库」入口。支持对应功能的连接也可从右键菜单打开，监控带入所选连接，同步将其作为源连接。监控页可手动刷新，也可选择自动刷新间隔。MySQL、MariaDB 和 Redis 显示实例统计，PostgreSQL 和 GreptimeDB 可切换数据库，Oracle 显示当前服务的 Schema 对象和可见会话。各引擎共用指标概览、趋势和分类状态，趋势仅记录当前页面的实际采样。
 
 ## 功能
 
 - 连接分组、连接测试、TLS 配置及密码加密保存。
 - Redis 单机、哨兵和集群连接，支持键浏览、命令行、实时订阅及监控。
-- 数据库与表浏览，表可展开字段、索引和外键（MySQL、MariaDB、PostgreSQL／PolarDB）；支持新建、设计、重命名、删除及刷新。
+- 数据库与表浏览，表可展开字段、索引和外键（MySQL、MariaDB、PostgreSQL／PolarDB、Oracle），支持按引擎新建、设计、重命名、删除及刷新。
 - 查询编辑、语法高亮、字段补全、多语句执行与执行历史。
 - 结果、消息、摘要和执行历史连续虚拟滚动。结果支持筛选、刷新及 CSV、Excel、JSON 导出。
 - 表数据新增与编辑，暂存修改后统一保存。
@@ -92,7 +92,7 @@ pnpm build
 4. “放弃修改”清空尚未提交的更改；已有暂存修改时，需先保存或放弃再刷新。
 5. 在消息、摘要及结果标签之间切换查看执行情况。可从执行历史载入 SQL 到当前查询。
 
-SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快捷键直接执行。MySQL、MariaDB 和 PostgreSQL 的多语句在同一会话顺序执行，支持批次内的会话设置、临时表和显式事务。失败或取消会停止后续语句，已提交写入保留。MySQL 和 MariaDB 支持 `DELIMITER` 脚本及选区中的存储程序，还可右键选择在事务中执行多条 INSERT。GreptimeDB 默认使用 MySQL 线协议端口 4002 和维护库 `public`。
+SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快捷键直接执行。MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句在同一会话顺序执行。失败或取消会停止后续语句，已提交写入保留。MySQL 和 MariaDB 支持 `DELIMITER`，Oracle 支持用单独一行的 `/` 分隔 PL/SQL。GreptimeDB 默认使用 MySQL 线协议端口 4002 和维护库 `public`。
 
 ## 本机配置
 

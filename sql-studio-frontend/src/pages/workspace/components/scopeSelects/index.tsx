@@ -29,6 +29,8 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
 
   const current = connections.find((connection) => connection.id === scope.connectionId)
   const redis = current?.type === DatabaseEngine.Redis
+  const service = current?.type === DatabaseEngine.Oracle
+  const databaseLabel = service ? '选择服务' : '选择数据库'
   const snapshot = objects.snapshots[scope.connectionId]
   const connected = snapshot?.status === 'connected'
   const databases = snapshot?.databases ?? []
@@ -62,13 +64,13 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       <Select
         className="database-select"
         style={scopeSelectStyle}
-        aria-label={t('选择数据库')}
+        aria-label={t(databaseLabel)}
         prefix={database ? undefined : <DatabaseOutlined />}
         showSearch
         optionFilterProp="searchText"
         allowClear={!redis}
         loading={snapshot?.status === 'loading'}
-        placeholder={t('选择数据库')}
+        placeholder={t(databaseLabel)}
         value={database}
         disabled={disabled || !connected || (redis && current.redisMode === 'cluster')}
         onChange={(value) => onSelect(value || '')}
@@ -89,7 +91,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         <Select
           style={scopeSelectStyle}
           aria-label={t('选择 Schema')}
-          placeholder={t('Schema（默认搜索路径）')}
+          placeholder={t(service ? 'Schema（默认登录用户）' : 'Schema（默认搜索路径）')}
           allowClear
           showSearch
           disabled={disabled || !connected || !scope.database}

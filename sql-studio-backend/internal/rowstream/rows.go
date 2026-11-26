@@ -16,6 +16,11 @@ import (
 // Read preserves precision and binary values without collecting the whole table.
 // The caller owns the read-only transaction; every batch must be consumed before return.
 func Read(ctx context.Context, rows *sql.Rows, emit func(model.QueryResult) error) error {
+	return ReadWithEncoder(ctx, rows, emit, encodeValue)
+}
+
+// ReadWithEncoder applies the engine's SQL value representation to every streamed cell.
+func ReadWithEncoder(ctx context.Context, rows *sql.Rows, emit func(model.QueryResult) error, encode func(string, any) any) error {
 	defer rows.Close()
 	types, err := rows.ColumnTypes()
 	if err != nil {
@@ -49,32 +54,7 @@ func Read(ctx context.Context, rows *sql.Rows, emit func(model.QueryResult) erro
 		}
 		rowBytes := 0
 		for i, value := range values {
-			switch v := value.(type) {
-			case []byte:
-				switch strings.ToUpper(types[i].DatabaseTypeName()) {
-				case "BINARY", "VARBINARY", "BLOB", "MEDIUMBLOB", "LONGBLOB", "TINYBLOB", "BIT", "GEOMETRY":
-					values[i] = "0x" + hex.EncodeToString(v)
-				case "BYTEA":
-					values[i] = "\\x" + hex.EncodeToString(v)
-				default:
-					values[i] = string(v)
-				}
-			case int64:
-				values[i] = strconv.FormatInt(v, 10)
-			case uint64:
-				values[i] = strconv.FormatUint(v, 10)
-			case float64:
-				values[i] = strconv.FormatFloat(v, 'g', -1, 64)
-			case time.Time:
-				switch strings.ToUpper(types[i].DatabaseTypeName()) {
-				case "DATE":
-					values[i] = v.Format("2006-01-02")
-				case "TIMESTAMP":
-					values[i] = v.Format("2006-01-02 15:04:05.999999999")
-				default:
-					values[i] = v.Format(time.RFC3339Nano)
-				}
-			}
+			values[i] = encode(types[i].DatabaseTypeName(), value)
 			rowBytes += len(fmt.Sprint(values[i]))
 		}
 		// A single oversized record fails explicitly; it is never silently truncated.
@@ -97,4 +77,34 @@ func Read(ctx context.Context, rows *sql.Rows, emit func(model.QueryResult) erro
 	}
 	// Empty tables still carry their column definitions.
 	return flush()
+}
+
+func encodeValue(kind string, value any) any {
+	switch v := value.(type) {
+	case []byte:
+		switch strings.ToUpper(kind) {
+		case "BINARY", "VARBINARY", "BLOB", "MEDIUMBLOB", "LONGBLOB", "TINYBLOB", "BIT", "GEOMETRY":
+			return "0x" + hex.EncodeToString(v)
+		case "BYTEA":
+			return "\\x" + hex.EncodeToString(v)
+		default:
+			return string(v)
+		}
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
+	case float64:
+		return strconv.FormatFloat(v, 'g', -1, 64)
+	case time.Time:
+		switch strings.ToUpper(kind) {
+		case "DATE":
+			return v.Format("2006-01-02")
+		case "TIMESTAMP":
+			return v.Format("2006-01-02 15:04:05.999999999")
+		default:
+			return v.Format(time.RFC3339Nano)
+		}
+	}
+	return value
 }

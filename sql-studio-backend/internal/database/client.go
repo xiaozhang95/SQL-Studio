@@ -125,9 +125,6 @@ func classifyQueryError(engine Engine, err error) error {
 }
 
 func (c *Client) ExecuteBatch(ctx context.Context, connection model.Connection, input model.QueryBatchRequest, statementTimeout time.Duration, emit func(model.QueryBatchStep) error) error {
-	if kind := model.NormalizeDatabaseType(connection.Type); kind != model.TypeMySQL && kind != model.TypeMariaDB && kind != model.TypePostgreSQL {
-		return errors.New("该引擎不支持同一会话批量执行")
-	}
 	engine, err := c.engine(connection)
 	if err != nil {
 		return err

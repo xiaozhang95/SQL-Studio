@@ -23,6 +23,33 @@ func TestAgentReadPolicyRejectsBeforeDatabase(t *testing.T) {
 	}
 }
 
+func TestOracleAgentDialectRetainsWriteAndReadBoundaries(t *testing.T) {
+	if err := ValidateReadSQL(`SELECT NVL(AMOUNT, 0) FROM "APP"."ORDERS"`, "oracle", "FREEPDB1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateEngineWriteSQL(`CREATE TABLE "APP"."ORDERS" (AMOUNT NUMBER(18,2))`, "oracle"); err != nil {
+		t.Fatal(err)
+	}
+	for _, sql := range []string{
+		`SELECT "APP".NVL(AMOUNT, 0) FROM "APP"."ORDERS"`,
+		`SELECT ORDER_SEQ.NEXTVAL FROM DUAL`,
+		`SELECT * FROM ORDERS FOR UPDATE`,
+	} {
+		if err := ValidateReadSQL(sql, "oracle", "FREEPDB1"); err == nil {
+			t.Errorf("accepted restricted Oracle read: %s", sql)
+		}
+	}
+	for _, sql := range []string{
+		`ALTER TABLE "APP"."ORDERS" SET UNUSED (AMOUNT)`,
+		`ALTER TABLE "APP"."ORDERS" TRUNCATE PARTITION OLD_ORDERS`,
+		`CREATE TABLE EXTERNAL_DATA (ID NUMBER) ORGANIZATION EXTERNAL`,
+	} {
+		if err := ValidateEngineWriteSQL(sql, "oracle"); err == nil {
+			t.Errorf("accepted restricted Oracle write: %s", sql)
+		}
+	}
+}
+
 func TestApprovalObjectsIncludesSourcesAndIgnoresLiteralSQL(t *testing.T) {
 	for _, c := range []struct {
 		sql  string

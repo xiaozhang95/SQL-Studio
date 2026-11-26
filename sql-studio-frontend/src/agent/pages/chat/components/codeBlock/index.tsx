@@ -50,7 +50,7 @@ export function CodeBlock({ text, language, title, formatJson = false, allowOpen
   const { locked } = useNavigationLock()
 
   const { token } = theme.useToken()
-  const sqlLanguage = ['sql', 'mysql', 'postgres', 'postgresql'].includes(language)
+  const sqlLanguage = ['sql', 'mysql', 'postgres', 'postgresql', 'oracle', 'plsql'].includes(language)
   const displayText = useMemo(() => (formatJson && language === 'json' ? formatJsonText(text) : text), [formatJson, language, text])
   const extensions = useMemo(() => {
     const lang = sqlLanguage

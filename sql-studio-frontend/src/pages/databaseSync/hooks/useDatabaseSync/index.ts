@@ -35,7 +35,9 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
   const current = useRef<AbortController | null>(null)
   const loadingDatabases = useRef<AbortController | null>(null)
   const profile = getDatabaseAdapter(engine).profile
+  const schemaSync = profile.syncScope === 'schema'
   const eligibleConnections = connections.filter(({ type }) => (type || DatabaseEngine.MySQL) === engine)
+  const savedTarget = eligibleConnections.find(({ id }) => id === choices.target)
 
   const canConnect = (side: Side) => {
     const form = credentials[side]
@@ -95,7 +97,8 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     setValues((previous) => ({
       ...previous,
       ...patch,
-      ...('sourceDatabase' in patch && (!previous.targetDatabase || previous.targetDatabase === previous.sourceDatabase) && patch.sourceDatabase ? { targetDatabase: patch.sourceDatabase } : {})
+      ...(!schemaSync && 'sourceDatabase' in patch && (!previous.targetDatabase || previous.targetDatabase === previous.sourceDatabase) && patch.sourceDatabase
+        ? { targetDatabase: patch.sourceDatabase } : {})
     }))
   }
   const clearSource = () => {
@@ -118,6 +121,7 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     if (current.current || choices[side] === value) return
     invalidate()
     if (side === 'source') clearSource()
+    else if (schemaSync) setValues((previous) => ({ ...previous, targetDatabase: eligibleConnections.find(({ id }) => id === value)?.username.toUpperCase() ?? '' }))
     setChoices((previous) => ({ ...previous, [side]: value }))
     setCredentials((previous) => ({ ...previous, [side]: initialExternal(engine) }))
   }
@@ -219,7 +223,7 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
         source: { ...previous.source, password: '' },
         target: { ...previous.target, password: '' }
       }))
-      if (progress.created && input.targetConnectionId) onCreated(input.targetConnectionId)
+      if ((progress.created || (progress.existingTarget && progress.tables > 0)) && input.targetConnectionId) onCreated(input.targetConnectionId)
     }
   }
   const back = () => {
@@ -240,6 +244,8 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     run,
     cancel: () => current.current?.abort(),
     profile,
+    schemaSync,
+    targetService: savedTarget?.database || profile.database || '',
     changeEngine,
     eligibleConnections,
     choices,

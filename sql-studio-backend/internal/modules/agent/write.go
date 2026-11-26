@@ -14,6 +14,10 @@ type WriteDatabase interface {
 // Full mode permits non-delete data and schema operations. Reject multi-statement,
 // executable comments, routines and dynamic SQL that could bypass delete checks.
 func ValidateWriteSQL(sql string) error {
+	return ValidateEngineWriteSQL(sql, "")
+}
+
+func ValidateEngineWriteSQL(sql, engine string) error {
 	deny := errors.New("完全访问模式仍禁止删除：DELETE、DROP、TRUNCATE、REPLACE及多语句、存储程序、动态SQL不可执行。仅提供命令和风险提示，由用户自行操作")
 	parsed, err := agentSQLTokens(sql)
 	if err != nil {
@@ -56,11 +60,54 @@ func ValidateWriteSQL(sql string) error {
 			return deny
 		}
 	}
+	if engine == "oracle" && !safeOracleWrite(parsed, tokens) {
+		return deny
+	}
 	relations, err := agentRelations(parsed, "", false)
 	if err != nil {
 		return err
 	}
-	return validateAgentCalls(parsed, relations.columnLists)
+	return validateAgentCalls(parsed, relations.columnLists, engine)
+}
+
+func safeOracleWrite(parsed []sqlToken, words []string) bool {
+	for _, word := range words {
+		switch word {
+		case "EXTERNAL", "DIRECTORY", "ORGANIZATION", "UNUSED", "EXCHANGE", "MOVE", "FLASHBACK", "PURGE", "FORCE", "DISABLE", "CASCADE", "NEXTVAL", "CURRVAL", "SPLIT", "MERGE", "COALESCE":
+			return false
+		}
+	}
+	if len(words) < 3 {
+		return false
+	}
+	switch words[0] {
+	case "CREATE":
+		switch words[1] {
+		case "TABLE", "VIEW", "INDEX", "SEQUENCE":
+			return true
+		case "UNIQUE":
+			return words[2] == "INDEX"
+		default:
+			return false
+		}
+	case "ALTER":
+		if words[1] != "TABLE" || !parsed[2].identifier {
+			return false
+		}
+		position := 3
+		if len(words) > 4 && words[3] == "." && parsed[4].identifier {
+			position = 5
+		}
+		if len(words) <= position {
+			return false
+		}
+		switch words[position] {
+		case "ADD", "MODIFY", "RENAME":
+			return true
+		}
+		return false
+	}
+	return true
 }
 
 func writeTool() model.Tool {

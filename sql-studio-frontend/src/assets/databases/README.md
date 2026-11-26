@@ -17,3 +17,5 @@ engineIcon 将半透明灰色先合成到主题容器底色 --surface 上，避�
 [greptimedb.svg](greptimedb.svg) 原样取自 [GreptimeDB 官方文档仓库的 logo-routine.svg](https://github.com/GreptimeTeam/docs/blob/2e5e230f129fea81801907b7c4944a37c966a60b/static/img/logo-routine.svg)。由 GreptimeDB profile 用于连接表单、对象树和连接选择器。显示时使用共享白色滤镜和圆角底板。
 
 [redis.svg](redis.svg) 是项目自制的堆叠图形，用于 Redis 连接，与其他引擎共享状态底板。
+
+[oracle.svg](oracle.svg) 是项目绘制的椭圆图形。Oracle profile 通过 EngineIcon 在连接表单、对象树和连接选择器共享状态底板。

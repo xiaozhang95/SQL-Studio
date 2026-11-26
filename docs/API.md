@@ -37,7 +37,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | GET    | `/connections/{id}/redis/channels`   | 读取活跃频道、订阅者数及模式订阅数                                     |
 | POST   | `/connections/{id}/redis/subscribe`  | 以 NDJSON 查看实时频道或模式订阅                                       |
 | GET    | `/connections/{id}/schemas`          | 数据库内可访问的 schema（含空 schema）                                 |
-| GET    | `/connections/{id}/tables`           | 表和视图列表，PostgreSQL 视图附可选依赖                                |
+| GET    | `/connections/{id}/tables`           | 表和视图列表，PostgreSQL 和 Oracle 视图附可选依赖                      |
 | GET    | `/connections/{id}/columns`          | 字段列表，MySQL 协议文本列附可选字符集和排序规则                       |
 | GET    | `/connections/{id}/indexes`          | 索引列表，含唯一性、类型及按顺序排列的字段                             |
 | GET    | `/connections/{id}/foreign-keys`     | 外键列表，含引用对象、字段映射和更新、删除规则                         |
@@ -47,7 +47,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | POST   | `/database-sync/check`               | 同引擎同步的只读检查                                                   |
 | POST   | `/database-sync/run`                 | 创建目标库，流式返回同步进度                                           |
 | POST   | `/connections/{id}/query`            | 执行一条 SQL                                                           |
-| POST   | `/connections/{id}/query-batch`      | MySQL／MariaDB／PostgreSQL 同一会话逐条执行，NDJSON 返回回执             |
+| POST   | `/connections/{id}/query-batch`      | MySQL、MariaDB、PostgreSQL 和 Oracle 同一会话执行，NDJSON 返回回执      |
 | GET    | `/state/{section}`                   | 读取配置分区                                                           |
 | PUT    | `/state/{section}`                   | 按修订号保存配置                                                       |
 | POST   | `/ai/assist`                         | SQL 续写或优化                                                         |
@@ -66,11 +66,11 @@ JSON 与 SSE 请求可发送 `Accept-Language: zh-CN` 或 `en-US`，支持语言
 
 ## 请求与行为边界
 
-- **连接**支持 `mysql`、`mariadb`、`postgresql`、`greptimedb` 和 `redis`。`name`、`host`、`port`（1–65535）必填，GreptimeDB 未启用鉴权时 `username` 和密码可留空，Redis 用户名可留空以使用 default 用户，初始逻辑库为空时为 0。其他引擎需要用户名。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 和 GreptimeDB 的维护库分别默认 `postgres` 和 `public`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
+- **连接**支持 `mysql`、`mariadb`、`postgresql`、`oracle`、`greptimedb` 和 `redis`。`name`、`host`、`port`（1–65535）必填，GreptimeDB 未启用鉴权时 `username` 和密码可留空，Redis 用户名可留空以使用 default 用户，初始逻辑库为空时为 0。其他引擎需要用户名。`type` 省略或为空按 `mysql`，`group` 留空归入默认分组。PostgreSQL 和 GreptimeDB 的维护库分别默认 `postgres` 和 `public`。Oracle 的 `database` 是服务名，默认 `FREEPDB1`。更新传 `id`，密码留空保留原值，响应以 `hasPassword` 表示是否有密码。测试最长 7 秒，启用 TLS 时校验证书链和主机名。
 - **分组**：名称去首尾空白，拒绝空名称、控制字符、重名；默认分组为固定回退项，不可重命名。空分组独立保存，连接表单输入新分组后保存也会登记。重命名更新全部成员。删除接收 `{name}`，将成员移回默认分组并返回 `{groups,connections}`。删除默认分组返回 400，写入失败保留原状态。移动只修改归属，不打开/关闭数据库会话、不修改凭据；不存在连接/原分组返回 404，不存在移动目标返回 400。
 - **元数据**：按显式 id/database/table 取对象，最长 10 秒，不以当前前端页面推断目标。
 - **索引**返回 `name`、`unique`、`type`、可选的 `primary` 及 `columns`。列项为 `{name,position,prefixLength,order}`，位置从 1 开始，顺序为 `A`、`D` 或空字符串。MySQL 和 MariaDB 的主键索引名为 `PRIMARY`，表达式字段的 `name` 为空。PostgreSQL 保留实际索引名，以 `primary` 标记主键，`name` 保存索引列定义（含表达式），`prefixLength` 为 `null`。无索引返回空数组。
-- **外键**按显式 `database`、`table` 读取，返回 `name`、`referencedSchema`、`referencedTable`、`onUpdate`、`onDelete` 和按定义顺序排列的 `columns`（`{name,referencedName}`）。MySQL、MariaDB 和 PostgreSQL／PolarDB 支持外键读取；无外键及 GreptimeDB 返回空数组。
+- **外键**按显式 `database`、`table` 读取，返回 `name`、`referencedSchema`、`referencedTable`、`onUpdate`、`onDelete` 和按定义顺序排列的 `columns`（`{name,referencedName}`）。MySQL、MariaDB、PostgreSQL／PolarDB 和 Oracle 支持外键读取；无外键及 GreptimeDB 返回空数组。
 - **查询** `{"database":"","sql":"SELECT 1","limit":1000,"allowWrite":false}`。每次仅一条 SQL，默认只读。`limit <= 0` 时默认返回 1000 行，显式行数最多 5000。`unlimitedRows: true` 跳过应用行数上限，优先于 `limit`，保留原 SQL 和约 8 MiB 结果预算。每条 30 秒，共享 4 个并发槽。`rows` 为二维数组，整数和 DECIMAL 使用文本，保留 NULL 和重复列名。`truncated` 表示截断。显式写入自动提交，取消后已提交的写入保留。单元格更新可传 `matchRows: true`，使 MySQL/MariaDB 的 UPDATE 将匹配行数作为 `affectedRows`。该选项默认关闭，PostgreSQL 使用原生计数。
 - **配置**：分区名匹配 `^[a-z][a-z0-9-]{0,47}$`。GET 返回 `{schemaVersion:1,revision,updatedAt,data,extensions?}`，缺失时 revision=0、data=null。PUT 提交 `{revision,data:{...}}`；现存分区严格比较修订号，缺失文件允许按当前会话修订连续重建。损坏和未知版本拒绝覆盖。
 - **AI 配置**：ai-models 分区使用 `{configurations:[{id,provider,model,modelName,apiKey}],activeId,completionEnabled?}`，最多 64 条。model 是实际调用 ID，modelName 为显示名称。相同供应商与模型 ID 不得重复。编辑空 Key 保留该行原值，完整列表一次 CAS 保存，空数组清空。仅支持列表格式。activeId 是 SQL 工具栏与 AI 助手共享的默认记录 ID，可从系统设置模型列表或 AI 助手切换。列表非空且 activeId 为空时，读取和调用使用首条可用记录，保存时写入该 ID。响应逐行清除 Key。DELETE 提交 `{revision}` 清空记录并关闭补全。
@@ -84,11 +84,13 @@ Redis 的逻辑库列表、监控和发布订阅使用实例范围，关闭整�
 
 PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。
 
+Oracle 使用配置的服务名作为 `database`。对象标识为完整的 `"OWNER"."OBJECT"`，查询的可选 `schema` 设置该次 Oracle 会话的 CURRENT_SCHEMA。默认只读接受 SELECT 和查询型 WITH，在 Oracle 只读事务中执行。显式写入允许单条 DML、DDL 或完整 PL/SQL 块。表预览使用 Oracle 的 `FETCH FIRST 1000 ROWS ONLY`。查询编码保留 NUMBER 精确文本及 RAW/BLOB 十六进制。
+
 SQL 编辑器运行及重新执行传 `allowWrite: true` 和 `unlimitedRows: true`，按原 SQL 执行，包括语句自带的 `LIMIT`。打开或刷新表数据使用带 `LIMIT 1000` 的只读预览。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL、MariaDB 和 PostgreSQL 多语句走同一会话批次。`truncatedBy` 可区分行数上限（`row-limit`）、结果大小上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
 MySQL 和 MariaDB 在显式写入路径读取 `CALL` 和 `EXECUTE` 的结果集。第一个数据集使用常规结果字段，后续数据集按顺序放在可选的 `additionalResults` 中。同条语句的结果集共享行数与大小预算，超限导致整个后续数据集省略时返回 `resultSetsTruncated: true`。这两类语句成功但没有数据列时，`writeFeedbackUnavailable: true` 表示驱动游标未提供影响行数和插入 ID，调用者应把该结果显示为成功回执。
 
-批次接收 `{database, schema?, statements, allowWrite: true, limit?, unlimitedRows?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。`unlimitedRows` 的默认值及行数策略与单语句一致，作用于批次中的每条语句。只有 PostgreSQL 使用 `schema` 设置初始搜索路径。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时表与显式事务。PostgreSQL 的事务控制及其语句需要放在同一批，批次结束仍有未完成的事务时返回错误并关闭连接回滚。已提交的写入保留。
+批次接收 `{database, schema?, statements, allowWrite: true, limit?, unlimitedRows?}`，最多 10000 条，共享 4 个查询槽，每条 30 秒、整批 30 分钟。`unlimitedRows` 的默认值及行数策略与单语句一致，作用于批次中的每条语句。PostgreSQL 和 Oracle 通过 `schema` 设置初始对象范围。每个 NDJSON `statement` 事件包含零基 `index` 和 `result` 或 `error`。已识别的语句错误附 `statementError: true`，MySQL／MariaDB 成功 USE 附 `database`。遇到语句错误停止并发送 `done`，流开启后出现批次错误发送 `error`。每批独立物理连接，脚本内共享会话设置、临时对象与显式事务。PostgreSQL 和 Oracle 的事务控制及其语句需要放在同一批，结束时仍有未完成的事务会返回错误并回滚。已提交的写入保留。
 
 单条请求与批次按请求语言展示应用设置的语句超时、批次超时或会话初始化超时。单条请求或批次流开启前的超时返回 HTTP 400。批次流内沿用对应语句或批次错误事件。
 
@@ -96,7 +98,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 ## 流式转储
 
-流式 SQL 转储适用于 MySQL、MariaDB 和 PostgreSQL。
+流式 SQL 转储适用于 MySQL、MariaDB、PostgreSQL 和 Oracle。
 
 `GET /connections/{id}/export-data` 必须携带 database/table。响应为 text/event-stream，data JSON 的 type 为 rows（result 为普通 QueryResult，无截断）、done 或 error（error 字符串）。只有 done 表示成功，约每 10 秒发送注释心跳。断开取消，后端独立限制 2 路并发、30 分钟和单行 8 MiB。客户端分批写入文件，失败或取消时放弃文件。数据库/Schema 导出顺序读取各表，不提供全库同一时间快照，不包含例程、触发器、事件、授权及外部类型/函数依赖。
 
@@ -119,9 +121,9 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 ## 数据库同步
 
-同步支持 MySQL、MariaDB、PostgreSQL／PolarDB 和 GreptimeDB。源和目标必须是同一类型。`databases` 接收 `{connectionId}` 或 `{external}`。check 和 run 接收 `sourceDatabase`、`targetDatabase`、`structure`、`data` 和 `createDatabase`，两端各自从已保存连接 ID 和外部连接二选一。外部连接接受 `{type?,host,port,username?,password?,tls?,database?}`，省略 type 为 MySQL。只有 GreptimeDB 允许空用户名。PostgreSQL 和 GreptimeDB 可指定维护库，默认分别为 postgres 和 public。凭据仅用于当前请求，TLS 沿用连接的证书验证。
+同步支持 MySQL、MariaDB、PostgreSQL／PolarDB、Oracle 和 GreptimeDB。源和目标必须是同一类型。`databases` 接收 `{connectionId}` 或 `{external}`。check 和 run 接收 `sourceDatabase`、`targetDatabase`、`structure`、`data` 和 `createDatabase`，两端各自从已保存连接 ID 和外部连接二选一。外部连接接受 `{type?,host,port,username?,password?,tls?,database?}`，省略 type 为 MySQL。只有 GreptimeDB 允许空用户名。PostgreSQL 和 GreptimeDB 可指定维护库，默认分别为 postgres 和 public。Oracle 连接字段 `database` 是服务名。凭据仅用于当前请求，TLS 沿用连接的证书验证。
 
-目标库必须不存在，structure 和 createDatabase 必须为 true。check 返回 `{tables,skippedViews}`，不写入。run 重新检查后排他创建目标库。各引擎复制可访问的普通表，视图计入跳过数量。MySQL/MariaDB 支持 InnoDB，包含不可见列。PostgreSQL 支持普通表、自有序列、标识列、生成列、索引及延后创建的外键。GreptimeDB 支持普通 Mito 表和数据，逐表读取，无全库一致性快照。复杂对象和不支持的依赖见各引擎说明。
+MySQL、MariaDB、PostgreSQL 和 GreptimeDB 需要尚未存在的目标库，`structure` 和 `createDatabase` 均为 true，run 重新检查后排他创建目标库。Oracle 的 `sourceDatabase` 和 `targetDatabase` 是 Schema 名称，目标须由目标账号拥有且为空，`createDatabase` 为 false。全部引擎的 check 仅读取，返回 `{tables,skippedViews}`，Oracle 另返回 `existingTarget: true`。run 的 Oracle 进度同样带 `existingTarget: true`，`created` 为 false。各引擎复制可访问的普通表，视图计入跳过数量。复杂对象和依赖见[数据库说明](DATABASES.md)。
 
 run 按 NDJSON 返回 heartbeat、progress、done 或 error。progress 中的 phase 为 checking、created、structure、data 或 table_done，并提供可选 table、created、completed、tables、skippedViews 和 rows。只有 done 表示成功。断开或取消会停止后续传输，已经写入的目标库、结构和批次保留。最后一个在途批次可能已经落库，界面计数表示已收到回执的记录数。单进程同时执行一个任务，最长 30 分钟。
 

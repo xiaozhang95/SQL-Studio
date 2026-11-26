@@ -140,6 +140,9 @@ func (s *Service) connection(id string, external *model.DatabaseSyncExternal) (m
 }
 
 func validDatabase(kind, name string) bool {
+	if kind == model.TypeOracle {
+		return name != "" && strings.TrimSpace(name) == name && utf8.ValidString(name) && len(name) <= 128 && !strings.ContainsFunc(name, unicode.IsControl)
+	}
 	if kind == model.TypePostgreSQL && (len(name) > 63 || strings.EqualFold(name, "template0") || strings.EqualFold(name, "template1")) {
 		return false
 	}

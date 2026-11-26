@@ -35,11 +35,14 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   const externalSource = model.choices.source === model.externalID
   const externalTarget = model.choices.target === model.externalID
   const done = status === 'completed'
+  const schemaSync = model.schemaSync
   const checkText =
     plan &&
-    (plan.skippedViews
-      ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
-      : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
+    (schemaSync
+      ? t('检查通过，将向目标 Schema 同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
+      : plan.skippedViews
+        ? t('检查通过，将新建目标库并同步 {count} 张表，跳过 {views} 个视图。', { count: plan.tables, views: plan.skippedViews })
+        : t('检查通过，将新建目标库并同步 {count} 张表。', { count: plan.tables }))
   const checkTextColor = `color-mix(in srgb, ${token.colorSuccessText} 65%, ${token.colorText})`
   const steps = [{ title: t('配置同步') }, { title: t('同步检查') }, { title: t('执行同步') }]
 
@@ -84,12 +87,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     </Flex>
                   }
                   actions={[
-                    <Button
-                      key="external"
-                      type="link"
-                      icon={<LinkOutlined />}
-                      onClick={() => model.choose('source', externalSource ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
-                    >
+                    <Button key="external" type="link" icon={<LinkOutlined />} onClick={() => model.choose('source', externalSource ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}>
                       {externalSource ? t('使用已保存连接') : t('使用外部连接')}
                     </Button>
                   ]}
@@ -104,28 +102,28 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('source', value)}
                     onCredentials={(patch) => model.updateExternal('source', patch)}
                   />
-                  <Form.Item label={t('源数据库')} htmlFor="sync-source-db" extra={t('将复制全部表，自动跳过视图')} style={{ marginBottom: 0 }}>
+                  <Form.Item label={t(schemaSync ? '源 Schema' : '源数据库')} htmlFor="sync-source-db" extra={t('将复制全部表，自动跳过视图')} style={{ marginBottom: 0 }}>
                     {externalSource ? (
                       <Flex gap="small" wrap>
                         <Input
                           id="sync-source-db"
                           value={values.sourceDatabase}
                           style={{ flex: '1 1 180px' }}
-                          maxLength={64}
-                          placeholder={t('输入源数据库名称')}
+                          maxLength={schemaSync ? 128 : 64}
+                          placeholder={t(schemaSync ? '输入源 Schema 名称' : '输入源数据库名称')}
                           onChange={(event) => update({ sourceDatabase: event.target.value })}
                         />
                         <Button disabled={!model.canReadSource || busy} loading={model.loading} onClick={model.refreshSource}>
-                          {t('读取源数据库')}
+                          {t(schemaSync ? '读取源 Schema' : '读取源数据库')}
                         </Button>
                         {model.databases.length > 0 && (
                           <Select
-                            aria-label={t('选择源数据库')}
+                            aria-label={t(schemaSync ? '选择源 Schema' : '选择源数据库')}
                             value={model.databases.includes(values.sourceDatabase) ? values.sourceDatabase : undefined}
                             options={model.databases.map((name) => ({ label: name, value: name }))}
                             style={{ width: '100%' }}
                             showSearch
-                            placeholder={t('选择源数据库')}
+                            placeholder={t(schemaSync ? '选择源 Schema' : '选择源数据库')}
                             onChange={(sourceDatabase) => update({ sourceDatabase })}
                           />
                         )}
@@ -138,7 +136,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                         showSearch
                         disabled={!model.choices.source || busy}
                         loading={model.loading}
-                        placeholder={t('选择源数据库')}
+                        placeholder={t(schemaSync ? '选择源 Schema' : '选择源数据库')}
                         onChange={(sourceDatabase) => update({ sourceDatabase })}
                       />
                     )}
@@ -161,12 +159,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     </Flex>
                   }
                   actions={[
-                    <Button
-                      key="external"
-                      type="link"
-                      icon={<LinkOutlined />}
-                      onClick={() => model.choose('target', externalTarget ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}
-                    >
+                    <Button key="external" type="link" icon={<LinkOutlined />} onClick={() => model.choose('target', externalTarget ? (model.eligibleConnections[0]?.id ?? '') : model.externalID)}>
                       {externalTarget ? t('使用已保存连接') : t('使用外部连接')}
                     </Button>
                   ]}
@@ -181,12 +174,17 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     onChange={(value) => model.choose('target', value)}
                     onCredentials={(patch) => model.updateExternal('target', patch)}
                   />
-                  <Form.Item label={t('目标数据库')} htmlFor="sync-target-db" extra={t('检查通过后新建；目标库已存在时立即停止')} style={{ marginBottom: 0 }}>
+                  <Form.Item
+                    label={t(schemaSync ? '目标 Schema' : '目标数据库')}
+                    htmlFor="sync-target-db"
+                    extra={t(schemaSync ? '使用目标连接登录用户所属的空 Schema' : '检查通过后新建；目标库已存在时立即停止')}
+                    style={{ marginBottom: 0 }}
+                  >
                     <Input
                       id="sync-target-db"
                       value={values.targetDatabase}
-                      maxLength={64}
-                      placeholder={t('输入尚未存在的库名')}
+                      maxLength={schemaSync ? 128 : 64}
+                      placeholder={t(schemaSync ? '输入目标 Schema 名称' : '输入尚未存在的库名')}
                       onChange={(event) => update({ targetDatabase: event.target.value })}
                     />
                   </Form.Item>
@@ -205,7 +203,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   <Checkbox checked={values.data} disabled={busy || !values.structure} onChange={(event) => update({ data: event.target.checked })} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div>{t('同时复制表数据')}</div>
-                    <Typography.Text type="secondary">{t('关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}</Typography.Text>
+                    <Typography.Text type="secondary">
+                      {t(schemaSync ? '开启后逐表提交数据。已创建的表和已提交的记录会保留。' : '关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}
+                    </Typography.Text>
                   </div>
                   {plan && (
                     <Typography.Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
@@ -213,11 +213,13 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                     </Typography.Text>
                   )}
                 </Flex>
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                  <Checkbox checked={values.createDatabase} disabled={busy} onChange={(event) => update({ createDatabase: event.target.checked })}>
-                    {t('目标库不存在时新建')}
-                  </Checkbox>
-                </div>
+                {!schemaSync && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                    <Checkbox checked={values.createDatabase} disabled={busy} onChange={(event) => update({ createDatabase: event.target.checked })}>
+                      {t('目标库不存在时新建')}
+                    </Checkbox>
+                  </div>
+                )}
               </Card>
             </Flex>
           </Form>
@@ -230,7 +232,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
               styles={{ title: { color: checkTextColor }, description: { color: checkTextColor, overflowWrap: 'anywhere' } }}
             />
           ) : (
-            <Alert type="info" variant="filled" showIcon title={t('目标库已存在时立即停止。同步新库需要勾选目标选项。')} />
+            <Alert type="info" variant="filled" showIcon title={t(schemaSync ? 'Oracle 同步使用已有空 Schema。目标 Schema 含有对象时停止。' : '目标库已存在时立即停止。同步新库需要勾选目标选项。')} />
           )}
         </>
       ) : (
@@ -242,6 +244,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
           sourceDatabase={values.sourceDatabase}
           targetDatabase={values.targetDatabase.trim()}
           withData={values.data}
+          schemaSync={schemaSync}
         />
       )}
       <Flex justify="space-between" align="center" gap="small" wrap>
@@ -267,7 +270,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             <Button
               type="primary"
               disabled={!done || externalTarget || !model.choices.target || !values.targetDatabase.trim()}
-              onClick={() => onOpenTarget?.(model.choices.target, values.targetDatabase.trim())}
+              onClick={() => onOpenTarget?.(model.choices.target, schemaSync ? model.targetService : values.targetDatabase.trim())}
             >
               {t('打开目标连接')}
             </Button>

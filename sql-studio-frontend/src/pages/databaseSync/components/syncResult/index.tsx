@@ -24,9 +24,10 @@ type Props = {
   sourceDatabase: string
   targetDatabase: string
   withData: boolean
+  schemaSync: boolean
 }
 
-export default function SyncResult({ status, result, plan, engineLabel, sourceDatabase, targetDatabase, withData }: Props) {
+export default function SyncResult({ status, result, plan, engineLabel, sourceDatabase, targetDatabase, withData, schemaSync }: Props) {
   const { t, language } = useTranslation()
   const { token } = theme.useToken()
   const [now, setNow] = useState(Date.now)
@@ -60,7 +61,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
       content: (
         <Flex justify="space-between" align="baseline" gap={8}>
           <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-            {t(phaseLabels[item.phase])}
+            {t(schemaSync && item.phase === 'checking' ? '正在重新检查源 Schema 和目标 Schema' : phaseLabels[item.phase])}
             {item.table ? ` · ${item.table}` : ''}
           </span>
           <Typography.Text type="secondary" style={{ flex: 'none', fontVariantNumeric: 'tabular-nums' }}>
@@ -106,8 +107,8 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
   ]
   const summary = [
     { key: 'engine', label: t('数据库类型'), value: engineLabel },
-    { key: 'source', label: t('源数据库'), value: sourceDatabase },
-    { key: 'target', label: t('目标数据库'), value: targetDatabase },
+    { key: 'source', label: t(schemaSync ? '源 Schema' : '源数据库'), value: sourceDatabase },
+    { key: 'target', label: t(schemaSync ? '目标 Schema' : '目标数据库'), value: targetDatabase },
     { key: 'content', label: t('同步内容'), value: withData ? t('结构 + 数据') : t('仅结构') },
     { key: 'views', label: t('跳过视图'), value: String(progress.tables ? progress.skippedViews : (plan?.skippedViews ?? 0)) }
   ]
@@ -126,7 +127,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
               <Tag color={done ? 'success' : status === 'error' ? 'error' : 'warning'}>{percent}%</Tag>
             </Flex>
             <Typography.Text type="secondary" style={{ overflowWrap: 'anywhere' }}>
-              {t('源库 {value1} → 目标库 {value2}', { value1: sourceDatabase, value2: targetDatabase })}
+              {t(schemaSync ? '源 Schema {value1} → 目标 Schema {value2}' : '源库 {value1} → 目标库 {value2}', { value1: sourceDatabase, value2: targetDatabase })}
             </Typography.Text>
             <Progress percent={percent} status={done ? 'success' : error ? 'exception' : running ? 'active' : 'normal'} showInfo={false} strokeWidth={6} />
           </Flex>
@@ -204,7 +205,7 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
           )}
         </Card>
       </div>
-      {(status === 'cancelled' || error) && <Alert type="warning" showIcon title={t(progress.created ? '已创建的库、表及已写入记录会保留。' : '如操作在建库时中断，请先检查目标库状态。')} />}
+      {(status === 'cancelled' || error) && <Alert type="warning" showIcon title={t(schemaSync ? '已创建的表及已提交的数据会保留，请先检查目标 Schema。' : progress.created ? '已创建的库、表及已写入记录会保留。' : '如操作在建库时中断，请先检查目标库状态。')} />}
     </>
   )
 }

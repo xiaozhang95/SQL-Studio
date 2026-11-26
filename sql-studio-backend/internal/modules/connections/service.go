@@ -86,6 +86,15 @@ func validateConnection(c *model.Connection) error {
 	if c.Port < 1 || c.Port > 65535 {
 		return errors.New("端口必须在 1–65535 之间")
 	}
+	if c.Type == model.TypeOracle {
+		c.Database = strings.TrimSpace(c.Database)
+		if c.Database == "" {
+			c.Database = model.DefaultOracleService
+		}
+		if !model.ValidOracleService(c.Database) {
+			return errors.New("Oracle 服务名无效")
+		}
+	}
 	if c.Type == model.TypeRedis && c.Database != "" {
 		if _, err := strconv.ParseUint(c.Database, 10, 31); err != nil {
 			return errors.New("Redis 逻辑库编号无效")

@@ -6,6 +6,7 @@ import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { CollationOption, DatabaseDefinition, FieldDefinition, ObjectChange, ObjectFormValues, ObjectTarget } from '@/databases/typings/objectManagement'
 import { useTranslation } from '@/hooks/useTranslation'
 import { executeObjectSQL, executeQuery, getColumns, getDDL } from '@/services/database'
+import { executeQueryBatch } from '@/services/queryBatch'
 import type { Connection } from '@/typings/database'
 
 type InitialOperation = { action: ObjectAction; target: ObjectTarget }
@@ -276,12 +277,16 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       }
       if (controller.signal.aborted || currentDialog.current !== built.dialog) return
       submitted = true
-      await executeObjectSQL(
-        connection.id,
-        action === ObjectAction.CreateDatabase || action === ObjectAction.EditDatabase || action === ObjectAction.DropDatabase ? '' : target.database,
-        built.sql,
-        controller.signal
-      )
+      const engine = getDatabaseAdapter(connection.type)
+      const database = [ObjectAction.CreateDatabase, ObjectAction.EditDatabase, ObjectAction.DropDatabase].some((kind) => kind === action) ? '' : target.database
+      const statements = engine.objectSQLBatch ? engine.splitStatements(built.sql) : [built.sql]
+      if (statements.length > 1) {
+        await executeQueryBatch(connection.id, database, statements, controller.signal, (step) => {
+          if (step.error) throw new Error(step.error)
+        })
+      } else {
+        await executeObjectSQL(connection.id, database, built.sql, controller.signal)
+      }
       if (controller.signal.aborted) return
       if (!keepOpen) {
         currentDialog.current = undefined
@@ -291,7 +296,6 @@ export function useObjectManagement({ connections, blocked, onBusyChange, onChan
       onDirtyChange?.(false)
       message.success(t('操作成功：{action}', { action: t(titles[action]) }))
       try {
-        const engine = getDatabaseAdapter(connection.type)
         const name =
           action === ObjectAction.CreateTable && engine.tableDesign
             ? engine.tableDesign.identity(target, built.values.name)
