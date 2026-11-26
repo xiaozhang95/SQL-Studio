@@ -15,22 +15,28 @@ export function upsertConnection(connections: readonly Connection[], saved: Conn
   return connections.some((item) => item.id === saved.id) ? connections.map((item) => (item.id === saved.id ? saved : item)) : [...connections, saved]
 }
 
-/** 持久化及恢复仅保留分组和已打开的连接根节点。 */
-export function explorerRoots(layout: ExplorerLayout, openedConnections: readonly string[]): ExplorerLayout {
+/** 保存和恢复分组及各已打开连接的完整树布局。 */
+export function explorerForOpenedConnections(layout: ExplorerLayout, openedConnections: readonly string[]): ExplorerLayout {
   const opened = new Set(openedConnections)
   const keep = (key: string) => {
-    const [kind, owner] = JSON.parse(key) as string[]
-    return kind === 'group' || (kind === 'connection' && opened.has(owner))
+    try {
+      const parts: unknown = JSON.parse(key)
+      if (!Array.isArray(parts) || parts.length < 2 || !parts.every((part: unknown) => typeof part === 'string')) return false
+      const [kind, owner] = parts
+      return kind === 'group' || opened.has(owner)
+    } catch {
+      return false
+    }
   }
   return { ...layout, expanded: layout.expanded.filter(keep), selected: layout.selected.filter(keep) }
 }
 
-/** 保留指定库的分支；新建连接会话时传空列表以重置该连接的子节点。 */
+/** 保留指定库的分支；连接因故障关闭时传空列表以清除该连接的子节点。 */
 export function explorerAfterDatabasesLoaded(layout: ExplorerLayout, connectionId: string, databases: readonly string[]): ExplorerLayout {
   const names = new Set(databases)
   const keep = (key: string) => {
     const parts = JSON.parse(key) as string[]
-    return parts[1] !== connectionId || parts.length < 3 || names.has(parts[2])
+    return parts[0] === 'group' || parts[1] !== connectionId || parts.length < 3 || names.has(parts[2])
   }
   const expanded = layout.expanded.filter(keep)
   const selected = layout.selected.filter(keep)

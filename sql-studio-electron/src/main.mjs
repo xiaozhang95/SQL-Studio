@@ -98,13 +98,15 @@ async function checkDevelopmentServices(signal, messages) {
 }
 
 async function loadIcons() {
+  const windows = process.platform === 'win32'
   if (app.isPackaged) {
     const icon = nativeImage.createFromPath(path.join(process.resourcesPath, 'icon.png'))
-    return { icon, appIcon: icon }
+    const appIcon = windows ? nativeImage.createFromPath(path.join(process.resourcesPath, 'windows-icon.png')) : icon
+    return { icon, appIcon }
   }
   const { renderAppIcon } = await import('../scripts/icons.mjs')
   const icon = nativeImage.createFromBuffer(renderAppIcon())
-  const appIcon = process.platform === 'darwin' ? nativeImage.createFromBuffer(renderAppIcon(true)) : icon
+  const appIcon = windows ? nativeImage.createFromBuffer(renderAppIcon('win32')) : icon
   return { icon, appIcon }
 }
 
@@ -142,8 +144,8 @@ function createWindow(dark, appIcon, updates, messages) {
   const themeReady = new Promise((resolve) => {
     reportThemeReady = resolve
   })
-  // 打包版使用 ICNS，由 macOS 统一管理 Dock 图标；开发预览才覆盖 Electron 默认图标。
-  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(appIcon)
+  // Dock 在运行时直接显示带透明通道的 Logo，避免系统为旧式包图标合成底板。
+  if (process.platform === 'darwin' && !appIcon.isEmpty()) app.dock?.setIcon(appIcon)
   const contents = mainWindow.webContents
   const isWorkbench = (event) => event.sender === contents && event.senderFrame && event.senderFrame === contents.mainFrame && isAppURL(event.senderFrame.url, origin)
   quitGuard = createQuitGuard({
@@ -300,6 +302,11 @@ if (dataError) {
   trace('single instance lock 获取失败，退出')
   app.quit()
 } else {
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('before-input-event', (event, input) => {
+      if (input.key === 'F5' && input.control && !input.shift && !input.alt && !input.meta) event.preventDefault()
+    })
+  })
   app.on('second-instance', () => {
     if (mainWindow?.isMinimized()) mainWindow.restore()
     mainWindow?.show()

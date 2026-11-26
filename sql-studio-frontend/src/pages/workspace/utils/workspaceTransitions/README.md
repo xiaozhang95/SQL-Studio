@@ -12,4 +12,4 @@
 
 `explorerAfterChange(layout,change)` 创建对象时返回原布局；删库/表仅移除目标节点及后代的展开/选中记录，重命名替换该表身份。其他连接、库、搜索与滚动位置保留。均为纯方法，不请求接口、不执行 SQL。
 
-`explorerRoots(layout, openedConnections)` 在写入和读取工作区索引时过滤展开及选中节点，仅保留分组和已打开连接的根节点。
+`explorerForOpenedConnections(layout, openedConnections)` 在写入和读取工作区索引时保留分组及已打开连接各层级的展开和选中记录，过滤无效节点键和未打开连接的记录。

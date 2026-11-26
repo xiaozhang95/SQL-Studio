@@ -64,6 +64,7 @@ export function buildExplorerTree(
 ) {
   const open = new Set(expanded),
     loadedKeys: string[] = [],
+    pendingLoads: ExplorerNode[] = [],
     byKey = new Map<string, ExplorerNode>()
   const term = search.trim().toLowerCase(),
     matches = (value: string) => value.toLowerCase().includes(term)
@@ -128,8 +129,7 @@ export function buildExplorerTree(
           const stateLabel = { closed: '未打开', opening: '正在打开', open: '已打开', error: '打开失败' }[databaseNode.databaseState]
           databaseNode.tooltip = `${db}\n${t(stateLabel)}`
           const tables = state.tables[db]
-          if (open.has(databaseNode.key) && !tables && !state.tableErrors[db]) ready = false
-          if (tables) loadedKeys.push(databaseNode.key)
+          if (tables || state.tableErrors[db]) loadedKeys.push(databaseNode.key)
           if (!open.has(databaseNode.key)) return databaseNode
           if (state.tableErrors[db]) {
             const error = placeholder('error', state.tableErrors[db], id, db)
@@ -137,7 +137,10 @@ export function buildExplorerTree(
             databaseNode.children = [error]
             return databaseNode
           }
-          if (!tables) return databaseNode
+          if (!tables) {
+            pendingLoads.push(databaseNode)
+            return databaseNode
+          }
           const values = tables.filter((table) => connectionMatch || matches(db) || matches(table.name))
           const layout = layouts[id]
           const names = new Map<string, string>()
@@ -163,16 +166,18 @@ export function buildExplorerTree(
                 const identity = key(db, table.name),
                   details = state.details[identity],
                   error = state.detailErrors[identity]
-                if (details) loadedKeys.push(node.key)
+                if (details || error) loadedKeys.push(node.key)
                 if (!open.has(node.key)) return node
-                if (!details && !error) ready = false
                 if (error && !details) {
                   const failed = placeholder('detail-error', error, id, db, table.name)
                   failed.retry = 'table'
                   node.children = [failed]
                   return node
                 }
-                if (!details) return node
+                if (!details) {
+                  pendingLoads.push(node)
+                  return node
+                }
                 node.children = []
                 const addDetails = <T extends { name: string }>(
                   kind: string,
@@ -272,5 +277,5 @@ export function buildExplorerTree(
   for (const group of groups.values()) if (!group.children!.length && (open.has(group.key) || term)) group.children = [placeholder('empty-connections', '暂无连接', group.owner, '')]
   const expandedKeys = expanded.filter((value) => byKey.has(value))
   if (term) for (const group of groups.values()) if (!expandedKeys.includes(group.key)) expandedKeys.push(group.key)
-  return { nodes, loadedKeys, expandedKeys, byKey, ready }
+  return { nodes, loadedKeys, expandedKeys, byKey, pendingLoads, ready: ready && !pendingLoads.length }
 }

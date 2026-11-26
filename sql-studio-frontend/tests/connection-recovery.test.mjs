@@ -8,13 +8,13 @@ import ts from 'typescript'
 import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { DatabaseLifecycle } from '../src/pages/workspace/utils/databaseLifecycle/index.ts'
 import { buildExplorerTree } from '../src/pages/workspace/utils/explorerTree/index.ts'
-import { explorerRoots } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
+import { explorerAfterDatabasesLoaded, explorerForOpenedConnections } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
 
 const read = (path) => readFileSync(new URL('../src/pages/workspace/' + path, import.meta.url), 'utf8')
 const source = read('hooks/useDatabaseObjects/index.ts')
 const implementation = stripTypeScriptTypes(source.slice(source.indexOf('type TableStructure')).replace('export function', 'function'))
 const workspace = read('hooks/useWorkspace/index.tsx')
-const opened = workspace.slice(workspace.indexOf('  const openedKey ='), workspace.indexOf('  const snapshot ='))
+const opened = workspace.slice(workspace.indexOf('  const openedKey ='), workspace.indexOf('  const persistedOpenedConnections ='))
 const openedConnections = new Function('objects', 'useMemo', stripTypeScriptTypes(opened) + ';return openedConnections')
 const savedConnections = (model) => openedConnections(model, (factory) => factory())
 
@@ -211,15 +211,18 @@ test('restoring a closed or failed connection does not let old expansion records
   const group = key('group', '默认分组')
   const connected = key('connection', 'other')
   const database = key('database', 'other', 'db')
+  const tables = key('tables', 'other', 'db')
   const failed = key('connection', 'offline')
   const failedDatabase = key('database', 'offline', 'db')
   const saved = {
     openedConnections: ['other'],
-    explorer: { expanded: [group, failed, failedDatabase, connected, database], selected: [failed, connected, database], search: '', top: 120 }
+    explorer: { expanded: [group, failed, failedDatabase, connected, database, tables], selected: [failed, tables], search: '', top: 120 }
   }
-  const restored = explorerRoots(saved.explorer, saved.openedConnections)
-  assert.deepEqual(restored.expanded, [group, connected])
-  assert.deepEqual(restored.selected, [connected])
+  const restored = explorerForOpenedConnections(saved.explorer, saved.openedConnections)
+  assert.deepEqual(restored.expanded, [group, connected, database, tables])
+  assert.deepEqual(restored.selected, [tables])
+  assert.equal(explorerAfterDatabasesLoaded(restored, 'other', ['db']), restored)
+  assert.deepEqual(explorerAfterDatabasesLoaded(restored, 'other', []).expanded, [group, connected])
   assert.equal(restored.top, 120)
-  assert.equal(saved.explorer.expanded.length, 5)
+  assert.equal(saved.explorer.expanded.length, 6)
 })

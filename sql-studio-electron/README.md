@@ -24,6 +24,8 @@ pnpm install --frozen-lockfile
 
 调试时，在 `sql-studio-backend` 目录手动执行 `go run main.go`，在 `sql-studio-frontend` 目录手动执行 `pnpm dev`，最后在本目录执行 `pnpm start`。Electron 检查 `http://127.0.0.1:15173` 上的 Vite 服务和它转发到 Go `127.0.0.1:18080` 的 `/api/health`。检查失败时，终端和弹窗会提示对应的启动命令。调试窗口直接加载 Vite 提供的前端源码，支持热更新。
 
+桌面端主进程拦截 `Ctrl+F5`，调试版和发行版均适用。
+
 打包时只需执行 `pnpm build`。它将前端静态资源和 Go 可执行文件构建到 `build/runtime/`，再通过 `extraResources` 随应用打包。后端可执行文件位于 ASAR 外。
 
 当前命令按宿主平台和架构成套构建，不支持附加 electron-builder 跨平台/跨架构参数；请在目标平台构建，避免 Go 与 Electron 架构不匹配。macOS 产物未签名、未公证，Windows 产物未签名；正式分发需另行配置签名。
@@ -71,9 +73,9 @@ Windows 打包完成可执行文件编辑后，将生成的应用目录及文件
 
 工作区最上方标题随活动页联动，例如 `sql_studio_demo · 查询 2`，复用页签完整标题；切库、切页同步，空工作区显示 SQL Studio。Windows 将 Logo 与标题整体左对齐，左右留白沿用 workspace-inset（16px），Logo 左边缘与下方侧栏搜索框的外边缘对齐；macOS/Linux 继续居中，macOS 左侧保留红黄绿窗口按钮。渲染页面的 document.title 同时同步系统窗口标题，后台工作台不覆盖 AI 页状态；AI 助手、监控和同步页均显示当前语言的功能页名称。
 
-图标唯一来源是 [studio.svg](../sql-studio-frontend/public/studio.svg)。开发时直接在内存渲染。`pnpm build` 通过 `scripts/icons.mjs` 生成 PNG 图标，electron-builder 据此生成平台图标。网页 favicon、开屏、窗口、macOS Dock 和安装包使用同一 Logo。
+图标唯一来源是 [studio.svg](../sql-studio-frontend/public/studio.svg)。开发时直接在内存渲染。`pnpm build` 通过 `scripts/icons.mjs` 生成 1024px 透明 PNG，electron-builder 据此生成平台图标。网页 favicon 和开屏使用原始构图。
 
-macOS 单独生成带透明安全区的 `build/icons/mac-icon.png`。生成脚本替换 SVG 根元素的视口尺寸，在 1024px 画布内居中放置 824px 图形，四周各留 100px。打包版由 macOS 使用应用自带 ICNS，不在运行时覆盖 Dock 图标；开发预览才用带留白的 PNG 替换 Electron 默认图标。开屏、网页和其他平台继续使用未缩小的图标。
+Windows 的快捷方式、可执行文件和运行窗口使用 `windows-icon.png` 的紧凑构图，通过收紧 SVG 视口提高小尺寸图标的辨识度。macOS 用原始透明 PNG 生成应用包的 ICNS，并在运行时将同一张透明 PNG 设置为 Dock 图标。Finder 和应用退出后的 Dock 图标由 macOS 渲染。
 
 ## Electron 镜像
 
@@ -122,7 +124,7 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 
 ## 代码与检查
 
-- `src/main.mjs`：窗口、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
+- `src/main.mjs`：窗口、`Ctrl+F5` 快捷键拦截、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
 - `src/quit.mjs`：窗口退出握手、请求去重、取消及无响应时的原生确认。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/messages.mjs`：原生对话框及桌面服务提示的中英文案。

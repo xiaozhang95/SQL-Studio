@@ -65,6 +65,28 @@ const tables = Array.from({ length: 10000 }, (_, index) => ({ name: `t_${String(
 const snapshot = { status: 'connected', databases: ['big'], tables: { big: tables }, loadingTables: [], tableErrors: {}, details: {}, structures: {}, detailErrors: {}, error: '' }
 const snapshots = { a: snapshot, b: { ...snapshot, tables: { big: [] } } }
 
+test('restored database and table expansions request metadata before restoring the virtual scroll position', () => {
+  const database = key('database', 'a', 'big')
+  const table = key('table', 'a', 'big', 't_00000')
+  const expanded = [key('group', '默认分组'), key('connection', 'a'), database, key('tables', 'a', 'big'), table]
+  const render = (state) => buildExplorerTree(connections.slice(0, 1), { a: state }, expanded, '')
+  const unloaded = render({ ...snapshot, tables: {} })
+  assert.deepEqual(
+    unloaded.pendingLoads.map((node) => node.key),
+    [database]
+  )
+  assert.equal(unloaded.ready, false)
+  const loaded = render({ ...snapshot, tables: { big: tables.slice(0, 1) } })
+  assert.deepEqual(
+    loaded.pendingLoads.map((node) => node.key),
+    [table]
+  )
+  const failed = render({ ...snapshot, tables: {}, tableErrors: { big: 'offline' } })
+  assert.deepEqual(failed.pendingLoads, [])
+  assert.equal(failed.ready, true)
+  assert.ok(failed.loadedKeys.includes(database))
+})
+
 test('database state follows successful opening, not connection status or expansion, and honors explicit close', () => {
   const expanded = [key('group', '默认分组'), key('connection', 'a')]
   const node = (state, closed = {}) => buildExplorerTree(connections.slice(0, 1), { a: state }, expanded, '', {}, [], closed).byKey.get(key('database', 'a', 'big'))

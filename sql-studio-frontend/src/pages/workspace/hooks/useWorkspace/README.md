@@ -30,7 +30,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 
-validateDatabases 仅在有效库列表加载成功后校验查询页范围，并通过 explorerAfterDatabasesLoaded 清理目标连接下已消失库及后代的展开/选中记录。首次打开、恢复、刷新连接和对象操作重读列表共用该回调；新建连接会话会清理该连接的子节点展开和选中状态。其他库、连接与布局保留，同名库重建保持收起。
+validateDatabases 仅在有效库列表加载成功后校验查询页范围，并通过 explorerAfterDatabasesLoaded 清理目标连接下已消失库及后代的展开/选中记录。首次打开、恢复、刷新连接和对象操作重读列表共用该回调。恢复和刷新连接期间保持保存范围，保留仍存在的数据库及其下级展开和选中状态。其他连接与布局保留，同名库重建保持收起。
 
 ## 本地恢复
 

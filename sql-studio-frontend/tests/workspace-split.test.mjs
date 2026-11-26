@@ -5,6 +5,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 import { setImmediate as settle } from 'node:timers/promises'
 
+import { clearExplorerSession, rememberExplorer, restoreExplorer } from '../src/pages/workspace/hooks/useWorkspacePersistence/explorerSession/index.ts'
 import { clearRedisDatabaseSession, rememberRedisDatabases, restoreRedisDatabases } from '../src/pages/workspace/hooks/useWorkspacePersistence/redisDatabaseSession/index.ts'
 import { WorkspaceStore } from '../src/services/workspace/index.ts'
 import { createLatestWriter } from '../src/utils/latestWriter/index.ts'
@@ -130,8 +131,11 @@ test('workbench silently restores the latest index after a conflict and saves ne
     WorkspaceStore,
     RequestError,
     createLatestWriter,
+    clearExplorerSession,
     clearRedisDatabaseSession,
+    rememberExplorer,
     rememberRedisDatabases,
+    restoreExplorer,
     restoreRedisDatabases,
     window: browser,
     useLayoutEffect: effect,
@@ -222,7 +226,7 @@ test('workbench silently restores the latest index after a conflict and saves ne
   slots.forEach((entry) => entry?.cleanup?.())
 })
 
-test('refresh recovers pending Redis database selections only for matching saved scopes', (t) => {
+function mockSessionStorage(t) {
   const values = new Map()
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage')
   Object.defineProperty(globalThis, 'sessionStorage', {
@@ -233,6 +237,26 @@ test('refresh recovers pending Redis database selections only for matching saved
     if (descriptor) Object.defineProperty(globalThis, 'sessionStorage', descriptor)
     else delete globalThis.sessionStorage
   })
+}
+
+test('a reload restores unsaved tree expansion before autosave and while an older write finishes', (t) => {
+  mockSessionStorage(t)
+  const { revision, index } = fixture().doc()
+  const database = JSON.stringify(['database', 'c0', 'same'])
+  const tables = JSON.stringify(['tables', 'c0', 'same'])
+  const inFlight = { ...index, openedConnections: ['c0'], explorer: { ...index.explorer, expanded: [database] } }
+  const draft = { ...inFlight, explorer: { ...inFlight.explorer, expanded: [database, tables], selected: [tables] } }
+  rememberExplorer(draft, { revision, index }, inFlight)
+  assert.deepEqual(restoreExplorer(index, revision), draft)
+  assert.deepEqual(restoreExplorer(inFlight, revision + 1), draft)
+  assert.equal(restoreExplorer(index, revision + 1), index)
+  assert.equal(restoreExplorer(inFlight, revision + 2), inFlight)
+  rememberExplorer(draft, { revision: revision + 2, index: draft }, null)
+  assert.equal(restoreExplorer(index, revision + 2), index)
+})
+
+test('refresh recovers pending Redis database selections only for matching saved scopes', (t) => {
+  mockSessionStorage(t)
   const scope = { id: 'p0', kind: 'query', connectionId: 'redis', database: '0' }
   const second = { ...scope, id: 'p1' }
   const inFlight = { ...scope, database: '5' }

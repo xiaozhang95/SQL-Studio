@@ -27,7 +27,7 @@ import { reconcileWorkspacePages } from '../../utils/workspacePages'
 import {
   explorerAfterChange,
   explorerAfterDatabasesLoaded,
-  explorerRoots,
+  explorerForOpenedConnections,
   findExplorerPage,
   pagesAfterSchemaChange,
   pagesForObjectDrop,
@@ -99,6 +99,7 @@ export const useWorkspace = (active = true) => {
   const [resultHeight, setResultHeight] = useState<number>(resultPanelLayout.defaultHeight)
   const { width: sidebarWidth, setWidth: setSidebarWidth, restoreWidth: restoreSidebarWidth } = useSidebarWidth()
   const [restoringConnections, setRestoringConnections] = useState<string[] | null>(null)
+  const [refreshingConnections, setRefreshingConnections] = useState<string[]>([])
   const [objectBusy, setObjectBusy] = useState(false)
   const [designerBusy, setDesignerBusy] = useState<Record<string, boolean>>({})
   const [designerDirty, setDesignerDirty] = useState<Record<string, boolean>>({})
@@ -213,6 +214,10 @@ export const useWorkspace = (active = true) => {
       .sort()
   )
   const openedConnections = useMemo(() => JSON.parse(openedKey) as string[], [openedKey])
+  const persistedOpenedConnections = useMemo(
+    () => [...new Set([...openedConnections, ...(restoringConnections ?? []), ...refreshingConnections])].sort(),
+    [openedConnections, restoringConnections, refreshingConnections]
+  )
   const snapshot = useMemo<WorkspaceSnapshot>(
     () => ({
       version: 1,
@@ -221,13 +226,13 @@ export const useWorkspace = (active = true) => {
       runs,
       resultViews,
       editorLayouts,
-      explorer: explorerRoots(explorer, restoringConnections || openedConnections),
+      explorer: explorerForOpenedConnections(explorer, persistedOpenedConnections),
       resultHeight,
       sidebarWidth,
-      openedConnections: restoringConnections || openedConnections,
+      openedConnections: persistedOpenedConnections,
       runningTabId
     }),
-    [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, restoringConnections, openedConnections, runningTabId]
+    [tabs, activeTab, runs, resultViews, editorLayouts, explorer, resultHeight, sidebarWidth, persistedOpenedConnections, runningTabId]
   )
   const queryRunning = Boolean(runningTabId)
   const uiBlocked = desktopPreparing || objectBusy || Boolean(objectManagement.dialog) || Object.values(designerBusy).some(Boolean) || connectionModal
@@ -246,7 +251,7 @@ export const useWorkspace = (active = true) => {
       setEditorLayouts(saved.editorLayouts)
       objects.retainConnections(new Set(saved.openedConnections))
       resetStructure()
-      setExplorer(explorerRoots(saved.explorer, saved.openedConnections))
+      setExplorer(explorerForOpenedConnections(saved.explorer, saved.openedConnections))
       setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
       restoreSidebarWidth(saved.sidebarWidth)
       setRestoringConnections(saved.openedConnections)
@@ -318,13 +323,13 @@ export const useWorkspace = (active = true) => {
     if (desktopPreparing || desktopClosing || !storage.ready || connectionLoading || connectionError || !restoringConnections) return
     let stale = false
     const restored = savedConnections.filter((item) => restoringConnections.includes(item.id))
-    void Promise.resolve().then(() => {
+    void Promise.resolve().then(async () => {
       if (stale) return
-      setRestoringConnections(null)
-      for (const { id } of restored) void openObjectsConnection(id).catch(() => {})
       setTabs((previous) =>
         previous.map((item) => (item.kind === 'query' && item.connectionId && !savedConnections.some((connection) => connection.id === item.connectionId) ? { ...item, ...emptyScope } : item))
       )
+      await Promise.allSettled(restored.map(({ id }) => openObjectsConnection(id)))
+      if (!stale) setRestoringConnections(null)
     })
     return () => {
       stale = true
@@ -524,12 +529,16 @@ export const useWorkspace = (active = true) => {
     return running ? Promise.resolve([]) : objects.openConnection(id)
   }
   function refreshSchema(id = connectionId) {
-    if (!id || running) return
+    if (!id || running || objects.snapshots[id]?.status !== 'connected' || refreshingConnections.includes(id)) return
     if (id === connectionId) {
       resetStructure(Boolean(selectedTable))
       setRefresh((value) => value + 1)
     }
-    void objects.refreshConnection(id).catch(() => {})
+    setRefreshingConnections((previous) => [...previous, id])
+    void objects
+      .refreshConnection(id)
+      .catch(() => {})
+      .finally(() => setRefreshingConnections((previous) => previous.filter((value) => value !== id)))
   }
   async function refreshObjectTarget(id: string, db: string) {
     await objects.refreshDatabases(id)
@@ -663,6 +672,7 @@ export const useWorkspace = (active = true) => {
       // 只有服务端确认驱动资源已释放后，才删除窗口和本地元数据。
       if (db === undefined) await objects.closeConnection(id)
       else await objects.closeDatabase(id, db)
+      if (db === undefined) setRestoringConnections((previous) => (previous?.includes(id) ? previous.filter((value) => value !== id) : previous))
       const removed = new Set(scoped.map((page) => page.id))
       removePages(removed, tabs.find((page) => !removed.has(page.id))?.id || '')
       setExplorer((previous) => ({
@@ -1033,13 +1043,14 @@ export const useWorkspace = (active = true) => {
     setSavedGroups((previous) => [...new Set([...previous, connectionGroupName(saved.group)])])
     setConnections((previous) => upsertConnection(previous, saved))
     if (editing) {
-      setExplorer((previous) => ({
-        ...previous,
-        expanded: previous.expanded.filter((key) => {
+      setRestoringConnections((previous) => (previous?.includes(saved.id) ? previous.filter((value) => value !== saved.id) : previous))
+      setExplorer((previous) => {
+        const keep = (key: string) => {
           const [type, owner] = JSON.parse(key) as string[]
           return type === 'group' || owner !== saved.id
-        })
-      }))
+        }
+        return { ...previous, expanded: previous.expanded.filter(keep), selected: previous.selected.filter(keep) }
+      })
       void objects.closeConnection(saved.id).catch((error) => setOperationError(error instanceof Error ? error.message : t('关闭旧连接失败')))
       setTabs((previous) => previous.map((item) => (item.kind === 'query' && item.connectionId === saved.id ? { ...item, database: '', schema: '', table: '' } : item)))
       if (connectionId === saved.id) resetStructure()

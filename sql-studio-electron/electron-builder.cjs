@@ -3,6 +3,8 @@ const { access, copyFile, rename } = require('node:fs/promises')
 const path = require('node:path')
 const { version } = require('../sql-studio-frontend/package.json')
 
+const windowsIcon = 'build/icons/windows-icon.png'
+
 // electron-builder 的辅助工具与 Electron 本体分别下载，两个镜像都需要设置。
 process.env.ELECTRON_BUILDER_BINARIES_MIRROR ||= 'https://npmmirror.com/mirrors/electron-builder-binaries/'
 
@@ -15,20 +17,21 @@ module.exports = {
   files: ['src/**/*', 'package.json'],
   extraResources: [
     { from: 'build/runtime', to: 'runtime' },
-    { from: 'build/icons/icon.png', to: 'icon.png' },
-    { from: 'build/icons/mac-icon.png', to: 'mac-icon.png' }
+    { from: 'build/icons/icon.png', to: 'icon.png' }
   ],
   electronDownload: { mirror: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
-  mac: { target: ['dmg'], icon: 'build/icons/mac-icon.png', category: 'public.app-category.developer-tools', identity: null },
+  mac: { target: ['dmg'], category: 'public.app-category.developer-tools', identity: null },
   win: {
     target: ['nsis'],
+    icon: windowsIcon,
+    extraResources: [{ from: windowsIcon, to: 'windows-icon.png' }],
     publish: { provider: 'github', owner: 'xiaozhang95', repo: 'SQL-Studio', vPrefixedTagName: false }
   },
   async beforePack({ electronPlatformName }) {
     const windows = electronPlatformName === 'win32'
     const backend = windows ? 'sql-studio-backend.exe' : 'sql-studio-backend'
-    const resources = ['build/runtime/web/index.html', `build/runtime/${backend}`, 'build/icons/icon.png', 'build/icons/mac-icon.png']
-    if (windows) resources.push('build/launcher.exe')
+    const resources = ['build/runtime/web/index.html', `build/runtime/${backend}`, 'build/icons/icon.png']
+    if (windows) resources.push('build/launcher.exe', windowsIcon)
     try {
       await Promise.all(resources.map((file) => access(path.join(__dirname, file))))
     } catch (error) {

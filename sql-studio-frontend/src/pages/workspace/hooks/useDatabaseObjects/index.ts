@@ -165,7 +165,6 @@ export function useDatabaseObjects(
         pendingDetails: new Map()
       }
       sessions.current.set(id, session)
-      onConnectionReset(id)
       const valid = () => sessions.current.get(id) === session && !session.controller.signal.aborted
       setSnapshots((previous) => ({
         ...previous,
@@ -196,7 +195,7 @@ export function useDatabaseObjects(
       session.opening = task
       return task
     },
-    [closeConnection, onConnectionReset, onDatabasesLoaded, releaseConnection]
+    [closeConnection, onDatabasesLoaded, releaseConnection]
   )
 
   const refreshConnection = useCallback(

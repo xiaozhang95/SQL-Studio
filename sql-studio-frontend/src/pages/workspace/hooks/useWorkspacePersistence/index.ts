@@ -5,6 +5,7 @@ import type { RunState, WorkspaceSnapshot, WorkspaceTab } from '@/typings/worksp
 import { createLatestWriter } from '@/utils/latestWriter'
 import { RequestError } from '@/utils/request'
 
+import { clearExplorerSession, rememberExplorer, restoreExplorer } from './explorerSession'
 import { clearRedisDatabaseSession, rememberRedisDatabases, restoreRedisDatabases } from './redisDatabaseSession'
 
 type Content = { id: string; sql: string; run?: RunState; expectedSQL: string; expectedRun?: RunState }
@@ -22,15 +23,17 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
   const available = useRef(false)
   const autoSavePaused = useRef(false)
   const [savePaused, setSavePaused] = useState(false)
-  const inFlight = useRef<WorkspaceTab[]>([])
-  const syncRedisDatabases = useCallback(() => {
+  const inFlight = useRef<WorkspaceSnapshot | null>(null)
+  const syncSession = useCallback(() => {
     const { snapshot, options } = current.current
     const repository = store.current
-    if (available.current && repository && options.redisConnections) rememberRedisDatabases(snapshot.tabs, repository.doc.index.tabs, inFlight.current, options.redisConnections)
+    if (!available.current || !repository) return
+    if (!autoSavePaused.current) rememberExplorer(snapshot, repository.doc, inFlight.current)
+    if (options.redisConnections) rememberRedisDatabases(snapshot.tabs, repository.doc.index.tabs, inFlight.current?.tabs ?? [], options.redisConnections)
   }, [])
   useLayoutEffect(() => {
     current.current = { snapshot, restore, options }
-    syncRedisDatabases()
+    syncSession()
   })
   const [repository, setRepository] = useState<WorkspaceStore | null>(null)
   const [ready, setReady] = useState(false)
@@ -47,20 +50,21 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
       queue.current ??= createLatestWriter<WorkspaceSnapshot>(async (value) => {
         const repository = store.current
         if (!repository || !available.current) return
-        inFlight.current = value.tabs
-        syncRedisDatabases()
+        inFlight.current = value
+        syncSession()
         try {
           await repository.commit(value)
         } catch (error) {
           if (error instanceof RequestError && error.status === 409) {
             available.current = false
+            clearExplorerSession()
             clearRedisDatabaseSession()
             setReload(true)
           }
           throw error
         } finally {
-          inFlight.current = []
-          syncRedisDatabases()
+          inFlight.current = null
+          syncSession()
         }
         const latest = current.current.snapshot
         const ids = repository.evictable(latest)
@@ -70,7 +74,7 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
       })
       return queue.current(value)
     },
-    [syncRedisDatabases]
+    [syncSession]
   )
   const waitForIdle = reload && options.busy
   useEffect(() => {
@@ -85,7 +89,7 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
         controller.signal.throwIfAborted()
         if (reload && current.current.options.busy) return
         const saved = repository.snapshot()
-        current.current.restore(reload ? saved : { ...saved, tabs: restoreRedisDatabases(saved.tabs) })
+        current.current.restore(reload ? saved : { ...restoreExplorer(saved, repository.doc.revision), tabs: restoreRedisDatabases(saved.tabs) })
         store.current = repository
         available.current = true
         setRepository(repository)
@@ -174,6 +178,7 @@ export function useWorkspacePersistence(snapshot: WorkspaceSnapshot, restore: (s
       if (!available.current || !store.current) throw new Error('工作区尚未就绪，无法安全退出')
       await save(value)
       if (!available.current) throw new Error('工作区保存失败，请重试退出')
+      if (autoSavePaused.current) clearExplorerSession()
     },
     ready,
     pageReady,

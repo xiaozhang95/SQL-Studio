@@ -20,7 +20,7 @@ import {
 } from '@ant-design/icons'
 import { Dropdown, Empty, Tree } from 'antd'
 import type { MenuProps } from 'antd'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
@@ -93,6 +93,15 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
   const failures = useMemo(() => Array.from(data.byKey.values()).filter((node) => node.retry && node.retry !== 'connection'), [data])
   const { container: treeContainerRef, tree: treeRef, height: treeHeight, onScroll: onTreeScroll } = useTreeViewport<ExplorerNode>(explorer.top, (top) => updateExplorer({ top }), data.ready)
   const selectedKeys = selected.filter((key) => data.byKey.has(key))
+  const { loadTables, loadTableDetails } = objects
+  useEffect(() => {
+    if (running) return
+    // 已展开的节点可能不在虚拟列表视口内，恢复布局时仍需加载其子项。
+    for (const { kind, owner, database, table } of data.pendingLoads) {
+      const load = kind === 'database' ? loadTables(database, owner) : loadTableDetails(database, table, owner)
+      void load.catch(() => {})
+    }
+  }, [data.pendingLoads, running, loadTables, loadTableDetails])
 
   // 菜单在右键时生成，不为几千张表预建按钮、图标和闭包。
   function menuFor(node: ExplorerNode): MenuProps | undefined {
