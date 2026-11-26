@@ -1,4 +1,3 @@
-import { SettingOutlined } from '@ant-design/icons'
 import { Button, Grid, Modal, theme, Tooltip, Typography } from 'antd'
 
 import { appearance, formModalStyles, railButtonStyle } from '@/constant/appearance'
@@ -8,6 +7,7 @@ import type { AppearancePreferences } from '@/typings/theme'
 
 import AISettings from '../aiSettings'
 import ErrorNotice from '../errorNotice'
+import StudioIcon from '../studioIcon'
 import About from './components/about'
 import AppearanceCards from './components/appearanceCards'
 import ThemePreview from './components/themePreview'
@@ -32,7 +32,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
             aria-label={t('系统设置')}
             aria-haspopup="dialog"
             aria-expanded={settings.open}
-            icon={<SettingOutlined aria-hidden="true" style={{ fontSize: appearance.railIconSize }} />}
+            icon={<StudioIcon name="settings" size={appearance.railIconSize} />}
             disabled={preferences.themeReady === false}
             onClick={settings.show}
           />
@@ -43,7 +43,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
           aria-label={t('系统设置')}
           aria-haspopup="dialog"
           aria-expanded={settings.open}
-          icon={<SettingOutlined aria-hidden="true" />}
+          icon={<StudioIcon name="settings" />}
           disabled={preferences.themeReady === false}
           onClick={settings.show}
         >

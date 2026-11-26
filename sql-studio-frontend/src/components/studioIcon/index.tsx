@@ -14,6 +14,7 @@ export type StudioIconName =
   | 'key'
   | 'sun'
   | 'moon'
+  | 'settings'
   | 'sparkle'
   | 'zap'
 
@@ -78,6 +79,12 @@ export default function StudioIcon({ name, size = 16, className, style }: Props)
       </>
     ),
     moon: <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" />,
+    settings: (
+      <>
+        <path d="M9.9 5.4 10.4 3.1h3.2l.5 2.3 2.5 1.5 2.3-.7 1.6 2.7-1.8 1.7v2.8l1.8 1.7-1.6 2.7-2.3-.7-2.5 1.5-.5 2.3h-3.2l-.5-2.3-2.5-1.5-2.3.7-1.6-2.7 1.8-1.7v-2.8L3.5 8.9l1.6-2.7 2.3.7z" />
+        <circle cx="12" cy="12" r="2.8" />
+      </>
+    ),
     sparkle: (
       <>
         <path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z" />

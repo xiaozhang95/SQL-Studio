@@ -77,7 +77,11 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
               className="app-rail-button"
               style={
                 section === item.key
-                  ? { ...railButtonStyle, background: 'var(--surface-selected)', color: navigationDisabled ? token.colorTextDisabled : 'var(--navigation-icon-selected)' }
+                  ? {
+                      ...railButtonStyle,
+                      backgroundColor: 'var(--app-rail-focus-bg, var(--surface-selected))',
+                      color: navigationDisabled ? token.colorTextDisabled : 'var(--navigation-icon-selected)'
+                    }
                   : railButtonStyle
               }
               icon={item.icon}

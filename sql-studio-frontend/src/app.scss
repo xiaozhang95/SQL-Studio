@@ -63,7 +63,7 @@ html[data-pointer-input]
 }
 
 // 键盘焦点显示在按钮内，门户中的按钮也使用当前文字色。
-html:not([data-pointer-input]) .ant-btn:not(:disabled, .ant-btn-disabled):focus-visible {
+html:not([data-pointer-input]) .ant-btn:not(.app-rail-button, :disabled, .ant-btn-disabled):focus-visible {
   outline: var(--ant-line-width, 1px) solid currentColor;
   outline-offset: -3px;
 }
@@ -459,6 +459,18 @@ body,
   .app-rail {
     width: 48px;
   }
+}
+
+// 侧栏按钮在点击、键盘聚焦或弹窗还原焦点时都不绘制边框。
+.app-rail .app-rail-button.ant-btn:is(:focus, :focus-visible) {
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+.app-rail .app-rail-button.ant-btn:focus-visible:not(:disabled, .ant-btn-disabled) {
+  --app-rail-focus-bg: var(--ant-color-fill);
+  background-color: var(--app-rail-focus-bg);
 }
 
 // 普通侧栏入口共用次级图标色，悬停和按下时提升对比度。
