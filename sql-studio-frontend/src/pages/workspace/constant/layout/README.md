@@ -24,6 +24,8 @@ workspaceTabBarStyle 为主页面签栏和结果页签栏提供统一的 42px �
 
 scopeCloseDialogLayout.width=560：关闭数据库或连接前的保存确认弹窗宽度。
 
+`connectionFormLabelWidth` 按界面语言提供连接表单的共享标签列宽。中文给必填标记、字段名和冒号留足空间，英文以表单宽度为基准弹性分配标签列。两种语言的字号变化都会同步调整列宽。
+
 objectTreeLayout.rowHeight=30 由连接对象树和 Redis 键树共用，与 28px 节点内容和 2px 行距一致；switcherWidth=20 用于 Redis 键树统一分组箭头与叶节点占位列宽，使同层文件夹和键图标、文字对齐；scrollSaveDelay=150ms 在连接对象树滚动结束后保存位置。
 
 redisPanelLayout.sidebarWidth=320 由 Redis 键浏览和发布订阅共用。标题栏与搜索行沿用 `appearance.panelHeaderHeight`，与工作区其他工具栏对齐。

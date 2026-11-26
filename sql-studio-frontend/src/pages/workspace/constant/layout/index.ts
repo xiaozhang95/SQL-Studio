@@ -32,6 +32,7 @@ export const workspaceTabBarStyle = {
   background: 'var(--surface)'
 } as const satisfies CSSProperties
 export const sqlCompletionLayout = { width: 360, height: 256 } as const
+export const connectionFormLabelWidth = { 'zh-CN': '7.5em', 'en-US': 'clamp(7.5em, 36%, 10.5em)' } as const
 export const scopeCloseDialogLayout = { width: 560 } as const
 export const objectTreeLayout = { rowHeight: 30, switcherWidth: 20, scrollSaveDelay: 150 } as const
 /** Redis 键浏览与发布订阅的双栏宽度。 */

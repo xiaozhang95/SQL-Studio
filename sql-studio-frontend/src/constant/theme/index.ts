@@ -3,6 +3,7 @@ import { theme as antdTheme, type ThemeConfig } from 'antd'
 import type { FontSizePreference, ThemeMode } from '@/typings/theme'
 
 const logoPrimary = '#2569df'
+const lightTextColor = '#000'
 const defaultTextColor = 'var(--ant-color-text)'
 const darkAlgorithm: typeof antdTheme.darkAlgorithm = (seed, map) => ({
   ...antdTheme.darkAlgorithm(seed, map),
@@ -34,6 +35,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       ...(dark
         ? {}
         : {
+            colorText: lightTextColor,
+            colorTextSecondary: lightTextColor,
             colorBgLayout: '#f0f0f0',
             colorBgContainer: '#f5f5f5'
           })
