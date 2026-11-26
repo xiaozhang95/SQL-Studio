@@ -24,7 +24,7 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
           {progress?.total ? (
             <Progress
               type="circle"
-              size={token.controlHeight}
+              size={appearance.railIconSize}
               percent={Math.floor(progress.percent)}
               showInfo={false}
               status="active"
@@ -34,7 +34,7 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
               aria-valuetext={label}
             />
           ) : (
-            <LoadingOutlined spin role="status" aria-label={label} style={{ fontSize: token.controlHeight }} />
+            <LoadingOutlined spin role="status" aria-label={label} style={{ fontSize: appearance.railIconSize }} />
           )}
         </Flex>
       </Tooltip>

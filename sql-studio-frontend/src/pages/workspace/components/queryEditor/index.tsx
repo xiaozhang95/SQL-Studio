@@ -141,6 +141,7 @@ export default function QueryEditor({ model, themeMode }: Props) {
                 <StudioIcon name="sparkle" size={14} />
                 <span>{t('AI 补全')}</span>
                 <Switch
+                  size="small"
                   aria-label={t('AI 代码补全')}
                   checked={ai.configured && ai.enabled}
                   disabled={!ai.configured || running || ai.preferenceSaving}
