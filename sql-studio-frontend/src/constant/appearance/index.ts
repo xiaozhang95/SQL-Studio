@@ -1,4 +1,5 @@
 import type { ButtonProps, ConfigProviderProps, ModalProps } from 'antd'
+import type { CSSProperties } from 'react'
 
 /** 仅集中已确认的界面约定，其余视觉属性沿用 Ant Design 默认值。 */
 export const appearance = {
@@ -12,6 +13,12 @@ export const appearance = {
   panelHeaderHeight: number
   railIconSize: number
 }
+
+export const panelHeaderRowStyle = {
+  boxSizing: 'border-box',
+  minHeight: appearance.panelHeaderHeight,
+  borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)'
+} as const satisfies CSSProperties
 
 /** 原生 Modal 与 AntApp 确认弹窗的操作按钮统一使用 default。 */
 export const modalDefaults = { okButtonProps: { type: 'default' } } as const satisfies NonNullable<ConfigProviderProps['modal']>

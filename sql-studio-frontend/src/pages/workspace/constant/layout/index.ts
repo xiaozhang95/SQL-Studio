@@ -20,12 +20,12 @@ export const workspaceTabLayout = { width: 200, menuWidth: 336, menuListHeight: 
 export const workspaceInset = 'var(--workspace-inset)'
 export const workspaceTabBarSpacer = { display: 'block', width: workspaceInset } as const satisfies CSSProperties
 export const resultToolbarSpacing = {
-  minHeight: appearance.panelHeaderHeight,
   paddingBlock: 'var(--ant-padding-xxs)',
   gap: 'var(--ant-margin-xs)'
 } as const satisfies CSSProperties
+export const resultNavigationContentHeight = `calc(${appearance.panelHeaderHeight}px - var(--ant-line-width))`
 
-/** 主页面签栏与结果页签栏共用高度，与对象栏标题行、搜索行和编辑器工具栏一致。 */
+/** 主页面签栏的高度包含 Ant Design 绘制在栏内的分隔线。 */
 export const workspaceTabBarStyle = {
   height: appearance.panelHeaderHeight,
   margin: 0,

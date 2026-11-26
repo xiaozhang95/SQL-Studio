@@ -21,6 +21,7 @@ import ContentLoading from '@/components/contentLoading'
 import DeleteDialog from '@/components/deleteDialog'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import ErrorNotice from '@/components/errorNotice'
+import { panelHeaderRowStyle } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
@@ -400,9 +401,9 @@ export default function QueryResults({ model, themeMode }: Props) {
             justify="space-between"
             wrap
             style={{
+              ...panelHeaderRowStyle,
               ...resultToolbarSpacing,
-              paddingInline: workspaceInset,
-              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
+              paddingInline: workspaceInset
             }}
           >
             {tab.kind === 'data' && adapter?.dataEditing && (

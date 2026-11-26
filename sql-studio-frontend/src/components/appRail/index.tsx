@@ -103,7 +103,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
           style={railButtonStyle}
           icon={<StudioIcon name={themeMode === 'dark' ? 'sun' : 'moon'} size={appearance.railIconSize} />}
           aria-label={t('切换主题')}
-          loading={savingTheme}
+          loading={savingTheme && { icon: <StudioIcon name="spinner" size={appearance.railIconSize} /> }}
           disabled={!preferences.themeReady}
           onClick={() => void toggleTheme()}
         />

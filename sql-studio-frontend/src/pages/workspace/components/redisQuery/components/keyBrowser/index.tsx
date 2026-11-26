@@ -1,11 +1,10 @@
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Empty, Form, Input, InputNumber, Modal, theme, Typography } from 'antd'
 import { useState } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
-import { SidebarHeader } from '@/components/sidebarControls'
-import { appearance } from '@/constant/appearance'
+import { SidebarHeader, SidebarSearch } from '@/components/sidebarControls'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RedisKey } from '@/services/redis'
@@ -95,33 +94,18 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
           actions={
             <>
               <ToolbarButton icon={<PlusOutlined />} label={t('新增键')} disabled={saving} onClick={() => promptAction('create')} />
-              <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(request.pattern)} />
+              <ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} disabled={saving} onClick={() => scan(filter)} />
             </>
           }
         />
-        <div
-          style={{
-            display: 'flex',
-            flex: 'none',
-            alignItems: 'center',
-            gap: token.marginXS,
-            minHeight: appearance.panelHeaderHeight,
-            paddingInline: token.padding,
-            borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
-          }}
-        >
-          <Input
-            value={filter}
-            disabled={saving}
-            onChange={(event) => setFilter(event.target.value)}
-            onPressEnter={() => scan(filter)}
-            placeholder={t('按模式匹配键，例如 user:*')}
-            aria-label={t('筛选 Redis 键')}
-            maxLength={256}
-            style={{ flex: 1, minWidth: 0 }}
-          />
-          <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} disabled={saving} onClick={() => scan(filter)} />
-        </div>
+        <SidebarSearch
+          value={filter}
+          onChange={setFilter}
+          placeholder={t('搜索键名')}
+          label={t('筛选 Redis 键')}
+          maxLength={256}
+          disabled={saving}
+        />
         {(needsRestart || scanningMore || (Boolean(nextCursor) && nextCursor !== '0')) && (
           <div
             style={{

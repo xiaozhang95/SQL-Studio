@@ -442,6 +442,19 @@ body,
   }
 }
 
+// 线性加载图标共享同一个旋转动画。
+.studio-icon-spinning {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: studio-icon-spin 1s linear infinite;
+  }
+}
+
+@keyframes studio-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 // 普通侧栏入口共用次级图标色，悬停和按下时提升对比度。
 .app-rail .app-rail-button.ant-btn:not([aria-current='page'], :disabled, .ant-btn-disabled) {
   color: var(--text-secondary);

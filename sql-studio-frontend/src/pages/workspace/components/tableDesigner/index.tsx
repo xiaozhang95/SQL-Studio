@@ -1,7 +1,7 @@
 import { EyeOutlined, ReloadOutlined, SaveOutlined } from '@ant-design/icons'
 import { Alert, Space, Spin, theme, Typography } from 'antd'
 
-import { appearance } from '@/constant/appearance'
+import { panelHeaderRowStyle } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
@@ -28,15 +28,14 @@ export default function TableDesigner({ themeMode, available, active, ...options
       <div
         className="editor-toolbar"
         style={{
+          ...panelHeaderRowStyle,
           flex: 'none',
           display: 'flex',
           alignItems: 'center',
           gap: token.marginXS,
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          minHeight: appearance.panelHeaderHeight,
           paddingInline: token.padding,
-          borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           userSelect: 'none'
         }}
       >

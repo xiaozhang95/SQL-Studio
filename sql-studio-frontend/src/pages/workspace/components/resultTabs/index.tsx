@@ -2,10 +2,11 @@ import { LoadingOutlined, MessageOutlined, ProfileOutlined } from '@ant-design/i
 import { Flex, Select, Tabs } from 'antd'
 import type { ReactNode } from 'react'
 
+import { panelHeaderRowStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { RunState } from '@/typings/workspace'
 
-import { resultControlProps, resultTabLayout, resultToolbarIconInset, resultToolbarSpacing, workspaceInset, workspaceTabBarStyle } from '../../constant/layout'
+import { resultControlProps, resultNavigationContentHeight, resultTabLayout, resultToolbarIconInset, resultToolbarSpacing, workspaceInset, workspaceTabBarStyle } from '../../constant/layout'
 import { resultOutputs } from '../../utils/queryOutput'
 
 type Props = {
@@ -24,14 +25,14 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
   const indexedResults = results.map((entry, resultIndex) => ({ ...entry, resultIndex }))
   const visibleResults = compact ? indexedResults.filter(({ key }) => key === activeKey) : indexedResults
   return (
-    <Flex className="result-navigation" wrap align="center" style={{ minWidth: 0, paddingInline: workspaceInset, borderBlockEnd: 'var(--ant-line-width) solid var(--layout-divider)' }}>
+    <Flex className="result-navigation" wrap align="center" style={{ ...panelHeaderRowStyle, minWidth: 0, paddingInline: workspaceInset }}>
       <Tabs
         className="statement-result-tabs"
         aria-label={t('输出内容')}
         type="line"
         style={{ flex: `1 1 ${resultTabLayout.wrapBasis}px`, minWidth: 0, maxWidth: '100%' }}
         styles={{
-          header: workspaceTabBarStyle,
+          header: { ...workspaceTabBarStyle, height: resultNavigationContentHeight },
           item: { height: 'var(--ant-control-height)', paddingBlock: 0, paddingInline: resultToolbarIconInset, borderRadius: 'var(--ant-border-radius)' }
         }}
         tabBarGutter={4}
@@ -58,7 +59,7 @@ export default function ResultTabs({ run, running, activeKey, status, onChange }
           align="center"
           justify="end"
           wrap
-          style={{ ...resultToolbarSpacing, minWidth: 0, maxWidth: '100%' }}
+          style={{ ...resultToolbarSpacing, minHeight: resultNavigationContentHeight, minWidth: 0, maxWidth: '100%' }}
         >
           {compact && (
             <Select

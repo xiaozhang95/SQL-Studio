@@ -1,7 +1,7 @@
 import { Flex, theme } from 'antd'
 import type { ReactNode } from 'react'
 
-import { appearance } from '@/constant/appearance'
+import { panelHeaderRowStyle } from '@/constant/appearance'
 
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import ScopeSelects from '../scopeSelects'
@@ -25,10 +25,9 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
       gap={token.marginXS}
       wrap
       style={{
+        ...panelHeaderRowStyle,
         flex: 'none',
-        minHeight: appearance.panelHeaderHeight,
         paddingInline: token.padding,
-        borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
         background: token.colorBgContainer,
         userSelect: 'none'
       }}

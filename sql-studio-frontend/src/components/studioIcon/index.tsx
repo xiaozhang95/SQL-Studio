@@ -15,6 +15,10 @@ export type StudioIconName =
   | 'sun'
   | 'moon'
   | 'settings'
+  | 'download'
+  | 'restart'
+  | 'spinner'
+  | 'progress'
   | 'sparkle'
   | 'zap'
 
@@ -23,12 +27,13 @@ export const databaseSectionIconNames = { monitor: 'activity', sync: 'swap' } as
 interface Props {
   name: StudioIconName
   size?: number
+  progress?: number
   className?: string
   style?: CSSProperties
 }
 
 /** 与应用视觉稿一致的线性 SVG 图标，避免 Ant Design 图标在不同尺寸下风格跳变。 */
-export default function StudioIcon({ name, size = 16, className, style }: Props) {
+export default function StudioIcon({ name, size = 16, progress = 0, className, style }: Props) {
   const paths: Record<StudioIconName, ReactNode> = {
     database: (
       <>
@@ -85,6 +90,15 @@ export default function StudioIcon({ name, size = 16, className, style }: Props)
         <circle cx="12" cy="12" r="2.8" />
       </>
     ),
+    download: <path d="M12 3v12m-4-4 4 4 4-4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />,
+    restart: <path d="M20 4v5h-5m5 0a8.5 8.5 0 1 0 .2 5" />,
+    spinner: <path d="M12 3a9 9 0 1 1-9 9" />,
+    progress: (
+      <>
+        <circle cx="12" cy="12" r="9" stroke="var(--ant-color-border)" />
+        {progress > 0 && <circle cx="12" cy="12" r="9" transform="rotate(-90 12 12)" pathLength={100} strokeDasharray={`${progress} 100`} />}
+      </>
+    ),
     sparkle: (
       <>
         <path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z" />
@@ -99,7 +113,7 @@ export default function StudioIcon({ name, size = 16, className, style }: Props)
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      className={className}
+      className={name === 'spinner' ? ['studio-icon-spinning', className].filter(Boolean).join(' ') : className}
       style={style}
       aria-hidden="true"
       fill={filled ? 'currentColor' : 'none'}

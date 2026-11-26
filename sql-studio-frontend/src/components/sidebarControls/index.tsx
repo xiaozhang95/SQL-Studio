@@ -2,7 +2,7 @@ import { SearchOutlined } from '@ant-design/icons'
 import { Flex, Input, theme, Typography } from 'antd'
 import type { ReactNode } from 'react'
 
-import { appearance } from '@/constant/appearance'
+import { appearance, panelHeaderRowStyle } from '@/constant/appearance'
 
 export function SidebarHeader({ title, actions, detail }: { title: string; actions: ReactNode; detail?: ReactNode }) {
   const { token } = theme.useToken()
@@ -10,7 +10,7 @@ export function SidebarHeader({ title, actions, detail }: { title: string; actio
     <Flex
       align="center"
       gap={token.marginXS}
-      style={{ flex: 'none', minHeight: appearance.panelHeaderHeight, paddingInline: token.padding, borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)` }}
+      style={{ ...panelHeaderRowStyle, flex: 'none', paddingInline: token.padding }}
     >
       <Typography.Text strong>{title}</Typography.Text>
       {detail}
@@ -21,20 +21,39 @@ export function SidebarHeader({ title, actions, detail }: { title: string; actio
   )
 }
 
-export function SidebarSearch({ value, onChange, placeholder, label = placeholder }: { value: string; onChange: (value: string) => void; placeholder: string; label?: string }) {
+type SearchProps = {
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  label?: string
+  disabled?: boolean
+  maxLength?: number
+}
+
+export function SidebarSearch({ value, onChange, placeholder, label = placeholder, disabled, maxLength }: SearchProps) {
   const { token } = theme.useToken()
   return (
     <div
       style={{
+        ...panelHeaderRowStyle,
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
         height: appearance.panelHeaderHeight,
-        paddingInline: token.padding,
-        borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
+        paddingInline: token.padding
       }}
     >
-      <Input style={{ width: '100%' }} prefix={<SearchOutlined />} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={label} allowClear />
+      <Input
+        style={{ width: '100%' }}
+        prefix={<SearchOutlined />}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={label}
+        disabled={disabled}
+        maxLength={maxLength}
+        allowClear
+      />
     </div>
   )
 }

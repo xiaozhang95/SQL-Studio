@@ -1,16 +1,18 @@
-import { CaretRightOutlined, ClearOutlined, PauseOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { CaretRightOutlined, ClearOutlined, PauseOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Checkbox, Empty, Flex, Input, Switch, theme, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
-import { SidebarHeader } from '@/components/sidebarControls'
+import { SidebarHeader, SidebarSearch } from '@/components/sidebarControls'
 import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
+import { redisSearchPattern } from '@/databases/redis/searchPattern'
 import { useTranslation } from '@/hooks/useTranslation'
 import { getChannels, subscribe } from '@/services/redis'
 import type { RedisChannel, RedisChannels } from '@/services/redis'
 
 import { objectTreeLayout, redisPanelLayout } from '../../../../constant/layout'
 import ToolbarButton from '../../../toolbarButton'
+import { useRedisSearch } from '../../hooks/useRedisSearch'
 
 type Message = { id: number; channel: string; payload: string; truncated?: boolean; receivedAt: number }
 type ChannelRequest = { pattern: string }
@@ -44,7 +46,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
 
   useEffect(() => {
     const controller = new AbortController()
-    void getChannels(id, request.pattern, controller.signal)
+    void getChannels(id, redisSearchPattern(request.pattern), controller.signal)
       .then((channels) => {
         if (!controller.signal.aborted) setResponse({ request, channels })
       })
@@ -53,6 +55,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
       })
     return () => controller.abort()
   }, [id, request])
+  useRedisSearch(filter, request.pattern, active, (pattern) => setRequest({ pattern }))
 
   useEffect(
     () => () => {
@@ -211,27 +214,13 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             }
             actions={<ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} onClick={() => setRequest({ pattern: filter })} />}
           />
-          <div
-            style={{
-              display: 'flex',
-              flex: 'none',
-              alignItems: 'center',
-              gap: token.marginXS,
-              minHeight: appearance.panelHeaderHeight,
-              paddingInline: token.padding,
-              borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
-            }}
-          >
-            <Input
-              value={filter}
-              aria-label={t('筛选频道')}
-              placeholder={t('匹配模式，可留空')}
-              maxLength={256}
-              onChange={(event) => setFilter(event.target.value)}
-              onPressEnter={() => setRequest({ pattern: filter })}
-            />
-            <ToolbarButton icon={<SearchOutlined />} label={t('筛选')} onClick={() => setRequest({ pattern: filter })} />
-          </div>
+          <SidebarSearch
+            value={filter}
+            onChange={setFilter}
+            placeholder={t('搜索频道名称')}
+            label={t('筛选频道')}
+            maxLength={256}
+          />
           <div style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlockStart: token.paddingXXS, paddingBlockEnd: token.paddingXS }}>
             {loading && !channels ? (
               <Typography.Text type="secondary" style={{ display: 'block', padding: token.padding }}>

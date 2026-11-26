@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { redisSearchPattern } from '@/databases/redis/searchPattern'
 import { useTranslation } from '@/hooks/useTranslation'
 import { changeKey, getKey, getKeyTTL, scanKeys } from '@/services/redis'
 import type { RedisKey, RedisKeyChange, RedisKeyDetail, RedisKeyPage } from '@/services/redis'
 import { RequestError } from '@/utils/request'
+
+import { useRedisSearch } from '../useRedisSearch'
 
 type Action = 'create'
 type ScanRequest = { pattern: string; cursor: string; continuous?: boolean }
@@ -52,6 +55,7 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
     setLoading(true)
     setError('')
     let cursor = request.cursor
+    const pattern = redisSearchPattern(request.pattern)
     let cursorExpired = false
     let replaceKeys = cursor === '0'
     let pending: RedisKeyPage[] = []
@@ -77,7 +81,7 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
       const pages = request.continuous ? Infinity : request.cursor === '0' ? 1 : subsequentScanPages
       for (let index = 0; index < pages; index++) {
         controller.signal.throwIfAborted()
-        const next = await scanKeys(id, database, request.pattern, cursor, controller.signal)
+        const next = await scanKeys(id, database, pattern, cursor, controller.signal)
         controller.signal.throwIfAborted()
         pending.push(next)
         cursor = next.cursor
@@ -140,7 +144,7 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
     }
   }, [active, id, database, selected, detail, expiring, saving, clearMissingKey])
 
-  function scan(pattern: string, cursor = '0', continuous = false) {
+  function scan(pattern: string, cursor = '0', continuous = cursor === '0' && Boolean(pattern)) {
     if (mutation.current) return
     // 同一筛选刷新时保留旧树，切换筛选时丢弃旧游标和结果。
     scanRequest.current?.abort()
@@ -156,6 +160,8 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
     setDetailError('')
     setDetailLoading(false)
   }
+
+  useRedisSearch(filter, request.pattern, active && !saving, (pattern) => scan(pattern))
 
   function read(key: RedisKey, refresh = false) {
     if (mutation.current || (!refresh && selectedRef.current === key.ref)) return
@@ -216,7 +222,7 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
           setDetailLoading(false)
         } else setPage((previous) => previous && { ...previous, keys: previous.keys.filter((key) => key.ref !== item.ref) })
       } else if (result.key) {
-        setRequest({ pattern: request.pattern, cursor: '0' })
+        setRequest({ pattern: request.pattern, cursor: '0', continuous: Boolean(request.pattern) })
         read(result.key, true)
       } else if (selected && (change.action === 'value' || change.action === 'ttl')) read(selected, true)
       else scan(request.pattern)
