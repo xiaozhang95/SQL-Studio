@@ -16,12 +16,15 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
   const dark = themeMode === 'dark'
   const borderColor = dark ? '#242424' : '#e2e2e2'
   const selectedBackground = dark ? '#303030' : '#e6e6e6'
+  const inputFocus = { activeBorderColor: borderColor }
   return {
     algorithm: dark ? darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
       colorPrimary: logoPrimary,
       fontSize: uiFontSizes[fontSizeMode],
       controlHeight: 30,
+      focusOutline: false,
+      controlOutlineWidth: 0,
       colorBorder: borderColor,
       colorBorderSecondary: borderColor,
       colorSplit: borderColor,
@@ -36,6 +39,10 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
           })
     },
     components: {
+      Input: inputFocus,
+      InputNumber: inputFocus,
+      DatePicker: inputFocus,
+      Select: inputFocus,
       Typography: { colorTextDescription: defaultTextColor },
       Statistic: { colorTextDescription: defaultTextColor },
       Tabs: { itemHoverColor: defaultTextColor, itemActiveColor: defaultTextColor, itemSelectedColor: defaultTextColor }

@@ -79,7 +79,7 @@ export default function AppRail({ section, themeMode, disabled = false, onOpenWo
                 section === item.key
                   ? {
                       ...railButtonStyle,
-                      backgroundColor: 'var(--app-rail-focus-bg, var(--surface-selected))',
+                      backgroundColor: 'var(--surface-selected)',
                       color: navigationDisabled ? token.colorTextDisabled : 'var(--navigation-icon-selected)'
                     }
                   : railButtonStyle

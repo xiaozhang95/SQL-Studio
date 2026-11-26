@@ -12,4 +12,4 @@ DataExport({model}) 接收 useDataExport 返回值。以 Ant Design Modal/Descri
 
 取消后隐藏进度条及百分比，保留取消日志与关闭按钮；运行、成功及失败状态继续显示相应进度。
 
-常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。
+常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下和禁用反馈，不增加交互颜色覆盖。

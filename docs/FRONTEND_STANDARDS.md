@@ -4,14 +4,14 @@
 
 ## Ant Design 与样式
 
-布局分隔线、弹窗、卡片、表格、页签和普通输入边框共用主题中性色。`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 在同一主题下使用同一颜色。输入焦点和校验反馈沿用组件的语义色。同一边界由一处绘制，Tabs 栏底沿用原生分隔线。
+布局分隔线、弹窗、卡片、表格、页签和普通输入边框共用主题中性色。`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 在同一主题下使用同一颜色。控件聚焦时沿用原本外观。Ant Design 主题统一关闭额外焦点效果，app.scss 覆盖浏览器轮廓及剩余的局部焦点样式。表单校验沿用语义色。同一边界由一处绘制，Tabs 栏底沿用原生分隔线。
 
 1. 以 Ant Design 组件为底座，使用 [主题 token](../sql-studio-frontend/src/constant/theme/README.md) 和项目设计令牌统一颜色、字号、间距与状态。亮暗主题共用 Logo 放大镜的蓝色 `#2569DF` 作为主色，主题算法派生交互色。信息色沿用 Ant Design 默认令牌。全局页面切换、主题切换和系统设置由 AppRail 承载，业务操作放入对应工具栏、页签栏或侧栏。
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；组件内的颜色、圆角、间距和尺寸优先读取 `theme.useToken()`，简单排版优先使用 Flex、Space 等原生组件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
 3. 常规 Ant Design 组件统一继承全局标准尺寸 `middle`。同类组件使用相同的尺寸、边框、圆角与颜色令牌。全局约定放 [appearance](../sql-studio-frontend/src/constant/appearance/README.md)，页面专用尺寸放对应页面 constant；优先使用 Ant Design token，不另造颜色体系。
 4. 成功/失败语义色、Alert 的状态底色和描边、表格外观等已确认要求集中配置后复用；常规导航项、会话列表项、用户消息和聊天输入区共用 Ant Design 默认 `borderRadius`。原生控件沿用组件对应尺寸的圆角令牌。不能把单处要求扩大为所有原生组件的覆盖。修改共享配置时同时核对亮暗主题和所有使用者。
 5. **每个操作面只设置一个 primary 主操作。** 工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」使用 primary；其余操作使用 default、text 或图标按钮。Modal/AntApp 确认按钮默认为 default，桌面退出时的查询「保存」使用 primary，写入确认可使用 warning。
-6. **业务表单统一左侧文本标签、右侧输入控件。** 使用 Ant Design Form 的 horizontal 布局、labelCol/wrapperCol 和合适的固定标签宽度，标签右对齐；校验错误、帮助说明跟随右侧输入。输入控件的边框和焦点样式沿用 Ant Design 令牌，按钮聚焦时仅显示按钮自身样式。新建/编辑连接、AI 配置、数据库/Schema/表管理及引擎专属属性表单均遵守，不新增 vertical 或上下排列；长名称说明放右侧内容区，表格内无标签单元格不加空白标签列。
+6. **业务表单统一左侧文本标签、右侧输入控件。** 使用 Ant Design Form 的 horizontal 布局、labelCol/wrapperCol 和合适的固定标签宽度，标签右对齐；校验错误、帮助说明跟随右侧输入。输入控件聚焦时沿用常态边框，校验边框保留。新建/编辑连接、AI 配置、数据库/Schema/表管理及引擎专属属性表单均遵守，不新增 vertical 或上下排列；长名称说明放右侧内容区，表格内无标签单元格不加空白标签列。
 7. **普通界面文本沿用系统和 Ant Design 默认字体。** Typography 正文、标题、次级说明与 Statistic 指标标签共用全局正文色 `colorText`，链接及状态文字使用语义色。提示、错误详情、消息、摘要、表单及表格使用组件默认字体和文字层级。多行说明用普通文本容器配合 whiteSpace/overflowWrap，不能为了保留换行使用自带等宽字体的 pre/code。SQL 编辑与预览沿用现有统一配置，不因局部提示调整字体。
 
 同一引擎的新建/编辑数据库表单保持相同字段顺序、标签宽度和控件列位置。编辑时库名行保留并禁用；PostgreSQL 不可修改字段使用 disabled，不能只用 readOnly。新建尚不支持设置的属性显示默认值提示并禁用，不注册校验或提交这些字段。

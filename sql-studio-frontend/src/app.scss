@@ -56,16 +56,9 @@ body {
   overflow-x: auto;
 }
 
-// 弹窗关闭和列表切换可恢复焦点，鼠标或触摸触发时不绘制按钮轮廓。
-html[data-pointer-input]
-  :is(.ant-btn, .ant-tabs .ant-tabs-nav .ant-tabs-nav-add, .ant-tabs .ant-tabs-tab-remove, .ant-modal .ant-modal-close, .ant-drawer .ant-drawer-close):focus {
+// Ant Design 通过主题关闭焦点轮廓；原生元素也不显示浏览器的额外描边。
+:focus {
   outline: none;
-}
-
-// 键盘焦点显示在按钮内，门户中的按钮也使用当前文字色。
-html:not([data-pointer-input]) .ant-btn:not(.app-rail-button, :disabled, .ant-btn-disabled):focus-visible {
-  outline: var(--ant-line-width, 1px) solid currentColor;
-  outline-offset: -3px;
 }
 
 // 仅隐藏 Button 的点击波纹，保留按钮自身的按下样式。
@@ -160,12 +153,11 @@ body,
   height: 100%;
 }
 
-.sidebar-resizer:is(:hover, :focus-visible),
+.sidebar-resizer:hover,
 .sidebar.is-resizing .sidebar-resizer,
-.results-resizer:is(:hover, :focus-visible),
+.results-resizer:hover,
 .results-panel.is-resizing .results-resizer {
   background: var(--ant-control-item-bg-hover);
-  outline: none;
 }
 .workspace:has(.sidebar.is-resizing),
 .workspace:has(.sidebar.is-resizing) * {
@@ -228,7 +220,6 @@ body,
   overflow: hidden;
 }
 .results-resizer:hover > span,
-.results-resizer:focus-visible > span,
 .results-panel.is-resizing .results-resizer > span {
   --resize-grip-color: var(--text-tertiary);
 }
@@ -256,14 +247,16 @@ body,
     background: transparent;
   }
 
-  &:is(:hover, :focus-visible)::after {
+  &:hover::after {
     background: var(--ant-color-text-tertiary);
   }
-
-  &:focus-visible {
-    outline: 1px solid var(--ant-color-primary);
-    outline-offset: -1px;
-  }
+}
+// Ant Design 表头排序和展开按钮有独立的焦点颜色，保留常态颜色。
+.ant-table-wrapper .ant-table-thead th.ant-table-column-has-sorters:focus-visible {
+  color: var(--ant-table-header-color, var(--text));
+}
+.ant-table-wrapper .ant-table-row-expand-icon:focus:not(:hover, :active) {
+  border-color: var(--ant-table-border-color, var(--border));
 }
 // 手动调整列宽后按实际宽度布局，允许最后一列收窄并保留横向滚动。
 .resizable-table.resizable-table-sized > .ant-table-wrapper table,
@@ -305,7 +298,7 @@ body,
   flex-basis: 8px;
 }
 
-// 刻度宽度和底色随当前项、悬停与焦点联动；保留 CSS 减弱动画支持。
+// 刻度宽度和底色随当前项与悬停联动；保留 CSS 减弱动画支持。
 .chat-round-marker span {
   width: 10px;
   height: 2px;
@@ -320,16 +313,10 @@ body,
   }
 }
 .chat-round-marker[aria-current='step'] span,
-.chat-round-marker:hover span,
-.chat-round-marker:focus-visible span {
+.chat-round-marker:hover span {
   width: 18px;
   background: var(--ant-color-primary);
 }
-.chat-round-marker:focus-visible {
-  outline: 1px solid var(--ant-color-primary);
-  outline-offset: 2px;
-}
-
 :is(.workspace-tabs, .statement-result-tabs) > .ant-tabs-nav {
   .ant-tabs-nav-list {
     align-items: center;
@@ -435,7 +422,7 @@ body,
 }
 
 // 「更多」面板的页签行统一绘制悬停底色，覆盖标题和关闭按钮所在区域。
-.workspace-open-page:is(:hover, :has(:focus-visible)) {
+.workspace-open-page:hover {
   background: var(--ant-control-item-bg-hover);
 }
 
@@ -444,8 +431,7 @@ body,
   color: var(--ant-color-icon);
 
   &:hover,
-  &:active,
-  &:focus:not(:focus-visible) {
+  &:active {
     color: var(--text);
   }
 }
@@ -459,18 +445,6 @@ body,
   .app-rail {
     width: 48px;
   }
-}
-
-// 侧栏按钮在点击、键盘聚焦或弹窗还原焦点时都不绘制边框。
-.app-rail .app-rail-button.ant-btn:is(:focus, :focus-visible) {
-  border-color: transparent;
-  outline: none;
-  box-shadow: none;
-}
-
-.app-rail .app-rail-button.ant-btn:focus-visible:not(:disabled, .ant-btn-disabled) {
-  --app-rail-focus-bg: var(--ant-color-fill);
-  background-color: var(--app-rail-focus-bg);
 }
 
 // 普通侧栏入口共用次级图标色，悬停和按下时提升对比度。
@@ -491,13 +465,9 @@ body,
   }
 }
 
-// Sender 的默认边框在亮色下对比度较低，聚焦时沿同一条边框显示主题色。
+// Sender 共用主题中性边框。
 .agent-composer.ant-sender.ant-sender-main {
   border-color: var(--ant-color-border);
-
-  &:focus-within {
-    border-color: var(--primary);
-  }
 }
 
 // 用户消息的编辑/复制操作只在悬停或键盘聚焦时出现，保持气泡本身简洁。

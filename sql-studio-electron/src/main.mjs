@@ -304,7 +304,7 @@ if (dataError) {
 } else {
   app.on('web-contents-created', (_event, contents) => {
     contents.on('before-input-event', (event, input) => {
-      if (input.key === 'F5' && input.control && !input.shift && !input.alt && !input.meta) event.preventDefault()
+      if (input.control && !input.shift && !input.alt && !input.meta && (input.key === 'F5' || input.key.toLowerCase() === 'r')) event.preventDefault()
     })
   })
   app.on('second-instance', () => {

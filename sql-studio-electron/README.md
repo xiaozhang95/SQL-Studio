@@ -24,7 +24,7 @@ pnpm install --frozen-lockfile
 
 调试时，在 `sql-studio-backend` 目录手动执行 `go run main.go`，在 `sql-studio-frontend` 目录手动执行 `pnpm dev`，最后在本目录执行 `pnpm start`。Electron 检查 `http://127.0.0.1:15173` 上的 Vite 服务和它转发到 Go `127.0.0.1:18080` 的 `/api/health`。检查失败时，终端和弹窗会提示对应的启动命令。调试窗口直接加载 Vite 提供的前端源码，支持热更新。
 
-桌面端主进程拦截 `Ctrl+F5`，调试版和发行版均适用。
+桌面端主进程拦截 `Ctrl+R` 和 `Ctrl+F5`，调试版和发行版均适用。
 
 打包时只需执行 `pnpm build`。它将前端静态资源和 Go 可执行文件构建到 `build/runtime/`，再通过 `extraResources` 随应用打包。后端可执行文件位于 ASAR 外。
 
@@ -124,7 +124,7 @@ Windows 调试遇到 `STATUS_BREAKPOINT`（`0x80000003`）或访问冲突（`0xC
 
 ## 代码与检查
 
-- `src/main.mjs`：窗口、`Ctrl+F5` 快捷键拦截、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
+- `src/main.mjs`：窗口、刷新快捷键拦截、单实例、应用生命周期与原生保存（`save-begin`/`save-commit`/`save-discard`）。
 - `src/quit.mjs`：窗口退出握手、请求去重、取消及无响应时的原生确认。
 - `src/backend.mjs`：本地服务启动、就绪等待与子进程清理。
 - `src/messages.mjs`：原生对话框及桌面服务提示的中英文案。

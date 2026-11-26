@@ -8,4 +8,4 @@ ObjectManagementModal 接收 manager（useObjectManagement 返回值）及 theme
 
 承载新建、编辑或删除数据库，以及删除、清空或重命名表。CreateTable/EditTable 由右侧 tableDesigner 标签页承载。加载时禁用提交，保存期间禁止关闭。危险动作输入完整对象名称确认，提交使用 danger 按钮。删库或删表前可保存关联 SQL 草稿，或确认放弃未保存的改动。对象删除成功后关闭关联标签页。预览、错误及元数据由 manager 控制。
 
-常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下、焦点和禁用反馈，不增加交互颜色覆盖。
+常规操作按钮使用 Ant Design default 类型，保留原生悬停、按下和禁用反馈，不增加交互颜色覆盖。

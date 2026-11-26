@@ -127,23 +127,6 @@ export default function App() {
   const themeConfig = useMemo(() => createThemeConfig(mode, fontSizePreference), [mode, fontSizePreference])
   const locale = useMemo(() => (language === 'en-US' ? { ...enUS, ...xEnUS } : { ...zhCN, ...xZhCN }), [language])
 
-  // 弹窗在独立门户恢复焦点，输入方式需在文档级记录。
-  useEffect(() => {
-    const root = document.documentElement
-    const markPointerInput = () => root.setAttribute('data-pointer-input', '')
-    const markKeyboardInput = (event: KeyboardEvent) => {
-      if (!event.altKey && !event.ctrlKey && !event.metaKey) root.removeAttribute('data-pointer-input')
-    }
-
-    document.addEventListener('pointerdown', markPointerInput, true)
-    document.addEventListener('keydown', markKeyboardInput, true)
-    return () => {
-      document.removeEventListener('pointerdown', markPointerInput, true)
-      document.removeEventListener('keydown', markKeyboardInput, true)
-      root.removeAttribute('data-pointer-input')
-    }
-  }, [])
-
   const appearancePreferences = {
     themePreference: preference,
     fontSizePreference,
