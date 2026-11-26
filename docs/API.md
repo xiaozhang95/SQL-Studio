@@ -2,7 +2,7 @@
 
 Swagger UI：开发时启动前后端后打开 `http://127.0.0.1:15173/swagger.html`；Go 从网页目录提供同源 `/swagger.html`。Electron 打包版由主进程分配本地服务端口。UI 资源随前端构建，不依赖 CDN。
 
-Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时通过 SQLDESK_WEB_DIR 指定随包网页目录。Gin 在 `GET /` 和 `GET /agent` 提供同一份页面入口，由前端历史路由分别展示工作区和 AI 助手；`GET /swagger.html` 提供文档页面、`GET /assets/*` 提供构建静态资源（均支持 HEAD）。`/api` 命名空间保留给下方接口，未知 API 返回 JSON 404。静态目录不列文件，丢失资源和未知页面路径返回 404。独立开发运行未指定 SQLDESK_WEB_DIR 时，从后端工作目录读取 `../sql-studio-frontend/dist`。
+Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时通过 SQLDESK_WEB_DIR 指定随包网页目录。Gin 为 `/`、`/agent`、`/monitor` 和 `/sync` 提供同一份页面入口，分别展示工作区、AI 助手、监控指标和数据库同步。`/swagger.html` 提供文档页面，`/assets/*` 提供构建静态资源。这些页面和资源支持 GET 与 HEAD。`/api` 命名空间保留给下方接口，未知 API 返回 JSON 404。静态目录不列文件，丢失资源和未知页面路径返回 404。独立开发运行未指定 SQLDESK_WEB_DIR 时，从后端工作目录读取 `../sql-studio-frontend/dist`。
 
 [OpenAPI 3.0 契约](../sql-studio-backend/internal/httpapi/openapi.json) 是字段、请求、响应及状态码的完整说明，运行时从 `GET /api/openapi.json` 获取。修改接口同步契约和本文件；Go 测试校验三者路由一致。
 
@@ -43,7 +43,7 @@ Electron 的 `pnpm build` 将前端网页与 Go 程序一起打包，运行时�
 | GET    | `/connections/{id}/foreign-keys`     | 外键列表，含引用对象、字段映射和更新、删除规则                         |
 | GET    | `/connections/{id}/ddl`              | 对象建表语句                                                           |
 | GET    | `/connections/{id}/export-data`      | `database`、`table` 必填，SSE 分批只读表数据 rows/done/error，支持取消 |
-| POST   | `/database-sync/databases`           | 读取同步用 MySQL 连接的可见用户库                                      |
+| POST   | `/database-sync/databases`           | 读取受支持同步引擎连接的可见用户库                                     |
 | POST   | `/database-sync/check`               | 同引擎同步的只读检查                                                   |
 | POST   | `/database-sync/run`                 | 创建目标库，流式返回同步进度                                           |
 | POST   | `/connections/{id}/query`            | 执行一条 SQL                                                           |

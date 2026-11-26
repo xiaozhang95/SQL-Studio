@@ -1,6 +1,6 @@
 # SQL Studio
 
-本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL 和 GreptimeDB 的连接管理、查询与对象浏览。各引擎的表设计、数据编辑和转储能力见 [数据库说明](docs/DATABASES.md)。
+本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、GreptimeDB 和 Redis。各引擎的连接、查询、对象管理和导出能力见 [数据库说明](docs/DATABASES.md)。
 
 项目显示名称统一为 **SQL Studio**，仓库目录为 `SQL-Studio`。各模块目录、项目标识和 skill 使用相同名称：
 
@@ -14,15 +14,15 @@
 
 内置[数据库 Agent](docs/AGENT.md)：从左侧导航的「AI 助手」进入，使用 Ant Design X 聊天界面与 DeepSeek 工具调用；与 SQL Studio 同一前端、Go module、进程和端口，共享连接、主题及 AI 配置。默认只读，完全访问模式下的新增、修改及非删除结构操作逐次确认。
 
-工作台顶栏和连接右键菜单都可打开「监控指标」与「同步数据库」独立页面。右键会带入所选连接，同步页将其作为源连接。监控页可手动刷新，也可选择自动刷新间隔，默认关闭。MySQL、MariaDB 和 Redis 显示实例统计，PostgreSQL 和 GreptimeDB 可切换数据库。全部引擎采用概览、四组趋势及分类状态；MySQL/MariaDB 展示语句/连接/网络/InnoDB，PostgreSQL 展示事务/会话/块访问/行变更，GreptimeDB 展示表/分片/估算行数/存储，Redis 展示命令/客户端/内存/网络及键空间。趋势仅记录当前页面的实际采样。
+左侧全局导航提供「监控指标」和「同步数据库」入口。支持对应功能的连接也可从右键菜单打开，监控带入所选连接，同步将其作为源连接。监控页可手动刷新，也可选择自动刷新间隔，默认关闭。MySQL、MariaDB 和 Redis 显示实例统计，PostgreSQL 和 GreptimeDB 可切换数据库。全部引擎采用概览、四组趋势及分类状态。MySQL/MariaDB 展示语句/连接/网络/InnoDB，PostgreSQL 展示事务/会话/块访问/行变更，GreptimeDB 展示表/分片/估算行数/存储，Redis 展示命令/客户端/内存/网络及键空间。趋势仅记录当前页面的实际采样。
 
 ## 功能
 
 - 连接分组、连接测试、TLS 配置及密码加密保存。
 - Redis 单机、哨兵和集群连接，支持键浏览、命令行、实时订阅及监控。
 - 数据库与表浏览，表可展开字段、索引和外键（MySQL、MariaDB、PostgreSQL／PolarDB）；支持新建、设计、重命名、删除及刷新。
-- 查询编辑、语法高亮、字段补全、多语句执行、执行历史与查询收藏。
-- 结果分页、筛选、刷新及 CSV、Excel、JSON 导出。
+- 查询编辑、语法高亮、字段补全、多语句执行与执行历史。
+- 结果、消息、摘要和执行历史连续虚拟滚动。结果支持筛选、刷新及 CSV、Excel、JSON 导出。
 - 表数据新增与编辑，暂存修改后统一保存。
 - 查看建表语句，转储结构或结构和数据。
 - 亮色、暗色和跟随系统主题，支持简体中文与 English 界面。
@@ -31,7 +31,7 @@
 
 ## 安装与启动
 
-需要 Node.js 22.12 或更高版本、pnpm、Go 1.26 或更高版本。连接数据库时使用可访问的 MySQL、MariaDB、PostgreSQL 或 GreptimeDB 实例。
+需要 Node.js 22.12 或更高版本、pnpm、Go 1.26 或更高版本。新建连接时使用可访问的数据库实例。
 
 安装依赖：
 
@@ -90,7 +90,7 @@ pnpm build
 2. 新建查询，选择连接和数据库，输入语句后点击“运行”；也可选中部分内容运行，快捷键为 Ctrl/Command+Enter。
 3. 右键表选择“打开表”查看数据。双击单元格编辑，或点击“新增行”填写新记录，通过顶部“保存”统一提交。
 4. “放弃修改”清空尚未提交的更改；已有暂存修改时，需先保存或放弃再刷新。
-5. 在消息、摘要及结果标签之间切换查看执行情况。编辑器或执行历史可收藏 SQL，顶栏「查询收藏」在新标签打开收藏。
+5. 在消息、摘要及结果标签之间切换查看执行情况。可从执行历史载入 SQL 到当前查询。
 
 SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快捷键直接执行。MySQL、MariaDB 和 PostgreSQL 的多语句在同一会话顺序执行，支持批次内的会话设置、临时表和显式事务。失败或取消会停止后续语句，已提交写入保留。MySQL 和 MariaDB 支持 `DELIMITER` 脚本及选区中的存储程序，还可右键选择在事务中执行多条 INSERT。GreptimeDB 默认使用 MySQL 线协议端口 4002 和维护库 `public`。
 
@@ -100,8 +100,7 @@ SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快�
 
 - `workspace-index.json` 保存布局、页签和内容引用，`workspace-parts/` 保存按散列寻址的查询草稿和结果。
 - `history.json`：按连接保存的执行历史。
-- `query-favorites.json`：命名收藏的 SQL 及对应连接、数据库和 Schema。
-- `appearance.json` 保存主题和界面字号。
+- `appearance.json` 保存主题、界面字号和语言。
 
 配置采用带版本号和修订号的 JSON 格式，可通过 `SQLDESK_STATE_DIR` 指定目录。配置文件缺失时使用默认布局并重新生成，不再读取浏览器旧记录。恢复页面不会自动执行查询。
 

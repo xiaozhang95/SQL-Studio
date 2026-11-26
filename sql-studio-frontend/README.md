@@ -14,7 +14,7 @@ pnpm dev
 
 本目录 `package.json` 的 `version` 是网页和 Electron 共用的产品版本。Vite 将它写入前端构建，显示在「系统设置 → 关于软件」。Electron 打包也读取该版本，检查更新由桌面应用提供。
 
-前端使用历史路由，`/` 为 SQL 工作区，`/agent` 为 AI 助手。Vite 配置为 SPA 模式，支持直接访问和刷新；构建后的网页由 Go 显式提供这两个页面入口。页面内切换使用 History API，支持浏览器前进、后退。
+前端使用历史路由，`/`、`/agent`、`/monitor` 和 `/sync` 分别提供 SQL 工作区、AI 助手、监控指标和数据库同步。开发时由 Vite 的 SPA 模式提供入口，构建后的网页由 Go 显式提供这四个路径。页面内切换使用 History API，支持直接访问、刷新及浏览器前进、后退。
 
 [源码索引](src/README.md) · [前端规范](../docs/FRONTEND_STANDARDS.md) · [项目框架](../docs/ARCHITECTURE.md) · [测试](tests/README.md)
 

@@ -14,6 +14,7 @@ export function useSystemSettings({ themePreference, fontSizePreference, languag
   const [draftFontSize, setDraftFontSize] = useState(fontSizePreference)
   const [draftLanguage, setDraftLanguage] = useState(language)
   const [saving, setSaving] = useState(false)
+  const [appearanceSaveFailed, setAppearanceSaveFailed] = useState(false)
   const submitting = useRef(false)
   const appearanceChanged = draftTheme !== themePreference || draftFontSize !== fontSizePreference || draftLanguage !== language
   const changed = appearanceChanged || ai.changed
@@ -25,6 +26,7 @@ export function useSystemSettings({ themePreference, fontSizePreference, languag
     setDraftTheme(themePreference)
     setDraftFontSize(fontSizePreference)
     setDraftLanguage(language)
+    setAppearanceSaveFailed(false)
     setSection(SettingsSection.Model)
     setOpen(true)
     void ai.show()
@@ -38,6 +40,7 @@ export function useSystemSettings({ themePreference, fontSizePreference, languag
     if (submitting.current || !canSave) return
     submitting.current = true
     setSaving(true)
+    setAppearanceSaveFailed(false)
     try {
       if (ai.changed) {
         const saved = await ai.save()
@@ -46,7 +49,10 @@ export function useSystemSettings({ themePreference, fontSizePreference, languag
           return
         }
       }
-      if (appearanceChanged && !(await onAppearanceSave({ theme: draftTheme, fontSize: draftFontSize, language: draftLanguage }))) return
+      if (appearanceChanged && !(await onAppearanceSave({ theme: draftTheme, fontSize: draftFontSize, language: draftLanguage }))) {
+        setAppearanceSaveFailed(true)
+        return
+      }
       ai.close()
       setOpen(false)
     } finally {
@@ -55,5 +61,5 @@ export function useSystemSettings({ themePreference, fontSizePreference, languag
     }
   }
 
-  return { ai, open, section, setSection, draftTheme, setDraftTheme, draftFontSize, setDraftFontSize, draftLanguage, setDraftLanguage, busy, canSave, show, close, save }
+  return { ai, open, section, setSection, draftTheme, setDraftTheme, draftFontSize, setDraftFontSize, draftLanguage, setDraftLanguage, appearanceSaveFailed, busy, canSave, show, close, save }
 }

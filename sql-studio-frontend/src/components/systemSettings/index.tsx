@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { AppearancePreferences } from '@/typings/theme'
 
 import AISettings from '../aiSettings'
+import ErrorNotice from '../errorNotice'
 import About from './components/about'
 import AppearanceCards from './components/appearanceCards'
 import ThemePreview from './components/themePreview'
@@ -132,6 +133,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
             <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 20 }}>
               {sectionTitle}
             </Typography.Title>
+            <ErrorNotice error={settings.appearanceSaveFailed ? '外观配置保存失败' : undefined} style={{ marginBottom: token.marginSM }} />
             {settings.section === SettingsSection.Model && <AISettings model={settings.ai} disabled={settings.busy} />}
             {settings.section === SettingsSection.About && <About updates={updates} disabled={settings.busy} />}
             {settings.section === SettingsSection.Appearance && (

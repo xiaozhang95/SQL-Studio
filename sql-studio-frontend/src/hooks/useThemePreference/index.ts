@@ -52,7 +52,7 @@ export const useThemePreference = () => {
       await readState<unknown>('appearance', async () => defaults)
       const result = await writeState('appearance', settings)
       setAppearance(result.saved ? settings : isAppearance(result.data) ? result.data : defaults)
-      return true
+      return result.saved
     } catch {
       return false
     } finally {

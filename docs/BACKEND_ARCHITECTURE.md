@@ -12,6 +12,8 @@
 | modules/connections   | 连接校验、分组、保存与 7 秒测试                                    |
 | modules/metadata      | 显式连接与对象范围，10 秒超时                                      |
 | modules/query         | 行数、30 秒超时、全进程 4 并发                                     |
+| modules/databasesync  | 同引擎同步的只读检查、复制进度和全进程单任务限制                    |
+| modules/redistools    | Redis 键浏览、命令、编辑和发布订阅                                  |
 | modules/settings      | 分区校验、32 MiB 对象限制和 AI 配置脱敏                            |
 | modules/ai            | 上下文校验、续写/优化/模型发现，共享 4 并发                        |
 | model                 | 跨层命名结构、错误与只读定义                                       |
@@ -19,6 +21,7 @@
 | mariadb               | 独立连接生命周期，组合 MySQL 线协议与 MariaDB 元数据适配           |
 | greptimedb            | 组合 MySQL 线协议，处理 GreptimeDB 语句、表结构和会话 |
 | postgresql            | PostgreSQL 驱动、schema 元数据和结果编码                           |
+| redis                 | Redis 单机、哨兵、集群连接及键、命令、发布订阅                       |
 | database              | 只按连接类型分派，具体实现由 app 注入                              |
 | connection            | AES-GCM 密码与原子落盘                                             |
 | statefile             | 版本、修订、同进程互斥与分区 JSON 原子替换                         |
