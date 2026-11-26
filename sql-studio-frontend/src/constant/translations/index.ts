@@ -760,6 +760,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   筛选当前结果: 'Filter current results',
   筛选查询结果: 'Filter query results',
   结果操作: 'Result actions',
+  表数据编辑: 'Table data editing',
   重新执行: 'Run again',
   '重新执行当前结果对应的 SQL，写入语句也会再次执行': 'Run the SQL for this result again, including any write operations',
   '单条重跑无法还原批次会话，请在编辑器中核对原脚本': 'Running this statement alone cannot restore the batch session. Review the original script in the editor',

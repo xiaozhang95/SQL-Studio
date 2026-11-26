@@ -405,6 +405,38 @@ export default function QueryResults({ model, themeMode }: Props) {
               borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`
             }}
           >
+            {tab.kind === 'data' && adapter?.dataEditing && (
+              <Flex role="group" aria-label={t('表数据编辑')} align="center" gap={token.marginXXS} wrap>
+                <ToolbarButton
+                  label={t('新增行')}
+                  icon={<PlusOutlined />}
+                  disabled={editingBlocked}
+                  onClick={() => {
+                    setResultSearch('')
+                    void editing.addRow()
+                  }}
+                />
+                <ToolbarButton
+                  label={t('删除行')}
+                  icon={<DeleteOutlined />}
+                  danger
+                  disabled={rowDeletionDisabled || !selectedRows.length}
+                  hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
+                  aria-haspopup="dialog"
+                  onClick={() => setDeleteOpen(true)}
+                />
+                <ToolbarButton
+                  label={t('保存')}
+                  icon={<SaveOutlined />}
+                  loading={editing.saving}
+                  disabled={editingBlocked || !editing.dirty}
+                  onClick={() => {
+                    void editing.save()
+                  }}
+                />
+                <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
+              </Flex>
+            )}
             {tab.kind !== 'data' && showingResult && (
               <Flex className="result-meta" align="center" gap={token.marginXXS} style={{ color: token.colorTextSecondary, fontVariantNumeric: 'tabular-nums' }}>
                 <CheckCircleOutlined />
@@ -426,38 +458,6 @@ export default function QueryResults({ model, themeMode }: Props) {
                 />
               )}
               <Flex role="group" aria-label={t('结果操作')} align="center" justify="end" gap={token.marginXXS} wrap>
-                {tab.kind === 'data' && adapter?.dataEditing && (
-                  <>
-                    <ToolbarButton
-                      label={t('新增行')}
-                      icon={<PlusOutlined />}
-                      disabled={editingBlocked}
-                      onClick={() => {
-                        setResultSearch('')
-                        void editing.addRow()
-                      }}
-                    />
-                    <ToolbarButton
-                      label={t('删除行')}
-                      icon={<DeleteOutlined />}
-                      danger
-                      disabled={rowDeletionDisabled || !selectedRows.length}
-                      hint={editing.dirty ? t('请先保存或放弃修改') : t('删除选中的数据行')}
-                      aria-haspopup="dialog"
-                      onClick={() => setDeleteOpen(true)}
-                    />
-                    <ToolbarButton
-                      label={t('保存')}
-                      icon={<SaveOutlined />}
-                      loading={editing.saving}
-                      disabled={editingBlocked || !editing.dirty}
-                      onClick={() => {
-                        void editing.save()
-                      }}
-                    />
-                    <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
-                  </>
-                )}
                 <ToolbarButton
                   label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
                   icon={<ReloadOutlined />}
