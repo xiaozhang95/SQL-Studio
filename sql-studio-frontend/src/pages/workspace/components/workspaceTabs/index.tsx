@@ -74,6 +74,7 @@ export default function WorkspaceTabs({ model, children, renderDesigner, renderR
           height: 'var(--ant-control-height)',
           flex: 'none',
           padding: '0 10px',
+          background: 'transparent',
           borderRadius: 'var(--ant-border-radius)'
         },
         remove: {

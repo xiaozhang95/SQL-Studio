@@ -376,12 +376,7 @@ body,
     align-items: center;
   }
 
-  .ant-tabs-tab:not(.ant-tabs-tab-active, .ant-tabs-tab-disabled):hover {
-    background: var(--surface-hover);
-  }
-
   .ant-tabs-tab.ant-tabs-tab-active:not(.ant-tabs-tab-disabled) {
-    background: var(--surface-selected);
     border-color: var(--border);
 
     &::after {
