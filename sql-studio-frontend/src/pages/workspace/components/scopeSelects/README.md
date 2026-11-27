@@ -12,7 +12,7 @@ scope 为 QueryScope；connections 为已保存连接；objects 为 useDatabaseO
 
 连接选项使用带圆角底板的官方品牌图标，并按对象快照在品牌原色与灰底白图标之间切换。数据库选项显式展示 DatabaseOutlined，已选值不重复渲染 prefix 图标。数据库搜索改按纯文本 searchText 匹配，避免 JSX label 影响搜索。
 
-连接状态图标为 20px，选择器高度跟随 30px 的主题控件高度。连接、数据库、Schema 选择器空间充足时均为 240px，SQL 与 Redis 共用同一尺寸。选择器在一行内等宽收缩，容不下其最小宽度时换行。
+连接状态图标为 18px，选择器高度跟随 30px 的主题控件高度。连接、数据库、Schema 选择器空间充足时均为 240px，SQL 与 Redis 共用同一尺寸。选择器在一行内等宽收缩，容不下其最小宽度时换行。
 
 PostgreSQL 和 Oracle 的 Schema 选项来自当前连接和数据库或服务已加载的 schemas。`onSchema(schema)` 独立回调。切换 Schema 清空表范围，切换库或连接清空 Schema。清空时 PostgreSQL 使用默认搜索路径，Oracle 使用登录用户的 Schema。
 

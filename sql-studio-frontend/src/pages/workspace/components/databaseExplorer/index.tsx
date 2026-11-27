@@ -322,7 +322,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
     }
   }
   function icon(node: ExplorerNode) {
-    if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} size={18} />
+    if (node.connection) return <EngineIcon type={node.connection.type} connected={node.status === 'is-connected'} />
     if (node.primary) return <KeyOutlined style={{ color: 'var(--ant-color-warning)' }} />
     switch (node.kind) {
       case 'group':
@@ -374,7 +374,15 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
       <span
         className={node.connection ? `connection-tree-label object-context-target ${node.status}` : 'object-context-target'}
         title={connectionFailure ? undefined : node.kind === 'group' ? title : generated && node.tooltip ? t(node.tooltip) : node.tooltip}
-        style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', minHeight: 24, overflow: 'hidden', color: node.retry ? 'var(--ant-color-error-text)' : 'inherit' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          width: '100%',
+          minHeight: 24,
+          overflow: node.connection ? 'visible' : 'hidden',
+          color: node.retry ? 'var(--ant-color-error-text)' : 'inherit'
+        }}
       >
         <span className={node.connection ? `tree-node-icon connection-tree-icon ${node.status}` : 'tree-node-icon'} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
           {icon(node)}
@@ -432,7 +440,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             ) : (
               <Tree<ExplorerNode>
                 disabled={running}
-                styles={{ root: { background: 'transparent' }, itemTitle: { display: 'block', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' } }}
+                styles={{ root: { background: 'transparent' }, itemTitle: { display: 'block', flex: 1, minWidth: 0 } }}
                 ref={treeRef}
                 aria-label={t('数据库连接树')}
                 showIcon={false}

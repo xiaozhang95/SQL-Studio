@@ -1,11 +1,13 @@
 import { LinkOutlined, SettingOutlined } from '@ant-design/icons'
 import { Alert, Button, Card, Checkbox, Flex, Form, Grid, Input, Select, Steps, theme, Typography } from 'antd'
+import type { CardProps } from 'antd'
 import { useId } from 'react'
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
 import StudioIcon from '@/components/studioIcon'
+import { engineSelectStyles } from '@/constant/appearance'
 import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -21,6 +23,8 @@ type Props = DatabasePageProps & {
   onCreated: (id: string) => void
   onOpenTarget?: (connectionId: string, database: string) => void
 }
+
+const connectionCardStyles = { title: { overflow: 'visible' } } as const satisfies NonNullable<CardProps['styles']>
 
 export default function DatabaseSync({ connections, initialConnection, onCreated, onOpenTarget, ...pageProps }: Props) {
   const { t } = useTranslation()
@@ -62,12 +66,13 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             aria-label={t('数据库类型')}
             value={model.profile.value}
             style={{ width: 220, flex: '0 0 220px', marginInlineStart: 'auto' }}
+            styles={engineSelectStyles}
             disabled={busy}
             options={sqlDatabaseProfiles.map(({ value, label }) => ({
               value,
               label: (
                 <Flex align="center" gap="small">
-                  <EngineIcon type={value} variant="logo" size={20} />
+                  <EngineIcon type={value} />
                   <span>{label}</span>
                 </Flex>
               )
@@ -82,9 +87,10 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
             <Flex vertical gap="middle">
               <div style={{ display: 'grid', gridTemplateColumns: screens.lg ? 'minmax(0, 1fr) auto minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: token.marginSM }}>
                 <Card
+                  styles={connectionCardStyles}
                   title={
                     <Flex gap="small" align="center">
-                      <EngineIcon type={model.profile.value} variant="logo" size={18} />
+                      <EngineIcon type={model.profile.value} />
                       {t('源端')}
                     </Flex>
                   }
@@ -154,9 +160,10 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                   onClick={model.swap}
                 />
                 <Card
+                  styles={connectionCardStyles}
                   title={
                     <Flex gap="small" align="center">
-                      <EngineIcon type={model.profile.value} variant="logo" size={18} />
+                      <EngineIcon type={model.profile.value} />
                       {t('目标端')}
                     </Flex>
                   }

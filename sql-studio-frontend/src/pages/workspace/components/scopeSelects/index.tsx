@@ -3,6 +3,7 @@ import { Flex, Select, theme } from 'antd'
 import type { CSSProperties } from 'react'
 
 import EngineIcon from '@/components/engineIcon'
+import { engineSelectStyles } from '@/constant/appearance'
 import { getDatabaseAdapter } from '@/databases'
 import { selectedRedisDatabase } from '@/databases/redis'
 import { DatabaseEngine } from '@/databases/typings'
@@ -10,7 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
-import { queryScopeLayout, workspaceConnectionIconSize } from '../../constant/layout'
+import { queryScopeLayout } from '../../constant/layout'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
 
 type Props = {
@@ -45,6 +46,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
       <Select
         className="connection-select"
         style={scopeSelectStyle}
+        styles={engineSelectStyles}
         aria-label={t('选择连接')}
         showSearch={{ optionFilterProp: 'searchText' }}
         placeholder={t('选择连接')}
@@ -57,7 +59,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           searchText: connection.name,
           label: (
             <span className="connection-option" style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
-              <EngineIcon type={connection.type} connected={objects.snapshots[connection.id]?.status === 'connected'} size={workspaceConnectionIconSize} />
+              <EngineIcon type={connection.type} connected={objects.snapshots[connection.id]?.status === 'connected'} />
               <span className="connection-option-name" title={connection.name} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {connection.name}
               </span>

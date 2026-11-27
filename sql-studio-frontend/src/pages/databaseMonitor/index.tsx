@@ -6,6 +6,7 @@ import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
+import { engineSelectStyles } from '@/constant/appearance'
 import { getDatabaseMonitorPanel, getDatabaseProfile } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
@@ -26,7 +27,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
     searchText: item.name,
     label: (
       <Flex align="center" gap="small">
-        <EngineIcon type={item.type} variant="logo" size={20} />
+        <EngineIcon type={item.type} />
         <Typography.Text ellipsis title={item.name}>
           {item.name}
         </Typography.Text>
@@ -46,6 +47,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
               <Select
                 aria-label={t('选择连接')}
                 style={{ width: 236, flex: '0 1 236px', minWidth: 0 }}
+                styles={engineSelectStyles}
                 value={connection?.id}
                 options={options}
                 showSearch={{ optionFilterProp: 'searchText' }}

@@ -14,8 +14,6 @@ resultTableLayout 定义结果表的行号列 64px、普通数据列 200px、复
 
 resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。弹性布局使用 260px 的页签基准宽度。选择器与筛选框同时出现时，通过子网格共用列宽，面板小于 580px 时页签单独占行，小于 520px 时选中行提示或编辑操作也独立占行。`resultControlProps` 为结果集选择器和筛选框提供同一组中号尺寸（宽 220px，高 30px），`resultToolbarSpacing` 提供共用的 4px 垂直留白和 8px 组间距。
 
-workspaceConnectionIconSize 为连接选择器与执行历史抽屉标题共用的 20px 引擎图标尺寸。
-
 resultToolbarIconInset 由默认按钮尺寸与图标字号计算，提供结果页签的水平内边距。执行状态图标按 `controlHeight` 居中，与操作按钮采用相同宽度。
 
 workspaceTabLayout.width=200：顶部工作区主标签固定等宽，长标题省略并保留悬停完整说明，关闭按钮位置保持一致；不改变下方消息、摘要和结果导航的宽度。

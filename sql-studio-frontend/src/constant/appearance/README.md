@@ -8,6 +8,8 @@
 
 `tagDefaults` 通过全局 Provider 为 Ant Design Tag 设置 `variant='solid'`。成功、失败等状态由各自的 `color` 语义决定，无状态标签使用 Ant Design 默认实色。
 
+`engineSelectStyles` 允许带引擎图标的选择器显示向四周扩散的底板阴影。长连接名在选项标签自己的文字层省略。
+
 ## 按钮层级
 
 - 每个页面或弹窗操作面只设置一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接弹窗「保存」。

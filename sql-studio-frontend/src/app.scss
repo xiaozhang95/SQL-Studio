@@ -45,6 +45,19 @@ html[data-theme='dark'] .sql-studio-theme {
   --navigation-icon-selected: var(--ant-color-text-light-solid);
   --selection: color-mix(in srgb, var(--primary) 20%, transparent);
 }
+
+// 亮色模式下，已连接图标的白色底板使用向四周淡出的双层阴影。
+html[data-theme='light'] .engine-symbol.is-connected {
+  box-shadow:
+    0 0 3px color-mix(in srgb, var(--text) 17%, transparent),
+    0 0 7px 1px color-mix(in srgb, var(--text) 9%, transparent);
+}
+
+// 下拉选项的内容层没有独立的样式槽，放开带引擎图标的选项内层裁切。
+html[data-theme='light'] .ant-select-item-option-content:has(.engine-symbol) {
+  overflow: visible;
+}
+
 * {
   // 保留 WebKit 像素尺寸与悬停样式，避免标准属性覆盖伪元素。
   scrollbar-width: auto;
@@ -192,6 +205,10 @@ body,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+// 连接行的名称在独立容器中省略，底板阴影可延伸到行内留白。
+html[data-theme='light'] .object-tree .ant-tree-node-content-wrapper:has(.connection-tree-label) {
+  overflow: visible;
 }
 // Tree 在 showIcon=false 的加载期仍插入额外图标，占位会挤动标题；加载状态已显示在展开箭头中。
 .object-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle.ant-tree-icon_loading {

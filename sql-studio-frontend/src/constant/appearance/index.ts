@@ -1,4 +1,4 @@
-import type { ButtonProps, ConfigProviderProps, ModalProps, SwitchProps } from 'antd'
+import type { ButtonProps, ConfigProviderProps, ModalProps, SelectProps, SwitchProps } from 'antd'
 import type { CSSProperties } from 'react'
 
 /** 仅集中已确认的界面约定，其余视觉属性沿用 Ant Design 默认值。 */
@@ -51,6 +51,9 @@ export const formModalStyles = {
 } as const satisfies NonNullable<ModalProps['styles']>
 
 export const scrollingModalBodyStyle = { maxHeight: 'max(160px, calc(100dvh - 240px))', overflowY: 'auto', overflowX: 'hidden' } as const satisfies CSSProperties
+
+/** 带引擎图标的选择器将省略效果留给名称，底板阴影可延伸到控件内边距。 */
+export const engineSelectStyles = { content: { overflow: 'visible' } } as const satisfies NonNullable<SelectProps['styles']>
 
 export const railButtonStyle = {
   position: 'relative',

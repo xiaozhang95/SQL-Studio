@@ -12,7 +12,6 @@ export const resultControlProps = {
   size: appearance.controlSize,
   style: { width: appearance.selectWidth, maxWidth: '100%', minWidth: 0 } satisfies CSSProperties
 } as const
-export const workspaceConnectionIconSize = 20
 export const queryScopeLayout = { width: 240, minWidth: 144 } as const
 /** 默认图标按钮从点击边界到居中图标的水平留白。 */
 export const resultToolbarIconInset = 'calc((var(--ant-control-height) - var(--ant-font-size)) / 2)'

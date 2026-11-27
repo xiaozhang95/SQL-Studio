@@ -14,7 +14,6 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 import type { HistoryItem } from '@/typings/workspace'
 
-import { workspaceConnectionIconSize } from '../../constant/layout'
 import { useTableViewportLayout } from '../../hooks/useTableViewportLayout'
 import type { WorkspaceModel } from '../../hooks/useWorkspace'
 import { executionCancelled } from '../../utils/queryOutput'
@@ -113,7 +112,7 @@ export default function QueryHistory({ model, themeMode, terminal = false, onLoa
       title={
         connection ? (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--ant-margin-xs)', minWidth: 0, maxWidth: '100%' }}>
-            <EngineIcon type={connection.type} connected={model.objects.snapshots[connection.id]?.status === 'connected'} size={workspaceConnectionIconSize} />
+            <EngineIcon type={connection.type} connected={model.objects.snapshots[connection.id]?.status === 'connected'} />
             <span title={connection.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {connection.name}
             </span>

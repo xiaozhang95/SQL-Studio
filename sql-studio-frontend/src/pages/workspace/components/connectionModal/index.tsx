@@ -112,7 +112,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
                   textAlign: 'left'
                 }}
               >
-                <EngineIcon type={profile.value} variant="logo" size={24} />
+                <EngineIcon type={profile.value} size={24} />
                 <span>{profile.label}</span>
               </Button>
             ))}
@@ -132,7 +132,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               borderBottom: '1px solid var(--border)'
             }}
           >
-            <EngineIcon type={engine.value} variant="logo" />
+            <EngineIcon type={engine.value} size={40} />
             <span>{engine.label}</span>
             <div style={{ marginInlineStart: 'auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: token.marginXS }}>
               <Tag style={{ marginInlineEnd: 0 }}>
