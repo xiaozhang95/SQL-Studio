@@ -1,4 +1,4 @@
-import icon from '@/assets/databases/oracle.svg'
+import icon from '@/assets/databases/oracle-brand.png'
 
 import { DatabaseEngine } from '../../typings'
 import type { DatabaseProfile } from '../../typings'

@@ -10,12 +10,11 @@ import ScopeSelects from '../scopeSelects'
 type Props = {
   model: Pick<WorkspaceModel, 'tab' | 'savedConnections' | 'objects' | 'selectConnection' | 'selectObject'>
   disabled: boolean
-  compact?: boolean
   runActions?: ReactNode
   children?: ReactNode
 }
 
-export default function QueryToolbar({ model, disabled, compact, runActions, children }: Props) {
+export default function QueryToolbar({ model, disabled, runActions, children }: Props) {
   const { token } = theme.useToken()
   const { tab, savedConnections, objects, selectConnection, selectObject } = model
   return (
@@ -39,7 +38,6 @@ export default function QueryToolbar({ model, disabled, compact, runActions, chi
         connections={savedConnections}
         objects={objects}
         disabled={disabled}
-        compact={compact}
         onConnection={selectConnection}
         onSelect={selectObject}
         onSchema={(schema) => selectObject(tab.database, undefined, tab.connectionId, schema)}

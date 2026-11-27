@@ -18,13 +18,12 @@ type Props = {
   connections: Connection[]
   objects: ReturnType<typeof useDatabaseObjects>
   disabled: boolean
-  compact?: boolean
   onSchema: (schema: string) => void
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
-export default function ScopeSelects({ scope, connections, objects, disabled, compact, onConnection, onSelect, onSchema }: Props) {
+export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
   const { t } = useTranslation()
   const { token } = theme.useToken()
 
@@ -32,7 +31,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, co
   const redis = current?.type === DatabaseEngine.Redis
   const service = current?.type === DatabaseEngine.Oracle
   const hasSchema = !redis && Boolean(getDatabaseAdapter(current?.type).explorer)
-  const selectWidth = compact ? queryScopeLayout.compactWidth : queryScopeLayout.width
+  const selectWidth = queryScopeLayout.width
   const selectCount = hasSchema ? 3 : 2
   const scopeWidth = selectCount * selectWidth + (selectCount - 1) * token.marginXS
   const scopeSelectStyle = { flex: '1 1 0px', minWidth: `min(${queryScopeLayout.minWidth}px, 100%)`, maxWidth: selectWidth } satisfies CSSProperties
@@ -59,7 +58,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, co
           searchText: connection.name,
           label: (
             <span className="connection-option" style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
-              <EngineIcon type={connection.type} size={workspaceConnectionIconSize} />
+              <EngineIcon type={connection.type} connected={objects.snapshots[connection.id]?.status === 'connected'} size={workspaceConnectionIconSize} />
               <span className="connection-option-name" title={connection.name} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {connection.name}
               </span>

@@ -29,11 +29,10 @@ html[data-theme='dark'] {
   --navigation-icon-selected: var(--text);
   --surface-hover: var(--ant-control-item-bg-hover);
   --primary: var(--ant-color-primary);
-  // 已连接引擎图标的底板跟随当前主题主色。
-  --brand: var(--primary);
   --selection: color-mix(in srgb, var(--primary) 14%, transparent);
   --border: var(--ant-color-border-secondary);
   --layout-divider: var(--border);
+  --engine-icon-background: var(--ant-color-bg-elevated);
   --inactive-icon: var(--ant-color-text-tertiary);
 
   ::selection {
@@ -44,6 +43,7 @@ html[data-theme='dark'] {
 
 html[data-theme='dark'] .sql-studio-theme {
   --navigation-icon-selected: var(--ant-color-text-light-solid);
+  --engine-icon-background: color-mix(in srgb, var(--ant-color-text-light-solid) 86%, var(--surface));
   --selection: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 * {
@@ -56,10 +56,18 @@ body {
   overflow-x: auto;
 }
 
-// 按钮用内描边标记键盘焦点，避免生成与按钮分离的外圈。
-:is(button, a).ant-btn:not(:disabled):focus-visible {
-  outline: var(--ant-line-width) solid var(--ant-color-primary-border);
-  outline-offset: -2px;
+// 按钮用前景色或底色标记键盘焦点。
+:is(button, a.ant-btn, [role='button']):not(:disabled, .ant-btn-disabled, [aria-disabled='true']):focus-visible {
+  outline: none;
+
+  &:is(.ant-btn-variant-text, .ant-btn-variant-link):not(.ant-btn-dangerous) {
+    color: var(--primary);
+  }
+
+  &:not(.ant-btn-variant-text, .ant-btn-variant-link),
+  &.ant-btn-dangerous {
+    background-image: linear-gradient(var(--ant-color-fill-secondary), var(--ant-color-fill-secondary));
+  }
 }
 
 // 仅隐藏 Button 的点击波纹，保留按钮自身的按下样式。
@@ -314,7 +322,7 @@ body,
   }
 }
 .chat-round-marker[aria-current='step'] span,
-.chat-round-marker:hover span {
+.chat-round-marker:is(:hover, :focus-visible) span {
   width: 18px;
   background: var(--ant-color-primary);
 }
@@ -453,6 +461,24 @@ body,
 @keyframes studio-icon-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+// 当前页用左侧主题线标记，图标保持居中。
+.app-rail .app-rail-button.ant-btn[aria-current='page'] {
+  background: transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 50%;
+    width: calc(2 * var(--ant-line-width));
+    height: var(--ant-control-height-sm);
+    border-radius: var(--ant-border-radius-sm);
+    background: var(--primary);
+    transform: translateY(-50%);
+    pointer-events: none;
   }
 }
 

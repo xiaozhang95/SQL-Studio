@@ -27,10 +27,11 @@ export interface DatabaseProfile {
   readonly databaseHelp?: string
   readonly syncScope?: 'schema'
   readonly optionalUsername?: boolean
-  readonly iconPresentation?: 'brand'
-  /** 品牌图形的固定衬底，确保主题及选中背景下对比度稳定。 */
-  readonly iconBackground?: string
   readonly icon: string
+  /** 关闭态的白色图标资源，适合提供独立线稿的品牌。 */
+  readonly closedIcon?: string
+  /** 将关闭态保留的图形映为白色，将需透出灰底的部分映为黑色。 */
+  readonly closedIconMaskFilter?: string
 }
 
 export interface SQLCompletionContext {

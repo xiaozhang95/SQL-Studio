@@ -56,7 +56,6 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
     <section className="editor-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: token.colorBgContainer }}>
       <QueryToolbar
         model={model}
-        compact
         disabled={blocked}
         runActions={
           <>

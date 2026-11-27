@@ -1,4 +1,5 @@
-import icon from '@/assets/databases/postgresql.svg'
+import icon from '@/assets/databases/postgresql-brand.svg'
+import closedIcon from '@/assets/databases/postgresql-white.svg'
 
 import { DatabaseEngine } from '../../typings'
 import type { DatabaseProfile } from '../../typings'
@@ -10,5 +11,6 @@ export const postgresqlProfile = {
   className: 'engine-postgresql',
   port: 5432,
   database: 'postgres',
-  icon
+  icon,
+  closedIcon
 } as const satisfies DatabaseProfile

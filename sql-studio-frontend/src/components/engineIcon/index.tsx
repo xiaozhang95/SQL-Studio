@@ -14,9 +14,9 @@ export default function EngineIcon({
   size?: number
 }) {
   const engine = getDatabaseProfile(type)
-  const originalBrand = engine.iconPresentation === 'brand'
-  // text-tertiary 带透明度，先叠在主题容器底色上，避免选中行蓝色透入灰色状态底板。
-  const statusBackground = connected ? 'var(--brand)' : 'linear-gradient(var(--inactive-icon), var(--inactive-icon)), var(--surface)'
+  const closedIcon = connected ? undefined : engine.closedIcon
+  const useClosedFilter = !connected && !closedIcon
+  const closedMask = useClosedFilter ? engine.closedIconMaskFilter : undefined
   return (
     <span
       className={`engine-symbol ${engine.className} ${connected ? 'is-connected' : 'is-closed'}${variant === 'logo' ? ' is-logo' : ''}`}
@@ -25,40 +25,25 @@ export default function EngineIcon({
         flex: 'none',
         width: size,
         height: size,
-        borderRadius: originalBrand ? undefined : size === 20 ? 'var(--ant-border-radius-sm)' : 'var(--ant-border-radius)',
-        position: 'relative',
         display: 'inline-grid',
         placeItems: 'center',
-        border: 0,
-        background: originalBrand ? (engine.iconBackground ?? 'transparent') : statusBackground
+        isolation: closedMask ? 'isolate' : undefined,
+        borderRadius: size === 20 ? 'var(--ant-border-radius-sm)' : 'var(--ant-border-radius)',
+        // 灰色与容器底色合成，避免选中行透入半透明底板。
+        background: connected ? 'var(--engine-icon-background)' : 'linear-gradient(var(--inactive-icon), var(--inactive-icon)), var(--surface)'
       }}
     >
-      {originalBrand && variant === 'icon' && (
-        <span
-          style={{
-            position: 'absolute',
-            zIndex: 1,
-            insetInlineEnd: 0,
-            bottom: 0,
-            width: Math.max(5, size / 4),
-            height: Math.max(5, size / 4),
-            borderRadius: '50%',
-            background: statusBackground,
-            outline: '1px solid var(--surface)'
-          }}
-        />
-      )}
       <img
-        src={engine.icon}
+        src={closedIcon ?? engine.icon}
         alt=""
         style={{
           display: 'block',
-          width: originalBrand ? '100%' : '80%',
-          height: originalBrand ? '100%' : '80%',
+          width: '80%',
+          height: '80%',
           objectFit: 'contain',
-          boxSizing: 'border-box',
-          padding: engine.iconBackground ? size * 0.1 : 0,
-          filter: originalBrand ? undefined : 'brightness(0) invert(1)'
+          filter: useClosedFilter ? (closedMask ?? 'brightness(0) invert(1)') : undefined,
+          // 滤色保留白色图形，黑色区域透出已隔离的灰底。
+          mixBlendMode: closedMask ? 'screen' : undefined
         }}
       />
     </span>

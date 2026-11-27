@@ -10,9 +10,9 @@ scope 为 QueryScope；connections 为已保存连接；objects 为 useDatabaseO
 
 库列表使用对应连接已加载的元数据；库表列表由树箭头或双击节点按需加载，共用缓存。关闭时清空相关查询的连接/库/表选择，SQL 草稿保留；重新连接成功后仍需重新选择。长连接名省略，悬停可查看完整值。
 
-连接选项使用所属引擎品牌图标及独立状态圆点；数据库选项显式展示 DatabaseOutlined，已选值不重复渲染 prefix 图标。数据库搜索改按纯文本 searchText 匹配，避免 JSX label 影响搜索。
+连接选项使用带圆角底板的官方品牌图标，并按对象快照在品牌原色与灰底白图标之间切换。数据库选项显式展示 DatabaseOutlined，已选值不重复渲染 prefix 图标。数据库搜索改按纯文本 searchText 匹配，避免 JSX label 影响搜索。
 
-连接状态图标为 20px，选择器高度跟随 30px 的主题控件高度。连接、数据库、Schema 选择器以 240px 为上限，`compact` 模式以 150px 为上限。选择器在一行内等宽收缩，容不下其最小宽度时换行。
+连接状态图标为 20px，选择器高度跟随 30px 的主题控件高度。连接、数据库、Schema 选择器空间充足时均为 240px，SQL 与 Redis 共用同一尺寸。选择器在一行内等宽收缩，容不下其最小宽度时换行。
 
 PostgreSQL 显示第三个 Schema 选择器，选项来自当前连接/数据库已加载的 schemas。onSchema(schema) 独立回调；选择/清空 schema 清空表范围，切库/连接清空 schema；未选择使用默认搜索路径。MySQL 仍仅连接/数据库两项。
 

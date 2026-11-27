@@ -2,12 +2,10 @@
 
 [组件索引](../README.md) · [源码](index.tsx)
 
-EngineIcon 读取 getDatabaseAdapter(type).profile，不直接绑定引擎资产。type?:DatabaseType 省略为 MySQL；variant?:icon|logo 默认为 icon；connected?:boolean 默认为 true；size?:number 默认 icon 32px、logo 40px。树与连接下拉传 20px，类型列表传 32px；组件没有回调。
+`EngineIcon` 从 `getDatabaseProfile(type)` 读取引擎图标。`type` 默认 MySQL，`variant` 默认 `icon`，`size` 在 `icon` 和 `logo` 模式下分别默认为 32px 和 40px。对象树用 18px，连接下拉用 20px，类型列表用 24px。组件没有回调。
 
-MySQL、MariaDB、PostgreSQL 和 GreptimeDB 已连接时使用当前主题主色 `--brand` 圆角底板和白色图形，与主按钮和页签活动线保持一致。SVG 源文件保持不变，通过图片 filter 白色化。connected=false 时底板使用主题变量 --inactive-icon，与未打开数据库图标共用 text-tertiary 灰色。悬停、选中和折叠沿用当前连接状态。数据库、schema、表和视图沿用原生语义图标。
+`EngineIcon` 统一使用圆角底板和 profile 中的官方图标，图形占容器的 80%。`connected` 默认为 `true`，图标保持品牌原色。对象树、查询连接下拉和执行历史标题使用实际打开状态。`connected: false` 时在灰色底板上显示白色图标。PostgreSQL 提供适合小尺寸的白色线稿。Redis 通过 `closedIconMaskFilter` 让原图红底透出灰底。其余引擎将图形填成白色，保留透明区域。悬停、选中和折叠沿用当前连接状态。
 
-text-tertiary 是半透明色，灰色底板及兼容品牌模式的灰色状态圆点通过同色渐变叠在 --surface 上，先合成当前主题下的灰色，防止选中行的主题背景透入。只调整自有图标底板，不覆盖 Ant Design 默认样式或改变字体。
+已打开状态的 `--engine-icon-background` 在亮色主题沿用浮层底色，在暗色主题使用由表面色调出的浅灰底，以提高深色品牌标记的对比。未打开状态的 `--inactive-icon` 叠在 `--surface` 上，合成当前亮暗主题下的灰色底板。
 
-profile.iconPresentation=brand 用于需要保留原色的图标，连接状态通过独立圆点展示。可选的 iconBackground 为品牌图形提供固定衬底。图标为装饰，名称由相邻文字提供。资源来源见 [资产说明](../../assets/databases/README.md)。
-
-对象树、Select 与连接弹窗共用灰色选中底衬托引擎图标，图标尺寸和状态底板保持一致。
+图标为装饰，名称由相邻文字提供。资源来源见 [资产说明](../../assets/databases/README.md)。

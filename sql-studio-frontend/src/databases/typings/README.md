@@ -28,7 +28,7 @@ DatabaseProfile.database 为可选维护库默认值，PostgreSQL 为 `postgres`
 
 databaseEditor.Form 接收 creating:boolean 和可选 definition:DatabaseDefinition，新建/编辑共用属性行；库名称字段由共享 ObjectManagementForm 注册。引擎组件按实际支持能力禁用属性，新建禁用字段不注册、不校验或提交；数据库 SQL、读取和提交能力保持原契约。
 
-DatabaseProfile.iconPresentation? 可为 brand，指定原始品牌图标使用透明底板与独立状态圆点；省略沿用现有状态底板，具体资源仍由所属引擎 profile 提供。
+`DatabaseProfile.icon` 指定官方品牌图标。可选的 `closedIcon` 提供关闭态的白色线稿。未提供线稿时，`closedIconMaskFilter` 可将原图中需要保留的区域映为白色，其余区域映为黑色以透出灰底。
 
 DatabaseAdapter.explorer? 提供 schema 引擎的 tableIdentity(table):{schema,name}，纯数据树接收该布局契约；省略则沿用 MySQL 数据库直下表/视图层级。
 
@@ -36,7 +36,7 @@ DatabaseAdapter.foreignKeys? 表示引擎支持读取外键元数据。启用的
 
 tableLabel(table) 提供带 schema 的可读对象标签；tableListResult(tables,schema?) 提供引擎所属结构列表列/行，PostgreSQL 拆开 Schema 和表名列。SQLCompletionContext.namespace? 表示当前 schema，schema 字段仍是元数据 map。DatabaseExplorerAdapter.referencedTables? 根据所属方言识别 AI 上下文引用。
 
-MySQL、MariaDB 和 PostgreSQL 的 profile 均使用状态底板，`EngineIcon` 将白色图形置于主色或灰色圆角底板上。
+`EngineIcon` 统一为品牌图形添加圆角底板，未打开的连接在灰底上显示同一图形的白色版本。
 
 DatabaseAdapter.dumpFile 提供 metadataSQL?/header(database,schemas,metadata?)/footer/prepare(database,table,ddl,columns,metadata,withData)。prepare 返回 DumpPlan(before/after/constraints?/data(chunk))，允许工作区先写所有结构、逐批数据、再补外键。支持占位的引擎通过可选 viewStandIn 生成占位语句及最终定义，用于恢复包含多个视图的转储。deleteRowSQL 根据完整主键或无主键表的原始整行生成单行删除。匹配所需的字段缺失或无法准确比较时，在提交前报告原因。
 
