@@ -10,7 +10,7 @@ import { ObjectAction } from '@/databases/typings/objectManagement'
 import type { ObjectChange, ObjectTarget } from '@/databases/typings/objectManagement'
 import { useSidebarWidth } from '@/hooks/useSidebarWidth'
 import { useTranslation } from '@/hooks/useTranslation'
-import { deleteConnection as removeConnection } from '@/services/database'
+import { getColumns, getDDL, deleteConnection as removeConnection } from '@/services/database'
 import type { Column, Connection } from '@/typings/database'
 import type { EditorLayout, ExplorerLayout, HistoryItem, QueryScope, WorkspacePageKind, WorkspaceSnapshot, WorkspaceTab } from '@/typings/workspace'
 import { exportSQL } from '@/utils/sqlExport'
@@ -886,9 +886,22 @@ export const useWorkspace = (active = true) => {
     const source = `${target.name} / ${db} / ${adapter.tableLabel(table)}`
     const controller = startRun(tabId, { kind: action, title, source })
     try {
-      const structure = await objects.loadStructure(db, table, targetConnectionId)
+      let columns: Column[] = []
+      let ddl = ''
+      if (target.type === DatabaseEngine.Oracle) {
+        if (action === 'ddl') {
+          const definition = await getDDL(targetConnectionId, db, table, controller.signal)
+          ddl = definition.ddl
+        } else {
+          columns = await getColumns(targetConnectionId, db, table, controller.signal)
+        }
+      } else {
+        const structure = await objects.loadStructure(db, table, targetConnectionId)
+        columns = structure.columns
+        ddl = structure.ddl
+      }
       if (controller.signal.aborted) throw new Error(t('请求已取消'))
-      const rows = action === 'ddl' ? [[structure.ddl]] : structure.columns.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
+      const rows = action === 'ddl' ? [[ddl]] : columns.map((field) => [field.name, field.type, field.nullable, field.key, field.default, field.extra, field.comment])
       publishResult(tabId, {
         kind: action,
         title,
@@ -905,6 +918,7 @@ export const useWorkspace = (active = true) => {
         }
       })
     } catch (error) {
+      if (target.type === DatabaseEngine.Oracle && !controller.signal.aborted) objects.verifyConnection(targetConnectionId)
       publishResult(tabId, { kind: action, title, source, error: controller.signal.aborted ? t('请求已取消') : error instanceof Error ? error.message : t('结构加载失败') })
     } finally {
       finishRun(controller)

@@ -40,7 +40,7 @@ JSON 解码统一使用 decodeLimit。普通请求上限为 1 MiB，SQL 单语�
 
 配置 PUT 与 AI 移除必须显式提供非 null 的 revision，首次写入可为 0；缺失字段不能以零值替代并触发写入。
 
-GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表。GET /api/connections/:id/foreign-keys 使用同样的范围参数，返回外键的引用对象、规则和有序列映射。两者沿用元数据超时及取消；Swagger 和本地 API 列表同步维护。
+GET /api/connections/:id/indexes 接受 database/table，返回只读索引列表。GET /api/connections/:id/foreign-keys 使用同样的范围参数，返回外键的引用对象、规则和有序列映射。两者沿用 10 秒元数据期限及请求取消。DDL 接口沿用模块期限，Oracle 为 30 秒，其他引擎为 10 秒。Swagger 和本地 API 列表同步维护。
 
 POST /api/connections/:id/session 要求显式非 null 的 open 布尔值；database 省略为整个连接，显式 null、空字符串和非字符串均拒绝。关闭成功响应表示目标驱动资源已释放。session_test.go 检查输入、原始范围、超时与失败响应；Swagger 及本地列表同步维护。
 

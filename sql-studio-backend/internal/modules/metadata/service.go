@@ -7,6 +7,8 @@ import (
 	"sql-studio-backend/internal/model"
 )
 
+var errOracleDDLTimeout = errors.New("读取 Oracle DDL 超时，请重试。")
+
 func (s *Service) Databases(ctx context.Context, id string) ([]string, error) {
 	c, err := s.connections.Get(id)
 	if err != nil {
@@ -42,9 +44,20 @@ func (s *Service) DDL(ctx context.Context, id, database, table string) (string, 
 	if err != nil {
 		return "", err
 	}
+	ref := model.TableRef{Database: database, Name: table}
+	if c.Type == model.TypeOracle {
+		// DBMS_METADATA can spend longer loading its catalog on the first call.
+		ctx, cancel := context.WithTimeoutCause(ctx, oracleDDLTimeout, errOracleDDLTimeout)
+		defer cancel()
+		ddl, err := s.database.DDL(ctx, c, ref)
+		if err != nil && ctx.Err() != nil {
+			return "", context.Cause(ctx)
+		}
+		return ddl, err
+	}
 	ctx, cancel := context.WithTimeout(ctx, metadataTimeout)
 	defer cancel()
-	return s.database.DDL(ctx, c, model.TableRef{Database: database, Name: table})
+	return s.database.DDL(ctx, c, ref)
 }
 
 func (s *Service) Indexes(ctx context.Context, id, database, table string) ([]model.Index, error) {

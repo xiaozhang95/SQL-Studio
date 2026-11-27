@@ -10,7 +10,7 @@
 | app                   | 创建存储、各数据库引擎和 AI 客户端，注入业务模块并装配 HTTP |
 | httpapi               | Gin 路由、单 JSON 解码、本机同源保护和错误映射；仅调用模块公开入口 |
 | modules/connections   | 连接校验、分组、保存与 7 秒测试                                    |
-| modules/metadata      | 显式连接与对象范围，10 秒超时                                      |
+| modules/metadata      | 显式连接与对象范围，目录读取 10 秒，Oracle DDL 30 秒                                      |
 | modules/query         | 行数、30 秒超时、全进程 4 并发                                     |
 | modules/databasesync  | 同引擎同步的只读检查、复制进度和全进程单任务限制                    |
 | modules/redistools    | Redis 键浏览、命令、编辑和发布订阅                                  |

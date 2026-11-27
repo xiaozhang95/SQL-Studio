@@ -4,7 +4,7 @@
 
 [源码](index.tsx)
 
-useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段。主区域只有一层 query/data/structure/ddl 页面标签。SQL 页共用编辑器和最新一批结果，对象操作打开独立结果页；关闭最后一页保留空状态，不自动新建。
+useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段。主区域只有一层 query/data/structure/ddl 页面标签。SQL 页共用编辑器和最新一批结果，对象操作打开独立结果页。Oracle 结构页单独加载列，DDL 页单独读取定义，两个请求随该页取消并支持原页重试。关闭最后一页保留空状态，不自动新建。
 
 `operationError` 提供导出、刷新和关闭等操作的失败原因，`clearOperationError()` 清理该错误。工作区将它与配置、连接列表错误交给 PageErrorBanner 合并展示。
 

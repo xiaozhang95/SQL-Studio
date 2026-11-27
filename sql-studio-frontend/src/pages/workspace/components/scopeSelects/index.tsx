@@ -1,5 +1,5 @@
 import { DatabaseOutlined } from '@ant-design/icons'
-import { Select } from 'antd'
+import { Flex, Select, theme } from 'antd'
 import type { CSSProperties } from 'react'
 
 import EngineIcon from '@/components/engineIcon'
@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { Connection } from '@/typings/database'
 import type { QueryScope } from '@/typings/workspace'
 
-import { workspaceConnectionIconSize } from '../../constant/layout'
+import { queryScopeLayout, workspaceConnectionIconSize } from '../../constant/layout'
 import type { useDatabaseObjects } from '../../hooks/useDatabaseObjects'
 
 type Props = {
@@ -18,25 +18,31 @@ type Props = {
   connections: Connection[]
   objects: ReturnType<typeof useDatabaseObjects>
   disabled: boolean
+  compact?: boolean
   onSchema: (schema: string) => void
   onConnection: (id: string) => void
   onSelect: (database: string, table?: string) => void
 }
-const scopeSelectStyle = { flex: '0 1 240px', minWidth: 'min(190px, 100%)', maxWidth: 'min(240px, 100%)' } satisfies CSSProperties
 /** 当前查询独立选择连接与库；仅与对象树共享元数据缓存，不共享选中范围。 */
-export default function ScopeSelects({ scope, connections, objects, disabled, onConnection, onSelect, onSchema }: Props) {
+export default function ScopeSelects({ scope, connections, objects, disabled, compact, onConnection, onSelect, onSchema }: Props) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
 
   const current = connections.find((connection) => connection.id === scope.connectionId)
   const redis = current?.type === DatabaseEngine.Redis
   const service = current?.type === DatabaseEngine.Oracle
+  const hasSchema = !redis && Boolean(getDatabaseAdapter(current?.type).explorer)
+  const selectWidth = compact ? queryScopeLayout.compactWidth : queryScopeLayout.width
+  const selectCount = hasSchema ? 3 : 2
+  const scopeWidth = selectCount * selectWidth + (selectCount - 1) * token.marginXS
+  const scopeSelectStyle = { flex: '1 1 0px', minWidth: `min(${queryScopeLayout.minWidth}px, 100%)`, maxWidth: selectWidth } satisfies CSSProperties
   const databaseLabel = service ? '选择服务' : '选择数据库'
   const snapshot = objects.snapshots[scope.connectionId]
   const connected = snapshot?.status === 'connected'
   const databases = snapshot?.databases ?? []
   const database = redis ? selectedRedisDatabase(databases, scope.database, current.database) : connected ? scope.database || undefined : undefined
   return (
-    <>
+    <Flex align="center" gap={token.marginXS} wrap style={{ flex: `0 1 ${scopeWidth}px`, minWidth: 0 }}>
       <Select
         className="connection-select"
         style={scopeSelectStyle}
@@ -87,7 +93,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           )
         }))}
       />
-      {!redis && getDatabaseAdapter(current?.type).explorer && (
+      {hasSchema && (
         <Select
           style={scopeSelectStyle}
           aria-label={t('选择 Schema')}
@@ -100,6 +106,6 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
           onChange={(value) => onSchema(value || '')}
         />
       )}
-    </>
+    </Flex>
   )
 }

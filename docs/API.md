@@ -82,6 +82,8 @@ Redis 的逻辑库列表、监控和发布订阅使用实例范围，关闭整�
 
 普通状态接口拒绝 `connections`、`workspace-index` 和 `ai` 分区。连接及工作区通过各自的专用 API 读写，`master.key` 不通过接口返回。
 
+`GET /connections/{id}/ddl` 按显式数据库和对象身份读取定义。Oracle DDL 的期限为 30 秒，其他引擎为 10 秒。请求取消会传递至驱动。
+
 PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参考，分区子表和外部表返回错误。查询和 AI 辅助请求可携带 `schema`，PostgreSQL 查询验证 USAGE 后设置本次连接的搜索路径。MySQL、MariaDB 和 GreptimeDB 查询使用数据库范围，拒绝非空的独立 `schema`。GreptimeDB 接受单条 SQL 或 TQL，执行双引号 `USE` 时转换为线协议的反引号写法。返回原始表或视图 DDL。目录缺少视图字段时，字段接口返回协议中的列名和类型，未知的可空性及其他目录属性留空。
 
 Oracle 使用配置的服务名作为 `database`。对象标识为完整的 `"OWNER"."OBJECT"`，查询的可选 `schema` 设置该次 Oracle 会话的 CURRENT_SCHEMA。默认只读接受 SELECT 和查询型 WITH，在 Oracle 只读事务中执行。显式写入允许单条 DML、DDL 或完整 PL/SQL 块。表预览使用 Oracle 的 `FETCH FIRST 1000 ROWS ONLY`。查询编码保留 NUMBER 精确文本及 RAW/BLOB 十六进制。

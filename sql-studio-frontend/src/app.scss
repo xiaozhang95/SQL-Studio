@@ -56,9 +56,10 @@ body {
   overflow-x: auto;
 }
 
-// Ant Design 通过主题关闭焦点轮廓；原生元素也不显示浏览器的额外描边。
-:focus {
-  outline: none;
+// 按钮用内描边标记键盘焦点，避免生成与按钮分离的外圈。
+:is(button, a).ant-btn:not(:disabled):focus-visible {
+  outline: var(--ant-line-width) solid var(--ant-color-primary-border);
+  outline-offset: -2px;
 }
 
 // 仅隐藏 Button 的点击波纹，保留按钮自身的按下样式。

@@ -30,4 +30,6 @@ objectTreeLayout.rowHeight=30 由连接对象树和 Redis 键树共用，与 28p
 
 redisPanelLayout.sidebarWidth=320 由 Redis 键浏览和发布订阅共用。标题栏与搜索行沿用 `appearance.panelHeaderHeight`，与工作区其他工具栏对齐。
 
+`queryScopeLayout` 定义查询范围选择器的普通上限 240px、紧凑上限 150px 和换行前的最小宽度 144px。
+
 sqlCompletionLayout.width=360、height=256：Ant Design 语法候选下拉的最大尺寸，实际宽度受窗口限制。

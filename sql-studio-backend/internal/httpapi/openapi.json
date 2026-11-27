@@ -2298,6 +2298,7 @@
       "get": {
         "operationId": "ddl",
         "summary": "对象建表语句",
+        "description": "按显式连接、数据库、对象读取 DDL。Oracle 最长 30 秒，其他引擎最长 10 秒。",
         "tags": [
           "元数据"
         ],

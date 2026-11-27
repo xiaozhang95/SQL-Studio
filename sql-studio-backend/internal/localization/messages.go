@@ -220,6 +220,7 @@ var messages = map[string]string{
 	"单条 SQL 执行超时，已停止。":                     "The SQL statement timed out and was stopped.",
 	"SQL 批次执行超时，已停止。":                      "The SQL batch timed out and was stopped.",
 	"SQL 会话初始化超时。":                         "SQL session setup timed out.",
+	"读取 Oracle DDL 超时，请重试。":                "Loading Oracle DDL timed out. Try again.",
 	"数据库拒绝操作：CHECK 约束校验失败":                 "The database rejected the operation because a CHECK constraint failed",
 	"数据库拒绝操作：主键或唯一约束冲突":                    "The database rejected the operation because a primary key or unique constraint was violated",
 	"数据库拒绝操作：外键约束校验失败":                     "The database rejected the operation because a foreign key constraint failed",

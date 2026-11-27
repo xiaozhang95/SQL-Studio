@@ -10,10 +10,10 @@ import (
 	"sql-studio-backend/internal/modules/metadata"
 )
 
-type repository struct{}
+type repository struct{ kind string }
 
-func (repository) Get(id string) (model.Connection, error) {
-	return model.Connection{ID: id, Password: "secret-" + id}, nil
+func (r repository) Get(id string) (model.Connection, error) {
+	return model.Connection{ID: id, Type: r.kind, Password: "secret-" + id}, nil
 }
 
 type database struct {
@@ -84,4 +84,38 @@ func TestMetadataScopeAndCancellation(t *testing.T) {
 
 func (d database) Schemas(ctx context.Context, c model.Connection, db string) ([]string, error) {
 	return nil, d.check(ctx, c, db, "")
+}
+
+func TestOracleDDLUsesLongerDeadline(t *testing.T) {
+	const table = `"TEST"."SAMPLE"`
+	var deadline time.Time
+	driver := database{check: func(ctx context.Context, _ model.Connection, _, _ string) error {
+		deadline, _ = ctx.Deadline()
+		return ctx.Err()
+	}}
+	svc := metadata.New(repository{kind: model.TypeOracle}, driver)
+	ctx := context.Background()
+	start := time.Now()
+	if _, err := svc.DDL(ctx, "oracle", "FREEPDB1", table); err != nil {
+		t.Fatal(err)
+	}
+	if deadline.Before(start.Add(30*time.Second)) || deadline.After(time.Now().Add(30*time.Second)) {
+		t.Fatalf("Oracle DDL deadline = %v", deadline)
+	}
+	if _, err := svc.Columns(ctx, "oracle", "FREEPDB1", table); err != nil {
+		t.Fatal(err)
+	}
+	if deadline.IsZero() || deadline.After(time.Now().Add(10*time.Second)) {
+		t.Fatalf("Oracle column metadata deadline = %v", deadline)
+	}
+
+	parent, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	want, _ := parent.Deadline()
+	if _, err := svc.DDL(parent, "oracle", "FREEPDB1", table); err != nil {
+		t.Fatal(err)
+	}
+	if !deadline.Equal(want) {
+		t.Fatalf("Oracle DDL did not inherit the earlier caller deadline")
+	}
 }

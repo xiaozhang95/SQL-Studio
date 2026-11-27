@@ -376,6 +376,7 @@ export default function QueryResults({ model, themeMode }: Props) {
   )
   if (!run) return null
   const output = batch ?? run
+  const retryOracleMetadata = databaseType === DatabaseEngine.Oracle && (tab.kind === 'ddl' || tab.kind === 'structure') && model.canRefreshResult && Boolean(pageExecutionError(output))
   return (
     <ResultsDock resizable={tab.kind === 'query'} height={model.resultHeight} onHeightChange={model.setResultHeight}>
       {run.interrupted && <Alert type="warning" banner title={t('上次执行因页面刷新中断，已完成结果保留；未自动继续执行。')} />}
@@ -394,7 +395,7 @@ export default function QueryResults({ model, themeMode }: Props) {
             }
           }}
         />
-        {(showingResult || (activeRunning && tab.kind !== 'query')) && (
+        {(showingResult || (activeRunning && tab.kind !== 'query') || retryOracleMetadata) && (
           <Flex
             className="result-toolbar"
             align="center"
@@ -436,6 +437,11 @@ export default function QueryResults({ model, themeMode }: Props) {
                   }}
                 />
                 <ToolbarButton label={t('放弃修改')} icon={<UndoOutlined />} disabled={editingBlocked || !editing.dirty} onClick={editing.cancel} />
+                {databaseType === DatabaseEngine.Oracle && showingResult && (
+                  <Typography.Text type="secondary" style={{ marginInlineStart: token.marginXXS }}>
+                    {t('无排序预览')}
+                  </Typography.Text>
+                )}
               </Flex>
             )}
             {tab.kind !== 'data' && showingResult && (
@@ -459,22 +465,28 @@ export default function QueryResults({ model, themeMode }: Props) {
                 />
               )}
               <Flex role="group" aria-label={t('结果操作')} align="center" justify="end" gap={token.marginXXS} wrap>
-                <ToolbarButton
-                  label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
-                  icon={<ReloadOutlined />}
-                  loading={activeRunning}
-                  disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
-                  hint={
-                    model.replayRequiresSession
-                      ? t('单条重跑无法还原批次会话，请在编辑器中核对原脚本')
-                      : editing.dirty
-                        ? t('请先保存或放弃修改')
-                        : tab.kind === 'query'
-                          ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行')
-                          : t('刷新当前结果')
-                  }
-                  onClick={model.refreshResult}
-                />
+                {retryOracleMetadata ? (
+                  <Button icon={<ReloadOutlined />} disabled={model.running} onClick={model.refreshResult}>
+                    {t('重试')}
+                  </Button>
+                ) : (
+                  <ToolbarButton
+                    label={tab.kind === 'query' ? t('重新执行') : t('刷新')}
+                    icon={<ReloadOutlined />}
+                    loading={activeRunning}
+                    disabled={model.running || !model.canRefreshResult || Boolean(editing.dirty)}
+                    hint={
+                      model.replayRequiresSession
+                        ? t('单条重跑无法还原批次会话，请在编辑器中核对原脚本')
+                        : editing.dirty
+                          ? t('请先保存或放弃修改')
+                          : tab.kind === 'query'
+                            ? t('重新执行当前结果对应的 SQL，写入语句也会再次执行')
+                            : t('刷新当前结果')
+                    }
+                    onClick={model.refreshResult}
+                  />
+                )}
                 {tab.kind !== 'query' && activeRunning && <ToolbarButton label={t('取消执行')} icon={<StopOutlined />} danger onClick={cancelQuery} />}
                 {showingResult && (
                   <ResultExport

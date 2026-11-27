@@ -8,7 +8,7 @@ CSS 变量键为 `sql-studio-theme`。工作区、Agent 与弹窗通过这个作
 
 工作区（含 SQL 编辑器、结果区和 Redis 工具）、AI 助手、监控和同步的主内容区共用 `colorBgContainer`。Modal、Drawer 的内容区继承浮层底色 `colorBgElevated`。只读 SQL 预览与共用分页底栏随所在页面、浮层或卡片显示背景。
 
-`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用低对比度的中性边框色，亮色为 `#e2e2e2`，暗色为 `#242424`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。在各主题的布局、容器和浮层背景上保留细微的分隔线。`focusOutline` 和 `controlOutlineWidth` 关闭组件的焦点轮廓及光晕。输入框、数字输入框、下拉框及日期时间选择器通过 `activeBorderColor` 在聚焦时沿用常态边框。校验边框保留语义色。
+`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 共用低对比度的中性边框色，亮色为 `#e2e2e2`，暗色为 `#242424`。布局分隔线、卡片、表格和普通控件边框都读取这组令牌。在各主题的布局、容器和浮层背景上保留细微的分隔线。`focusOutline` 关闭 Ant Design 与控件分离的键盘焦点外圈。输入框、数字输入框、下拉框和日期时间选择器沿用 Ant Design 聚焦边框、阴影和校验色。
 
 `controlItemBgActive` 和 `controlItemBgActiveHover` 使用同一个不透明的中性选中底，亮色为 `#e6e6e6`，暗色为 `#303030`。Ant Design 下拉选项、树节点和表格选中行沿用这组令牌。自定义的左侧主导航、连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表通过 `--surface-selected` 引用同一颜色。主题、字号和语言卡片沿用弹窗底色，通过 Radio 圆点标记当前选项。
 

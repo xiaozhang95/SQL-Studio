@@ -7,11 +7,11 @@
 - `Columns(ctx, id, database, table) ([]model.Column, error)`：读取字段结构。
 - `DDL(ctx, id, database, table) (string, error)`：读取对象 DDL。
 
-所有方法的 `ctx` 为 `context.Context`，其余参数为 `string`；每次按显式连接 ID 读取凭据，最长 10 秒，继承调用者取消；错误原样传递。对象范围通过 `model.TableRef` 交给引擎，不拼协议 SQL，不缓存可变连接范围。
+所有方法的 `ctx` 为 `context.Context`，其余参数为 `string`。每次按显式连接 ID 读取凭据，继承调用者取消。普通目录读取的期限为 10 秒，Oracle DDL 读取的期限为 30 秒。Oracle DDL 达到本模块期限时返回可重试的超时提示。对象范围通过 `model.TableRef` 交给引擎，不拼协议 SQL，不缓存可变连接范围。
 
 app 注入实现，HTTP 层仅调用模块公开入口。测试使用两个连接的同名对象验证范围、凭据、超时和取消，不访问真实数据库。
 
-`Indexes(ctx, id, database, table) ([]model.Index, error)` 按显式范围读取索引与按顺序排列的字段，包含主键、唯一性、类型、前缀长度和排序方向；无索引返回空数组。`ForeignKeys(ctx, id, database, table)` 返回有序列映射和引用规则，无外键或引擎不支持返回空数组。两者与其他元数据方法使用相同的 10 秒超时和取消。
+`Indexes(ctx, id, database, table) ([]model.Index, error)` 按显式范围读取索引与按顺序排列的字段，包含主键、唯一性、类型、前缀长度和排序方向；无索引返回空数组。`ForeignKeys(ctx, id, database, table)` 返回有序列映射和引用规则，无外键或引擎不支持返回空数组。两者使用 10 秒期限并继承请求取消。
 
 Schemas(ctx,id,database) 复用显式目标、凭据消费接口与 10 秒超时，返回可访问的 schema 名称列表；业务层不拼元数据 SQL。
 

@@ -801,6 +801,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   删除选中的数据行: 'Delete selected rows',
   放弃修改: 'Discard changes',
   筛选当前结果: 'Filter current results',
+  无排序预览: 'Unsorted preview',
   筛选查询结果: 'Filter query results',
   结果操作: 'Result actions',
   表数据编辑: 'Table data editing',

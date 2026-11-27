@@ -21,7 +21,10 @@ type Database interface {
 	DDL(context.Context, model.Connection, model.TableRef) (string, error)
 }
 
-const metadataTimeout = 10 * time.Second
+const (
+	metadataTimeout  = 10 * time.Second
+	oracleDDLTimeout = 30 * time.Second
+)
 
 type Service struct {
 	connections Connections
