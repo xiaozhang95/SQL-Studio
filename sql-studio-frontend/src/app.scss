@@ -32,7 +32,7 @@ html[data-theme='dark'] {
   --selection: color-mix(in srgb, var(--primary) 14%, transparent);
   --border: var(--ant-color-border-secondary);
   --layout-divider: var(--border);
-  --engine-icon-background: color-mix(in srgb, var(--primary) 15%, var(--ant-color-bg-elevated));
+  --engine-icon-background: var(--ant-color-text-light-solid);
   --inactive-icon: var(--ant-color-text-tertiary);
 
   ::selection {
@@ -43,7 +43,6 @@ html[data-theme='dark'] {
 
 html[data-theme='dark'] .sql-studio-theme {
   --navigation-icon-selected: var(--ant-color-text-light-solid);
-  --engine-icon-background: color-mix(in srgb, var(--ant-color-text-light-solid) 86%, var(--surface));
   --selection: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 * {
@@ -56,26 +55,9 @@ body {
   overflow-x: auto;
 }
 
-// 键盘焦点使用按钮底部的短线，保留原有底色和前景色。
-:is(button, a.ant-btn, [role='button']):not(:disabled, .ant-btn-disabled, [aria-disabled='true']):focus-visible {
+:focus,
+:hover {
   outline: none;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-size: var(--ant-size-xs) var(--ant-line-width);
-  background-position: center bottom;
-  background-repeat: no-repeat;
-}
-
-// 复选、单选和页签的焦点由控件本身反馈。
-.sql-studio-theme :is(.ant-checkbox, .ant-radio):has(> input:focus-visible) {
-  box-shadow: 0 0 0 2px var(--ant-color-primary-border);
-}
-.sql-studio-theme .ant-tabs-tab:has(> .ant-tabs-tab-btn:focus-visible) {
-  background-image: linear-gradient(var(--ant-color-fill-secondary), var(--ant-color-fill-secondary));
-}
-
-// 仅隐藏 Button 的点击波纹，保留按钮自身的按下样式。
-.ant-btn > div > .ant-wave {
-  visibility: hidden;
 }
 
 // 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。

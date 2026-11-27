@@ -27,7 +27,7 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
       colorBorder: borderColor,
       colorBorderSecondary: borderColor,
       colorSplit: borderColor,
-      colorBgElevated: dark ? '#181818' : '#f7f7f7',
+      colorBgElevated: dark ? '#181818' : '#f5f5f5',
       controlItemBgActive: selectedBackground,
       controlItemBgActiveHover: selectedBackground,
       ...(dark
@@ -35,8 +35,8 @@ export const createThemeConfig = (themeMode: ThemeMode, fontSizeMode: FontSizePr
         : {
             colorText: lightTextColor,
             colorTextSecondary: lightTextColor,
-            colorBgLayout: '#f0f0f0',
-            colorBgContainer: '#f5f5f5'
+            colorBgLayout: '#eeeeee',
+            colorBgContainer: '#f2f2f2'
           })
     },
     components: {
