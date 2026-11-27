@@ -17,13 +17,13 @@ export default function UpdateIndicator({ updates, disabled }: Props) {
   const size = appearance.railIconSize
   const spinner = <StudioIcon name="spinner" size={size} />
 
-  if (pending === 'download') {
-    const label = t(downloadStatus)
+  if (pending === 'check' || pending === 'download') {
+    const label = t(pending === 'check' ? '正在检查更新' : downloadStatus)
     const percent = Math.floor(progress?.percent ?? 0)
     return (
       <Tooltip title={label} placement="right">
         <Flex align="center" justify="center" style={{ width: railButtonStyle.width, height: railButtonStyle.height, flex: 'none' }}>
-          {progress?.total ? (
+          {pending === 'download' && progress?.total ? (
             <span role="progressbar" aria-label={t('更新下载进度')} aria-valuenow={percent} aria-valuetext={`${label} ${percent}%`} style={{ display: 'flex' }}>
               <StudioIcon name="progress" size={size} progress={percent} />
             </span>
