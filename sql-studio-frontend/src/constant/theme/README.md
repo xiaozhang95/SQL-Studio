@@ -12,4 +12,4 @@ CSS 变量键为 `sql-studio-theme`。工作区、Agent 与弹窗通过这个作
 
 `controlItemBgActive` 和 `controlItemBgActiveHover` 使用同一个不透明的中性选中底，亮色为 `#e6e6e6`，暗色为 `#303030`。Ant Design 下拉选项、树节点和表格选中行沿用这组令牌。自定义的连接类型、设置分类、对象树、会话列表、Redis 工具和频道列表通过 `--surface-selected` 引用同一颜色。主题、字号和语言卡片沿用弹窗底色，通过 Radio 圆点标记当前选项。
 
-左侧主导航用主题主色竖线标记当前页。主导航当前页图标在亮色模式使用 `colorPrimary`，在暗色模式使用 `--navigation-icon-selected` 的白色。设置分类使用 `--navigation-icon-selected`，亮色模式为主题正文色，暗色模式为白色。主导航普通入口的图标使用次级文字色，悬停或按下时使用正文色。工作区卡片页签采用透明底和中性边框，标签和图标沿用默认文字色，当前页通过主题色活动线标记。线形页签由原生活动线标记当前项。普通导航项使用 `controlItemBgHover` 悬浮底，结果表表头使用 `colorFillAlter`。AI 欢迎卡片图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。助手正文与行内过程入口沿用会话容器底色。
+左侧主导航的当前页图标和左侧竖线在亮暗模式下均使用 `colorPrimary`。设置分类使用 `--navigation-icon-selected`，亮色模式为主题正文色，暗色模式为白色。主导航普通入口的图标使用次级文字色，悬停或按下时使用正文色。工作区卡片页签采用透明底和中性边框，标签和图标沿用默认文字色，当前页通过主题色活动线标记。线形页签由原生活动线标记当前项。普通导航项使用 `controlItemBgHover` 悬浮底，结果表表头使用 `colorFillAlter`。AI 欢迎卡片图标的底板使用 `colorPrimaryBg`，图标在亮色下使用主色、暗色下使用正文色。助手正文与行内过程入口沿用会话容器底色。

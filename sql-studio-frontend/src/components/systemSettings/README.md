@@ -8,7 +8,7 @@ SystemSettings 接收 AppearancePreferences（已应用主题、字号、语言�
 
 - 点击入口打开标题为“系统设置”的 Ant Design Modal，沿用默认位置，宽度 920px；内容区高度为 `clamp(280px, calc(100dvh - 240px), 532px)`，低高度视口保留内层滚动空间。弹窗根节点带 `sql-studio-theme` 作用域，保证门户内的自定义变量与亮暗主题一致。
 - Header 至少 52px、Footer 至少 58px，左右使用主题内边距。内容区各区域独立滚动。
-- 左侧导航包含模型配置、外观设置、语言设置、关于软件，常规宽度 208px，按“AI”和“通用”分组。Ant Design xs 断点收为 48px 图标栏，保留可访问名称及悬停、聚焦提示。导航项高 40px，当前项与全局左侧导航共用 `--surface-selected` 中性底和 `--navigation-icon-selected` 图标色，亮色下用正文色、暗色下用白色。导航、内容、标题和底栏共用弹窗底色 `colorBgElevated`，导航与内容以分隔线区隔。导航、卡片和说明文字的字号统一跟随全局界面字号。
+- 左侧导航包含模型配置、外观设置、语言设置、关于软件，常规宽度 208px，按“AI”和“通用”分组。Ant Design xs 断点收为 48px 图标栏，保留可访问名称及悬停、聚焦提示。导航项高 40px，当前项使用 `--surface-selected` 中性底和 `--navigation-icon-selected` 图标色，亮色下用正文色、暗色下用白色。导航、内容、标题和底栏共用弹窗底色 `colorBgElevated`，导航与内容以分隔线区隔。导航、卡片和说明文字的字号统一跟随全局界面字号。
 - Footer 仅保留右侧的 default「取消」和 primary「保存」。
 - 关闭按钮、遮罩或 Escape 放弃未提交草稿；保存成功后关闭并应用偏好。
 
