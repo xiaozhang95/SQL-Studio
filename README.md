@@ -1,6 +1,6 @@
 # SQL Studio
 
-本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL（含 PolarDB PostgreSQL）、Oracle、GreptimeDB 和 Redis。各引擎的连接、查询、对象管理和导出能力见 [数据库说明](docs/DATABASES.md)。
+本地数据库工作台，支持 MySQL、MariaDB、PostgreSQL、Oracle、GreptimeDB 和 Redis。各引擎的连接、查询、对象管理和导出能力见 [数据库说明](docs/DATABASES.md)。
 
 项目显示名称统一为 **SQL Studio**，仓库目录为 `SQL-Studio`。各模块目录、项目标识和 skill 使用相同名称：
 
@@ -20,7 +20,7 @@
 
 - 连接分组、连接测试、TLS 配置及密码加密保存。
 - Redis 单机、哨兵和集群连接，支持键浏览、命令行、实时订阅及监控。
-- 数据库与表浏览，表可展开字段、索引和外键（MySQL、MariaDB、PostgreSQL／PolarDB、Oracle），支持按引擎新建、设计、重命名、删除及刷新。
+- 数据库与表浏览，表可展开字段、索引和外键（MySQL、MariaDB、PostgreSQL、Oracle），支持按引擎新建、设计、重命名、删除及刷新。
 - 查询编辑、语法高亮、字段补全、多语句执行与执行历史。
 - 结果、消息、摘要和执行历史连续虚拟滚动。结果支持筛选、刷新及 CSV、Excel、JSON 导出。
 - 表数据新增与编辑，暂存修改后统一保存。
@@ -116,22 +116,7 @@ SQL 窗口按所选引擎执行查询、DDL 和 DML。点击运行或使用快�
 
 使用说明：[数据库连接](docs/DATABASES.md) · [用户配置格式](docs/USER_STATE.md)
 
-测试数据：根目录 `sql/` 仅包含 [MySQL](sql/mysql.sql)、[MariaDB](sql/mariadb.sql)、[PostgreSQL / PolarDB](sql/postgresql.sql) 三份完整 demo。每份依次创建 `sql_studio_demo` 库、4 张业务表，并通过多行 `INSERT ... VALUES` 和 `INSERT ... SELECT` 批量插入 21,100 行虚构数据（客户 1,000、商品 100、订单 5,000、明细 15,000），最后展示行数与金额校验结果。
-
-在仓库根目录选择对应引擎执行一条命令即可，地址、端口和用户名按实际连接修改，密码由客户端提示输入：
-
-```sh
-# MySQL
-mysql --host=127.0.0.1 --port=3306 --user=root --password --default-character-set=utf8mb4 < sql/mysql.sql
-
-# MariaDB（这里使用本机开发映射端口 3307，默认服务端口通常为 3306）
-mariadb --host=127.0.0.1 --port=3307 --user=root --password --default-character-set=utf8mb4 < sql/mariadb.sql
-
-# PostgreSQL / PolarDB PostgreSQL
-psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --file=sql/postgresql.sql
-```
-
-需要建库权限；目标库已存在时脚本报错停止，不自动覆盖。PostgreSQL 文件包含 [`psql` 的 `\connect` 命令](https://www.postgresql.org/docs/current/app-psql.html)，用于建库后自动切换连接，请通过上面的 `psql` 命令执行完整文件。MySQL/MariaDB 可通过命令行或 SQL Studio 执行整个文件；多语句不会整体回滚，出错时需检查已完成的部分。
+本地测试库的 Compose 配置和初始化脚本分别位于各数据库目录。在仓库根目录可运行 `docker compose -f sql/mysql/docker-compose.yml up -d` 启动并初始化 MySQL。测试密码为 `00000000`，Redis 使用免密码连接。其他引擎、端口和兼容版本见 [本地测试数据库](sql/README.md)。
 
 `go run main.go` 默认使用开发目录 `~/.sql-studio-dev/state/`，桌面打包版使用 `~/.sql-studio/state/`；Windows 在 `%USERPROFILE%` 下使用对应目录。`SQLDESK_ENV=development|production` 可显式选择 Go 环境，`SQLDESK_STATE_DIR` 可覆盖状态目录，`SQLDESK_DATA_DIR` 可单独指定连接目录。显式相对路径以启动工作目录为基准。
 

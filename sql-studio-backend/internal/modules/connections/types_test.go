@@ -30,13 +30,13 @@ func TestConnectionTypesPersistAndRejectUnknown(t *testing.T) {
 			t.Fatal("stored connection lost type/TLS/password")
 		}
 	}
-	for _, kind := range []string{"polardb-mysql", "polardb-postgresql", "polardb-oracle", "sqlserver"} {
+	for _, kind := range []string{"unknown-mysql", "unknown-postgresql", "unknown-oracle", "sqlserver"} {
 		c := model.Connection{Type: kind, Name: "test", Host: "localhost", Port: 3306, Username: "user"}
 		if _, err := svc.SaveConnection(c); err == nil {
-			t.Fatalf("removed type accepted: %s", kind)
+			t.Fatalf("unknown type accepted: %s", kind)
 		}
 		if _, err := svc.TestConnection(context.Background(), c); err == nil {
-			t.Fatalf("removed type tested: %s", kind)
+			t.Fatalf("unknown type tested: %s", kind)
 		}
 	}
 }

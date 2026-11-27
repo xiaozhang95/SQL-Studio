@@ -2,7 +2,7 @@
 
 [统一入口](../README.md) · [源码](index.ts)
 
-按 DatabaseAdapter 组装 PostgreSQL 协议实现，可连接阿里云 PolarDB PostgreSQL 版和普通 PostgreSQL；不代表 PolarDB Oracle 兼容版。所有网络仍经共享 services/database，后端持有密码。
+按 DatabaseAdapter 组装 PostgreSQL 连接配置、方言和对象操作。网络请求通过共享 services/database 发送，密码由后端持有。
 
 - [配置](profile/README.md)：type、默认端口、维护库及图标。
 - [脚本与历史](statements/README.md)：美元引号、E 字符串和嵌套注释。

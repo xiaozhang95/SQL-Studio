@@ -1,4 +1,4 @@
-# PostgreSQL / PolarDB 监控
+# PostgreSQL 监控
 
 默认导出 DatabaseMonitor(props:DatabaseMonitorPanelProps)，组合 MonitorPanel 与 [本引擎定义](constant/README.md)。概览展示所选库连接、可见活跃会话、库大小和缓存命中率；四组趋势展示事务、会话、数据块访问和数据行变更。分类明细包含启动/统计重置时间、参数、事务、缓存与临时文件、锁和估算元组/维护统计。
 

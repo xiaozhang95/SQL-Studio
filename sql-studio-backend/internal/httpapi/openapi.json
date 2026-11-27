@@ -3194,7 +3194,7 @@
             }
           }
         },
-        "description": "按显式连接、数据库、表读取，最长 10 秒。支持 MySQL、MariaDB、PostgreSQL（含 PolarDB）和 Oracle。无外键或 GreptimeDB 返回空数组。"
+        "description": "按显式连接、数据库、表读取，最长 10 秒。支持 MySQL、MariaDB、PostgreSQL和 Oracle。无外键或 GreptimeDB 返回空数组。"
       }
     },
     "/connections/{id}/session": {

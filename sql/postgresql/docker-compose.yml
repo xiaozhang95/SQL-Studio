@@ -1,0 +1,34 @@
+name: sql-studio-test-postgresql
+
+x-postgresql: &postgresql
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: "00000000"
+  healthcheck:
+    interval: 3s
+    timeout: 3s
+    retries: 60
+    start_period: 90s
+    test: ["CMD-SHELL", "PGPASSWORD=\"$$POSTGRES_PASSWORD\" psql -X -h 127.0.0.1 -U postgres -d sql_studio_demo -Atqc 'SELECT 1'"]
+
+services:
+  postgresql:
+    <<: *postgresql
+    image: postgres:17-alpine
+    ports: ["127.0.0.1:${SQLSTUDIO_POSTGRESQL_PORT:-15432}:5432"]
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/10-fixture.sql:ro
+
+  postgresql-16:
+    <<: *postgresql
+    image: postgres:16-alpine
+    profiles: [compat]
+    ports: ["127.0.0.1:${SQLSTUDIO_POSTGRESQL_16_PORT:-25432}:5432"]
+    volumes:
+      - postgresql-16-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/10-fixture.sql:ro
+
+volumes:
+  postgresql-data:
+  postgresql-16-data:

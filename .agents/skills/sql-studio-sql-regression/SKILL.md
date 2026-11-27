@@ -1,6 +1,6 @@
 ---
 name: sql-studio-sql-regression
-description: 用户明确要求 SQL Studio 的 SQL 窗口实测、回归或复测时使用。覆盖 MySQL 和 PostgreSQL/PolarDB 的真实执行、多语句、选区快捷键、结果、历史、范围和取消。
+description: 用户明确要求 SQL Studio 的 SQL 窗口实测、回归或复测时使用。覆盖 MySQL 和 PostgreSQL 的真实执行、多语句、选区快捷键、结果、历史、范围和取消。
 ---
 
 # SQL 窗口执行回归

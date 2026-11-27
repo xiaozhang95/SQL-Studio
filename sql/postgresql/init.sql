@@ -1,6 +1,6 @@
--- PostgreSQL 12+ / PolarDB PostgreSQL 完整 demo。
+-- PostgreSQL 12+ 完整 demo。
 -- 执行（仓库根目录）：
--- psql -X --host=127.0.0.1 --port=5432 --username=postgres --dbname=postgres --file=sql/postgresql.sql
+-- psql -X --host=127.0.0.1 --port=15432 --username=postgres --dbname=postgres --file=sql/postgresql/init.sql
 -- 密码由 psql 按需提示，不写入文件；需要 CREATEDB 权限。
 -- 本文件由 psql 执行，含 \connect 客户端命令；不能整份作为普通 SQL 发给服务端。
 -- 不要使用 --single-transaction：CREATE DATABASE 不能在事务中执行。
@@ -111,6 +111,11 @@ FROM (
   FROM public.order_items GROUP BY order_id
 ) AS i
 WHERE i.order_id = o.id;
+
+CREATE VIEW public.v_order_summary AS
+SELECT o.order_no, c.name AS customer_name, o.status, o.total_amount, o.created_at
+FROM public.orders AS o
+JOIN public.customers AS c ON c.id = o.customer_id;
 
 COMMIT;
 

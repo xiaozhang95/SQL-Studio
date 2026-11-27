@@ -1,14 +1,16 @@
 # 数据库连接说明
 
+本地 Docker 测试库的镜像、映射端口和样例数据见 [本地测试数据库](../sql/README.md)。
+
 | 引擎 | type | 默认端口 | 维护数据库 |
 | --- | --- | --- | --- |
 | MySQL | mysql | 3306 | 不需要 |
 | MariaDB | mariadb | 3306 | 不需要；Docker 端口映射按宿主机填写 |
-| PolarDB PostgreSQL / PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
+| PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
 | Oracle | oracle | 1521 | 服务名 FREEPDB1，可改为监听器注册的服务 |
 | GreptimeDB | greptimedb | 4002 | public，可改为账号有权连接的库 |
 
-PolarDB PostgreSQL 使用 PostgreSQL 协议。各引擎在前端 `src/databases` 和后端 `internal` 下独立注册，统一入口负责分派。MariaDB 和 GreptimeDB 复用 MySQL 线协议，并各自维护 SQL 与对象能力。
+各引擎在前端 `src/databases` 和后端 `internal` 下独立注册，统一入口负责分派。MariaDB 和 GreptimeDB 复用 MySQL 线协议，并各自维护 SQL 与对象能力。
 
 连接表单可选引擎，切换新建类型更新默认端口和维护库并保留其他已填信息；编辑已有连接不更换引擎。名称、主机、用户名不预填。密码仅后端 AES-GCM 保存，编辑留空保留旧密码；连接分组默认“默认分组”，只影响树布局。SSL 启用后校验证书链和主机名，不提供跳过校验；暂不支持自定义 CA、客户端证书、SSH 隧道。
 
@@ -22,11 +24,11 @@ MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发
 
 PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 
-MySQL、MariaDB 和 PostgreSQL（含 PolarDB PostgreSQL）的基础表支持在数据页查看、新增、编辑和删除。无主键时，编辑和删除按原始整行匹配。修改同一行的多个字段会一起保存，内容完全相同的记录每次只更新或删除一条。整行数据缺失或存在无法精确匹配的值时，界面会显示原因。
+MySQL、MariaDB 和 PostgreSQL的基础表支持在数据页查看、新增、编辑和删除。无主键时，编辑和删除按原始整行匹配。修改同一行的多个字段会一起保存，内容完全相同的记录每次只更新或删除一条。整行数据缺失或存在无法精确匹配的值时，界面会显示原因。
 
 真实 MySQL 和 MariaDB 回归使用随机临时库，PostgreSQL 回归使用随机 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 
-连接方式参考 [阿里云 PolarDB PostgreSQL 官方说明](https://www.alibabacloud.com/help/en/polardb/polardb-for-postgresql/connect-to-polardb/)。当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
+当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
 
 PostgreSQL 对象树按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。MySQL、MariaDB 和 PostgreSQL 的表可展开外键分类，悬停查看引用库或 Schema、表、复合字段映射和更新、删除规则。
 
@@ -40,18 +42,13 @@ PostgreSQL 查询页可独立选择 schema。物理数据库与 schema 分别保
 
 新建连接选择 **Oracle**，输入监听地址、端口、服务名和数据库账号。默认端口为 `1521`，Oracle Free 的应用容器数据库服务名为 `FREEPDB1`。其他实例按监听器公布的服务填写。启用 TLS 时使用 Oracle TCPS 监听端口，并验证系统信任链及主机名。应用使用纯 Go 驱动，适配以 Oracle 19c 及之后版本为目标。
 
-以下 PowerShell 命令可在本地 Docker 启动单独的 Oracle Free 实例，并提示输入管理员与应用账号的密码。
+在仓库根目录可用 Compose 启动带测试数据的 Oracle Free。
 
 ```powershell
-$env:ORACLE_PASSWORD = Read-Host "Oracle admin password" -MaskInput
-$env:APP_USER = "SQLSTUDIO"
-$env:APP_USER_PASSWORD = Read-Host "SQLSTUDIO password" -MaskInput
-docker run -d --name sql-studio-oracle -p 127.0.0.1:1521:1521 -e ORACLE_PASSWORD -e APP_USER -e APP_USER_PASSWORD gvenzl/oracle-free:23-slim
-Remove-Item Env:ORACLE_PASSWORD, Env:APP_USER, Env:APP_USER_PASSWORD
-docker logs --tail 30 sql-studio-oracle
+docker compose -f sql/oracle/docker-compose.yml up -d
 ```
 
-日志出现 `DATABASE IS READY TO USE!` 后，在应用中填 `127.0.0.1`、`1521`、`FREEPDB1`、`SQLSTUDIO` 与应用账号密码。宿主机端口已占用时可使用 `127.0.0.1:1522:1521` 映射，并在连接表单填写 `1522`。[Oracle Free 容器说明](https://github.com/gvenzl/oci-oracle-free)
+容器状态变为 `healthy` 后，在应用中填 `127.0.0.1`、`11521`、`FREEPDB1`、`SQL_STUDIO_DEMO` 和密码 `00000000`。该项目同时提供 Oracle XE 21c。端口及版本选择见 [本地测试数据库](../sql/README.md)。
 
 - 对象树按服务 → Schema → 表/视图显示，可展开列、主键、索引和外键。查看 DDL 使用 `DBMS_METADATA`，跨 Schema 读取完整 DDL 由数据库权限决定。
 - SQL 窗口支持 SELECT、DDL、DML、PL/SQL、选区运行、补全、历史、结果导出和取消。表预览使用 `FETCH FIRST 1000 ROWS ONLY`。脚本通过分号切分 SQL，PL/SQL 块及程序定义用独立一行的 `/` 分隔。工作台普通写入逐条提交，显式事务与其语句放在同一次运行。Oracle DDL 会隐式提交，已提交的操作会保留。
@@ -95,7 +92,7 @@ Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.
 
 转储保留已适配的精确值、二进制、NULL、生成列、自增和自有序列定义，以及字符集、Schema 和延后外键等必要结构。它不提供跨表一致性快照，不包含完整的例程、触发器、事件、授权及外部依赖。完整备份应使用对应数据库的原生工具。
 
-PostgreSQL／PolarDB 的库和 Schema 转储只创建用户 Schema，跳过扩展自身管理的表和视图，例如 PolarDB 默认附带的任务调度表，并在日志报告跳过数量。恢复需要预先安装所依赖的扩展。
+PostgreSQL 的库和 Schema 转储只创建用户 Schema，跳过扩展自身管理的表和视图，并在日志报告跳过数量。恢复需要预先安装所依赖的扩展。
 
 MySQL 数据库转储包含原库名。恢复到空实例时可在查询页清空当前库选择，再执行完整脚本，由脚本建库和切库。已有同名表会报错并停止。编辑器导入上限为 16 MiB，较大的转储可用 MySQL 客户端执行。
 

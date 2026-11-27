@@ -16,7 +16,7 @@ ClassifyQueryError 根据 pgx 服务端错误的 SQLSTATE 返回 model.QueryErro
 
 batch.go 使用同一物理会话逐条执行已切分的 SQL，共享显式事务、SET 和临时表。结束时关闭物理连接，事务控制与事务内 SQL 应放在同批执行。批次结束时若事务仍未关闭，返回错误并由连接关闭回滚未提交事务。结果截断时在语句超时内排空游标以保留批次会话。已提交写入在失败或取消后保留。
 
-测试以 database/sql 替身检查配置/TLS、结果精度与限制、游标取消、关闭和同名库隔离，不读取业务库。tests/integration/postgresql_test.go 可显式启用真实 PostgreSQL/PolarDB 测试；前端 tests/sql-window.integration.test.mjs 另验证实际 SQL 窗口编排与 HTTP 执行，仅操作随机临时 schema，配置见对应测试 README。
+测试以 database/sql 替身检查配置/TLS、结果精度与限制、游标取消、关闭和同名库隔离，不读取业务库。tests/integration/postgresql_test.go 可显式启用真实 PostgreSQL 测试；前端 tests/sql-window.integration.test.mjs 另验证实际 SQL 窗口编排与 HTTP 执行，仅操作随机临时 schema，配置见对应测试 README。
 
 Schemas(ctx,connection,database) 从 pg_namespace 返回具 USAGE 权限的非系统 schema，包含空 schema。Schemas 和 Tables 均排除保留前缀 pg_ 与 information_schema，沿用请求取消和连接释放；树按真实 schema 列表分层。
 

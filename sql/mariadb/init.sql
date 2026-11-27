@@ -1,10 +1,12 @@
--- MariaDB 11.4 完整 demo：创建 sql_studio_demo 库、4 张业务表、插入 21,100 行数据。
+-- MariaDB 10.11 / 11.4 完整 demo：创建 sql_studio_demo 库、4 张业务表、插入 21,100 行数据。
 -- 执行（仓库根目录）：
--- mariadb --host=127.0.0.1 --port=3307 --user=root --password --default-character-set=utf8mb4 < sql/mariadb.sql
+-- mariadb --host=127.0.0.1 --port=13307 --user=root --password --default-character-set=utf8mb4 < sql/mariadb/init.sql
 -- 需要建库权限；库已存在时停止，避免覆盖已有内容；不要使用客户端 --force 参数。
 -- 全部数据为虚构，所有日期固定；没有 DROP DATABASE、TRUNCATE 或覆盖已有数据的操作。
 -- 批量插入包括多行 INSERT ... VALUES 和 INSERT ... SELECT。
 -- 完成后 customers=1000、products=100、orders=5000、order_items=15000。
+
+SET NAMES utf8mb4;
 
 -- 1. 建库和建表。完整限定库名，不依赖 USE 或跨语句会话状态。
 CREATE DATABASE `sql_studio_demo`
@@ -61,19 +63,19 @@ CREATE TABLE `sql_studio_demo`.`order_items` (
     REFERENCES `sql_studio_demo`.`products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. 辅助数字表：无需递归 CTE、存储过程或 DELIMITER；数据生成后删除。
-CREATE TABLE `sql_studio_demo`.`demo_digits` (`n` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB;
-INSERT INTO `sql_studio_demo`.`demo_digits` (`n`) VALUES
-  (0), (1), (2), (3), (4), (5), (6), (7), (8), (9);
-
-CREATE TABLE `sql_studio_demo`.`demo_numbers` (`n` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB;
+-- 2. 生成临时数字表，客户端会话结束后自动释放。
+CREATE TEMPORARY TABLE `sql_studio_demo`.`demo_numbers` (`n` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB;
 INSERT INTO `sql_studio_demo`.`demo_numbers` (`n`)
+WITH digits AS (
+  SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+  UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+)
 SELECT 1 + a.`n` + 10*b.`n` + 100*c.`n` + 1000*d.`n` + 10000*e.`n`
-FROM `sql_studio_demo`.`demo_digits` AS a
-CROSS JOIN `sql_studio_demo`.`demo_digits` AS b
-CROSS JOIN `sql_studio_demo`.`demo_digits` AS c
-CROSS JOIN `sql_studio_demo`.`demo_digits` AS d
-CROSS JOIN `sql_studio_demo`.`demo_digits` AS e
+FROM digits AS a
+CROSS JOIN digits AS b
+CROSS JOIN digits AS c
+CROSS JOIN digits AS d
+CROSS JOIN digits AS e
 WHERE a.`n` + 10*b.`n` + 100*c.`n` + 1000*d.`n` + 10000*e.`n` < 15000;
 
 -- 3. 多行 VALUES 示例，再批量补足 1,000 个客户。
@@ -129,9 +131,10 @@ JOIN (
 ) AS i ON i.`order_id` = o.`id`
 SET o.`total_amount` = i.`amount`;
 
--- 删除本脚本创建的两个辅助表，最终只保留 4 张业务表。
-DROP TABLE `sql_studio_demo`.`demo_numbers`;
-DROP TABLE `sql_studio_demo`.`demo_digits`;
+CREATE VIEW `sql_studio_demo`.`v_order_summary` AS
+SELECT o.`order_no`, c.`name` AS `customer_name`, o.`status`, o.`total_amount`, o.`created_at`
+FROM `sql_studio_demo`.`orders` AS o
+JOIN `sql_studio_demo`.`customers` AS c ON c.`id` = o.`customer_id`;
 
 -- 8. 自动展示校验结果：passed 应全部为 1，problem_count 应为 0。
 SELECT 'customers' AS `table_name`, 1000 AS `expected_rows`, COUNT(*) AS `actual_rows`, COUNT(*)=1000 AS `passed`

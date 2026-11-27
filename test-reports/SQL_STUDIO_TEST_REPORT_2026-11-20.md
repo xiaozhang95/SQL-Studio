@@ -12,7 +12,6 @@
 | MySQL | 8.4.10 |
 | MariaDB | 11.4.13 |
 | PostgreSQL | 16.16、17.12 |
-| PolarDB PostgreSQL | 17.11.1.0 |
 | Redis | 7.4.12 |
 | 前端/后端 | 当前 commit 构建产物 / 独立实例 127.0.0.1:18089 |
 
@@ -39,14 +38,14 @@
 - MariaDB 不支持 `WITH ... UPDATE` 形式（语法错误）；MySQL 不支持 SEQUENCE。
 - 单条 SQL 窗口对含内部半角分号的存储程序体存在分割限制：UI 会把 `CREATE PROCEDURE ... BEGIN SELECT 1; SELECT 2; END` 拆成 3 条，首条语法错误，后续 2 条未执行；而 API 批次将完整存储程序作为单条语句发送时可成功创建。详见第 4 节问题 1。
 
-### PostgreSQL 16/17 与 PolarDB
+### PostgreSQL 16/17
 
 已验证成功：
 
 - **对象与 DDL**：ENUM、DOMAIN、IDENTITY、生成列、CHECK/UNIQUE/FK、表达式索引、部分索引、GIN 索引、`CREATE INDEX CONCURRENTLY`、`DROP INDEX CONCURRENTLY`、`ALTER TABLE`、`COMMENT ON`、`CREATE TABLE AS`、`CREATE TABLE (LIKE ...)`、视图、物化视图及 REFRESH、SEQUENCE、函数（SQL/PLpgSQL）、触发器、RANGE 分区（父表 + `PARTITION OF`）。
 - **DML/高级查询**：INSERT RETURNING、ON CONFLICT DO UPDATE、MERGE（PG16+）、UPDATE FROM、DELETE USING、递归 CTE、LATERAL、GROUPING SETS、窗口帧、数组、范围类型、JSONB、全文检索、EXPLAIN ANALYZE、VACUUM。
 - **高级特性**：DO 块、SET/SHOW、并发索引、分区裁剪（`tableoid::regclass` 验证分区命中）。
-- **版本差异**：PG13 不支持 MERGE/JSON_TABLE/ANY_VALUE/pg_stat_io；PG16 支持 MERGE/ANY_VALUE/pg_stat_io；PG17 增加 JSON_TABLE；PolarDB 17 与 PG17 测试项一致。
+- **版本差异**：PG13 不支持 MERGE/JSON_TABLE/ANY_VALUE/pg_stat_io；PG16 支持 MERGE/ANY_VALUE/pg_stat_io；PG17 增加 JSON_TABLE。
 - **错误类型**：FK、UNIQUE、ENUM 非法值、DOMAIN 约束、CHECK、NOT NULL、语法错误、未知表、除零，均按预期失败并停止。
 - **事务/会话边界**：跨 HTTP 请求 `BEGIN → INSERT → ROLLBACK` 后数据仍存在（每语句独立连接）；临时表在下一请求不可见。属当前逐语句请求架构行为，使用事务脚本时需注意。
 - **分区语法**：CREATE TABLE 内联分区定义不是 PostgreSQL 合法语法；父表 `PARTITION BY` + 独立 `PARTITION OF` 已验证通过。
@@ -70,9 +69,8 @@
 | PG 16 | 1,000,000 行 CREATE TABLE AS | 1,774 ms |
 | PG 16 | 建索引 / 聚合 / 10 万 UPDATE / 10 万 DELETE | 404 / 124 / 682 / 254 ms |
 | PG 17 | 30 万行建表 / 索引 / UPDATE / DELETE | 498 / 115 / 741 / 110 ms |
-| PolarDB 17 | 30 万行建表 / 索引 / UPDATE / DELETE | 474 / 360 / 1,311 / 500 ms |
 
-删除后计数：MySQL 90 万、MariaDB 40 万、PG16 90 万、PG17/PolarDB 20 万，均符合预期。
+删除后计数：MySQL 90 万、MariaDB 40 万、PG16 90 万、PG17 20 万，均符合预期。
 
 ### 批量写入性能（重点）
 
@@ -111,7 +109,7 @@
 
 1. **中：SQL 窗口不支持含内部半角分号的存储程序。** UI 分句器会把 `CREATE PROCEDURE ... BEGIN SELECT 1; SELECT 2; END` 拆开，导致首条语法错误并停止；API 批次以完整单条语句发送时可成功。触发器 BEGIN…END 同理。
 2. **中：大批量逐条写入性能风险。** 5,000 条 autocommit INSERT 批次耗时 433s；用户需自行在脚本中加 `BEGIN/COMMIT` 或改用单条多行 INSERT；UI 不会自动包裹事务。
-3. **中：PostgreSQL/PolarDB 跨请求事务和临时表不共享。** 逐语句请求架构下，`BEGIN → INSERT → ROLLBACK` 的 INSERT 仍会提交；临时表下一请求不可见。执行事务脚本时应使用单条语句能力或理解该边界。
+3. **中：PostgreSQL 跨请求事务和临时表不共享。** 逐语句请求架构下，`BEGIN → INSERT → ROLLBACK` 的 INSERT 仍会提交；临时表下一请求不可见。执行事务脚本时应使用单条语句能力或理解该边界。
 4. **低：简单查询固定开销约 15ms。** 本机顺序 300 次 `SELECT 1` 约 4.4s（约 68 qps），MySQL/PG 接近；主要来自每请求连接/HTTP 开销。
 5. **已知遗留（同日复测）：** MariaDB 超过 `max_allowed_packet` 时约 4/5 仍显示 `driver: bad connection`；单条 >1MiB 语句仍不可执行（提示已本地化）；9MB 单结果整行丢弃（truncated=true、rowCount=0）；`pnpm format:check` 仍报 108 个文件；语句错误详情需手动展开。
 6. **版本限制：** MySQL 不支持 SEQUENCE/RETURNING；MariaDB 不支持 `WITH ... UPDATE`；PG13 不支持 MERGE/JSON_TABLE/ANY_VALUE/pg_stat_io；上述均在对应版本明确报错。
@@ -127,9 +125,9 @@
 
 ## 6. 清理核验
 
-- 测试库/schema：MySQL `st_mysql`、MariaDB `st_maria`、PG16/17/PolarDB `st_pg*` 已删除。
+- 测试库/schema：MySQL `st_mysql`、MariaDB `st_maria`、PG16/17 `st_pg*` 已删除。
 - Redis 测试数据已 FLUSHALL；连接列表 0，分组仅剩“默认分组”。
-- 6 个压力测试容器已删除；全流程 E2E 轮次的 4 个容器（MySQL/MariaDB/PostgreSQL/Redis）、Agent 深度轮次的 3 个容器（MySQL/PostgreSQL/Redis）、对应 `e2e_*`/`agent_deep` 库与 schema、连接、Agent 会话和临时目录同样已清理。
+- 压力测试容器已删除；全流程 E2E 轮次的 4 个容器（MySQL/MariaDB/PostgreSQL/Redis）、Agent 深度轮次的 3 个容器（MySQL/PostgreSQL/Redis）、对应 `e2e_*`/`agent_deep` 库与 schema、连接、Agent 会话和临时目录同样已清理。
 - 独立后端已停止；18089 及全部测试端口无监听；连接列表 0，仅剩默认分组。
 - 除本报告外，仓库无源码改动。
 
@@ -160,7 +158,7 @@
 
 ## 8. 跨版本 SQL 兼容性（补充）
 
-同一 SQL 在 MySQL 5.7.44 / 8.0.46 / 8.4.10、MariaDB 10.11.19 / 11.4.13、PostgreSQL 13.23 / 16.16 / 17.12 / PolarDB 17.11.1.0、Redis 6.2.24 / 7.4.12 上逐一执行；迁移脚本按批次执行并记录停止点。以下差异均来自数据库版本能力，不是 SQL Studio 路由或结果错误。
+同一 SQL 在 MySQL 5.7.44 / 8.0.46 / 8.4.10、MariaDB 10.11.19 / 11.4.13、PostgreSQL 13.23 / 16.16 / 17.12、Redis 6.2.24 / 7.4.12 上逐一执行；迁移脚本按批次执行并记录停止点。以下差异均来自数据库版本能力，不是 SQL Studio 路由或结果错误。
 
 ### MySQL / MariaDB 兼容矩阵
 
@@ -193,9 +191,9 @@
 - MariaDB RETURNING/SEQUENCE 脚本：MariaDB 通过；MySQL 8.0/8.4/5.7 在 INSERT RETURNING 停止，后续未执行。
 - MySQL 5.7 老脚本（`ON DUPLICATE KEY UPDATE ... VALUES()`、`SQL_CALC_FOUND_ROWS`/`FOUND_ROWS`）：在 5.7、8.0、8.4、MariaDB 10.11/11.4 上均通过（新版本仍有弃用风险）。
 
-### PostgreSQL / PolarDB 兼容矩阵
+### PostgreSQL 兼容矩阵
 
-| 特性 | PG 13 | PG 16 | PG 17 / PolarDB 17 |
+| 特性 | PG 13 | PG 16 | PG 17 |
 | --- | --- | --- | --- |
 | CTE / 窗口 / JSONB / RETURNING / IDENTITY / 分区 / 并发索引 / VACUUM | 支持 | 支持 | 支持 |
 | MERGE | 不支持 | 支持 | 支持 |

@@ -1,0 +1,34 @@
+name: sql-studio-test-mariadb
+
+x-mariadb: &mariadb
+  environment:
+    MARIADB_ROOT_HOST: "%"
+    MARIADB_ROOT_PASSWORD: "00000000"
+  healthcheck:
+    interval: 3s
+    timeout: 3s
+    retries: 60
+    start_period: 90s
+    test: ["CMD-SHELL", "MYSQL_PWD=\"$$MARIADB_ROOT_PASSWORD\" mariadb -h 127.0.0.1 -u root -e 'SELECT 1'"]
+
+services:
+  mariadb:
+    <<: *mariadb
+    image: mariadb:11.4
+    ports: ["127.0.0.1:${SQLSTUDIO_MARIADB_PORT:-13307}:3306"]
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/10-fixture.sql:ro
+
+  mariadb-1011:
+    <<: *mariadb
+    image: mariadb:10.11
+    profiles: [compat]
+    ports: ["127.0.0.1:${SQLSTUDIO_MARIADB_1011_PORT:-23307}:3306"]
+    volumes:
+      - mariadb-1011-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/10-fixture.sql:ro
+
+volumes:
+  mariadb-data:
+  mariadb-1011-data:

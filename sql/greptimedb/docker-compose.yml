@@ -1,0 +1,49 @@
+name: sql-studio-test-greptimedb
+
+services:
+  greptimedb:
+    image: greptime/greptimedb:v1.3.0
+    environment:
+      GREPTIMEDB_STANDALONE__ENABLE_TELEMETRY: "false"
+    command:
+      - standalone
+      - start
+      - --mysql-addr=0.0.0.0:4002
+      - --user-provider=static_user_provider:file:/fixtures/users.txt
+    ports: ["127.0.0.1:${SQLSTUDIO_GREPTIMEDB_PORT:-14002}:4002"]
+    volumes:
+      - greptimedb-data:/greptimedb_data
+      - ./users.txt:/fixtures/users.txt:ro
+
+  greptimedb-init:
+    image: mysql:8.4.10
+    depends_on:
+      greptimedb:
+        condition: service_started
+    environment:
+      MYSQL_PWD: "00000000"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        greptime_sql() {
+          mysql -h greptimedb -P 4002 -u sqlstudio --ssl-mode=DISABLED \
+            --connect-timeout=3 --default-character-set=utf8mb4 --skip-comments --batch "$$@"
+        }
+        attempts=0
+        until greptime_sql -e 'SELECT 1' >/dev/null 2>&1; do
+          attempts=$$((attempts + 1))
+          if [ "$$attempts" -ge 60 ]; then
+            greptime_sql -e 'SELECT 1' >&2
+            exit 1
+          fi
+          sleep 2
+        done
+        if greptime_sql sql_studio_demo -e 'SELECT 1 FROM v_device_summary LIMIT 1' >/dev/null 2>&1; then
+          exit 0
+        fi
+        greptime_sql < /fixtures/init.sql
+    volumes:
+      - ./init.sql:/fixtures/init.sql:ro
+
+volumes:
+  greptimedb-data:

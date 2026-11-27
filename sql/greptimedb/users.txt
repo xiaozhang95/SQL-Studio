@@ -1,0 +1,2 @@
+# Docker Compose 本地测试账号
+sqlstudio=00000000

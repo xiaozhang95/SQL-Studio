@@ -2,7 +2,7 @@
 
 ## 技术栈与目录
 
-前端使用 Vite、React、TypeScript、Ant Design 和 SCSS，SQL 编辑器使用 CodeMirror。后端为 Go Gin 模块化单体，支持 MySQL、MariaDB、PostgreSQL / PolarDB PostgreSQL、Oracle、GreptimeDB 和 Redis。前端包管理使用 pnpm。
+前端使用 Vite、React、TypeScript、Ant Design 和 SCSS，SQL 编辑器使用 CodeMirror。后端为 Go Gin 模块化单体，支持 MySQL、MariaDB、PostgreSQL、Oracle、GreptimeDB 和 Redis。前端包管理使用 pnpm。
 
 ```text
 SQL-Studio/

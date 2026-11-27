@@ -66,7 +66,7 @@ SELECT X'00FF' AS b,JSON_EXTRACT('{"a":2}','$.a') AS j;
 
 返回0x00ff与JSON数值文本2。SQL 窗口和准备/清理夹具的 API 均显式允许写入；省略 allowWrite 的 API 默认读取保护另行验证。
 
-## PostgreSQL / PolarDB
+## PostgreSQL
 
 选择授权物理库和本轮schema，不依赖跨请求SET。执行：
 

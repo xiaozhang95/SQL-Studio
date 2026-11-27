@@ -3,7 +3,7 @@
 - 日期：2026-11-25
 - 方式：内置浏览器 UI 验证 + 真实 HTTP/API 语句矩阵 + Docker 多版本数据库
 - 被测对象：当前工作区源码运行中的前端 15173 / 后端 18080（只读浏览）+ 隔离后端 18089（全部写操作仅作用于临时对象）
-- 结论：**自动化共检查 896 项，其中 795 项通过、101 项为记录项、0 项失败。发现 2 个代码问题（1 中、1 低），无阻断性缺陷。**
+- 结论：**自动化检查无失败项。发现 2 个代码问题（1 中、1 低），无阻断性缺陷。**
 
 ## 1. 测试环境
 
@@ -12,7 +12,6 @@
 | MySQL | 5.7.44 / 8.0.46 / 8.4.10 | Docker `mysql:5.7`、`mysql:8.0`、`mysql:8.4.10` |
 | MariaDB | 10.11.19 / 11.4.13 | Docker `mariadb:10.11`、`mariadb:11.4` |
 | PostgreSQL | 13.23 / 16.16 / 17.12 | Docker `postgres:13/16/17-alpine` |
-| PolarDB PostgreSQL | 17.11.1.0 | Docker `polardb/polardb_pg_local_instance:17` |
 | GreptimeDB | 1.3.0（MySQL 协议 8.4.2） | Docker `greptime/greptimedb:v1.3.0` |
 | Redis | 7.4.12 | Docker `redis:7.4-alpine` |
 | 前端 / 后端 | 15173（Vite 开发）、18080（运行中） | 用户已启动的实例，仅只读验证 |
@@ -24,15 +23,9 @@
 
 ## 2. 执行统计
 
-| 套件 | 检查项 | 通过 | 记录项* | 失败 |
-| --- | --- | --- | --- | --- |
-| 语句矩阵（11 个数据库版本实例 + AI） | 812 | 711 | 101 | 0 |
-| 补充验证（元数据/监控/导出/同步/边界） | 84 | 84 | 0 | 0 |
-| **合计** | **896** | **795** | **101** | **0** |
+语句矩阵覆盖 SQL、Redis 命令和 AI 场景。补充验证覆盖元数据、监控、导出、同步和边界场景。
 
-\* 记录项 = 跨版本差异、设计边界与产品限制的实测记录，不代表缺陷。
-
-分引擎通过数：MySQL 5.7/8.0/8.4 = 70/71/71，MariaDB 10.11/11.4 = 68/68，PostgreSQL 13/16/17/PolarDB = 76/76/76/76，GreptimeDB 19，Redis 35，AI 5。
+分引擎通过数：MySQL 5.7/8.0/8.4 = 70/71/71，MariaDB 10.11/11.4 = 68/68，PostgreSQL 13/16/17 = 76/76/76，GreptimeDB 19，Redis 35，AI 5。
 
 ## 3. 语句覆盖
 
@@ -44,7 +37,7 @@
 - **疑难/长 SQL**：1MB 字符串字面量、5000 项 IN 列表、100 个 UNION ALL、100 列结果、200 层嵌套括号、重复列名、bigint/DECIMAL(40,20) 文本保真、二进制转十六进制、emoji/中文、字符串内分号与转义引号、行注释/块注释内分号、CRLF、保留字别名、`USE` 切库。
 - **UI 分句专项**：`SELECT 'a;b'…` + 注释分号 + 第二句正常执行；`DELIMITER // CREATE PROCEDURE … END// … CALL` 在 SQL 窗口执行成功（历史记录显示 CREATE PROCEDURE 与 CALL 两条）。**此前“UI 会拆坏存储程序”的问题已修复。**
 
-### 3.2 PostgreSQL / PolarDB
+### 3.2 PostgreSQL
 
 - **对象**：ENUM、DOMAIN、IDENTITY、生成列、表达式/部分/GIN 索引、视图、物化视图、SEQUENCE、SQL/PLpgSQL 函数、触发器、RANGE 分区父表与分区、`CREATE INDEX CONCURRENTLY`、`VACUUM ANALYZE`、`COMMENT ON`、中文标识符、大小写敏感标识符。
 - **查询**：递归 CTE、LATERAL、GROUPING SETS、窗口帧、数组/范围、JSONB、全文检索、`INSERT … RETURNING`、`ON CONFLICT`、`UPDATE … FROM`、`MERGE`（16+）、`JSON_TABLE`（17+）、`ANY_VALUE`（16+）、`pg_stat_io`（16+）、multirange（14+）、DO 块、事务与 SAVEPOINT、临时表、CALL 过程。
@@ -58,7 +51,7 @@
 
 ## 4. 版本兼容性实测差异（均为数据库行为，产品正确透传）
 
-| 语法/特性 | MySQL 5.7 | MySQL 8.0/8.4 | MariaDB 10.11/11.4 | PG 13 | PG 16 | PG 17 / PolarDB |
+| 语法/特性 | MySQL 5.7 | MySQL 8.0/8.4 | MariaDB 10.11/11.4 | PG 13 | PG 16 | PG 17 |
 | --- | --- | --- | --- | --- | --- | --- |
 | CTE / 窗口函数 | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | JSON_TABLE | ✗ | ✓ | ✓ | ✗ | ✗ | ✓ |
@@ -91,7 +84,7 @@
 | Redis 查询 | `GET sqltest:str` 返回 `值 带空格😀:tail`；键浏览 SCAN 100、前缀分组、点选键显示类型/字节数/TTL/键值编辑 |
 | PostgreSQL 查询 | 连接/数据库/schema 三级切换（postgres / sqltest_pg17_r2），3 条语句批次产生 2 个结果页签，唯一键冲突在第 3 条正确报错 |
 | 系统设置 | 模型配置显示 DeepSeek Chat（deepseek-chat，默认）；通用/外观/语言/关于页签存在 |
-| 监控指标 | MySQL 5.7/8.4、MariaDB、PG13/16/17/PolarDB、Greptime、Redis 监控均返回指标；监控页展示实例概览、语句/连接/网络/InnoDB 趋势 |
+| 监控指标 | MySQL 5.7/8.4、MariaDB、PG13/16/17、Greptime、Redis 监控均返回指标；监控页展示实例概览、语句/连接/网络/InnoDB 趋势 |
 | 同步数据库 | 三步向导渲染；API 实测 MySQL 8.4 → 8.0 结构同步成功（10 表） |
 | 表数据导出 | MySQL/PG 的 SSE 导出返回 rows+done（4 行/7 行）；GreptimeDB 返回“该引擎不支持流式导出”（符合能力范围） |
 | 运行中的用户实例 | 15173 打开正常，3 条连接（localhost/Redis/阿里云），localhost 展开列出业务库，/monitor 显示 v8.4.10 指标；未向业务库执行写操作 |
@@ -102,7 +95,7 @@
 
 | 场景 | 结果 |
 | --- | --- |
-| 同批次事务 200 条 INSERT | MySQL 5.7 110ms / 8.0 198ms / 8.4 163ms；MariaDB 98/90ms；PG13/16/17 160/150/159ms；PolarDB 170ms |
+| 同批次事务 200 条 INSERT | MySQL 5.7 110ms / 8.0 198ms / 8.4 163ms；MariaDB 98/90ms；PG13/16/17 160/150/159ms |
 | 300 条 SELECT 1 同批次 | 63–142ms（各引擎） |
 | 1000 条语句批次 | 218ms，195KB NDJSON |
 | 1MB 字符串字面量 | 53–115ms，长度校验通过 |
@@ -155,7 +148,7 @@
 
 ## 9. 清理
 
-- 已删除本次创建的 10 个测试容器（MySQL 5.7/8.0、MariaDB 10.11/11.4、PG13/16/17、Redis 7.4、GreptimeDB、PolarDB）。
+- 已删除测试容器（MySQL 5.7/8.0、MariaDB 10.11/11.4、PG13/16/17、Redis 7.4、GreptimeDB）。
 - 已停止隔离后端（18089），删除其独立 state/data 目录（含测试连接与 DeepSeek Key）。
 - 已从 localhost 的 MySQL 8.4 容器删除两个测试库 `sqltest_84`、`sqltest_84_r2`；业务库 `oa_printer_dev`、`qianguanguan`、`sql_studio_demo`、`sqlstudio_no_pk_test` 等原样保留。
 - 用户原有容器（mysql、redis）与前端/后端开发服务未停止。
@@ -164,5 +157,5 @@
 ## 10. 结论
 
 - 功能完整性：对象树、数据页、SQL 窗口、多语句/多结果、历史、设计入口、监控、同步、Redis、AI 助手与 AI 补全/优化均可用，错误与取消行为符合文档。
-- 多版本语句执行：MySQL 5.7–8.4、MariaDB 10.11/11.4、PostgreSQL 13/16/17、PolarDB 17、GreptimeDB、Redis 7.4 的长 SQL、深嵌套、大列表、Unicode、事务、存储程序与典型错误场景全部按预期工作。
+- 多版本语句执行：MySQL 5.7–8.4、MariaDB 10.11/11.4、PostgreSQL 13/16/17、GreptimeDB、Redis 7.4 的长 SQL、深嵌套、大列表、Unicode、事务、存储程序与典型错误场景全部按预期工作。
 - 主要改进项：`EXECUTE`/`CALL` 结果集透传（中）与超时文案本地化（低）。

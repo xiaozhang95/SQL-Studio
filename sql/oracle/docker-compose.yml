@@ -1,0 +1,45 @@
+name: sql-studio-test-oracle
+
+x-oracle: &oracle
+  healthcheck:
+    interval: 5s
+    timeout: 5s
+    retries: 60
+    start_period: 2m
+    test:
+      - CMD-SHELL
+      - >-
+        printf '%s\n' 'WHENEVER SQLERROR EXIT FAILURE' 'SET HEAD OFF FEEDBACK OFF'
+        "SELECT 1 FROM USER_VIEWS WHERE VIEW_NAME='V_ORDER_SUMMARY';" EXIT |
+        sqlplus -L -s "sql_studio_demo/00000000@//127.0.0.1:1521/$$SQLSTUDIO_ORACLE_SERVICE" |
+        grep -Eq '^[[:space:]]*1[[:space:]]*$$'
+
+services:
+  oracle:
+    <<: *oracle
+    image: gvenzl/oracle-free:23-slim
+    environment:
+      ORACLE_PASSWORD: "00000000"
+      SQLSTUDIO_ORACLE_SERVICE: FREEPDB1
+      NLS_LANG: AMERICAN_AMERICA.AL32UTF8
+    ports: ["127.0.0.1:${SQLSTUDIO_ORACLE_PORT:-11521}:1521"]
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./init.sql:/container-entrypoint-initdb.d/10-fixture.sql:ro
+
+  oracle-xe:
+    <<: *oracle
+    image: gvenzl/oracle-xe:21-slim
+    profiles: [compat]
+    environment:
+      ORACLE_PASSWORD: "00000000"
+      SQLSTUDIO_ORACLE_SERVICE: XEPDB1
+      NLS_LANG: AMERICAN_AMERICA.AL32UTF8
+    ports: ["127.0.0.1:${SQLSTUDIO_ORACLE_XE_PORT:-21521}:1521"]
+    volumes:
+      - oracle-xe-data:/opt/oracle/oradata
+      - ./init.sql:/container-entrypoint-initdb.d/10-fixture.sql:ro
+
+volumes:
+  oracle-data:
+  oracle-xe-data:

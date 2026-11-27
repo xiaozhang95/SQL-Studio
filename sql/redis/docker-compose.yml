@@ -1,0 +1,63 @@
+name: sql-studio-test-redis
+
+x-redis: &redis
+  command: ["redis-server", "--appendonly", "yes"]
+  healthcheck:
+    interval: 3s
+    timeout: 3s
+    retries: 60
+    start_period: 90s
+    test: ["CMD-SHELL", "test \"$$(redis-cli ping)\" = PONG"]
+
+x-redis-init: &redis-init
+  entrypoint: ["/bin/sh", "-ec"]
+  command:
+    - |
+      for db in 0 1; do
+        result="$$(redis-cli -h "$$REDIS_HOST" -n "$$db" --raw --eval /fixtures/init.lua)"
+        case "$$result" in
+          seeded|already-initialized) printf 'Redis DB %s: %s\n' "$$db" "$$result" ;;
+          *) printf '%s\n' "$$result" >&2; exit 1 ;;
+        esac
+      done
+  volumes:
+    - ./init.lua:/fixtures/init.lua:ro
+
+services:
+  redis:
+    <<: *redis
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:${SQLSTUDIO_REDIS_PORT:-16379}:6379"]
+    volumes:
+      - redis-data:/data
+
+  redis-init:
+    <<: *redis-init
+    image: redis:7.4-alpine
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+
+  redis-62:
+    <<: *redis
+    image: redis:6.2
+    profiles: [compat]
+    ports: ["127.0.0.1:${SQLSTUDIO_REDIS_62_PORT:-26379}:6379"]
+    volumes:
+      - redis-62-data:/data
+
+  redis-62-init:
+    <<: *redis-init
+    image: redis:6.2
+    profiles: [compat]
+    depends_on:
+      redis-62:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis-62
+
+volumes:
+  redis-data:
+  redis-62-data:
