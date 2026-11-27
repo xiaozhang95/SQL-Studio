@@ -20,7 +20,7 @@
 ## 行为
 
 - 导航按钮使用 `aria-current="page"` 标记当前页面。当前项背景透明，左侧用 2px 主题色竖线标记。当前项图标在亮色主题用 `colorPrimary`，暗色主题用白色。普通入口使用次级文字色，悬停或按下时提升为正文色。导航锁定时竖线继续标记当前页，图标采用禁用色。悬停均显示 Tooltip。
-- 侧栏按钮的键盘焦点沿用公共按钮底部短线。
+- 侧栏按钮使用全局 Ant Design 按钮主题。
 - 监控指标和同步数据库入口与连接右键菜单共用 [StudioIcon](../studioIcon/README.md) 的图标定义。
 - 主题按钮保存与当前相反的主题，保留现有字号和语言；保存期间显示加载态。
 - Electron 启动后发现新版本时，[侧栏更新入口](components/updateIndicator/README.md)在主题分隔线上方显示下载图标。Windows 安装版点击后显示圆环进度，校验完成后可重启安装。下载、加载、进度环和重启安装与主题、设置齿轮共用 20px 的 StudioIcon 及相同描边。侧栏和设置页共用 [桌面更新状态](../../hooks/useDesktopUpdates/README.md)。

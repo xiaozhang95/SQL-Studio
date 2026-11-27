@@ -55,8 +55,7 @@ body {
   overflow-x: auto;
 }
 
-:focus,
-:hover {
+:focus:not(:focus-visible) {
   outline: none;
 }
 

@@ -14,7 +14,7 @@
 - 常规次级操作使用 default；工具栏和低频操作使用 text/icon，并提供 Tooltip 与可访问名称。
 - Modal 与 AntApp 确认弹窗通过 modalDefaults 将确认按钮默认为 default；桌面退出时的查询保存确认使用 primary，写入确认可使用 warning 按钮，危险与禁用语义保留。
 - 主按钮的悬停、按下颜色和阴影沿用 [Ant Design 主题算法](../theme/README.md)。
-- 按钮底部短线仅在键盘聚焦时显示，颜色继承按钮前景色。按钮沿用组件自身的前景、底色、边框和按下样式，点击波纹隐藏。
+- 按钮沿用组件自身的前景、底色、边框和按下样式。全局描边重置仅作用于 `:focus:not(:focus-visible)`。
 
 ## 面板与弹窗
 
