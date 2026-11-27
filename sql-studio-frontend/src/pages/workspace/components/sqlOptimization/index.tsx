@@ -2,6 +2,7 @@ import { Modal, Typography } from 'antd'
 
 import ContentLoading from '@/components/contentLoading'
 import ErrorNotice from '@/components/errorNotice'
+import { scrollingModalBodyStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ThemeMode } from '@/typings/theme'
 
@@ -21,7 +22,7 @@ export default function SQLOptimization({ model, themeMode }: { model: ReturnTyp
       cancelText={model.loading ? t('取消请求') : t('关闭')}
       okButtonProps={{ disabled: !model.preview || model.loading }}
       width={1040}
-      styles={{ body: { maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
+      styles={{ body: scrollingModalBodyStyle }}
     >
       <ErrorNotice error={model.error} style={{ marginBottom: 12 }} />
       {model.loading && <ContentLoading label={t('正在生成建议…')} style={{ minHeight: 100 }} />}

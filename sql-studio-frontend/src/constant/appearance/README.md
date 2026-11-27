@@ -14,12 +14,14 @@
 - 常规次级操作使用 default；工具栏和低频操作使用 text/icon，并提供 Tooltip 与可访问名称。
 - Modal 与 AntApp 确认弹窗通过 modalDefaults 将确认按钮默认为 default；桌面退出时的查询保存确认使用 primary，写入确认可使用 warning 按钮，危险与禁用语义保留。
 - 主按钮的悬停、按下颜色和阴影沿用 [Ant Design 主题算法](../theme/README.md)。
-- 文本和链接按钮通过前景色反馈键盘焦点，危险按钮和其余按钮通过底色反馈。按钮沿用组件自身的边框和按下样式，点击波纹隐藏。
+- 按钮底部短线仅在键盘聚焦时显示，颜色继承按钮前景色。按钮沿用组件自身的前景、底色、边框和按下样式，点击波纹隐藏。
 
 ## 面板与弹窗
 
-Modal 与 AntApp 确认弹窗使用 Ant Design 容器外观，沿用默认位置。暗色模式通过 app.scss 为面板统一添加 1px colorBorder 描边。系统设置弹窗宽 920px、内容高度上限 532px（同时不超过视口减 240px），左右内容独立滚动。
+Modal 与 AntApp 确认弹窗使用 Ant Design 容器外观，沿用默认位置。暗色模式通过 app.scss 为面板统一添加 1px colorBorder 描边。系统设置弹窗宽 920px，左右内容独立滚动。
 
-`formModalStyles` 是连接与系统设置弹窗共用的语义样式。标题行最小 52px、底栏最小 58px，水平内边距为 Ant Design `padding`，分隔线随主题切换。标题、正文、分栏和底栏共用 Modal 的 `colorBgElevated` 底色。业务表单使用左侧标签与右侧控件。
+`formModalStyles` 是连接与系统设置弹窗共用的语义样式。标题行最小 52px、底栏最小 58px，正文高度为 `clamp(280px, calc(100dvh - 240px), 532px)`，水平内边距为 Ant Design `padding`，分隔线随主题切换。标题、正文、分栏和底栏共用 Modal 的 `colorBgElevated` 底色。业务表单使用左侧标签与右侧控件。
+
+`scrollingModalBodyStyle` 供转储与 SQL 优化预览共用。正文仅纵向滚动，正文高度上限为视口减 240px，最少留出 160px。
 
 `railButtonStyle` 供全局导航和设置图标入口共用尺寸及默认 `borderRadius`。

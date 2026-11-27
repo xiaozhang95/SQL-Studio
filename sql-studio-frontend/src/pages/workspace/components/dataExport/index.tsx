@@ -2,6 +2,7 @@ import { Alert, Button, Descriptions, Modal, Progress } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import ErrorNotice from '@/components/errorNotice'
+import { scrollingModalBodyStyle } from '@/constant/appearance'
 import { useTranslation } from '@/hooks/useTranslation'
 
 import type { useDataExport } from '../../hooks/useDataExport'
@@ -26,7 +27,7 @@ export default function DataExport({ model }: { model: ReturnType<typeof useData
       title={t('转储 SQL 文件')}
       open={Boolean(state)}
       width={760}
-      styles={{ body: { maxHeight: 'calc(100dvh - 240px)', overflowY: 'auto', overflowX: 'hidden' } }}
+      styles={{ body: scrollingModalBodyStyle }}
       closable={!busy}
       mask={{ closable: !busy }}
       keyboard={!busy}

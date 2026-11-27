@@ -36,7 +36,7 @@ export const formModalStyles = {
     alignItems: 'center',
     borderBlockEnd: 'var(--ant-line-width) solid var(--ant-color-border-secondary)'
   },
-  body: { padding: 0 },
+  body: { padding: 0, height: 'clamp(280px, calc(100dvh - 240px), 532px)' },
   footer: {
     margin: 0,
     minHeight: 58,
@@ -47,6 +47,8 @@ export const formModalStyles = {
     borderBlockStart: 'var(--ant-line-width) solid var(--ant-color-border-secondary)'
   }
 } as const satisfies NonNullable<ModalProps['styles']>
+
+export const scrollingModalBodyStyle = { maxHeight: 'max(160px, calc(100dvh - 240px))', overflowY: 'auto', overflowX: 'hidden' } as const satisfies CSSProperties
 
 export const railButtonStyle = {
   position: 'relative',

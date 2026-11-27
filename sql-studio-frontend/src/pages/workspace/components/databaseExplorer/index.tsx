@@ -405,7 +405,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
         <ExplorerError key={node.key} error={node.title} />
       ))}
       <SidebarSearch value={search} onChange={(value) => updateExplorer({ search: value })} placeholder={t('搜索连接 / 库 / 表')} label={t('搜索数据库对象')} />
-      <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden', userSelect: 'none' }}>
+      <div className="object-tree" ref={treeContainerRef} style={{ flex: 1, minHeight: 0, marginBlockStart: 'var(--ant-padding-xxs)', overflow: 'hidden', userSelect: 'none' }}>
         <Dropdown trigger={['contextMenu']} open={menuOpen} onOpenChange={setMenuOpen} menu={contextMenu}>
           <div
             style={{ height: '100%' }}

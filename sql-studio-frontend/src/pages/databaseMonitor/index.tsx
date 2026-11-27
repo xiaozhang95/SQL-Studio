@@ -66,7 +66,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
                 />
               )}
               {connection && (
-                <Typography.Text type="secondary">
+                <Typography.Text type="secondary" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
                   {snapshot?.database || (monitor.databaseScoped ? '' : t('实例统计'))}
                   {snapshot && ` · ${t('采样于 {time}', { time: new Date(snapshot.sampledAt).toLocaleTimeString(language) })}`}
                 </Typography.Text>

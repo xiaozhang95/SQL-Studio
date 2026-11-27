@@ -30,7 +30,7 @@ export const fontSizeOptions = [
   { value: 'large', label: '稍大（16px）', fontSize: uiFontSizes.large }
 ] as const satisfies readonly { value: FontSizePreference; label: string; fontSize: number }[]
 
-export const settingsLayout = { width: 920, height: 532, sidebarWidth: 208, compactSidebarWidth: 48, previewHeight: 96, cardMinWidth: 132 } as const
+export const settingsLayout = { width: 920, sidebarWidth: 208, compactSidebarWidth: 48, previewHeight: 96, cardMinWidth: 132 } as const
 
 export const languageOptions = [
   { value: 'zh-CN', label: '简体中文', heading: '你好，世界', sample: '数据库工作区' },

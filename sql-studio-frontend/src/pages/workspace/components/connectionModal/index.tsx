@@ -51,7 +51,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           <Button icon={<LinkOutlined />} onClick={test} loading={testing} disabled={saving}>
             {t('测试连接')}
           </Button>
-          <div className="modal-actions" style={{ display: 'flex', alignItems: 'center', gap: token.marginXS, marginInlineStart: 'auto' }}>
+          <div className="modal-actions" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: token.marginXS, marginInlineStart: 'auto' }}>
             <Button onClick={onClose} disabled={busy}>
               {t('取消')}
             </Button>
@@ -62,7 +62,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
         </div>
       }
     >
-      <div className="connection-dialog-body" style={{ display: 'flex', flexDirection: compact ? 'column' : 'row', height: 'min(532px, calc(100dvh - 240px))', minHeight: 0, overflow: 'hidden' }}>
+      <div className="connection-dialog-body" style={{ display: 'flex', flexDirection: compact ? 'column' : 'row', height: '100%', minHeight: 0, overflow: 'hidden' }}>
         {compact ? (
           <div style={{ flex: 'none', paddingBlock: token.paddingXS, paddingInline: token.paddingSM, borderBlockEnd: '1px solid var(--border)' }}>
             <Select
@@ -124,7 +124,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
               flex: 'none',
               display: 'flex',
               alignItems: 'center',
-              flexWrap: compact ? 'wrap' : undefined,
+              flexWrap: 'wrap',
               gap: compact ? 8 : 12,
               minHeight: 62,
               padding: compact ? '8px 12px' : '0 20px',
@@ -133,7 +133,7 @@ export default function ConnectionModal({ open, connection, groups, onClose, onS
           >
             <EngineIcon type={engine.value} variant="logo" />
             <span>{engine.label}</span>
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ marginInlineStart: 'auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: token.marginXS }}>
               <Tag style={{ marginInlineEnd: 0 }}>
                 {t('默认端口 ')}
                 {sentinel ? 26379 : engine.port}

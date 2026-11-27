@@ -12,7 +12,7 @@ resultSQLLayout 仅定义普通查询 SQL 单元格列宽 520px；只读 SQL 完
 
 resultTableLayout 定义结果表的行号列 64px、普通数据列 200px、复选框列 32px、列宽拖拽下限 80px；虚拟表格据此合计数值横向滚动宽度，避免表头、固定列与虚拟表体宽度不一致。
 
-resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。弹性布局使用 260px 的页签基准宽度。选择器与筛选框同时出现时，通过子网格共用列宽，窄布局只单独放置页签栏。`resultControlProps` 为结果集选择器和筛选框提供同一组中号尺寸（宽 220px，高 30px），`resultToolbarSpacing` 提供共用的 4px 垂直留白和 8px 组间距。
+resultTabLayout.maximumVisibleTabs 为 8。超过 8 个数据结果集时使用 Select 切换，标签栏保留当前结果。执行回执不占结果标签。弹性布局使用 260px 的页签基准宽度。选择器与筛选框同时出现时，通过子网格共用列宽，面板小于 580px 时页签单独占行，小于 520px 时选中行提示或编辑操作也独立占行。`resultControlProps` 为结果集选择器和筛选框提供同一组中号尺寸（宽 220px，高 30px），`resultToolbarSpacing` 提供共用的 4px 垂直留白和 8px 组间距。
 
 workspaceConnectionIconSize 为连接选择器与执行历史抽屉标题共用的 20px 引擎图标尺寸。
 

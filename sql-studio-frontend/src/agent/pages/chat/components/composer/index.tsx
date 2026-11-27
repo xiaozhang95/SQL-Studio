@@ -37,6 +37,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
   const question = Form.useWatch('question', form) ?? ''
   const tooLong = new TextEncoder().encode(question).length > CHAT.maxQuestionBytes
   const selectedModel = aiStatus?.configured ? aiStatus.models.find((model) => model.id === aiStatus.configId) : undefined
+  const modelName = selectedModel?.name ?? t(modelPlaceholder)
   const controlsDisabled = busy || conversationLoading || settingsBusy
   function submit(text: string) {
     if (!controlsDisabled && aiStatus?.configured && text.trim() && new TextEncoder().encode(text).length <= CHAT.maxQuestionBytes) void onSend({ question: text })
@@ -96,7 +97,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
             placeholder={t('向数据库提问…（Enter 发送，Shift+Enter 换行）')}
             footer={
               <Flex align="center" justify="space-between" gap="small" wrap>
-                <Flex align="center" gap={token.marginXXS}>
+                <Flex align="center" gap={token.marginXXS} wrap style={{ minWidth: 0 }}>
                   {onOpenHistory && (
                     <Tooltip title={t('历史会话')}>
                       <Button type="text" aria-label={t('历史会话')} aria-haspopup="dialog" icon={<MenuOutlined />} onClick={onOpenHistory} />
@@ -153,7 +154,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
                     <Button type="text" aria-label={t('模式说明')} icon={<InfoCircleOutlined style={{ color: token.colorIcon }} />} />
                   </Tooltip>
                 </Flex>
-                <Flex align="center" gap={token.marginXS}>
+                <Flex align="center" gap={token.marginXS} style={{ minWidth: 0, maxWidth: '100%', marginInlineStart: 'auto' }}>
                   <Dropdown
                     trigger={['click']}
                     placement="topRight"
@@ -169,11 +170,12 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
                       type="text"
                       aria-label={t('当前模型')}
                       disabled={controlsDisabled || !aiStatus?.models.length}
-                      title={aiStatus && !aiStatus.models.length ? t('请在右上角系统设置中添加模型') : undefined}
+                      title={aiStatus && !aiStatus.models.length ? t('请在右上角系统设置中添加模型') : modelName}
                       icon={selectedModel && <DeepSeekLogo size={CHAT.modelTriggerIconSize} />}
-                      style={{ paddingInline: token.paddingXS }}
+                      style={{ minWidth: 0, maxWidth: CHAT.modelSelectorWidth, paddingInline: token.paddingXS }}
+                      styles={{ icon: { flexShrink: 0 } }}
                     >
-                      {selectedModel?.name ?? t(modelPlaceholder)}
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{modelName}</span>
                       <DropdownChevron disabled={controlsDisabled || !aiStatus?.models.length} />
                     </Button>
                   </Dropdown>
@@ -182,6 +184,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
                       <Button
                         {...CHAT.iconButton}
                         danger
+                        style={{ flexShrink: 0 }}
                         aria-label={t('停止生成')}
                         icon={<span aria-hidden="true" style={{ display: 'block', width: token.sizeXS, height: token.sizeXS, background: 'currentColor', borderRadius: token.borderRadiusXS }} />}
                         onClick={onStop}
@@ -191,6 +194,7 @@ export function Composer({ mode, onModeChange, form, busy, conversationLoading, 
                     <Button
                       {...CHAT.iconButton}
                       type="primary"
+                      style={{ flexShrink: 0 }}
                       onClick={() => submit(question)}
                       aria-label={t('发送消息')}
                       icon={<ArrowUpOutlined />}

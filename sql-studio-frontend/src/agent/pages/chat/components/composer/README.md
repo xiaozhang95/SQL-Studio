@@ -8,7 +8,7 @@
 
 窄屏由页面传入可选 `onOpenHistory`，底部操作区显示带提示的历史会话图标按钮。会话读取期间 `conversationLoading` 暂停编辑、发送和配置选择，历史会话按钮仍可打开抽屉。
 
-底部模型 Dropdown 使用默认尺寸文本按钮。选中可用模型时显示模型名称和蓝鲸图标，空状态显示「请选择模型」。菜单只展示已添加模型及其图标。菜单和入口图标分别使用 CHAT.modelMenuIconSize（18px）与 CHAT.modelTriggerIconSize（20px），沿用 Ant Design 默认图文间距与字体。
+底部模型 Dropdown 使用默认尺寸文本按钮。选中可用模型时显示模型名称和蓝鲸图标，空状态显示「请选择模型」。菜单只展示已添加模型及其图标。菜单和入口图标分别使用 CHAT.modelMenuIconSize（18px）与 CHAT.modelTriggerIconSize（20px），沿用 Ant Design 默认图文间距与字体。模型按钮宽度上限为 192px，长名称省略显示，悬停可见全名。底部控件随可用宽度换行。
 
 模式和模型的 Dropdown 浮层沿用 Ant Design 默认边框、圆角及背景。模式和模型入口共用公共 DropdownChevron，显式同步按钮禁用态。
 

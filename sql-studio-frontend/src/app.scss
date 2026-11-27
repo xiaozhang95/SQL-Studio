@@ -32,7 +32,7 @@ html[data-theme='dark'] {
   --selection: color-mix(in srgb, var(--primary) 14%, transparent);
   --border: var(--ant-color-border-secondary);
   --layout-divider: var(--border);
-  --engine-icon-background: var(--ant-color-bg-elevated);
+  --engine-icon-background: color-mix(in srgb, var(--primary) 15%, var(--ant-color-bg-elevated));
   --inactive-icon: var(--ant-color-text-tertiary);
 
   ::selection {
@@ -56,18 +56,21 @@ body {
   overflow-x: auto;
 }
 
-// 按钮用前景色或底色标记键盘焦点。
+// 键盘焦点使用按钮底部的短线，保留原有底色和前景色。
 :is(button, a.ant-btn, [role='button']):not(:disabled, .ant-btn-disabled, [aria-disabled='true']):focus-visible {
   outline: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: var(--ant-size-xs) var(--ant-line-width);
+  background-position: center bottom;
+  background-repeat: no-repeat;
+}
 
-  &:is(.ant-btn-variant-text, .ant-btn-variant-link):not(.ant-btn-dangerous) {
-    color: var(--primary);
-  }
-
-  &:not(.ant-btn-variant-text, .ant-btn-variant-link),
-  &.ant-btn-dangerous {
-    background-image: linear-gradient(var(--ant-color-fill-secondary), var(--ant-color-fill-secondary));
-  }
+// 复选、单选和页签的焦点由控件本身反馈。
+.sql-studio-theme :is(.ant-checkbox, .ant-radio):has(> input:focus-visible) {
+  box-shadow: 0 0 0 2px var(--ant-color-primary-border);
+}
+.sql-studio-theme .ant-tabs-tab:has(> .ant-tabs-tab-btn:focus-visible) {
+  background-image: linear-gradient(var(--ant-color-fill-secondary), var(--ant-color-fill-secondary));
 }
 
 // 仅隐藏 Button 的点击波纹，保留按钮自身的按下样式。
@@ -345,11 +348,11 @@ body,
   margin-inline-start: auto;
 }
 
-// 结果选择器和筛选框始终共用列宽。空间不足时，只有结果页签占用单独一行。
+// 结果选择器和筛选框共用列宽。空间不足时给左侧内容单独一行。
 @supports (grid-template-columns: subgrid) {
   .result-bars:has(.result-picker):has(.result-filter) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, max-content) max-content;
+    grid-template-columns: minmax(min-content, 1fr) minmax(0, max-content) max-content;
     column-gap: var(--ant-margin-xs);
 
     > :is(.result-navigation, .result-toolbar) {
@@ -369,6 +372,12 @@ body,
 
     @container result-panel (width < 580px) {
       > .result-navigation > .statement-result-tabs {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @container result-panel (width < 520px) {
+      > .result-toolbar > :not(.result-actions) {
         grid-column: 1 / -1;
       }
     }
@@ -500,9 +509,13 @@ body,
   }
 }
 
-// Sender 共用主题中性边框。
+// Sender 文本区聚焦时直接改变外层边框色，保留原有阴影。
 .agent-composer.ant-sender.ant-sender-main {
   border-color: var(--ant-color-border);
+
+  &:has(.ant-sender-input:focus-within) {
+    border-color: var(--primary);
+  }
 }
 
 // 用户消息的编辑/复制操作只在悬停或键盘聚焦时出现，保持气泡本身简洁。

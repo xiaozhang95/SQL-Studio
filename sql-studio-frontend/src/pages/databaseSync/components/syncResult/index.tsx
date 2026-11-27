@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined, HistoryOutlined, LoadingOutlined, StopOutlined } from '@ant-design/icons'
-import { Alert, Card, Collapse, Flex, Progress, Tag, theme, Timeline, Typography } from 'antd'
+import { Alert, Card, Collapse, Flex, Grid, Progress, Tag, theme, Timeline, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import { useTranslation } from '@/hooks/useTranslation'
@@ -30,6 +30,7 @@ type Props = {
 export default function SyncResult({ status, result, plan, engineLabel, sourceDatabase, targetDatabase, withData, schemaSync }: Props) {
   const { t, language } = useTranslation()
   const { token } = theme.useToken()
+  const statColumns = Grid.useBreakpoint().sm ? 4 : 2
   const [now, setNow] = useState(Date.now)
   const log = useRef<HTMLDivElement>(null)
   const running = status === 'running'
@@ -135,17 +136,29 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
             {t('用时 {value1}s', { value1: seconds })}
           </Typography.Text>
         </Flex>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-          {statItems.map((item, index) => (
-            <div key={item.key} style={{ minWidth: 0, paddingInline: index ? 16 : 0, borderInlineStart: index ? '1px solid var(--border)' : undefined }}>
-              <Typography.Text type="secondary" style={{ display: 'block' }}>
-                {item.label}
-              </Typography.Text>
-              <Typography.Text strong style={{ display: 'block', fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
-                {item.value}
-              </Typography.Text>
-            </div>
-          ))}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${statColumns}, minmax(0, 1fr))`,
+            rowGap: token.marginSM,
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: '1px solid var(--border)'
+          }}
+        >
+          {statItems.map((item, index) => {
+            const firstInRow = index % statColumns === 0
+            return (
+              <div key={item.key} style={{ minWidth: 0, paddingInline: firstInRow ? 0 : token.padding, borderInlineStart: firstInRow ? undefined : '1px solid var(--border)' }}>
+                <Typography.Text type="secondary" style={{ display: 'block', overflowWrap: 'anywhere' }}>
+                  {item.label}
+                </Typography.Text>
+                <Typography.Text strong style={{ display: 'block', fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
+                  {item.value}
+                </Typography.Text>
+              </div>
+            )
+          })}
         </div>
       </Card>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: token.marginMD, alignItems: 'start' }}>
@@ -198,7 +211,9 @@ export default function SyncResult({ status, result, plan, engineLabel, sourceDa
           {(tableNames.length > 0 || tables > 0) && (
             <Flex wrap gap={4} style={{ marginTop: 10 }}>
               {tableNames.slice(0, 8).map((name) => (
-                <Tag key={name}>{name}</Tag>
+                <Tag key={name} style={{ maxWidth: '100%', marginInlineEnd: 0, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+                  {name}
+                </Tag>
               ))}
               {tables > tableNames.slice(0, 8).length && <Tag>{`+ ${tables - tableNames.slice(0, 8).length}`}</Tag>}
             </Flex>

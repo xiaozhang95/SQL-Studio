@@ -62,7 +62,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
         destroyOnHidden
         styles={formModalStyles}
         footer={
-          <div style={{ display: 'flex', gap: token.marginXS, width: '100%', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.marginXS, width: '100%', justifyContent: 'flex-end' }}>
             <Button disabled={settings.busy} onClick={settings.close}>
               {t('取消')}
             </Button>
@@ -72,7 +72,7 @@ export default function SystemSettings({ variant = 'default', updates, ...prefer
           </div>
         }
       >
-        <div style={{ display: 'flex', height: `min(${settingsLayout.height}px, calc(100dvh - 240px))`, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
           <nav
             aria-label={t('设置分类')}
             style={{

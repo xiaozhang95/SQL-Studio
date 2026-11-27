@@ -12,7 +12,7 @@ explorer/updateExplorer 将树布局转发为受控状态，随工作区索引�
 
 sidebarWidth/setSidebarWidth 为与Agent历史栏共用的受控偏好宽度，交互由 useSidebarResize 管理。右边缘 5px 透明分隔条支持拖拽、键盘左右/Home/End 和双击重置；默认 272px，最小 200px，最大 560px，随工作区大小收紧以保留主区域空间。拖动结束提交一次宽度并随工作台轻量布局索引保存；调整期间不改变连接和查询范围，hover/拖动反馈沿用原生悬停 token。
 
-侧栏通过 [SidebarHeader](../../../../components/sidebarControls/README.md) 展示「对象」标题和新建连接入口。新建连接使用标准尺寸的 text 图标按钮。悬停显示操作提示，键盘聚焦以主题色图标作为反馈。DatabaseExplorer 在连接树上方使用同模块的 SidebarSearch；标题行和搜索行均与 AI 助手会话栏共用布局。无连接时显示空态，连接、库、表共享独立滚动区域。新建连接可从对象栏或工作区空态进入，执行历史入口位于查询工具栏。连接的打开、关闭、编辑和删除均位于树根右键菜单。
+侧栏通过 [SidebarHeader](../../../../components/sidebarControls/README.md) 展示「对象」标题和新建连接入口。新建连接使用标准尺寸的 text 图标按钮。悬停显示操作提示，键盘聚焦通过按钮底部短线提示。DatabaseExplorer 在连接树上方使用同模块的 SidebarSearch。标题行和搜索行均与 AI 助手会话栏共用布局，搜索行下方的 4px 留白与 Redis 键浏览对齐。无连接时显示空态，连接、库、表共享独立滚动区域。新建连接可从对象栏或工作区空态进入，执行历史入口位于查询工具栏。连接的打开、关闭、编辑和删除均位于树根右键菜单。
 
 接收 `layout: ReturnType<typeof useSidebarResize>` 和 `onNewConnection()`，由工作区统一管理实际显示宽度及拖动事件；对象栏固定显示，不提供收起状态。侧栏只消费同一份布局；顶部竖线随 visibleWidth 同步对齐。model 仍通过 Pick 消费连接列表、对象缓存和树操作，不读取查询标签状态。
 
