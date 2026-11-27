@@ -1,7 +1,7 @@
 {
   "name": "sql-studio-frontend",
   "private": true,
-  "version": "1.5.5",
+  "version": "1.5.6",
   "type": "module",
   "scripts": {
     "test:sql": "node --test tests/mysql.test.mjs tests/oracle.test.mjs",

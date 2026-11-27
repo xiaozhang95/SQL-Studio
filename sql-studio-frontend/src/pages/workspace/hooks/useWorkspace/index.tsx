@@ -243,18 +243,21 @@ export const useWorkspace = (active = true) => {
       pendingDrafts.current.clear()
       closedPages.current.clear()
       setTabs(saved.tabs)
-      const active = saved.tabs.some((item) => item.id === saved.activeTab) ? saved.activeTab : saved.tabs[0]?.id || ''
+      const activePage = saved.tabs.find((item) => item.id === saved.activeTab) ?? saved.tabs[0]
+      const active = activePage?.id ?? ''
       setActiveTab(active)
       activeTabRef.current = active
       setRuns(saved.runs)
       setResultViews(saved.resultViews)
       setEditorLayouts(saved.editorLayouts)
-      objects.retainConnections(new Set(saved.openedConnections))
+      const connectionsToRestore = new Set(saved.openedConnections)
+      if (activePage?.kind === 'query' && activePage.connectionId) connectionsToRestore.add(activePage.connectionId)
+      objects.retainConnections(connectionsToRestore)
       resetStructure()
       setExplorer(explorerForOpenedConnections(saved.explorer, saved.openedConnections))
       setResultHeight(Number.isFinite(saved.resultHeight) ? Math.max(resultPanelLayout.minimumHeight, saved.resultHeight) : resultPanelLayout.defaultHeight)
       restoreSidebarWidth(saved.sidebarWidth)
-      setRestoringConnections(saved.openedConnections)
+      setRestoringConnections([...connectionsToRestore])
     },
     {
       busy: queryRunning || uiBlocked || Object.values(designerDirty).some(Boolean),
@@ -518,7 +521,7 @@ export const useWorkspace = (active = true) => {
     setResultViews(withoutActiveResult)
     setHistoryOpen(false)
     resetStructure()
-    if (snapshot?.status !== 'connected') void openObjectsConnection(id).catch(() => {})
+    void openObjectsConnection(id).catch(() => {})
   }
   function selectObject(db: string, table?: string, id = connectionId, schema = '') {
     if (running || objects.snapshots[id]?.status !== 'connected') return
@@ -967,7 +970,7 @@ export const useWorkspace = (active = true) => {
   function executeCurrentSQL(statement: string, singleStatement = false) {
     if (!tab.id || tab.kind !== 'query' || activeTabRef.current !== tab.id || !storage.pageReady) return
     if ((!connection && !redisConnection) || !objects.connected) {
-      message.info(t('请先展开连接并加载数据库结构'))
+      message.info(t('请先选择连接并等待库列表加载完成'))
       return
     }
     if (running || request.current) return

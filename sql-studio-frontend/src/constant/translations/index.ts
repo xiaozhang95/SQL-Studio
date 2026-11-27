@@ -930,7 +930,7 @@ export const englishMessages: Readonly<Record<string, string>> = {
   外键: 'Foreign keys',
   额外属性: 'Extra attributes',
   结构加载失败: 'Failed to load structure',
-  请先展开连接并加载数据库结构: 'Expand the connection and load the database structure first',
+  请先选择连接并等待库列表加载完成: 'Select a connection and wait for its database list to load',
   '删除连接「{value1}」？': 'Delete connection “{value1}”?',
   '删除本机保存的连接信息，数据库中的数据不受影响。': 'Deletes the connection saved on this computer. Data in the database is unaffected.',
   '关闭有未保存修改的页面？': 'Close tabs with unsaved changes?',
