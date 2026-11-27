@@ -215,7 +215,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
       >
         <ErrorNotice error={lastChange === 'create' ? changeError : undefined} />
         {action === 'create' && (
-          <Form layout="horizontal" labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0' }} disabled={saving}>
+          <Form layout="horizontal" labelWrap labelCol={{ flex: '92px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }} disabled={saving}>
             <Form.Item label={t('键名')} htmlFor="redis-key-target">
               <Input id="redis-key-target" placeholder={t('输入键名')} maxLength={16384} value={target} spellCheck={false} onChange={(event) => setTarget(event.target.value)} />
             </Form.Item>

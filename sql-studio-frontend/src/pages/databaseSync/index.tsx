@@ -7,7 +7,7 @@ import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
 import EngineIcon from '@/components/engineIcon'
 import StudioIcon from '@/components/studioIcon'
-import { engineSelectStyles } from '@/constant/appearance'
+import { appearance, engineSelectStyles } from '@/constant/appearance'
 import { useNavigationLockEffect } from '@/contexts/navigationLock'
 import { sqlDatabaseProfiles } from '@/databases'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -65,7 +65,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
           <Select
             aria-label={t('数据库类型')}
             value={model.profile.value}
-            style={{ width: 220, flex: '0 0 220px', marginInlineStart: 'auto' }}
+            style={{ width: appearance.selectWidth, flex: `0 1 ${appearance.selectWidth}px`, minWidth: 0, marginInlineStart: 'auto' }}
             styles={engineSelectStyles}
             disabled={busy}
             options={sqlDatabaseProfiles.map(({ value, label }) => ({
@@ -73,7 +73,9 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
               label: (
                 <Flex align="center" gap="small">
                   <EngineIcon type={value} />
-                  <span>{label}</span>
+                  <Typography.Text ellipsis title={label}>
+                    {label}
+                  </Typography.Text>
                 </Flex>
               )
             }))}

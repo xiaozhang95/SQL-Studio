@@ -66,4 +66,4 @@ Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme
 
 Radio、Switch 等组件共用亮暗一致的 `colorPrimary`，交互色由 Ant Design 主题算法派生。侧栏标题、查询工具栏和表单弹窗复用 appearance 与组件令牌。每个操作面只使用一个 primary 主操作：工作台「运行」、AI「发送」、同步「同步检查/开始同步」、设置与连接「保存」；其余使用 default/text/icon。
 
-原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 默认为 default。桌面退出时的查询保存使用 primary，写入确认可使用 warning 按钮。主按钮颜色由主题算法派生。全局样式仅隐藏 `:focus:not(:focus-visible)` 的外层描边。输入控件沿用 Ant Design 聚焦边框、阴影和校验色。工具栏保留 text/link 类型及危险和禁用语义。
+原生 Modal/AntApp 确认按钮由 appearance.modalDefaults 默认为 default。桌面退出时的查询保存使用 primary，写入确认可使用 warning 按钮。主按钮颜色由主题算法派生。按钮、页签、开关、单选和复选使用 `:focus-visible` 细线标示键盘焦点。输入控件沿用 Ant Design 聚焦边框、阴影和校验色。工具栏保留 text/link 类型及危险和禁用语义。

@@ -72,6 +72,18 @@ body {
   outline: none;
 }
 
+// Ant Design 的默认外描边已关闭，为键盘焦点保留一条贴边指示线。
+.sql-studio-theme :is(.ant-btn, .ant-switch, .ant-tabs-nav-add, .ant-tabs-tab-remove):focus-visible:not(:disabled, [aria-disabled='true']),
+.sql-studio-theme .ant-tabs .ant-tabs-tab:has(.ant-tabs-tab-btn:focus-visible) {
+  box-shadow: inset 0 0 0 var(--ant-line-width) currentColor;
+}
+
+// 单选和复选的实际焦点位于透明 input，指示线画在可见的控件外壳上。
+.sql-studio-theme :is(.ant-checkbox, .ant-radio):has(> input:focus-visible) {
+  outline: var(--ant-line-width) solid currentColor;
+  outline-offset: var(--ant-line-width);
+}
+
 // 仅 Electron 标题栏可拖动，业务 header 保持正常点击和文本交互。
 .desktop-titlebar {
   -webkit-app-region: drag;

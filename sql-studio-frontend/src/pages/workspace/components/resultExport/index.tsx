@@ -92,7 +92,7 @@ export default function ResultExport({ result, selectedCount, rows, disabled }: 
         keyboard={!busy}
       >
         <ErrorNotice error={error} onClose={() => setError('')} style={{ marginBottom: 16 }} />
-        <Form layout="horizontal" disabled={busy} labelCol={{ flex: '104px' }} wrapperCol={{ flex: '1 1 0' }}>
+        <Form layout="horizontal" labelWrap disabled={busy} labelCol={{ flex: '104px' }} wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}>
           <Form.Item label={t('导出格式')}>
             <Radio.Group aria-label={t('导出格式')} value={format} onChange={(event) => setFormat(event.target.value)} orientation="horizontal" options={[...formats]} />
           </Form.Item>

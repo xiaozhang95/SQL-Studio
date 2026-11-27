@@ -4,7 +4,7 @@
 
 ## Ant Design 与样式
 
-布局分隔线、弹窗、卡片、表格、页签和普通输入边框共用主题中性色。`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 在同一主题下使用同一颜色。输入控件保留 Ant Design 聚焦边框、阴影和校验色。全局描边重置仅作用于 `:focus:not(:focus-visible)`。Ant Design 通过 `focusOutline` 控制额外描边。同一边界由一处绘制，Tabs 栏底沿用原生分隔线。
+布局分隔线、弹窗、卡片、表格、页签和普通输入边框共用主题中性色。`colorBorder`、`colorBorderSecondary` 和 `colorSplit` 在同一主题下使用同一颜色。输入控件保留 Ant Design 聚焦边框、阴影和校验色。`focusOutline` 控制 Ant Design 的外描边。按钮、页签、开关、单选和复选使用与控件贴近的键盘焦点细线。同一边界由一处绘制，Tabs 栏底沿用原生分隔线。
 
 1. 以 Ant Design 组件为底座，使用 [主题 token](../sql-studio-frontend/src/constant/theme/README.md) 和项目设计令牌统一颜色、字号、间距与状态。亮暗主题共用 Logo 放大镜的蓝色 `#2569DF` 作为主色，主题算法派生交互色。信息色沿用 Ant Design 默认令牌。全局页面切换、主题切换和系统设置由 AppRail 承载，业务操作放入对应工具栏、页签栏或侧栏。
 2. 能通过组件参数、`style`、语义化 `styles` 表达的布局和受控状态样式，放回所属组件，不集中堆进全局文件；组件内的颜色、圆角、间距和尺寸优先读取 `theme.useToken()`，简单排版优先使用 Flex、Space 等原生组件；样式对象用 `CSSProperties` 或组件公开类型约束。Ant Design 原生覆盖仅放 [app.scss](../sql-studio-frontend/src/app.scss)。基础全局规则、媒体查询及确需 CSS 的 hover/焦点/伪元素可保留于该文件，限定作用域并说明原因；第三方控件有原生样式 API 时优先使用，例如 CodeMirror 的 EditorView.theme。
