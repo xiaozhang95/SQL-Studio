@@ -88,7 +88,7 @@ PostgreSQL 表名使用完整的 `"schema"."table"`。DDL 提供目录结构参�
 
 Oracle 使用配置的服务名作为 `database`。对象标识为完整的 `"OWNER"."OBJECT"`，查询的可选 `schema` 设置该次 Oracle 会话的 CURRENT_SCHEMA。默认只读接受 SELECT 和查询型 WITH，在 Oracle 只读事务中执行。显式写入允许单条 DML、DDL 或完整 PL/SQL 块。表预览使用 Oracle 的 `FETCH FIRST 1000 ROWS ONLY`。查询编码保留 NUMBER 精确文本及 RAW/BLOB 十六进制。
 
-SQL 编辑器运行及重新执行传 `allowWrite: true` 和 `unlimitedRows: true`，按原 SQL 执行，包括语句自带的 `LIMIT`。打开或刷新表数据使用带 `LIMIT 1000` 的只读预览。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL、MariaDB 和 PostgreSQL 多语句走同一会话批次。`truncatedBy` 可区分行数上限（`row-limit`）、结果大小上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
+SQL 编辑器运行及重新执行传 `allowWrite: true` 和 `unlimitedRows: true`，按原 SQL 执行，包括语句自带的 `LIMIT`。打开或刷新表数据使用方言对应的 1000 行只读预览。Oracle 使用 `FETCH FIRST 1000 ROWS ONLY`，其余 SQL 引擎使用 `LIMIT 1000`。PostgreSQL 和 MariaDB 支持各自方言的 `RETURNING`，返回的列与行作为结果集。MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句走同一会话批次。`truncatedBy` 可区分行数上限（`row-limit`）、结果大小上限（`byte-limit`）和超限首行（`oversized-row`）。首行超出预算时，`rowPreview` 单独返回最多前 8 列的文本预览，每列最多 512 UTF-8 字节，`shortened` 标示值是否截短，`value: null` 继续表示 SQL NULL。
 
 MySQL 和 MariaDB 在显式写入路径读取 `CALL` 和 `EXECUTE` 的结果集。第一个数据集使用常规结果字段，后续数据集按顺序放在可选的 `additionalResults` 中。同条语句的结果集共享行数与大小预算，超限导致整个后续数据集省略时返回 `resultSetsTruncated: true`。这两类语句成功但没有数据列时，`writeFeedbackUnavailable: true` 表示驱动游标未提供影响行数和插入 ID，调用者应把该结果显示为成功回执。
 
@@ -106,7 +106,7 @@ MySQL 和 MariaDB 默认只读请求仅接受查询类语句及 USE，并在数�
 
 ## 数据库监控
 
-`GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 database，省略时使用连接默认库。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。MySQL/MariaDB、PostgreSQL、GreptimeDB 可附带 details:{version,role,identity,sections:[{key,fields:[{key,value}]}],warnings?}，身份和状态字段保持文本，不含凭据。可选服务器变量或扩展目录失败保留基础 metrics，并返回提示；基础采样失败仍返回错误。MySQL/MariaDB 从全局状态/变量读取语句、连接、网络、InnoDB 和配置；PostgreSQL 增加会话可见性、锁、扫描、维护与统计重置；GreptimeDB 扩展构建和主分片存储/累计活动，缺失统计保持未知。前端按实际间隔计算累计计数速率，首点与重置断开，不新增采样或写入接口。
+`GET /connections/{id}/monitor?database=...` 使用已保存连接的认证信息读取统计。MySQL 和 MariaDB 返回实例连接、线程、查询、连接失败、网络流量和运行时间。PostgreSQL 还统计库级事务、缓存、大小、死锁、临时文件写入和行变更，GreptimeDB 汇总表、主分片、估算行数、磁盘和写入缓冲占用及 SST 文件数。PostgreSQL 和 GreptimeDB 使用可选 `database`，省略时使用连接默认库。Oracle 使用服务名作为范围，统计登录用户的表、视图、索引和无效对象，具备 `V$SESSION` 权限时追加当前容器中的用户会话。响应包含实际数据库名（实例级为空）、UTC 采样时间 sampledAt 和 metrics 列表，每项包含稳定的 key 和十进制字符串 value。接口执行固定的只读系统查询，超时 10 秒。各引擎可附带 details:{version,role,identity,sections:[{key,fields:[{key,value}]}],warnings?}，身份和状态字段保持文本，不含凭据。可选服务器变量或扩展目录失败保留基础 metrics，并返回提示；基础采样失败仍返回错误。MySQL/MariaDB 从全局状态/变量读取语句、连接、网络、InnoDB 和配置；PostgreSQL 增加会话可见性、锁、扫描、维护与统计重置；GreptimeDB 扩展构建和主分片存储/累计活动，缺失统计保持未知。前端按实际间隔计算累计计数速率，首点与重置断开，不新增采样或写入接口。
 
 ## Redis 查询
 

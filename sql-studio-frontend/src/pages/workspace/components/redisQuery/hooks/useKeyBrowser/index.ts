@@ -52,8 +52,6 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
   useEffect(() => {
     const controller = new AbortController()
     scanRequest.current = controller
-    setLoading(true)
-    setError('')
     let cursor = request.cursor
     const pattern = redisSearchPattern(request.pattern)
     let cursorExpired = false
@@ -144,13 +142,18 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
     }
   }, [active, id, database, selected, detail, expiring, saving, clearMissingKey])
 
-  function scan(pattern: string, cursor = '0', continuous = cursor === '0' && Boolean(pattern)) {
-    if (mutation.current) return
-    // 同一筛选刷新时保留旧树，切换筛选时丢弃旧游标和结果。
+  function startScan(next: ScanRequest) {
     scanRequest.current?.abort()
     scanRequest.current = null
     setLoading(true)
-    setRequest({ pattern, cursor, continuous })
+    setError('')
+    setRequest(next)
+  }
+
+  function scan(pattern: string, cursor = '0', continuous = cursor === '0' && Boolean(pattern)) {
+    if (mutation.current) return
+    // 同一筛选刷新时保留旧树，切换筛选时丢弃旧游标和结果。
+    startScan({ pattern, cursor, continuous })
     if (cursor !== '0') return
     setPage((previous) => (previous?.pattern === pattern ? previous : undefined))
     detailRequest.current?.abort()
@@ -222,7 +225,7 @@ export function useKeyBrowser(id: string, database: number, active: boolean) {
           setDetailLoading(false)
         } else setPage((previous) => previous && { ...previous, keys: previous.keys.filter((key) => key.ref !== item.ref) })
       } else if (result.key) {
-        setRequest({ pattern: request.pattern, cursor: '0', continuous: Boolean(request.pattern) })
+        startScan({ pattern: request.pattern, cursor: '0', continuous: Boolean(request.pattern) })
         read(result.key, true)
       } else if (selected && (change.action === 'value' || change.action === 'ttl')) read(selected, true)
       else scan(request.pattern)

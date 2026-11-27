@@ -31,7 +31,7 @@ Modal（连接、AI 配置、优化建议、库表管理及 AntApp 确认弹窗�
 
 没有保存记录时主页面为空；从数据库右键打开结构页，双击表创建独立数据页，查询页的 SQL 与最新结果共用一个标签。历史入口只在 SQL 页面，加载该页面连接的记录；载入追加到当前编辑器并标注历史来源。右键可执行选中 SQL，补全弹层沿用系统 Select 的视觉，树折叠按钮无背景。
 
-完整草稿和选区支持多条 SQL。前端在引号和注释之外识别语句分隔符，MySQL 和 MariaDB 也识别 `DELIMITER`。MySQL、MariaDB 和 PostgreSQL 多语句在同一会话执行，其他 SQL 引擎顺序调用单语句接口。每个数据集可在同页标签或下拉选择器查看，消息、摘要与执行历史按语句保存。同会话批次结果需通过原脚本重跑。失败或取消停止后续语句，保留已完成结果。
+完整草稿和选区支持多条 SQL。前端在引号和注释之外识别语句分隔符，MySQL 和 MariaDB 也识别 `DELIMITER`。MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句在同一会话执行。GreptimeDB 顺序调用单语句接口。每个数据集可在同页标签或下拉选择器查看，消息、摘要与执行历史按语句保存。同会话批次结果需通过原脚本重跑。失败或取消停止后续语句，保留已完成结果。
 
 页面/范围/布局由 Go 保存为配置目录下的轻量索引，草稿和结果按页独立保存并按需读取，已保存的非活动内容释放内存。历史和界面偏好（主题、字号、语言）使用独立配置分区。工作区存储不使用 IndexedDB，也不保存连接密码。恢复不自动执行 SQL，后台保存不在顶部展示 loading，后台配置保存冲突后重新读取服务端最新快照。执行成功或失败在当前页面的结果和消息中展示。
 
@@ -54,7 +54,7 @@ Electron 标题栏、工作区、监控、AI 助手、弹窗和普通控件的�
 
 系统设置在 Ant Design xs 断点使用带提示的图标分类栏，新建和编辑连接则将数据库类型移入顶部下拉框。业务 Modal 与确认框使用 Ant Design 默认位置。
 
-[主题配置](constant/theme/README.md) 使用 Ant Design 的亮暗算法，主色种子取自 Logo 放大镜的蓝色 `#2569DF`。基础字号 small/standard/large 为 12/14/16px。全局控件使用 Ant Design `middle` 标准尺寸，按钮和输入类控件高 30px。普通文本、表头、编辑器和设置卡片跟随全局字号，Tag 和 Badge 的小号文字沿用组件默认比例。Tag 全局使用 `solid` 实色变体。普通布局及重复卡片和图标分别归组件 style/styles 与公共组件，app.scss 保留基础、原生结构与交互覆盖。
+[主题配置](constant/theme/README.md) 使用 Ant Design 的亮暗算法，主色种子取自 Logo 放大镜的蓝色 `#2569DF`。基础字号 small/standard/large 为 12/14/16px。全局控件使用 Ant Design `middle` 标准尺寸，标准按钮和输入框高 30px。[共享 Switch](components/switch/README.md) 默认使用 `small`。普通文本、表头、编辑器和设置卡片跟随全局字号，Tag 和 Badge 的小号文字沿用组件默认比例。Tag 全局使用 `solid` 实色变体。普通布局及重复卡片和图标分别归组件 style/styles 与公共组件，app.scss 保留基础、原生结构与交互覆盖。
 
 Ant Design Alert 的亮暗色底色和描边共用 [主题配置](constant/theme/README.md)。转储和同步的说明使用无可见描边的信息提示。
 

@@ -11,7 +11,7 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 - 后端任务使用 [sql-studio-backend](../sql-studio-backend/SKILL.md)，遵守 [后端规范](../../../docs/BACKEND_STANDARDS.md)，从 [架构](../../../docs/BACKEND_ARCHITECTURE.md) 和 [包索引](../../../sql-studio-backend/internal/README.md) 进入实际模块。
 - 跨端功能同时维护 API、类型与公开行为，参见 [API 文档](../../../docs/API.md) 和 [开发约定](../../../docs/DEVELOPMENT.md)。当前连接类型包括 MySQL、MariaDB、PostgreSQL、Oracle、GreptimeDB 和 Redis，具体能力见 [数据库说明](../../../docs/DATABASES.md)。
 
-查询与结果始终归属发起页面和连接，旧请求取消或失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化、日志或工作区索引与分片。编辑时留空保留旧密码。工作区恢复不自动执行 SQL。单语句 API 默认只读，工作台显式允许写入。MySQL、MariaDB 和 PostgreSQL 的多语句脚本通过批次 API 在同一会话内逐条执行。取消后保留已收到的结果与已提交的写入。
+查询与结果始终归属发起页面和连接，旧请求取消或失效后不得覆盖新范围。密码只由后端加密管理，不进入前端持久化、日志或工作区索引与分片。编辑时留空保留旧密码。工作区恢复不自动执行 SQL。单语句 API 默认只读，工作台显式允许写入。MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句脚本通过批次 API 在同一会话内逐条执行。取消后保留已收到的结果与已提交的写入。
 
 ## 文档维护
 
@@ -21,6 +21,7 @@ description: 维护本仓库 SQL Studio 的 Vite React Ant Design 前端、Gin G
 
 **修改完成后默认核对源码、改动差异和受影响的文档，用户自行运行和调试。** 仅当用户明确要求时，才在指定范围启动应用、执行构建、lint 或测试、操作浏览器、连接数据库联调或回归。代码格式化按改动文件进行。
 
+- 用户要求全局静态检查时使用 [sql-studio-static-audit](../sql-studio-static-audit/SKILL.md)。核对代码、样式、功能和文档，修复可静态确认的问题。
 - 用户明确要求 SQL 窗口实测时使用 [sql-studio-sql-regression](../sql-studio-sql-regression/SKILL.md)。使用隔离临时对象，分别报告真实驱动/API、执行编排和浏览器证据，并核验清理。
 
 ## 交付与 Git 提交日志

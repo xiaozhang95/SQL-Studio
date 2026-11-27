@@ -37,7 +37,7 @@ export const connectionFormLabelWidth = { 'zh-CN': '7.5em', 'en-US': 'clamp(7.5e
 export const scopeCloseDialogLayout = { width: 560 } as const
 export const objectTreeLayout = { rowHeight: 30, switcherWidth: 20, scrollSaveDelay: 150 } as const
 /** Redis 键浏览与发布订阅的双栏宽度。 */
-export const redisPanelLayout = { sidebarWidth: 320 } as const
+export const redisPanelLayout = { sidebarWidth: 320, sidebarMaxWidth: '55%' } as const
 
 export const workspaceEmptyStyle = {
   display: 'flex',

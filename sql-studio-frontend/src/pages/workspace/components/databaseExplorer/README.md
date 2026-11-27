@@ -74,7 +74,7 @@ schema 节点双击/菜单可打开仅此 schema 的结构列表或新建带该 
 
 PostgreSQL 数据库及 schema 右键可新建 Schema；schema 右键可重命名或删除。删除要求输入名称并使用 RESTRICT，仅允许删除空 Schema。相关表设计页或未保存表格修改须先保存或关闭。
 
-数据库菜单按 databaseEditor 能力显示编辑数据库；PostgreSQL 可编辑所有者、连接数上限和注释，库名/编码/排序规则只读。MySQL、MariaDB 和 PostgreSQL 的表均可转储结构和数据，执行入口复核引擎能力。
+数据库菜单按 databaseEditor 能力显示编辑数据库；PostgreSQL 可编辑所有者、连接数上限和注释，库名/编码/排序规则只读。MySQL、MariaDB、PostgreSQL 和 Oracle 的表均可转储结构和数据，执行入口复核引擎能力。
 
 数据库和 Schema 右键提供“转储文件 → 仅结构 / 结构和数据”，与表转储共用独立进度弹框；目标来自节点，不推断当前查询范围。
 

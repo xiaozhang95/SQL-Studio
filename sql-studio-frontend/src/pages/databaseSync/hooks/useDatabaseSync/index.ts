@@ -17,6 +17,7 @@ type Side = keyof typeof initialChoices
 type Status = 'form' | 'checking' | 'running' | 'completed' | 'error' | 'cancelled'
 type ResultLog = { progress: SyncProgress; at: number }
 type Result = { progress: SyncProgress; logs: ResultLog[]; startedAt: number; endedAt?: number; error?: string }
+type SourceDatabases = { source: string; names: string[]; error?: string; loading?: boolean }
 const emptyProgress: SyncProgress = { phase: 'checking', created: false, completed: 0, tables: 0, skippedViews: 0, rows: 0 }
 
 export function useDatabaseSync(connections: readonly Connection[], initialConnection: Connection | undefined, onCreated: (connectionId: string) => void) {
@@ -29,14 +30,17 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
   const [plan, setPlan] = useState<SyncPlan>()
   const [result, setResult] = useState<Result>()
   const [error, setError] = useState('')
-  const [databases, setDatabases] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
-  const [databaseError, setDatabaseError] = useState('')
+  const [sourceDatabases, setSourceDatabases] = useState<SourceDatabases>()
   const current = useRef<AbortController | null>(null)
   const loadingDatabases = useRef<AbortController | null>(null)
   const profile = getDatabaseAdapter(engine).profile
   const schemaSync = profile.syncScope === 'schema'
   const eligibleConnections = connections.filter(({ type }) => (type || DatabaseEngine.MySQL) === engine)
+  const sourceId = eligibleConnections.find(({ id }) => id === choices.source)?.id
+  const sourceKey = choices.source === externalID ? externalID : sourceId
+  const sourceList = sourceDatabases?.source === sourceKey ? sourceDatabases : undefined
+  const databases = sourceList?.names ?? []
+  const loading = sourceList?.loading ?? Boolean(sourceId && !sourceList)
   const savedTarget = eligibleConnections.find(({ id }) => id === choices.target)
 
   const canConnect = (side: Side) => {
@@ -53,30 +57,32 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     loadingDatabases.current = null
   }, [])
   const readDatabases = useCallback(
-    async (input: SyncConnection) => {
+    (input: SyncConnection, source: string) => {
       cancelList()
       const controller = new AbortController()
       loadingDatabases.current = controller
-      setLoading(true)
-      setDatabaseError('')
-      try {
-        const names = await listSyncDatabases(input, controller.signal)
-        if (!controller.signal.aborted) setDatabases(names)
-      } catch (error) {
-        if (!controller.signal.aborted) setDatabaseError(error instanceof Error ? error.message : '源数据库读取失败')
-      } finally {
-        if (loadingDatabases.current === controller) {
-          loadingDatabases.current = null
-          setLoading(false)
-        }
-      }
+      void listSyncDatabases(input, controller.signal)
+        .then((names) => {
+          if (!controller.signal.aborted) setSourceDatabases({ source, names })
+        })
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted) {
+            setSourceDatabases((previous) => ({
+              source,
+              names: previous?.source === source ? previous.names : [],
+              error: error instanceof Error ? error.message : '源数据库读取失败'
+            }))
+          }
+        })
+        .finally(() => {
+          if (loadingDatabases.current === controller) loadingDatabases.current = null
+        })
     },
     [cancelList]
   )
-  const sourceId = eligibleConnections.find(({ id }) => id === choices.source)?.id
   useEffect(() => {
     if (!sourceId) return
-    void readDatabases({ connectionId: sourceId })
+    readDatabases({ connectionId: sourceId }, sourceId)
     return cancelList
   }, [sourceId, readDatabases, cancelList])
   useEffect(
@@ -98,14 +104,13 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
       ...previous,
       ...patch,
       ...(!schemaSync && 'sourceDatabase' in patch && (!previous.targetDatabase || previous.targetDatabase === previous.sourceDatabase) && patch.sourceDatabase
-        ? { targetDatabase: patch.sourceDatabase } : {})
+        ? { targetDatabase: patch.sourceDatabase }
+        : {})
     }))
   }
   const clearSource = () => {
     cancelList()
-    setDatabases([])
-    setDatabaseError('')
-    setLoading(false)
+    setSourceDatabases(undefined)
     setValues((previous) => ({ ...previous, sourceDatabase: '', targetDatabase: previous.targetDatabase === previous.sourceDatabase ? '' : previous.targetDatabase }))
   }
   const changeEngine = (next: DatabaseType) => {
@@ -136,9 +141,7 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     invalidate()
     if (choices.source !== choices.target || choices.source === externalID) {
       cancelList()
-      setDatabases([])
-      setDatabaseError('')
-      setLoading(false)
+      setSourceDatabases(undefined)
     }
     setValues((previous) => ({
       ...previous,
@@ -151,6 +154,7 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
 
   const valid =
     values.structure &&
+    (schemaSync || values.createDatabase) &&
     canConnect('source') &&
     canConnect('target') &&
     Boolean(values.sourceDatabase.trim() && values.targetDatabase.trim()) &&
@@ -256,11 +260,13 @@ export function useDatabaseSync(connections: readonly Connection[], initialConne
     updateExternal,
     databases,
     loading,
-    databaseError,
+    databaseError: sourceList?.error,
     valid,
     canReadSource: canConnect('source'),
     refreshSource: () => {
-      if (!current.current && canConnect('source')) void readDatabases(endpoint('source'))
+      if (current.current || !canConnect('source')) return
+      setSourceDatabases({ source: choices.source, names: databases, loading: true })
+      readDatabases(endpoint('source'), choices.source)
     }
   }
 }

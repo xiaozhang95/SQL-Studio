@@ -14,7 +14,7 @@ INSERT INTO sample VALUES
   (9007199254740993,NULL,-99.0001);
 ```
 
-SQL 窗口先按引擎切分。MySQL、MariaDB 和 PostgreSQL 多语句使用 `/query-batch`，在同一会话执行并逐条返回回执。PostgreSQL 应覆盖同批显式回滚、临时表及未结束事务的提示。直接调用 `/query` 时每个请求传一条 SQL。
+SQL 窗口先按引擎切分。本回归覆盖的 MySQL 和 PostgreSQL 多语句使用 `/query-batch`，在同一会话执行并逐条返回回执。PostgreSQL 应覆盖同批显式回滚、临时表及未结束事务的提示。直接调用 `/query` 时每个请求传一条 SQL。
 
 | 类别 | SQL/输入 | 断言 |
 | --- | --- | --- |

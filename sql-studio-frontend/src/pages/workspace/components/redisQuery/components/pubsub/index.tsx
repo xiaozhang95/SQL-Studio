@@ -1,8 +1,9 @@
 import { CaretRightOutlined, ClearOutlined, PauseOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Button, Checkbox, Empty, Flex, Input, Switch, theme, Typography } from 'antd'
+import { Button, Checkbox, Empty, Flex, Input, theme, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import { SidebarHeader, SidebarSearch } from '@/components/sidebarControls'
+import Switch from '@/components/switch'
 import { appearance } from '@/constant/appearance'
 import { usePageError } from '@/contexts/pageErrors'
 import { redisSearchPattern } from '@/databases/redis/searchPattern'
@@ -198,6 +199,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             flex: 'none',
             flexDirection: 'column',
             width: redisPanelLayout.sidebarWidth,
+            maxWidth: redisPanelLayout.sidebarMaxWidth,
             minHeight: 0,
             borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
             background: token.colorBgContainer
@@ -214,13 +216,7 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             }
             actions={<ToolbarButton icon={<ReloadOutlined />} label={t('刷新')} loading={loading} onClick={() => setRequest({ pattern: filter })} />}
           />
-          <SidebarSearch
-            value={filter}
-            onChange={setFilter}
-            placeholder={t('搜索频道名称')}
-            label={t('筛选频道')}
-            maxLength={256}
-          />
+          <SidebarSearch value={filter} onChange={setFilter} placeholder={t('搜索频道名称')} label={t('筛选频道')} maxLength={256} />
           <div style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBlockStart: token.paddingXXS, paddingBlockEnd: token.paddingXS }}>
             {loading && !channels ? (
               <Typography.Text type="secondary" style={{ display: 'block', padding: token.padding }}>
@@ -264,16 +260,18 @@ export default function PubSub({ id, active }: { id: string; active: boolean }) 
             style={{
               display: 'flex',
               flex: 'none',
+              flexWrap: 'wrap',
               alignItems: 'center',
               gap: token.marginXS,
               minHeight: appearance.panelHeaderHeight,
               paddingInline: token.padding,
+              paddingBlock: token.paddingXXS,
               borderBlockEnd: `${token.lineWidth}px solid var(--layout-divider)`,
               background: token.colorBgContainer
             }}
           >
             <Typography.Text strong>{t('消息流')}</Typography.Text>
-            <Flex align="center" gap={token.marginXS} style={{ marginInlineStart: 'auto' }}>
+            <Flex align="center" gap={token.marginXS} wrap style={{ marginInlineStart: 'auto', minWidth: 0 }}>
               <Flex align="center" gap={token.marginXXS}>
                 <Typography.Text type="secondary">{t('自动滚动')}</Typography.Text>
                 <Switch checked={autoScroll} onChange={setAutoScroll} aria-label={t('自动滚动')} />

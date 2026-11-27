@@ -2,7 +2,7 @@
 
 [源码](index.tsx)
 
-`StudioIcon` 提供与应用视觉稿一致的 24 × 24 线性 SVG 图标，使用 `currentColor`，避免 Ant Design 图标在 15–20px 下粗细和形状不一致。
+`StudioIcon` 提供 24 × 24 视区的线性 SVG 图标，使用 `currentColor`，在不同显示尺寸下共享形状与描边。
 
 ## 用法
 
@@ -17,7 +17,7 @@
 
 普通图标使用 1.7px 圆角描边；`play` 为实心三角形。图标默认 `aria-hidden`，按钮和状态容器负责提供可访问名称。`progress` 通过同名参数接收 0–100 的百分比，`spinner` 在系统允许动画时旋转。
 
-`databaseSectionIconNames` 提供 `monitor` 与 `sync` 对应的图标名称，由全局 Rail 和连接右键菜单共用。Rail 使用 20px，右键菜单使用默认 16px。
+全局 Rail 和连接右键菜单共用 [数据库页面图标映射](../../constant/databaseSectionIcons/README.md)。Rail 使用 20px，右键菜单使用默认 16px。
 
 ## 使用范围
 

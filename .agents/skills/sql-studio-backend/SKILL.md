@@ -18,11 +18,11 @@ description: 开发和维护 SQL Studio 的 Go Gin 模块化单体后端；用�
 - 一个实际功能一个包，包内按职责分文件，源码与单元测试同目录；保留 Go 原生命名与 gofmt，不套前端 index 规则或为局部 helper 建空包。每个实际包有 README.md 与 doc.go，父目录提供索引。
 - README 说明职责、构造器/公开方法、参数类型与默认值、返回值、错误、超时/取消、并发和缓存归属。迁移同步调用者、索引、[API](../../../docs/API.md) 及架构测试。
 - 使用命名类型、struct、const、最小接口及 errors.Is/As 约束边界。跨模块共享契约放 model，私有定义留本模块；不用无约束 any 或任意 map 替代已知业务结构，外部输入做运行时校验。
-- 连接、TLS、语句识别、元数据和执行按引擎归入 internal/mysql、internal/mariadb 或 internal/postgresql。MariaDB 组合 MySQL 线协议，internal/database 负责分派。连接加密落盘由 internal/connection 管理，环境变量集中在 internal/config。不预建未支持引擎的空包或注册框架。
+- 连接、TLS、语句识别、元数据和执行归入 `internal` 下各自的引擎包。MariaDB 和 GreptimeDB 组合 MySQL 线协议，`internal/database` 负责 SQL 引擎分派。连接加密落盘由 `internal/connection` 管理，环境变量集中在 `internal/config`。按实际支持的引擎维护实现。
 
 ## 行为边界
 
-明确传递连接 ID 和对象范围，context 从请求传到驱动，保留取消、超时、游标与连接释放。保持单语句 API 默认只读、行数/字节/并发限制和精确数值文本。MySQL、MariaDB 和 PostgreSQL 的同会话批次共用查询并发预算。取消后已提交写入保留。
+明确传递连接 ID 和对象范围，context 从请求传到驱动，保留取消、超时、游标与连接释放。保持单语句 API 默认只读、行数/字节/并发限制和精确数值文本。MySQL、MariaDB、PostgreSQL 和 Oracle 的同会话批次共用查询并发预算。取消后已提交写入保留。
 
 密码不进入响应或日志；编辑空密码保留原值，密钥丢失拒绝覆盖。API、本地连接格式和现有数据在重构时保持兼容；不因清理日志或生成文件删除 data/、密钥或连接记录。
 

@@ -1,5 +1,6 @@
 import { LinkOutlined, SettingOutlined } from '@ant-design/icons'
 import { Alert, Button, Card, Checkbox, Flex, Form, Grid, Input, Select, Steps, theme, Typography } from 'antd'
+import { useId } from 'react'
 
 import DatabasePage from '@/components/databasePage'
 import type { DatabasePageProps } from '@/components/databasePage'
@@ -25,6 +26,7 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
   const { t } = useTranslation()
   const { token } = theme.useToken()
   const screens = Grid.useBreakpoint()
+  const copyDataId = useId()
   const model = useDatabaseSync(connections, initialConnection, onCreated)
   const { values, status, plan, result, update } = model
   const checking = status === 'checking'
@@ -200,9 +202,11 @@ export default function DatabaseSync({ connections, initialConnection, onCreated
                 styles={{ header: { minHeight: 42, paddingInline: 14 }, body: { padding: 14 } }}
               >
                 <Flex align="flex-start" gap={10}>
-                  <Checkbox checked={values.data} disabled={busy || !values.structure} onChange={(event) => update({ data: event.target.checked })} />
+                  <Checkbox id={copyDataId} checked={values.data} disabled={busy || !values.structure} onChange={(event) => update({ data: event.target.checked })} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div>{t('同时复制表数据')}</div>
+                    <div>
+                      <label htmlFor={copyDataId}>{t('同时复制表数据')}</label>
+                    </div>
                     <Typography.Text type="secondary">
                       {t(schemaSync ? '开启后逐表提交数据。已创建的表和已提交的记录会保留。' : '关闭时只同步表结构；开启后将逐表复制数据，已创建的库和已写入记录不会回滚。')}
                     </Typography.Text>

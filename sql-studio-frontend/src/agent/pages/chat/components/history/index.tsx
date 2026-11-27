@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, MessageOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import { Button, Drawer, Empty, Flex, Form, Input, Modal, Spin, theme, Tooltip, Typography } from 'antd'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import DeleteDialog from '@/components/deleteDialog'
 import ErrorNotice from '@/components/errorNotice'
@@ -37,12 +37,20 @@ export function History(props: Props) {
   const { open, onClose, mobile } = props
   const rename = useSessionRename(props.onRename)
   const [search, setSearch] = useState('')
+  const [startOfToday, setStartOfToday] = useState(() => new Date().setHours(0, 0, 0, 0))
   const [deleteTarget, setDeleteTarget] = useState<ConversationInfo>()
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const deletePending = useRef(false)
   const deletionDisabled = props.busy || props.selecting
   const canDeleteTarget = !deletionDisabled && props.items.some((item) => item.id === deleteTarget?.id)
+
+  useEffect(() => {
+    const tomorrow = new Date(startOfToday)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const timer = setTimeout(() => setStartOfToday(new Date().setHours(0, 0, 0, 0)), Math.max(1, tomorrow.getTime() - Date.now()))
+    return () => clearTimeout(timer)
+  }, [startOfToday])
 
   function requestDelete(item: ConversationInfo) {
     if (deletionDisabled || deletePending.current) return
@@ -68,7 +76,7 @@ export function History(props: Props) {
 
   const keyword = search.trim().toLowerCase()
   const items = keyword ? props.items.filter(({ title }) => title.toLowerCase().includes(keyword)) : props.items
-  const contentsProps = { ...props, items, search, onSearchChange: setSearch, onRenameOpen: rename.show, onDeleteOpen: requestDelete }
+  const contentsProps = { ...props, items, search, startOfToday, onSearchChange: setSearch, onRenameOpen: rename.show, onDeleteOpen: requestDelete }
   const refreshAction = (
     <Tooltip title={t('刷新历史')}>
       <Button type="text" aria-label={t('刷新历史')} icon={<ReloadOutlined />} onClick={() => void props.onRefresh()} disabled={props.loading} />
@@ -175,6 +183,7 @@ export function History(props: Props) {
             <Input
               aria-label={t('会话名称')}
               maxLength={CHAT.maxTitleLength}
+              placeholder={t('请输入会话名称')}
               onPressEnter={(event) => {
                 event.preventDefault()
                 rename.form.submit()
@@ -196,18 +205,18 @@ function HistoryContents({
   onDeleteOpen,
   onRenameOpen,
   search,
+  startOfToday,
   onSearchChange
-}: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; onSearchChange: (value: string) => void }) {
+}: Props & { onRenameOpen: (item: ConversationInfo) => void; onDeleteOpen: (item: ConversationInfo) => void; search: string; startOfToday: number; onSearchChange: (value: string) => void }) {
   const { t, language } = useTranslation()
 
   const { token } = theme.useToken()
-  const startOfToday = new Date()
-  startOfToday.setHours(0, 0, 0, 0)
-  const startOfYesterday = startOfToday.getTime() - 24 * 60 * 60 * 1000
+  const yesterday = new Date(startOfToday)
+  const startOfYesterday = yesterday.setDate(yesterday.getDate() - 1)
   const timeLabel = (updatedAt: string) => {
     const time = Date.parse(updatedAt)
     if (!Number.isFinite(time)) return ''
-    if (time >= startOfToday.getTime()) return new Date(time).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
+    if (time >= startOfToday) return new Date(time).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
     if (time >= startOfYesterday) return t('昨天')
     const date = new Date(time)
     return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -222,7 +231,7 @@ function HistoryContents({
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
     .forEach((item) => {
       const time = Date.parse(item.updatedAt)
-      grouped[time >= startOfToday.getTime() ? 0 : time >= startOfYesterday ? 1 : 2].items.push(item)
+      grouped[time >= startOfToday ? 0 : time >= startOfYesterday ? 1 : 2].items.push(item)
     })
   return (
     <Flex vertical style={{ flex: 1, height: '100%', minHeight: 0 }}>

@@ -1,28 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 
-import type { DatabaseSection } from '@/hooks/useAppSection'
-
 export type StudioIconName =
-  | 'database'
-  | 'bot'
-  | 'activity'
-  | 'swap'
-  | 'play'
-  | 'folder'
-  | 'table'
-  | 'eye'
-  | 'key'
-  | 'sun'
-  | 'moon'
-  | 'settings'
-  | 'download'
-  | 'restart'
-  | 'spinner'
-  | 'progress'
-  | 'sparkle'
-  | 'zap'
-
-export const databaseSectionIconNames = { monitor: 'activity', sync: 'swap' } as const satisfies Record<DatabaseSection, StudioIconName>
+  'database' | 'bot' | 'activity' | 'swap' | 'play' | 'folder' | 'table' | 'eye' | 'key' | 'sun' | 'moon' | 'settings' | 'download' | 'restart' | 'spinner' | 'progress' | 'sparkle' | 'zap'
 
 interface Props {
   name: StudioIconName

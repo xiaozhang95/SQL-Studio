@@ -142,17 +142,11 @@ export default function RedisQuery({ model, connection, active, themeMode }: Pro
           )}
           {keysOpened && (
             <div style={{ display: active && tool === 'keys' ? 'flex' : 'none', flex: 1, minWidth: 0, minHeight: 0 }}>
-              <KeyBrowser
-                key={`${connection.id}:${database}`}
-                id={connection.id}
-                database={Number(database)}
-                themeMode={themeMode}
-                active={active && tool === 'keys'}
-              />
+              <KeyBrowser key={`${connection.id}:${database}`} id={connection.id} database={Number(database)} themeMode={themeMode} active={active && tool === 'keys'} />
             </div>
           )}
           {pubSubOpened && (
-            <div hidden={!active || tool !== 'pubsub'} style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
+            <div style={{ display: active && tool === 'pubsub' ? 'flex' : 'none', flex: 1, minWidth: 0, minHeight: 0 }}>
               <PubSub id={connection.id} active={active && tool === 'pubsub'} />
             </div>
           )}

@@ -2,7 +2,8 @@
 
 - [desktopTitleBar](desktopTitleBar/README.md)：Electron 专用标题栏，使用主题背景和 1px 下沿分隔线，Windows 将标题左对齐至下方搜索框外边缘。
 - [appRail](appRail/README.md)：全局左侧导航、主题切换和系统设置入口，底色与右侧面板一致。
-- [studioIcon](studioIcon/README.md)：与应用视觉稿一致的线性 SVG 图标，供 Rail、Header 和对象树使用。
+- [navigationLockProvider](navigationLockProvider/README.md)：为全局导航提供操作锁状态。
+- [studioIcon](studioIcon/README.md) 提供应用使用的线性 SVG 图标，供 Rail、Header 和对象树使用。
 - [pageErrorBanner](pageErrorBanner/README.md)：工作区及各功能页共用的错误通栏。
 - [databasePage](databasePage/README.md)：监控与同步共用的内容布局。
 - [engineIcon](engineIcon/README.md)：对象树、连接选择及数据库页面共用的引擎图标。
@@ -13,6 +14,7 @@
 
 - [sidebarWidthProvider](sidebarWidthProvider/README.md)：工作台与Agent共享的侧栏宽度状态。
 - [sidebarControls](sidebarControls/README.md)：对象栏、Redis 工具和会话栏共用的标题、操作与搜索布局。
+- [switch](switch/README.md) 提供默认小号的 Ant Design 开关。
 
 - [aiSettings](aiSettings/README.md)：已添加模型列表，通过子弹框选择供应商、填写 Key 并明确选择模型；按供应商与模型去重，由设置统一保存。
 - [aiProviderIcon](aiProviderIcon/README.md)：服务商图标。

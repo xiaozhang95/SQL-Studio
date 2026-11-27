@@ -1,14 +1,16 @@
-import type { ButtonProps, ConfigProviderProps, ModalProps } from 'antd'
+import type { ButtonProps, ConfigProviderProps, ModalProps, SwitchProps } from 'antd'
 import type { CSSProperties } from 'react'
 
 /** 仅集中已确认的界面约定，其余视觉属性沿用 Ant Design 默认值。 */
 export const appearance = {
   controlSize: 'middle',
+  switchSize: 'small',
   selectWidth: 220,
   panelHeaderHeight: 42,
   railIconSize: 20
 } as const satisfies {
   controlSize: NonNullable<ButtonProps['size']>
+  switchSize: NonNullable<SwitchProps['size']>
   selectWidth: number
   panelHeaderHeight: number
   railIconSize: number

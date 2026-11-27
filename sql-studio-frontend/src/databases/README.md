@@ -2,7 +2,7 @@
 
 [统一入口](index.ts) · [契约与类型枚举](typings/README.md) · [MySQL](mysql/README.md)
 
-getDatabaseAdapter(type?) 接收 DatabaseType，省略时使用 MySQL，返回 DatabaseAdapter。入口仅按类型分派实际实现，注册表通过 satisfies Record<DatabaseType, DatabaseAdapter> 做穷尽校验。
+getDatabaseAdapter(type?) 接收 DatabaseType，省略时使用 MySQL，返回 DatabaseAdapter。入口仅按类型分派实际实现，注册表通过 satisfies Record<SQLDatabaseType, DatabaseAdapter> 做穷尽校验。
 
 页面、组件和 hooks 通过适配器获取 profile、completion、splitStatements、cleanHistory 和 tableDataSQL。MySQL、MariaDB、PostgreSQL、Oracle 和 GreptimeDB 各自在本目录维护品牌、端口、方言及专属 SQL。
 
@@ -18,4 +18,4 @@ databaseProfiles 导出已实现引擎 profile 列表。objects 可为 undefined
 - [MariaDB](mariadb/README.md)：独立类型、MariaSQL 补全、默认值及排序规则适配，显式复用 MySQL 协议通用能力。
 - [GreptimeDB](greptimedb/README.md)：独立连接配置、语句切分与库表浏览。
 
-Redis 连接资料通过 [redis](redis/README.md) 提供，操作位于[工作区查询标签](../pages/workspace/components/redisQuery/README.md)。getDatabaseMonitorPanel(type?) 通过 DatabaseType 穷尽注册表分派各引擎监控：[MySQL](mysql/monitor/README.md)、[MariaDB](mariadb/monitor/README.md)、[PostgreSQL](postgresql/monitor/README.md)、[GreptimeDB](greptimedb/monitor/README.md) 和 [Redis](redis/monitor/README.md)。SQL 引擎组合共享 MonitorPanel，Redis 保留键空间专属详情，趋势和格式化共用；监控不依赖 SQL 能力分派。
+Redis 连接资料通过 [redis](redis/README.md) 提供，操作位于[工作区查询标签](../pages/workspace/components/redisQuery/README.md)。getDatabaseMonitorPanel(type?) 通过 DatabaseType 穷尽注册表分派各引擎监控：[MySQL](mysql/monitor/README.md)、[MariaDB](mariadb/monitor/README.md)、[PostgreSQL](postgresql/monitor/README.md)、[Oracle](oracle/monitor/README.md)、[GreptimeDB](greptimedb/monitor/README.md) 和 [Redis](redis/monitor/README.md)。SQL 引擎组合共享 MonitorPanel，Redis 保留键空间专属详情，趋势和格式化共用；监控不依赖 SQL 能力分派。

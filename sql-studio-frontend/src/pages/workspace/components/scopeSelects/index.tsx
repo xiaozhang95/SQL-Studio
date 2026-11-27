@@ -46,8 +46,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         className="connection-select"
         style={scopeSelectStyle}
         aria-label={t('选择连接')}
-        showSearch
-        optionFilterProp="searchText"
+        showSearch={{ optionFilterProp: 'searchText' }}
         placeholder={t('选择连接')}
         value={current?.id}
         disabled={disabled || !connections.length}
@@ -71,8 +70,7 @@ export default function ScopeSelects({ scope, connections, objects, disabled, on
         style={scopeSelectStyle}
         aria-label={t(databaseLabel)}
         prefix={database ? undefined : <DatabaseOutlined />}
-        showSearch
-        optionFilterProp="searchText"
+        showSearch={{ optionFilterProp: 'searchText' }}
         allowClear={!redis}
         loading={snapshot?.status === 'loading'}
         placeholder={t(databaseLabel)}

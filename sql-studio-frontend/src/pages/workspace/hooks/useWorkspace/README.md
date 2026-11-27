@@ -26,7 +26,7 @@ useWorkspace 返回 WorkspaceModel，区域组件通过 Pick 限定消费字段�
 
 选连接后提供当前连接的数据库补全；选库自动 loadTables 并共用对象缓存，补全表/视图及已加载字段，defaultSchema/defaultTable 与当前页一致。异步数据按连接隔离，范围变化只切换消费方；关闭/刷新取消旧代请求，迟到结果不能重新打开连接。数据库成功加载时只校验保存范围是否仍有效，不自动执行 SQL。
 
-普通运行的草稿或选区由目标适配器 splitStatements 扫描，MySQL、MariaDB 和 PostgreSQL 多语句使用同一会话批次。MySQL 和 MariaDB 还可显式以单条语句运行选区，或选中多条 INSERT 后加入事务控制，同批执行。双击表、右键查询数据和刷新表数据使用适配器生成的 `LIMIT 1000` 预览。表菜单新建查询生成普通 SELECT 草稿。整批固定页 ID、连接、初始库、Schema、运行锁和 AbortController。语句结果即时发布，查询页逐条保存历史。编辑器执行和重新执行显式传 `allowWrite: true` 与 `unlimitedRows: true`。语句失败停止后续执行并提示未执行数量。取消或连接中断保留已收到的回执。
+普通运行的草稿或选区由目标适配器 splitStatements 扫描，MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句使用同一会话批次。MySQL 和 MariaDB 还可显式以单条语句运行选区，或选中多条 INSERT 后加入事务控制，同批执行。双击表、右键查询数据和刷新表数据使用适配器生成的 1000 行只读预览。表菜单新建查询生成普通 SELECT 草稿。整批固定页 ID、连接、初始库、Schema、运行锁和 AbortController。语句结果即时发布，查询页逐条保存历史。编辑器执行和重新执行显式传 `allowWrite: true` 与 `unlimitedRows: true`。语句失败停止后续执行并提示未执行数量。取消或连接中断保留已收到的回执。
 
 RunState.statements 保存该批逐条输出，resultViews.resultIndex 保存当前结果；selectResult 重置筛选。顶部 Tab 与结果标签 根据该页选中语句的状态着色，切页后保持。运行中可切已有页面，禁止关闭和新增；关闭同步释放该页结果、视图和编辑器布局。
 
@@ -82,7 +82,7 @@ schemaConnections 和 foreignKeyConnections 按各连接所属引擎的 explorer
 
 数据库结构结果由所属适配器 tableListResult 生成，PostgreSQL 分开 Schema/表名；schema 结构页按 schema 筛选并在标题中保留范围。查询传递 schema、逐条历史和结果刷新记录它；切库/连接清空，真实 schema 列表确认失效后才清空。只展示当前对象页和结构结果，恢复不转换旧格式或重跑 SQL。
 
-MySQL、MariaDB 和 PostgreSQL 的 SQL 窗口的手动运行与结果刷新均显式传 allowWrite=true，支持 DDL/DML，不增加只读开关或额外确认；对象数据预览保持读取请求。每条 SQL 独立自动提交，批次失败停止后续语句；累计结果只在整批完成、失败或取消后持久化；不支持跨请求事务或会话状态，取消不保证回滚。
+SQL 窗口运行和结果刷新显式传 `allowWrite: true`，按引擎语义执行 DDL 和 DML。对象数据预览使用只读请求。显式事务与其语句放在同一批次，批次失败停止后续语句。累计结果在整批完成、失败或取消后持久化，已提交的写入在取消后保留。
 
 dataExport 独立管理导出请求和文件；数据库/Schema/表菜单显式传入目标连接与范围。关闭相同库/连接会取消该导出，关闭其他范围不影响它。查询编辑器不因 objectBusy/running 改变而重挂载；页面关闭按钮恒定占位。
 

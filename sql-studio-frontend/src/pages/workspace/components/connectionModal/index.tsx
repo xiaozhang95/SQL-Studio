@@ -1,8 +1,9 @@
 import { LinkOutlined, LoadingOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Alert, AutoComplete, Button, Form, Grid, Input, InputNumber, Modal, Select, Switch, Tabs, Tag, theme, Tooltip, Typography } from 'antd'
+import { Alert, AutoComplete, Button, Form, Grid, Input, InputNumber, Modal, Select, Tabs, Tag, theme, Tooltip, Typography } from 'antd'
 
 import EngineIcon from '@/components/engineIcon'
 import ErrorNotice from '@/components/errorNotice'
+import Switch from '@/components/switch'
 import { appearance, formModalStyles } from '@/constant/appearance'
 import { connectionGroupLabel, connectionGroupName } from '@/constant/connectionGroup'
 import { databaseProfiles } from '@/databases'

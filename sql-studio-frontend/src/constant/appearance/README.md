@@ -2,7 +2,7 @@
 
 [源码](index.ts)
 
-`appearance.controlSize` 由根 Provider 提供 `middle` 标准尺寸，按钮、输入框、下拉框、表格、分页、卡片和导航沿用对应组件的标准外观。按钮和输入类控件的主题标准高度为 30px。连接、数据库和 Schema 范围选择器的宽度上限为 240px，结果集选择器与筛选框宽度为 220px。工作区面板标题、搜索栏及工具栏共用 `panelHeaderRowStyle`，单行最小高度为 42px，计入底部分隔线。全局 Rail 的导航、主题、设置及更新状态图标统一使用 20px StudioIcon。
+`appearance.controlSize` 由根 Provider 提供 `middle` 标准尺寸，按钮、输入框、下拉框、表格、分页、卡片和导航沿用对应组件的标准外观。标准按钮和输入框高 30px。[共享 Switch](../../components/switch/README.md) 使用 `appearance.switchSize`，是唯一默认采用 `small` 的控件。连接、数据库和 Schema 范围选择器的宽度上限为 240px，结果集选择器与筛选框宽度为 220px。工作区面板标题、搜索栏及工具栏共用 `panelHeaderRowStyle`，单行最小高度为 42px，计入底部分隔线。全局 Rail 的导航、主题、设置及更新状态图标统一使用 20px StudioIcon。
 
 圆角沿用 Ant Design 默认 token，App 不设置全局 borderRadius 覆盖，appearance 不维护圆角数值。不得在业务组件中随意另设字号、边框、弧度或混用尺寸。局部布局使用 style/styles，确需覆盖原生选择器时只放 app.scss。
 

@@ -84,6 +84,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
           flex: 'none',
           flexDirection: 'column',
           width: redisPanelLayout.sidebarWidth,
+          maxWidth: redisPanelLayout.sidebarMaxWidth,
           minHeight: 0,
           borderInlineEnd: `${token.lineWidth}px solid var(--layout-divider)`,
           background: token.colorBgContainer
@@ -98,14 +99,7 @@ export default function KeyBrowser({ id, database, themeMode, active }: { id: st
             </>
           }
         />
-        <SidebarSearch
-          value={filter}
-          onChange={setFilter}
-          placeholder={t('搜索键名')}
-          label={t('筛选 Redis 键')}
-          maxLength={256}
-          disabled={saving}
-        />
+        <SidebarSearch value={filter} onChange={setFilter} placeholder={t('搜索键名')} label={t('筛选 Redis 键')} maxLength={256} disabled={saving} />
         {(needsRestart || scanningMore || (Boolean(nextCursor) && nextCursor !== '0')) && (
           <div
             style={{

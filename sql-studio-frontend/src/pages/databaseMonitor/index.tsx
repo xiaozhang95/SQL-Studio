@@ -1,5 +1,6 @@
 import { ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Card, Empty, Flex, Select, Tag, Tooltip, Typography } from 'antd'
+import { createElement } from 'react'
 
 import ContentLoading from '@/components/contentLoading'
 import DatabasePage from '@/components/databasePage'
@@ -19,7 +20,6 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
   const { connection, result } = monitor
   const snapshot = result?.snapshot
   const sampleError = result?.error
-  const MonitorPanel = getDatabaseMonitorPanel(connection?.type)
   const defaultDatabase = connection?.database || getDatabaseProfile(connection?.type).database
   const options = connections.map((item) => ({
     value: item.id,
@@ -96,7 +96,7 @@ export default function DatabaseMonitor({ connections, initialConnection, initia
             </Flex>
           </Card>
           {snapshot ? (
-            <MonitorPanel key={connection?.id} snapshot={snapshot} history={result?.history ?? []} />
+            createElement(getDatabaseMonitorPanel(connection?.type), { key: connection?.id, snapshot, history: result?.history ?? [] })
           ) : connection && !sampleError ? (
             <ContentLoading label={t('正在读取数据库指标…')} style={{ minHeight: 120 }} />
           ) : null}

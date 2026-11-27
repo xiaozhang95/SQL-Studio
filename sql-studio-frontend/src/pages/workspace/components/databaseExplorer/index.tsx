@@ -25,8 +25,9 @@ import { useEffect, useMemo, useState } from 'react'
 import EmptyStateIcon from '@/components/emptyStateIcon'
 import EngineIcon from '@/components/engineIcon'
 import { SidebarSearch } from '@/components/sidebarControls'
-import StudioIcon, { databaseSectionIconNames } from '@/components/studioIcon'
+import StudioIcon from '@/components/studioIcon'
 import { connectionGroupLabel, connectionGroupName, defaultConnectionGroup } from '@/constant/connectionGroup'
+import { databaseSectionIconNames } from '@/constant/databaseSectionIcons'
 import { usePageError } from '@/contexts/pageErrors'
 import { getDatabaseAdapter } from '@/databases'
 import { DatabaseEngine } from '@/databases/typings'
@@ -291,8 +292,11 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
             !('key' in item) ||
             !unavailable.includes(String(item.key)) ||
             Boolean(node.kind === 'database' && item.key === 'edit' && engine.databaseEditor) ||
-            supported.some((action) => action === actionForKey[String(item.key) as keyof typeof actionForKey] &&
-              engine.simpleObjects?.canApply?.(action, { connectionId: id, database: db, table: node.table ?? '', schema: node.schema, view: node.view }) !== false) ||
+            supported.some(
+              (action) =>
+                action === actionForKey[String(item.key) as keyof typeof actionForKey] &&
+                engine.simpleObjects?.canApply?.(action, { connectionId: id, database: db, table: node.table ?? '', schema: node.schema, view: node.view }) !== false
+            ) ||
             Boolean(engine.tableDesign && ((item.key === 'create-table' && node.schema) || (node.kind === 'table' && (item.key === 'create' || item.key === 'design'))))
         )
         .map((item) =>
@@ -333,12 +337,7 @@ export default function DatabaseExplorer({ model, onOpenDatabaseSection }: Props
               node.databaseState === 'open' ? t('数据库已打开') : node.databaseState === 'opening' ? t('数据库正在打开') : node.databaseState === 'error' ? t('数据库打开失败') : t('数据库未打开')
             }
             style={{
-              color:
-                node.databaseState === 'open' || node.databaseState === 'opening'
-                  ? 'var(--primary)'
-                  : node.databaseState === 'error'
-                    ? 'var(--ant-color-error)'
-                    : 'var(--inactive-icon)'
+              color: node.databaseState === 'open' || node.databaseState === 'opening' ? 'var(--primary)' : node.databaseState === 'error' ? 'var(--ant-color-error)' : 'var(--inactive-icon)'
             }}
           />
         )

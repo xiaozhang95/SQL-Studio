@@ -1,9 +1,10 @@
 import { Button, Divider, theme, Tooltip } from 'antd'
 import { useState } from 'react'
 
-import StudioIcon, { databaseSectionIconNames } from '@/components/studioIcon'
+import StudioIcon from '@/components/studioIcon'
 import SystemSettings from '@/components/systemSettings'
 import { appearance, railButtonStyle } from '@/constant/appearance'
+import { databaseSectionIconNames } from '@/constant/databaseSectionIcons'
 import { useNavigationLock } from '@/contexts/navigationLock'
 import type { DatabaseSection, DatabaseSectionScope } from '@/hooks/useAppSection'
 import { useDesktopUpdates } from '@/hooks/useDesktopUpdates'

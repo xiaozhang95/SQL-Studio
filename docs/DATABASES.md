@@ -9,6 +9,7 @@
 | PostgreSQL | postgresql | 5432 | postgres，可改为账号有权连接的库 |
 | Oracle | oracle | 1521 | 服务名 FREEPDB1，可改为监听器注册的服务 |
 | GreptimeDB | greptimedb | 4002 | public，可改为账号有权连接的库 |
+| Redis | redis | 6379 | 默认逻辑库 0，集群固定为 0 |
 
 各引擎在前端 `src/databases` 和后端 `internal` 下独立注册，统一入口负责分派。MariaDB 和 GreptimeDB 复用 MySQL 线协议，并各自维护 SQL 与对象能力。
 
@@ -22,15 +23,15 @@ MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句批次使用独立会话，�
 
 MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
 
-PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、完整主键数据行编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
+PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、基础表数据编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 
-MySQL、MariaDB 和 PostgreSQL的基础表支持在数据页查看、新增、编辑和删除。无主键时，编辑和删除按原始整行匹配。修改同一行的多个字段会一起保存，内容完全相同的记录每次只更新或删除一条。整行数据缺失或存在无法精确匹配的值时，界面会显示原因。
+MySQL、MariaDB、PostgreSQL 和 Oracle 的基础表按引擎能力在数据页开放查看、新增、编辑和删除。无主键时，编辑和删除按原始整行匹配。修改同一行的多个字段会一起保存，内容完全相同的记录每次只更新或删除一条。整行数据缺失或存在无法精确匹配的值时，界面会显示原因。
 
 真实 MySQL 和 MariaDB 回归使用随机临时库，PostgreSQL 回归使用随机 schema，环境变量见 [后端 README](../sql-studio-backend/README.md)。默认跳过真实数据库测试。
 
 当前目录元数据实现要求 PostgreSQL 12 或更新版本（含 identity/generated 目录字段）。
 
-PostgreSQL 对象树按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。MySQL、MariaDB 和 PostgreSQL 的表可展开外键分类，悬停查看引用库或 Schema、表、复合字段映射和更新、删除规则。
+PostgreSQL 对象树按数据库 → schema → 表/视图 → 对象展示；从真实 schema 列表保留空 schema。表标签仅显示本层名称，API/缓存仍保留完整身份。MySQL、MariaDB、PostgreSQL 和 Oracle 的表可展开外键分类，悬停查看引用库或 Schema、表、复合字段映射和更新、删除规则。
 
 PostgreSQL 数据库结构页展示 schema 列表，schema 结构页展示该 schema 内的表和视图。MySQL 和 MariaDB 数据库结构页展示表列表。
 
@@ -82,7 +83,7 @@ Docker 使用 -p 3307:3306 时，新建连接选择 MariaDB，主机填 127.0.0.
 
 新建连接选择 GreptimeDB。Docker 使用 `-p 127.0.0.1:4002:4002` 映射时，主机填 `127.0.0.1`，端口填 `4002`，维护库默认 `public`。采用其他端口映射时填宿主机端口。未启用鉴权时用户名和密码可留空，启用后填写配置的账号。容器的 MySQL 监听地址须允许容器外访问。见 [GreptimeDB Docker 文档](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)。
 
-支持数据库、表、视图、字段和索引浏览，保留 `TIME INDEX`，提供数据预览、CSV、原始 DDL、SQL 和 TQL 执行。查询结构可显示视图列名和类型。工作台可用 `USE "库名"` 切换数据库，后续语句使用切换后的库。建表与写入通过 SQL 编辑器完成。图形化表设计、网格行编辑、SQL 转储和 Agent 数据库工具暂未接入。
+支持数据库、表、视图、字段和索引浏览，保留 `TIME INDEX`，提供数据预览、CSV、原始 DDL、SQL 和 TQL 执行。查询结构可显示视图列名和类型。工作台可用 `USE "库名"` 切换数据库，后续语句使用切换后的库。建表与写入通过 SQL 编辑器完成。图形化表设计、网格行编辑、SQL 转储和 Agent 数据库工具暂未接入。同步支持普通 Mito 表，可选复制数据，跳过视图。Metric 表需要另行处理。
 
 ## SQL 转储
 

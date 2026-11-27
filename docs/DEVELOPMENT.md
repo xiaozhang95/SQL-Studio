@@ -11,26 +11,25 @@
 
 ## 检查
 
-在 sql-studio-frontend 执行：
+全局静态检查使用 [sql-studio-static-audit 技能](../.agents/skills/sql-studio-static-audit/SKILL.md)。该流程覆盖代码、样式、功能入口和文档，修复静态可确认的问题。格式化只处理当前改动文件。
+
+需要前端回归或构建时，在 `sql-studio-frontend` 按任务运行对应命令。
 
 ```sh
-pnpm format
 pnpm lint
 node --test tests/*.test.mjs
 pnpm build
 ```
 
-在 sql-studio-backend 执行：
+需要后端回归或构建时，在 `sql-studio-backend` 按任务运行对应命令。
 
 ```sh
-gofmt -w .
-gofmt -l .
 go test -count=1 ./...
 go vet ./...
 go build ./...
 ```
 
-UI 变更补充亮暗主题、长名称、伸缩布局和相关交互检查，证据保存在任务产物中。静态检查不能替代浏览器或真实数据库验证，交付时说明未覆盖范围。启动使用项目 README 中的原生命令，不增加包装脚本或部署配置。
+用户要求界面实测时，核对亮暗主题、长名称、伸缩布局和相关交互，并记录实际覆盖范围。启动使用项目 README 中的原生命令。
 
 发布打包在 [Electron 项目](../sql-studio-electron/README.md#调试与打包)执行 `pnpm build`，统一构建前端网页与 Go 后端，将两者放入桌面资源并生成当前平台的分发产物。后端从随包目录提供网页，调试时使用开发者手动启动的 Go 与 Vite 服务。
 

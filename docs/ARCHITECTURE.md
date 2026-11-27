@@ -42,6 +42,7 @@ SQL-Studio/
 │  ├─ internal/deepseek/      AI HTTPS 传输
 │  └─ tests/                  架构与可选数据库集成测试
 ├─ sql-studio-electron/        独立 Electron 桌面壳、进程管理与安装包构建
+├─ sql/                      各引擎的本地测试库配置与初始化数据
 └─ docs/                     当前项目文档
 ```
 
@@ -50,9 +51,10 @@ SQL-Studio/
 ```mermaid
 flowchart LR
   UI[React 工作区] --> Hooks[业务 hooks]
-  Hooks --> Adapter[数据库 / AI 适配器]
+  Hooks --> Adapter[数据库适配器]
+  Hooks --> AI[AI 服务商适配器]
   Hooks --> HTTP[共享 HTTP 服务]
-  Adapter --> HTTP
+  AI --> HTTP
   HTTP --> Gin[Gin HTTP API]
   Gin --> Modules[独立业务模块]
   Modules --> Engines[数据库分派]

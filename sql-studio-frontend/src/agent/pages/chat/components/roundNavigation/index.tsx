@@ -37,8 +37,7 @@ export function RoundNavigation({ rounds, activeIndex, onJump }: Props) {
             <Typography.Paragraph>{t('问题列表')}</Typography.Paragraph>
             <Select<number>
               aria-label={t('搜索并跳转问题')}
-              showSearch
-              optionFilterProp="label"
+              showSearch={{ optionFilterProp: 'label' }}
               placeholder={t('搜索问题')}
               style={{ width: '100%' }}
               value={undefined}

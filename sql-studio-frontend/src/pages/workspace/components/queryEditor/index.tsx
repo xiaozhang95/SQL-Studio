@@ -1,11 +1,23 @@
-import { BulbOutlined, CodeOutlined, DownloadOutlined, HistoryOutlined, LoadingOutlined, OrderedListOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined, UploadOutlined } from '@ant-design/icons'
+import {
+  BulbOutlined,
+  CodeOutlined,
+  DownloadOutlined,
+  HistoryOutlined,
+  LoadingOutlined,
+  OrderedListOutlined,
+  PlayCircleOutlined,
+  ReloadOutlined,
+  StopOutlined,
+  UploadOutlined
+} from '@ant-design/icons'
 import type { EditorView, ViewUpdate } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import type { ReactCodeMirrorProps } from '@uiw/react-codemirror'
-import { Button, Dropdown, Switch, Tooltip, Upload } from 'antd'
+import { Button, Dropdown, Tooltip, Upload } from 'antd'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import StudioIcon from '@/components/studioIcon'
+import Switch from '@/components/switch'
 import { usePageError } from '@/contexts/pageErrors'
 import { DatabaseEngine } from '@/databases/typings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -141,7 +153,6 @@ export default function QueryEditor({ model, themeMode }: Props) {
                 <StudioIcon name="sparkle" size={14} />
                 <span>{t('AI 补全')}</span>
                 <Switch
-                  size="small"
                   aria-label={t('AI 代码补全')}
                   checked={ai.configured && ai.enabled}
                   disabled={!ai.configured || running || ai.preferenceSaving}
