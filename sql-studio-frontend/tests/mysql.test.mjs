@@ -52,6 +52,25 @@ test('preserves semicolons inside strings and quoted identifiers', () => {
   assert.deepEqual(splitSQLStatements('SELECT * FROM `ends\\`; SELECT 2;'), ['SELECT * FROM `ends\\`;', 'SELECT 2;'])
 })
 
+test('literal session sql_mode changes quoting for subsequent MySQL statements only', () => {
+  const backslash = "SELECT 'tail\\' AS literal_backslash;"
+  const escaped = "SELECT 'it\\'s;SQL';"
+  for (const setMode of [
+    "SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';",
+    "/* ordinary */ SET /* scope */ LOCAL sql_mode := 'STRICT_TRANS_TABLES, no_backslash_escapes';",
+    "SET @@SESSION.sql_mode = 'NO_BACKSLASH_ESCAPES';",
+    "SET @@sql_mode = 'NO_BACKSLASH_ESCAPES';"
+  ]) {
+    const restore = "SET sql_mode='';"
+    assert.deepEqual(splitSQLStatements([setMode, backslash, restore, escaped].join('\n')), [setMode, backslash, restore, escaped])
+  }
+  for (const ignored of ["SET GLOBAL sql_mode='NO_BACKSLASH_ESCAPES';", "/*!99999 SET sql_mode='NO_BACKSLASH_ESCAPES' */;", "SELECT 'SET sql_mode=''NO_BACKSLASH_ESCAPES''';"]) {
+    assert.deepEqual(splitSQLStatements(ignored + ' ' + escaped), [ignored, escaped])
+  }
+  assert.throws(() => splitSQLStatements(backslash), /未闭合/)
+  assert.throws(() => splitSQLStatements("SET sql_mode='NO_BACKSLASH_ESCAPES'; SELECT 'unfinished"), /未闭合/)
+})
+
 test('preserves comments and ignores their delimiters and quotes', () => {
   assert.deepEqual(splitSQLStatements("-- 历史记录 ; '\nSELECT 1; # comment ;\nSELECT 2; /* ; */"), ["-- 历史记录 ; '\nSELECT 1;", '# comment ;\nSELECT 2;'])
   assert.deepEqual(splitSQLStatements("/* ; ' */ SELECT 1; -- tail ;"), ["/* ; ' */ SELECT 1;"])

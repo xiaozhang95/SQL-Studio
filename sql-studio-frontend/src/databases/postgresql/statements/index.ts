@@ -1,16 +1,84 @@
+const modeCommand = /^(?:SET|RESET|BEGIN|START|COMMIT|END|ABORT|ROLLBACK|SAVEPOINT|RELEASE)\b/i
+const setStrings = /^SET\s+(?:(SESSION|LOCAL)\s+)?standard_conforming_strings\s*(?:=\s*|TO\s+)(['"]?)(on|off|true|false|yes|no|1|0|default)\2$/i
+const resetStrings = /^RESET\s+(?:standard_conforming_strings|ALL)$/i
+const endTransaction = /^(COMMIT|END|ROLLBACK|ABORT)(?:\s+(?:WORK|TRANSACTION))?(?:\s+AND\s+(NO\s+)?(CHAIN))?$/i
+const savepointCommand = /^(SAVEPOINT|RELEASE(?:\s+SAVEPOINT)?|ROLLBACK(?:\s+(?:WORK|TRANSACTION))?\s+TO(?:\s+SAVEPOINT)?)\s+("(?:[^"]|"")+"|[\p{L}_][\p{L}\p{N}_$]*)$/iu
+
+function createStringMode() {
+  // Every batch opens with standard_conforming_strings=on.
+  let session = true
+  let current = session
+  let transactionStart: boolean | undefined
+  const savepoints: { name: string; session: boolean; current: boolean }[] = []
+
+  return {
+    get backslashEscapes() {
+      return !current
+    },
+    apply(command: string) {
+      const setting = setStrings.exec(command)
+      if (setting || resetStrings.test(command)) {
+        const local = setting?.[1]?.toUpperCase() === 'LOCAL'
+        if (local && transactionStart === undefined) return
+        current = !/^(?:off|false|no|0)$/i.test(setting?.[3] ?? 'default')
+        if (!local) session = current
+        return
+      }
+      if (/^(?:BEGIN|START\s+TRANSACTION)\b/i.test(command)) {
+        transactionStart ??= session
+        return
+      }
+      if (transactionStart === undefined) return
+      const end = endTransaction.exec(command)
+      if (end) {
+        if (/^(?:ROLLBACK|ABORT)$/i.test(end[1])) session = transactionStart
+        current = session
+        transactionStart = end[3] && !end[2] ? session : undefined
+        savepoints.length = 0
+        return
+      }
+      const savepoint = savepointCommand.exec(command)
+      if (!savepoint) return
+      const [, action, identifier] = savepoint
+      const name = identifier.startsWith('"') ? identifier.slice(1, -1).replace(/""/g, '"') : identifier.toLowerCase()
+      if (action.toUpperCase() === 'SAVEPOINT') {
+        savepoints.push({ name, session, current })
+        return
+      }
+      const index = savepoints.findLastIndex((entry) => entry.name === name)
+      if (index < 0) return
+      if (/^ROLLBACK\b/i.test(action)) {
+        session = savepoints[index].session
+        current = savepoints[index].current
+        savepoints.length = index + 1
+      } else savepoints.length = index
+    }
+  }
+}
+
 /** PostgreSQL lexical boundaries: dollar quotes, E strings and nested block comments. */
 function scan(script: string, removeMarkers: boolean) {
   const statements: string[] = []
+  const mode = createStringMode()
+  const commandParts: string[] = []
   let output = '',
+    outputStart = 0,
     start = 0,
+    commandStart = -1,
     quote = '',
     dollar = '',
     block = 0,
     line = false,
     escaped = false,
     hasSQL = false
-  const append = (end: number) => {
-    if (hasSQL) statements.push(script.slice(start, end).trim())
+  const append = (end: number, terminated = false) => {
+    if (hasSQL && !removeMarkers) statements.push(script.slice(start, end).trim())
+    if (terminated && commandStart >= 0) {
+      commandParts.push(script.slice(commandStart, end - 1))
+      mode.apply(commandParts.join(' ').trim())
+    }
+    commandParts.length = 0
+    commandStart = -1
     start = end
     hasSQL = false
   }
@@ -25,7 +93,10 @@ function scan(script: string, removeMarkers: boolean) {
       continue
     }
     if (line) {
-      if (char === '\n' || char === '\r') line = false
+      if (char === '\n' || char === '\r') {
+        line = false
+        if (commandStart >= 0) commandStart = i + 1
+      }
       continue
     }
     if (block) {
@@ -35,6 +106,7 @@ function scan(script: string, removeMarkers: boolean) {
       } else if (char === '*' && next === '/') {
         block--
         i++
+        if (!block && commandStart >= 0) commandStart = i + 1
       }
       continue
     }
@@ -49,19 +121,18 @@ function scan(script: string, removeMarkers: boolean) {
     if (removeMarkers && (i === 0 || /[\r\n]/.test(script[i - 1]))) {
       const marker = /^[\t \uFEFF]*-- 历史记录[\t ]*(?:\r\n|[\r\n]|$)/.exec(script.slice(i))
       if (marker) {
-        output += script.slice(start, i)
+        output += script.slice(outputStart, i)
+        if (commandStart >= 0) commandParts.push(script.slice(commandStart, i))
         i += marker[0].length - 1
-        start = i + 1
+        outputStart = i + 1
+        if (commandStart >= 0) commandStart = i + 1
         continue
       }
     }
-    if (char === '-' && next === '-') {
-      line = true
-      i++
-      continue
-    }
-    if (char === '/' && next === '*') {
-      block = 1
+    if ((char === '-' && next === '-') || (char === '/' && next === '*')) {
+      if (commandStart >= 0) commandParts.push(script.slice(commandStart, i))
+      if (char === '-') line = true
+      else block = 1
       i++
       continue
     }
@@ -76,13 +147,16 @@ function scan(script: string, removeMarkers: boolean) {
     }
     if (char === "'" || char === '"') {
       quote = char
-      escaped = char === "'" && /e/i.test(script[i - 1] || '') && (i < 2 || !/[\p{L}\p{N}_$]/u.test(script[i - 2]))
+      escaped = char === "'" && (mode.backslashEscapes || (/e/i.test(script[i - 1] || '') && (i < 2 || !/[\p{L}\p{N}_$]/u.test(script[i - 2]))))
       hasSQL = true
-    } else if (char === ';' && !removeMarkers) append(i + 1)
-    else if (!/\s/.test(char)) hasSQL = true
+    } else if (char === ';') append(i + 1, true)
+    else if (!/\s/.test(char)) {
+      if (!hasSQL && modeCommand.test(script.slice(i, i + 12))) commandStart = i
+      hasSQL = true
+    }
   }
   if (!removeMarkers && (quote || dollar || block)) throw new Error('SQL 包含未闭合的引号、美元引号或注释')
-  if (removeMarkers) return { statements, cleaned: (output + script.slice(start)).trim() }
+  if (removeMarkers) return { statements, cleaned: (output + script.slice(outputStart)).trim() }
   append(script.length)
   return { statements, cleaned: script.trim() }
 }

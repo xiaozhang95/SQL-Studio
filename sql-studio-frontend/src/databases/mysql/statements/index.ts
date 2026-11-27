@@ -1,3 +1,9 @@
+const mysqlGap = String.raw`(?:\s|/\*(?![!+]|M!)[^*]*(?:\*+[^*/][^*]*)*\*+/|#[^\n]*(?:\n|$)|--(?=[\x00-\x20]|$)[^\n]*(?:\n|$))*`
+const sessionSQLMode = new RegExp(
+  `^${mysqlGap}SET\\b${mysqlGap}(?:(?:SESSION|LOCAL)\\b${mysqlGap}|@@(?:(?:SESSION|LOCAL)${mysqlGap}\\.${mysqlGap})?)?(?:sql_mode|\`sql_mode\`)${mysqlGap}:?=${mysqlGap}'([a-z0-9_, ]*)'${mysqlGap};?${mysqlGap}$`,
+  'i'
+)
+
 /** 按 MySQL 客户端分隔符切分，保留字符串、标识符和注释中的分隔符。 */
 export function splitSQLStatements(script: string, executableComments: readonly string[] = ['!'], { ansi = false } = {}): string[] {
   const statements: string[] = []
@@ -8,6 +14,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
   let hasSQL = false
   let lineStart = 0
   let delimiter = ';'
+  let noBackslashEscapes = false
   let commentGaps: number[] = []
   const append = (end: number, nextStart = end) => {
     if (hasSQL) {
@@ -18,7 +25,14 @@ export function splitSQLStatements(script: string, executableComments: readonly 
         from = position
       }
       parts.push(script.slice(from, end))
-      statements.push(parts.join('').trim())
+      const statement = parts.join('').trim()
+      statements.push(statement)
+      const mode = ansi ? undefined : sessionSQLMode.exec(statement)?.[1]
+      if (mode !== undefined)
+        noBackslashEscapes = mode
+          .toUpperCase()
+          .split(',')
+          .some((name) => name.trim() === 'NO_BACKSLASH_ESCAPES')
     }
     start = nextStart
     hasSQL = false
@@ -40,7 +54,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
       continue
     }
     if (quote) {
-      if (char === '\\' && !ansi && quote !== '`') i++
+      if (char === '\\' && !ansi && !noBackslashEscapes && quote !== '`') i++
       else if (char === quote) {
         if (next === quote) i++
         else quote = ''
@@ -90,7 +104,7 @@ export function splitSQLStatements(script: string, executableComments: readonly 
 
 /** 仅识别完整 USE；数据库是否存在及访问权限仍由服务端验证。 */
 export function useDatabaseSQL(statement: string, { ansi = false } = {}): string | undefined {
-  const gap = ansi ? String.raw`(?:\s|/\*(?![!+]|M!)(?:[^*]|\*+[^*/])*\*+/|--[^\r\n]*(?:[\r\n]|$))*` : String.raw`(?:\s|/\*(?![!+]|M!)[\s\S]*?\*/|#[^\n]*(?:\n|$)|--(?=[\x00-\x20]|$)[^\n]*(?:\n|$))*`
+  const gap = ansi ? String.raw`(?:\s|/\*(?![!+]|M!)(?:[^*]|\*+[^*/])*\*+/|--[^\r\n]*(?:[\r\n]|$))*` : mysqlGap
   const doubleQuoted = ansi ? '|"(?:""|[^"])+"' : ''
   const identifier = '(`(?:``|[^`])+`|[\\p{L}\\p{N}_$]+' + doubleQuoted + ')'
   const match = new RegExp('^' + gap + String.raw`USE\b` + gap + identifier + gap + ';?' + gap + '$', 'iu').exec(statement)

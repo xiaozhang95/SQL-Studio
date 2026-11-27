@@ -15,6 +15,14 @@ test('MariaDB scripts preserve vendor comments and quoted semicolons without mis
   assert.ok(mariadbCompletion({ database: 'db', table: '', schema: {} }))
 })
 
+test('MariaDB applies literal session sql_mode and preserves vendor version guards', () => {
+  const guarded = "/*M!999999 SET sql_mode='NO_BACKSLASH_ESCAPES' */;"
+  const escaped = "SELECT 'it\\'s;SQL';"
+  const setting = "SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';"
+  const backslash = "SELECT 'tail\\' AS literal_backslash;"
+  assert.deepEqual(splitMariaDBStatements([guarded, escaped, setting, backslash, 'SELECT 7;'].join('\n')), [guarded, escaped, setting, backslash, 'SELECT 7;'])
+})
+
 test('MariaDB field defaults distinguish NULL strings, SQL NULL and expressions', () => {
   const defaults = ["'NULL'", 'NULL', null, "'it''s 中文'", '5', 'current_timestamp()', 'uuid()', "'a\\nb'"]
   const columns = defaults.map((value, i) => ({ name: 'c' + i, type: i === 5 ? 'timestamp' : 'varchar(100)', nullable: 'YES', key: '', default: value, extra: '', comment: '' }))

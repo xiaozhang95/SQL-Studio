@@ -21,7 +21,9 @@
 
 MySQL、MariaDB、PostgreSQL 和 Oracle 的多语句批次使用独立会话，批次内共享会话设置、临时对象及事务。请将事务控制语句和事务内 SQL 放在同一次运行中。批次结果通过原脚本重跑。MySQL 和 MariaDB 支持含 `DELIMITER` 的脚本，选中完整存储程序也可右键「作为单条 SQL 运行」。这两个引擎的 `CALL` 和 `EXECUTE` 返回的数据集各自显示为结果页签，执行历史按语句记录。批量写入事务表时，选中两条以上以 `INSERT` 开头的语句，可右键「在事务中运行 INSERT」，由工作台在同批次加入 `START TRANSACTION` 和 `COMMIT`。
 
-MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。PostgreSQL 在顶部数据库选择器切换连接目标，不支持 USE；默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释；普通字符串按后端强制 standard_conforming_strings=on。
+MySQL 和 MariaDB 使用反引号和 SHOW CREATE TABLE。成功的 USE 更新发起查询页的库，批次内后续语句使用服务器当前库，独立请求则显式传入新库。同次运行中，独立的会话级字面量 `SET sql_mode = '…'` 可切换 `NO_BACKSLASH_ESCAPES`，工作台用新规则切分后续字符串。
+
+PostgreSQL 在顶部数据库选择器切换连接目标，默认未选库时连接维护库。其表/视图使用完整 `"schema"."table"` 身份，预览 SQL 仅限定 schema/table，数据库通过请求字段传递。不同 schema 的同名表互不混淆。脚本切分支持美元引号、E 字符串与嵌套块注释。普通字符串默认使用 `standard_conforming_strings=on`，同次运行可用字面量 `SET`、`SET LOCAL` 或 `RESET` 改变解析规则，并遵循事务作用域。选区内的语句共用一次运行，依赖会话设置时应把设置语句一并选中。
 
 PostgreSQL 当前支持连接测试、数据库/表/视图/字段/索引浏览、查询与补全、基础表数据编辑、DDL 查看与结构参考导出；右键支持新建/编辑/删除数据库、删除或重命名表及视图、清空表。编辑数据库可修改所有者、连接数上限和注释，名称、编码和排序规则只读，权限由数据库校验。可从 schema 下新建表并设计已有字段；复杂定义边界见 [表设计说明](../sql-studio-frontend/src/databases/postgresql/tableDesign/README.md)。库、Schema 和表菜单支持结构和数据转储，分批读取并保留精确值、BYTEA、NULL、自有 SERIAL/IDENTITY 和生成列定义。视图可导出结构。流式限制与文件提交条件见 [SQL 转储](#sql-转储)。依赖类型/函数/外键目标需预先存在；分区表、外部/共享序列等不能完整转储时提示使用 pg_dump。读取不是并发写入下的一致备份，完整备份仍使用 pg_dump。
 

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
 
+import { DatabaseEngine } from '../src/databases/typings/index.ts'
 import { ObjectAction } from '../src/databases/typings/objectManagement/index.ts'
 import { findExplorerPage } from '../src/pages/workspace/utils/workspaceTransitions/index.ts'
 import { WorkspaceStore } from '../src/services/workspace/index.ts'
@@ -25,6 +26,7 @@ function harness(type, view) {
     tableLabel: (name) => name
   }
   const dependencies = {
+    DatabaseEngine,
     ObjectAction,
     findExplorerPage,
     t: (text) => text,

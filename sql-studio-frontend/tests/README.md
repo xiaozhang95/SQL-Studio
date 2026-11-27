@@ -53,11 +53,11 @@ history-completion.test.mjs 覆盖旧历史每连接截取最新 50 条、删除
 
 PostgreSQL 回归使用 `node --test tests/postgresql.test.mjs`，覆盖美元引号、E 字符串、嵌套注释、历史保护、schema 同名表、SQL 转义、精确主键与 NULL 数据编辑，以及无主键的单行多字段更新。使用固定数据构造 SQL。
 
-PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test.mjs` 覆盖元数据解码、属性范围/原值核对/注入拒绝、序列精度、IDENTITY、生成列、BYTEA及截断拒绝。`postgresql-management.integration.test.mjs` 复用 SQLDESK_SQL_WINDOW_INTEGRATION/SQLDESK_TEST_API/SQLDESK_PG_PASSWORD 开关，建立两个随机 sqldesk_feature_ 临时库，真实执行属性修改与跨库还原、对比数据并检查后续自增；finally删除临时库和连接。浏览器另验证实际编辑入口、预览/保存、下载内容及亮暗主题。
+PostgreSQL 属性与数据转储：`node --test tests/postgresql-management.test.mjs` 覆盖元数据解码、属性范围/原值核对/注入拒绝、序列精度、IDENTITY、生成列、BYTEA及截断拒绝。`postgresql-management.integration.test.mjs` 复用 `SQLDESK_SQL_WINDOW_INTEGRATION`、`SQLDESK_TEST_API`、`SQLDESK_PG_PASSWORD` 与 `SQLDESK_PG_PORT`（默认 5432），建立两个随机 `sqldesk_feature_` 临时库，真实执行属性修改与跨库还原、对比数据并检查后续自增，最终清理临时库和连接。浏览器另验证实际编辑入口、预览、保存、下载内容及亮暗主题。
 
 真实 SQL 窗口回归：`node --test tests/sql-window.integration.test.mjs` 默认跳过。先用独立 SQLDESK_STATE_DIR/SQLDESK_DATA_DIR 启动本地后端，再设置 SQLDESK_SQL_WINDOW_INTEGRATION=1、SQLDESK_MYSQL_PASSWORD、SQLDESK_PG_PASSWORD；SQLDESK_TEST_API 可覆盖接口地址（默认 http://127.0.0.1:18080/api）。SQLDESK_SQL_WINDOW_ENGINE 可选 mysql 或 postgresql；SQLDESK_MYSQL_PORT 和 SQLDESK_PG_PORT 可分别指定两个临时服务的映射端口。测试执行实际 executeSQL 编排和引擎切分器，经 HTTP 访问本机默认 3306/root 与 5432/postgres；只创建随机 sqldesk_window_ 临时库/schema、临时连接，finally 清理。覆盖精确值、多结果、错误停止、取消后重跑、行数限制、MySQL USE/SET/建表/重建表/INSERT/UPDATE/DELETE/ALTER/RENAME/TRUNCATE/DROP、同会话变量与外键开关、事务提交与取消回滚、写入失败停止和 API 默认读取边界、PostgreSQL DDL/DML/RETURNING 与美元引号。它替换 React 状态并断言请求、逐条结果及历史，不替代浏览器点击、选区或快捷键检查。凭据只从环境变量读取，勿把真实密码写入测试文件或报告。
 
-MySQL 真实窗口编排另覆盖连续 160 条写入回执：所有语句及历史保留，最后查询同一会话变量得到预期值，整个批次不创建全局成功通知。浏览器大脚本回归同时核对控制台没有 Maximum update depth exceeded、页面保持可操作且完成数量与脚本切分数量一致。
+MySQL 真实窗口编排另覆盖连续 160 条写入回执，核对语句、历史、同会话变量与成功通知。浏览器大脚本回归同时核对控制台、页面可操作性及完成数量。MySQL/MariaDB/PostgreSQL 切分器测试覆盖同一脚本改变字符串转义再恢复。真实窗口编排对 MySQL 和 PostgreSQL 核对字面量值，并验证 PostgreSQL 的事务内局部设置和批次末未完成事务的连接复核。
 
 explorer-tree.test.mjs 额外验证空连接分组、数据库/Schema 列表及表、视图、字段、索引、外键的文本提示与非交互边界，区分未加载、加载中、失败和空数据；覆盖 PostgreSQL 相邻空 Schema 的 key 隔离、同名表的短标题/完整操作目标和搜索，MySQL 万表按展开构建的行为保持不变。Redis 键树只从实际键生成分组，不会产生空文件夹；空扫描页的提示由 KeyBrowser 提供。
 

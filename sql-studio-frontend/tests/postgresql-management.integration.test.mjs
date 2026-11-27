@@ -23,7 +23,7 @@ test('real PostgreSQL database edits and structure/data export restore into anot
     name: 'PostgreSQL feature regression ' + suffix,
     type: 'postgresql',
     host: '127.0.0.1',
-    port: 5432,
+    port: Number(process.env.SQLDESK_PG_PORT || 5432),
     username: 'postgres',
     password: process.env.SQLDESK_PG_PASSWORD,
     database: 'postgres'

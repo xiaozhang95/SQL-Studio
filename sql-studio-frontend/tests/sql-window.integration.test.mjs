@@ -34,6 +34,7 @@ function windowRunner(connection, scope) {
     const calls = [],
       histories = [],
       results = [],
+      verifiedConnections = [],
       messages = []
     let pages = [
       { ...scope, id: 'origin', kind: 'query' },
@@ -46,7 +47,10 @@ function windowRunner(connection, scope) {
       DatabaseEngine,
       RequestError,
       connections: [connection],
-      objects: { snapshots: { [connection.id]: { status: 'connected' } } },
+      objects: {
+        snapshots: { [connection.id]: { status: 'connected' } },
+        verifyConnection: (id) => verifiedConnections.push(id)
+      },
       running: false,
       request,
       getDatabaseAdapter: () => adapter,
@@ -91,7 +95,7 @@ function windowRunner(connection, scope) {
     await execute(script, scope, 'origin')
     assert.equal(pages[1].database, 'unchanged')
     if (calls.length) assert.ok(finished, 'execution must release its running state')
-    return { calls, histories, results, messages, pages, batch: results.at(-1) }
+    return { calls, histories, results, messages, pages, verifiedConnections, batch: results.at(-1) }
   }
 }
 
@@ -235,6 +239,11 @@ for (const type of ['mysql', 'postgresql']) {
         assert.equal(small.truncated, true)
       })
       if (type === 'mysql') {
+        await step(t, 'literal session sql_mode changes backslash parsing in the window batch', async () => {
+          const r = await success("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES'; SELECT 'tail\\' AS literal_backslash; SET @@SESSION.sql_mode=''; SELECT 'it\\'s;SQL';", 4)
+          assert.deepEqual(r[1].rows, [['tail\\']])
+          assert.deepEqual(r[3].rows, [["it's;SQL"]])
+        })
         await step(t, 'bulk write receipts do not create global notifications', async () => {
           const statements = Array.from({ length: 160 }, (_, index) => `SET @sql_studio_notice = ${index};`)
           const output = await run([...statements, 'SELECT @sql_studio_notice AS notice_value;'].join('\n'))
@@ -348,6 +357,15 @@ for (const type of ['mysql', 'postgresql']) {
           assert.deepEqual(result.rows[0], ['0x00ff', '2'])
         })
       } else {
+        await step(t, 'window batch honors PostgreSQL session and transaction-local string modes', async () => {
+          const r = await success(
+            "SET standard_conforming_strings=off; SELECT 'a\\'b;c' AS quoted_value; RESET standard_conforming_strings; BEGIN; SET LOCAL standard_conforming_strings=off; SELECT 'a\\'b'; COMMIT; SELECT 'tail\\' AS literal_backslash;",
+            8
+          )
+          assert.deepEqual(r[1].rows, [["a'b;c"]])
+          assert.deepEqual(r[5].rows, [["a'b"]])
+          assert.deepEqual(r[7].rows, [['tail\\']])
+        })
         await step(t, 'DDL, DML, RETURNING and zero-row write feedback', async () => {
           const r = await success(
             "CREATE TABLE flow (id INT PRIMARY KEY, label TEXT); INSERT INTO flow VALUES (1,'first') RETURNING id,label; UPDATE flow SET label='second' WHERE id=1 RETURNING label; DELETE FROM flow WHERE id=1 RETURNING id; UPDATE flow SET label='none'; SELECT COUNT(*) FROM flow;",
@@ -384,6 +402,7 @@ for (const type of ['mysql', 'postgresql']) {
           await assert.rejects(query('BEGIN', { allowWrite: true }), /同一个 SQL 批次/)
           const unclosed = await run("BEGIN; INSERT INTO flow VALUES (43,'rolled back');")
           assert.match(unclosed.batch.error, /未提交的更改已回滚/)
+          assert.deepEqual(unclosed.verifiedConnections, [connection.id])
           assert.deepEqual((await success('SELECT id FROM flow WHERE id=43'))[0].rows, [])
         })
         await step(t, 'BYTEA, JSONB, booleans and schema search path', async () => {

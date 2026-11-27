@@ -86,10 +86,42 @@ test('PostgreSQL splitter handles dollar bodies, nested comments, E strings and 
   for (const input of ["SELECT 'unfinished", 'DO $$ missing;', '/* a /* b */']) assert.throws(() => splitPostgreSQLStatements(input))
 })
 
+test('PostgreSQL tracks literal session string settings and restores the startup value', () => {
+  const escaped = "SELECT 'a\\'b;c' AS quoted_value;"
+  const standard = "SELECT 'tail\\' AS literal_backslash;"
+  const set = "/* leading */ SET /* outer /* inner */ end */ SESSION standard_conforming_strings TO 'off';"
+  for (const restore of ['SET standard_conforming_strings = on;', 'SET standard_conforming_strings TO DEFAULT;', 'RESET standard_conforming_strings;', 'RESET ALL;']) {
+    const statements = [set, escaped, restore, standard]
+    assert.deepEqual(splitPostgreSQLStatements(statements.join('\n')), statements)
+  }
+  assert.throws(() => splitPostgreSQLStatements(escaped), /未闭合/)
+  assert.throws(() => splitPostgreSQLStatements(set + " SELECT 'unfinished"), /未闭合/)
+})
+
+test('PostgreSQL restores string modes at transaction and savepoint boundaries', () => {
+  const escaped = "SELECT 'a\\'b;c';"
+  const standard = "SELECT 'tail\\';"
+  const local = 'SET LOCAL standard_conforming_strings=off;'
+  const sessionOff = 'SET standard_conforming_strings TO false;'
+  const sessionOn = 'SET standard_conforming_strings TO true;'
+  for (const statements of [
+    [local, standard, 'BEGIN;', local, escaped, 'COMMIT;', standard],
+    ['START TRANSACTION;', sessionOff, escaped, 'ROLLBACK;', standard],
+    ['BEGIN;', sessionOff, 'SET LOCAL standard_conforming_strings=on;', standard, 'COMMIT;', escaped],
+    ['BEGIN;', 'SAVEPOINT "Quoted";', sessionOff, escaped, 'ROLLBACK TO SAVEPOINT "Quoted";', standard, 'RELEASE "Quoted";', local, escaped, 'END;', standard],
+    ['BEGIN;', local, 'COMMIT AND CHAIN;', standard, sessionOff, escaped, 'ROLLBACK AND NO CHAIN;', standard],
+    [sessionOff, 'BEGIN;', local, sessionOn, standard, 'ABORT;', escaped]
+  ]) {
+    assert.deepEqual(splitPostgreSQLStatements(statements.join('\n')), statements)
+  }
+})
+
 test('history markers inside dollar bodies remain intact', () => {
   const body = 'DO $$\n-- 历史记录\nSELECT 1;\n$$;'
   assert.equal(cleanPostgreSQLHistory('-- 历史记录\n' + body), body)
   assert.equal(cleanPostgreSQLHistory('/* nested /* x */\n-- 历史记录\n*/\nSELECT 1'), '/* nested /* x */\n-- 历史记录\n*/\nSELECT 1')
+  const modeScript = "SET standard_conforming_strings=off;\nSELECT 'a\\'b\n-- 历史记录\nc';"
+  assert.equal(cleanPostgreSQLHistory('-- 历史记录\n' + modeScript + '\n-- 历史记录'), modeScript)
 })
 
 test('schema qualified identifiers preserve dots/quotes and cannot inject SQL', () => {
