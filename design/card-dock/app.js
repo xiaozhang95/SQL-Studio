@@ -14,11 +14,12 @@
   }
 
   const setScreen = (screen) => {
+    const dockScreen = screen.startsWith('redis-') ? 'workspace' : screen
     document.querySelectorAll('.screen').forEach((item) => {
       item.classList.toggle('active', item.dataset.screen === screen)
     })
     document.querySelectorAll('.dock-item[data-screen]').forEach((item) => {
-      const active = item.dataset.screen === screen
+      const active = item.dataset.screen === dockScreen
       item.classList.toggle('is-active', active)
       if (active) item.setAttribute('aria-current', 'page')
       else item.removeAttribute('aria-current')
@@ -35,6 +36,10 @@
 
   document.querySelectorAll('.dock-item[data-screen]').forEach((button) => {
     button.addEventListener('click', () => setScreen(button.dataset.screen))
+  })
+
+  document.querySelectorAll('[data-screen-link]').forEach((button) => {
+    button.addEventListener('click', () => setScreen(button.dataset.screenLink))
   })
 
   const toast = (message) => {

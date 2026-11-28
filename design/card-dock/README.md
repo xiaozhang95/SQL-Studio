@@ -6,7 +6,7 @@
 
 - 直接打开 [index.html](index.html)。
 - 或在当前目录运行 `python3 -m http.server 4174`，访问 `http://127.0.0.1:4174/`。
-- 页面参数：`?screen=workspace|agent|monitor|sync&theme=light|dark&modal=connection|settings&settings=model|appearance|language|about`。
+- 页面参数：`?screen=workspace|agent|monitor|sync|redis-keys|redis-pubsub&theme=light|dark&modal=connection|settings&settings=model|appearance|language|about`。
 
 ## 设计变化
 
@@ -18,6 +18,7 @@
   - 暗色：画布 `#000000`、容器 `#141414`、边框 `#242424`、选中 `#303030`。
   - 控件高度 30px；普通界面沿用系统和 Ant Design 默认字体。
 - **每一块都是卡片**：Dock、对象栏、SQL 编辑、结果区、AI 会话、监控指标、同步步骤都使用独立圆角卡片和背景间隙，不再用连续边框切块。
+- **亮色轻投影**：页签、搜索框、范围选择器、工具栏按钮、AI 内容卡片和设置选项使用克制的分层阴影；暗色主题保持原有深邃对比。
 - **Dock 使用单色线性图标**：四个入口统一使用中性色线性图标；选中项切换为主题蓝实心底板 + 白色图标，并保留蓝色状态点，悬停使用中性灰。
 
 ## 页面
@@ -25,6 +26,8 @@
 | 页面 | 亮色 | 暗色 |
 | --- | --- | --- |
 | 工作台 | [preview-workspace-light.png](preview-workspace-light.png) | [preview-workspace-dark.png](preview-workspace-dark.png) |
+| Redis · 键详情 | [preview-redis-keys-light.png](preview-redis-keys-light.png) | [preview-redis-keys-dark.png](preview-redis-keys-dark.png) |
+| Redis · 发布订阅 | [preview-redis-pubsub-light.png](preview-redis-pubsub-light.png) | [preview-redis-pubsub-dark.png](preview-redis-pubsub-dark.png) |
 | AI 助手 | [preview-agent-light.png](preview-agent-light.png) | [preview-agent-dark.png](preview-agent-dark.png) |
 | 监控指标 | [preview-monitor-light.png](preview-monitor-light.png) | [preview-monitor-dark.png](preview-monitor-dark.png) |
 | 同步数据库 | [preview-sync-light.png](preview-sync-light.png) | [preview-sync-dark.png](preview-sync-dark.png) |
@@ -34,7 +37,15 @@
 
 ### 工作台
 
-对象树、SQL 编辑器和结果区各自独立成卡片；查询和结果页签使用主题蓝实心选中态，运行按钮使用无边框中性底板样式；结果区保留表格状态与筛选，不显示分页和结果数量徽标。
+对象树、SQL 编辑器和结果区各自独立成卡片；查询和结果页签使用主题蓝实心选中态，运行按钮使用无边框中性底板样式。SQL 编辑器使用独立行号槽、当前行高亮和更清晰的工具栏分隔；结果区保留表格状态与筛选，不显示分页和结果数量徽标。
+
+### Redis · 键详情
+
+沿用工作台对象栏，主区由 Redis 工具栏、键浏览卡片和键详情卡片组成。键树按冒号命名空间分层；详情区展示类型、字节数和 TTL，支持编辑键名、过期秒数与键值，并保留刷新、删除、取消和保存操作。
+
+### Redis · 发布订阅
+
+主区由订阅栏、活跃频道卡片和消息流卡片组成。支持频道或模式输入、按模式订阅、开始/停止订阅、频道搜索、自动滚动、暂停消息和清空消息；消息按时间、频道和内容三列展示。
 
 ### AI 助手
 
@@ -53,6 +64,7 @@
 - 左侧 Dock 切换四个页面。
 - 亮/暗主题切换（Dock 底部）。
 - 工作台页签、结果页签、树节点展开/选中、AI 补全开关均可交互。
+- Redis 键详情与发布订阅通过顶部工具页签互相切换。
 - 对象栏顶部 `+` 打开新建连接；Dock 底部设置图标打开系统设置；Esc 或点击遮罩关闭。
 - 新建连接弹窗可切换数据库类型；系统设置左侧导航可切换模型配置、外观设置、语言设置和关于软件，主题卡片可预览亮暗。
 
