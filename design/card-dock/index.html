@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL Studio · Card + Dock UI</title>
+    <link rel="icon" href="assets/studio.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-database" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="5" rx="7" ry="3" />
+          <path d="M5 5v14c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
+          <path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
+        </symbol>
+        <symbol id="i-bot" viewBox="0 0 24 24">
+          <rect x="4" y="7" width="16" height="12" rx="4" />
+          <path d="M12 7V4" />
+          <circle cx="9" cy="13" r="1" />
+          <circle cx="15" cy="13" r="1" />
+        </symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4" /></symbol>
+        <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3" /><path d="M20 16H7l3 3" /></symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+          <circle cx="9" cy="6" r="2" />
+          <circle cx="15" cy="12" r="2" />
+          <circle cx="8" cy="18" r="2" />
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" />
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+        <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></symbol>
+        <symbol id="i-sparkle" viewBox="0 0 24 24">
+          <path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z" />
+          <path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z" />
+        </symbol>
+        <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 20V8m0 0 4 4m-4-4-4 4M5 4h14" /></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m0 0 4-4m-4 4-4-4M5 20h14" /></symbol>
+        <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9z" /></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.6" /></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 5.3" /><path d="M20 5v6h-6" /></symbol>
+        <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z" /></symbol>
+        <symbol id="i-rows" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="4" rx="1" />
+          <rect x="3" y="10" width="18" height="4" rx="1" />
+          <rect x="3" y="16" width="18" height="4" rx="1" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></symbol>
+        <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></symbol>
+        <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol>
+        <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M9 4v16" /></symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24">
+          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </symbol>
+        <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8M16 4h4v4" /></symbol>
+        <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4" /></symbol>
+        <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v5h5M9 12h6M9 16h6" /></symbol>
+        <symbol id="i-eye-toggle" viewBox="0 0 24 24">
+          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </symbol>
+        <symbol id="i-panel-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></symbol>
+        <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9" /><path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4" /></symbol>
+        <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 20V4m0 0 6 6m-6-6-6 6" /></symbol>
+        <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 4v16m0 0 6-6m-6 6-6-6" /></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 5a3 3 0 0 1 0 6M18 20a5 5 0 0 0-3-4.6" /></symbol>
+        <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0" /><path d="m12 14 4-4" /><circle cx="12" cy="14" r="1" /></symbol>
+        <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /><rect x="9" y="9" width="6" height="6" rx="1" /><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" /></symbol>
+        <symbol id="i-hard-drive" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 13h18M7 16h.01" stroke-width="2.2" /></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></symbol>
+        <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z" /></symbol>
+        <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2" /><rect x="3" y="14" width="18" height="6" rx="2" /><path d="M7 7h.01M7 17h.01" stroke-width="2.4" /></symbol>
+        <symbol id="i-spinner" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7" /></symbol>
+        <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-6-6l-1 1" /><path d="M14 11a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 6 6l1-1" /></symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v5M14 11v5" /></symbol>
+      </defs>
+    </svg>
+
+    <div class="app" id="app" data-theme="light">
+      <aside class="dock" aria-label="全局导航">
+        <nav class="dock-nav" aria-label="页面">
+          <button class="dock-item is-active" data-screen="workspace" aria-current="page" data-label="工作台">
+            <span class="dock-icon workspace"><svg class="icon"><use href="#i-database" /></svg></span>
+            <span class="dock-label">工作台</span>
+          </button>
+          <button class="dock-item" data-screen="agent" data-label="AI 助手">
+            <span class="dock-icon agent"><svg class="icon"><use href="#i-bot" /></svg></span>
+            <span class="dock-label">AI 助手</span>
+          </button>
+          <button class="dock-item" data-screen="monitor" data-label="监控指标">
+            <span class="dock-icon monitor"><svg class="icon"><use href="#i-activity" /></svg></span>
+            <span class="dock-label">监控指标</span>
+          </button>
+          <button class="dock-item" data-screen="sync" data-label="同步数据库">
+            <span class="dock-icon sync"><svg class="icon"><use href="#i-swap" /></svg></span>
+            <span class="dock-label">同步数据库</span>
+          </button>
+        </nav>
+        <div class="dock-spacer"></div>
+        <div class="dock-divider"></div>
+        <button class="dock-item dock-utility" id="dock-theme" data-label="切换亮暗主题">
+          <span class="dock-icon"><svg class="icon"><use id="dock-theme-icon" href="#i-moon" /></svg></span>
+          <span class="dock-label">切换亮暗主题</span>
+        </button>
+        <button class="dock-item dock-utility" id="dock-settings" data-label="系统设置">
+          <span class="dock-icon"><svg class="icon"><use href="#i-sliders" /></svg></span>
+          <span class="dock-label">系统设置</span>
+        </button>
+      </aside>
+
+      <main class="content">
+        <section class="screen active" data-screen="workspace">
+          <div class="content-body">
+          <aside class="card objects-card" aria-label="数据库对象">
+            <div class="objects-head">
+              <span class="objects-title">对象</span>
+              <span class="count">3</span>
+              <div class="right">
+                <button class="mini-btn" id="new-connection" aria-label="新建连接" title="新建连接"><svg class="icon"><use href="#i-plus" /></svg></button>
+                <button class="mini-btn" aria-label="收起对象栏" title="收起对象栏"><svg class="icon"><use href="#i-panel-left" /></svg></button>
+              </div>
+            </div>
+            <label class="search">
+              <svg class="icon"><use href="#i-search" /></svg>
+              <input type="text" placeholder="搜索连接、库或表" aria-label="搜索数据库对象" />
+            </label>
+            <div class="tree">
+              <div class="tree-group">
+                <div class="tree-group-label"><svg class="icon" style="width: 11px; height: 11px; transform: rotate(90deg)"><use href="#i-chevron-right" /></svg>默认分组<span class="count">2</span></div>
+                <div class="tree-row open" data-toggle>
+                  <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                  <span class="engine"><img src="assets/mysql.svg" alt="" /></span>
+                  <span class="row-label">本地开发库</span>
+                  <span class="status-dot"></span>
+                </div>
+                <div class="tree-children">
+                  <div class="tree-row open selected" data-select data-toggle style="--depth: 1">
+                    <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                    <svg class="icon row-icon"><use href="#i-database" /></svg>
+                    <span class="row-label">sql_studio_demo</span>
+                  </div>
+                  <div class="tree-children">
+                    <div class="tree-row open" data-toggle style="--depth: 2">
+                      <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                      <svg class="icon row-icon"><use href="#i-folder" /></svg>
+                      <span class="row-label">表</span>
+                      <span style="margin-left: auto; color: var(--text-4); font-size: 10px">12</span>
+                    </div>
+                    <div class="tree-children">
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">users</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">orders</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">products</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">payments</span></div>
+                    </div>
+                    <div class="tree-row" data-toggle style="--depth: 2">
+                      <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                      <svg class="icon row-icon"><use href="#i-eye" /></svg>
+                      <span class="row-label">视图</span>
+                      <span style="margin-left: auto; color: var(--text-4); font-size: 10px">2</span>
+                    </div>
+                    <div class="tree-children collapsed">
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-eye" /></svg><span class="row-label">v_monthly_revenue</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-eye" /></svg><span class="row-label">v_active_users</span></div>
+                    </div>
+                  </div>
+                  <div class="tree-row open" data-toggle style="--depth: 1">
+                    <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                    <svg class="icon row-icon"><use href="#i-database" /></svg>
+                    <span class="row-label">analytics</span>
+                  </div>
+                  <div class="tree-children">
+                    <div class="tree-row open" data-toggle style="--depth: 2">
+                      <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                      <svg class="icon row-icon"><use href="#i-folder" /></svg>
+                      <span class="row-label">表</span>
+                      <span style="margin-left: auto; color: var(--text-4); font-size: 10px">8</span>
+                    </div>
+                    <div class="tree-children">
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">events</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">sessions</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">metrics</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">funnels</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tree-row open" data-toggle>
+                  <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                  <span class="engine"><img src="assets/postgresql.svg" alt="" /></span>
+                  <span class="row-label">PolarDB 生产</span>
+                  <span class="status-dot"></span>
+                </div>
+                <div class="tree-children">
+                  <div class="tree-row open" data-toggle style="--depth: 1">
+                    <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                    <svg class="icon row-icon"><use href="#i-database" /></svg>
+                    <span class="row-label">app_prod</span>
+                  </div>
+                  <div class="tree-children">
+                    <div class="tree-row open" data-toggle style="--depth: 2">
+                      <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                      <svg class="icon row-icon"><use href="#i-folder" /></svg>
+                      <span class="row-label">表</span>
+                    </div>
+                    <div class="tree-children">
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">accounts</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">invoices</span></div>
+                      <div class="tree-row" data-select style="--depth: 3"><svg class="icon row-icon"><use href="#i-table" /></svg><span class="row-label">subscriptions</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tree-row" data-toggle>
+                  <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                  <span class="engine"><img src="assets/redis.png" alt="" /></span>
+                  <span class="row-label">Redis 缓存</span>
+                  <span class="status-dot" style="background: var(--text-4); box-shadow: none"></span>
+                </div>
+              </div>
+              <div class="tree-group">
+                <div class="tree-group-label"><svg class="icon" style="width: 11px; height: 11px; transform: rotate(90deg)"><use href="#i-chevron-right" /></svg>数据仓库<span class="count">1</span></div>
+                <div class="tree-row" data-toggle>
+                  <svg class="icon tree-chevron"><use href="#i-chevron-right" /></svg>
+                  <span class="engine"><img src="assets/greptimedb.svg" alt="" /></span>
+                  <span class="row-label">GreptimeDB 指标</span>
+                  <span class="status-dot"></span>
+                </div>
+              </div>
+            </div>
+            <div class="objects-foot">
+              <span class="status-dot"></span>
+              <span>2 个已连接</span>
+              <span style="color: var(--text-4)">·</span>
+              <span>3 个连接</span>
+              <span class="right">MySQL 8.0</span>
+            </div>
+          </aside>
+
+          <div class="work-column">
+            <section class="card sql-card" aria-label="SQL 编辑器">
+              <div class="query-tabs" role="tablist">
+                <button class="qt active" data-tab>
+                  <span class="dot"></span>
+                  <span class="label"><span class="ctx">sql_studio_demo</span> · 查询 1</span>
+                  <span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span>
+                </button>
+                <button class="qt" data-tab>
+                  <svg class="icon leading"><use href="#i-table" /></svg>
+                  <span class="label">orders 数据</span>
+                  <span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span>
+                </button>
+                <button class="qt" data-tab>
+                  <svg class="icon leading"><use href="#i-file" /></svg>
+                  <span class="label">users 结构</span>
+                  <span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span>
+                </button>
+                <button class="tab-add" aria-label="新建查询" title="新建查询"><svg class="icon"><use href="#i-plus" /></svg></button>
+              </div>
+
+              <div class="sql-toolbar">
+                <button class="scope-pill scope-connection">
+                  <span class="engine"><img src="assets/mysql.svg" alt="" /></span>
+                  <span class="value">本地开发库</span>
+                  <svg class="icon chevron"><use href="#i-chevron-down" /></svg>
+                </button>
+                <button class="scope-pill scope-database">
+                  <svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg>
+                  <span class="value">sql_studio_demo</span>
+                  <svg class="icon chevron"><use href="#i-chevron-down" /></svg>
+                </button>
+                <button class="btn-run"><svg class="icon fill"><use href="#i-play" /></svg>运行<span class="kbd">⌘↵</span></button>
+                <div class="ai-group">
+                  <svg class="icon sparkle"><use href="#i-sparkle" /></svg>
+                  <span>AI 补全</span>
+                  <span class="switch" role="switch" aria-checked="true" aria-label="AI 代码补全" data-switch></span>
+                </div>
+                <button class="icon-btn" aria-label="优化" title="优化"><svg class="icon"><use href="#i-zap" /></svg></button>
+                <div class="toolbar-icons">
+                  <button class="icon-btn" aria-label="导入" title="导入"><svg class="icon"><use href="#i-upload" /></svg></button>
+                  <button class="icon-btn" aria-label="导出" title="导出"><svg class="icon"><use href="#i-download" /></svg></button>
+                  <button class="icon-btn" aria-label="收藏" title="收藏"><svg class="icon"><use href="#i-star" /></svg></button>
+                  <button class="icon-btn" aria-label="执行历史" title="执行历史"><svg class="icon"><use href="#i-clock" /></svg></button>
+                  <button class="icon-btn" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
+                </div>
+              </div>
+
+              <div class="sql-editor" role="textbox" aria-label="SQL 编辑器" aria-multiline="true">
+                <div class="gutter" aria-hidden="true">
+                  <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div><div>13</div><div>14</div>
+                </div>
+                <div class="code" aria-hidden="true">
+                  <div class="code-line"><span class="com">-- 最近 50 位高价值用户</span></div>
+                  <div class="code-line"><span class="kw">SELECT</span></div>
+                  <div class="code-line">  u.id,</div>
+                  <div class="code-line">  u.name,</div>
+                  <div class="code-line">  u.email,</div>
+                  <div class="code-line">  <span class="fn">COUNT</span>(o.id)       <span class="kw">AS</span> order_count,</div>
+                  <div class="code-line">  <span class="fn">SUM</span>(o.amount)     <span class="kw">AS</span> total_amount,</div>
+                  <div class="code-line">  <span class="fn">MAX</span>(o.created_at) <span class="kw">AS</span> last_order_at</div>
+                  <div class="code-line current"><span class="kw">FROM</span> users u</div>
+                  <div class="code-line"><span class="kw">LEFT JOIN</span> orders o <span class="kw">ON</span> o.user_id = u.id</div>
+                  <div class="code-line"><span class="kw">WHERE</span> u.created_at &gt;= <span class="str">'2026-01-01'</span></div>
+                  <div class="code-line"><span class="kw">GROUP BY</span> u.id, u.name, u.email</div>
+                  <div class="code-line"><span class="kw">ORDER BY</span> total_amount <span class="kw">DESC</span></div>
+                  <div class="code-line"><span class="kw">LIMIT</span> <span class="num">50</span>;</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card results-card" aria-label="查询结果">
+              <div class="result-head" role="tablist">
+                <button class="rt" data-result-tab><svg class="icon" style="width: 12px; height: 12px"><use href="#i-message" /></svg>消息</button>
+                <button class="rt" data-result-tab><svg class="icon" style="width: 12px; height: 12px"><use href="#i-rows" /></svg>摘要</button>
+                <button class="rt active" data-result-tab><span class="dot"></span>结果 1<span class="count">50</span></button>
+                <button class="rt" data-result-tab>结果 2</button>
+                <div class="result-status">
+                  <span class="ok"><svg class="icon"><use href="#i-check-circle" /></svg>成功</span>
+                  <span>38 ms</span>
+                  <span>50 行</span>
+                  <span>6 列</span>
+                </div>
+              </div>
+              <div class="result-toolbar">
+                <span class="selection"><svg class="icon" style="width: 13px; height: 13px"><use href="#i-check-circle" /></svg>已选择 1 行</span>
+                <label class="result-search">
+                  <svg class="icon"><use href="#i-search" /></svg>
+                  <input type="text" placeholder="筛选当前结果" aria-label="筛选查询结果" />
+                </label>
+                <button class="icon-btn" aria-label="重新执行" title="重新执行"><svg class="icon"><use href="#i-refresh" /></svg></button>
+                <button class="icon-btn" aria-label="导出结果" title="导出结果"><svg class="icon"><use href="#i-download" /></svg></button>
+                <button class="icon-btn" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <colgroup>
+                    <col style="width: 32px" /><col style="width: 40px" /><col style="width: 54px" /><col style="width: 110px" /><col style="width: 190px" /><col style="width: 92px" /><col style="width: 112px" /><col style="width: 142px" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th class="check-cell"><span class="checkbox checked"><svg class="icon"><use href="#i-check" /></svg></span></th>
+                      <th style="text-align: right">#</th>
+                      <th>id<span class="type">BIGINT</span></th>
+                      <th>name<span class="type">VARCHAR(80)</span></th>
+                      <th>email<span class="type">VARCHAR(160)</span></th>
+                      <th style="text-align: right">orders<span class="type">BIGINT</span></th>
+                      <th style="text-align: right">total_amount<span class="type">DECIMAL(12,2)</span></th>
+                      <th>last_order_at<span class="type">DATETIME</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="selected">
+                      <td class="check-cell"><span class="checkbox checked"><svg class="icon"><use href="#i-check" /></svg></span></td>
+                      <td class="index">1</td><td class="id">1001</td><td class="name">林若溪</td><td class="mono">lin.ruoxi@example.com</td><td class="num">42</td><td class="num">¥128,640.00</td><td class="mono">2026-11-18 14:32</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">2</td><td class="id">1002</td><td class="name">陈嘉禾</td><td class="mono">chen.jiahe@example.com</td><td class="num">31</td><td class="num">¥96,420.50</td><td class="mono">2026-11-17 09:18</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">3</td><td class="id">1003</td><td class="name">周予安</td><td class="mono">zhou.yuan@example.com</td><td class="num">28</td><td class="num">¥88,120.00</td><td class="mono">2026-11-16 20:05</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">4</td><td class="id">1004</td><td class="name">沈知夏</td><td class="mono">shen.zhixia@example.com</td><td class="num">25</td><td class="num">¥72,860.40</td><td class="mono">2026-11-15 11:47</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">5</td><td class="id">1005</td><td class="name">顾南舟</td><td class="mono">gu.nanzhou@example.com</td><td class="num">21</td><td class="num">¥61,300.00</td><td class="mono">2026-11-14 16:22</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">6</td><td class="id">1006</td><td class="name">苏清和</td><td class="null">(NULL)</td><td class="num">19</td><td class="num">¥54,780.20</td><td class="mono">2026-11-13 08:51</td>
+                    </tr>
+                    <tr>
+                      <td class="check-cell"><span class="checkbox"></span></td>
+                      <td class="index">7</td><td class="id">1007</td><td class="name">江晚意</td><td class="mono">jiang.wanyi@example.com</td><td class="num">17</td><td class="num">¥49,200.00</td><td class="mono">2026-11-12 19:33</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination">
+                <span class="range">第 1–50 行 · 共 128 行</span>
+                <div class="pages">
+                  <button class="page-btn" aria-label="上一页"><svg class="icon" style="transform: rotate(180deg)"><use href="#i-chevron-right" /></svg></button>
+                  <button class="page-btn active">1</button>
+                  <button class="page-btn">2</button>
+                  <button class="page-btn">3</button>
+                  <span class="page-btn" style="pointer-events: none">…</span>
+                  <button class="page-btn">7</button>
+                  <button class="page-btn" aria-label="下一页"><svg class="icon"><use href="#i-chevron-right" /></svg></button>
+                  <span class="page-size">50 条/页</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        </section>
+
+        <section class="screen" data-screen="agent">
+          <div class="agent-layout">
+            <aside class="card side-card history-card" aria-label="会话历史">
+              <div class="side-head">
+                <span class="side-title">AI 助手</span>
+                <span class="count">12</span>
+                <div class="right">
+                  <button class="mini-btn" aria-label="新建会话" title="新建会话"><svg class="icon"><use href="#i-plus" /></svg></button>
+                  <button class="mini-btn" aria-label="刷新历史" title="刷新历史"><svg class="icon"><use href="#i-refresh" /></svg></button>
+                </div>
+              </div>
+              <label class="search">
+                <svg class="icon"><use href="#i-search" /></svg>
+                <input type="text" placeholder="搜索会话" aria-label="搜索会话" />
+              </label>
+              <div class="history-list">
+                <div class="history-group">今天</div>
+                <button class="history-item active"><span class="dot"></span><span class="title">月度订单分析</span><span class="time">22:04</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">查找重复用户</span><span class="time">20:31</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">索引使用情况</span><span class="time">16:18</span></button>
+                <div class="history-group">昨天</div>
+                <button class="history-item"><span class="dot"></span><span class="title">慢查询原因分析</span><span class="time">昨天</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">生成月度报表 SQL</span><span class="time">昨天</span></button>
+                <div class="history-group">更早</div>
+                <button class="history-item"><span class="dot"></span><span class="title">PolarDB 表结构对比</span><span class="time">11-18</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">Redis 键命名检查</span><span class="time">11-16</span></button>
+                <div class="history-group">上个月</div>
+                <button class="history-item"><span class="dot"></span><span class="title">视图权限梳理</span><span class="time">11-12</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">订单退款分析</span><span class="time">11-08</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">慢查询索引建议</span><span class="time">11-05</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">月度经营报表</span><span class="time">10-30</span></button>
+                <button class="history-item"><span class="dot"></span><span class="title">数据字典导出</span><span class="time">10-26</span></button>
+              </div>
+              <div class="side-foot"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-lock" /></svg>本地加密保存<span class="right">DeepSeek</span></div>
+            </aside>
+
+            <section class="card chat-card" aria-label="AI 对话">
+              <div class="chat-head">
+                <div class="chat-title"><h2>月度订单分析</h2><span class="chat-sub">会话 / 2026 年订单</span></div>
+                <div class="chat-actions">
+                  <span class="status-pill"><img src="assets/deepseek.svg" alt="" style="width: 13px; height: 13px; object-fit: contain" />deepseek-chat<span style="color: var(--text-4)">·</span><span>只读</span></span>
+                  <button class="btn"><svg class="icon"><use href="#i-plus" /></svg>新建会话</button>
+                  <button class="btn btn-icon" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
+                </div>
+              </div>
+              <div class="chat-scroll">
+                <div class="chat-column">
+                  <div class="message user"><div class="bubble">统计 2026 年各月订单数量和金额，并按金额降序排列。</div></div>
+                  <div class="assistant">
+                    <div class="assistant-head"><span class="assistant-avatar"><svg class="icon"><use href="#i-bot" /></svg></span><span class="assistant-name">SQL Studio AI</span><span class="model-chip"><img src="assets/deepseek.svg" alt="" />deepseek-chat</span></div>
+                    <div class="process-card">
+                      <div class="process-head"><svg class="icon"><use href="#i-rows" /></svg><span class="process-title">执行过程</span><span class="muted">3 步 · 2.4s</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></div>
+                      <div class="process-steps">
+                        <div class="process-step"><span class="step-dot"><svg class="icon"><use href="#i-check" /></svg></span><span>理解问题与时间范围</span><span class="step-meta">0.4s</span></div>
+                        <div class="process-step"><span class="step-dot"><svg class="icon"><use href="#i-check" /></svg></span><span>读取 orders 表结构</span><span class="step-meta">6 列</span></div>
+                        <div class="process-step"><span class="step-dot"><svg class="icon"><use href="#i-check" /></svg></span><span>执行只读查询</span><span class="step-meta">5 行 · 38 ms</span></div>
+                      </div>
+                    </div>
+                    <p class="answer-text">已按月份聚合 2026 年订单。1 月至 10 月共 <strong>18,420</strong> 笔订单，累计金额 <strong>¥2,846,300</strong>，其中 <strong>5 月</strong> 金额最高。</p>
+                    <div class="code-card">
+                      <div class="code-head"><span class="code-lang"><svg class="icon"><use href="#i-code" /></svg>SQL</span><span class="muted">只读查询</span><div class="code-actions"><button class="mini-btn" aria-label="复制 SQL" title="复制 SQL"><svg class="icon"><use href="#i-copy" /></svg></button><button class="mini-btn" aria-label="打开查询" title="打开查询"><svg class="icon"><use href="#i-external" /></svg></button></div></div>
+                      <div class="code-body"><span class="kw">SELECT</span>
+  <span class="fn">DATE_FORMAT</span>(created_at, <span class="str">'%Y-%m'</span>) <span class="kw">AS</span> month,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> orders,
+  <span class="fn">SUM</span>(amount) <span class="kw">AS</span> revenue
+<span class="kw">FROM</span> orders
+<span class="kw">WHERE</span> created_at &gt;= <span class="str">'2026-01-01'</span>
+<span class="kw">GROUP BY</span> month
+<span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>;</div>
+                    </div>
+                    <div class="result-mini-card">
+                      <div class="result-mini-head"><svg class="icon"><use href="#i-table" /></svg><span>查询结果 · 5 行</span><span class="muted">38 ms</span><div class="code-actions"><button class="mini-btn" aria-label="导出" title="导出"><svg class="icon"><use href="#i-download" /></svg></button></div></div>
+                      <table class="mini-table">
+                        <thead><tr><th>month</th><th class="right">orders</th><th class="right">revenue</th><th class="right">环比</th></tr></thead>
+                        <tbody>
+                          <tr><td class="mono">2026-05</td><td class="right">2,186</td><td class="right strong">¥382,400</td><td class="right up">+18.2%</td></tr>
+                          <tr><td class="mono">2026-08</td><td class="right">2,041</td><td class="right strong">¥361,250</td><td class="right up">+12.7%</td></tr>
+                          <tr><td class="mono">2026-03</td><td class="right">1,982</td><td class="right strong">¥340,800</td><td class="right up">+9.4%</td></tr>
+                          <tr><td class="mono">2026-10</td><td class="right">1,864</td><td class="right strong">¥318,600</td><td class="right up">+6.1%</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="answer-actions"><button class="text-btn"><svg class="icon"><use href="#i-copy" /></svg>复制 SQL</button><button class="text-btn"><svg class="icon"><use href="#i-external" /></svg>在查询页打开</button><button class="text-btn"><svg class="icon"><use href="#i-download" /></svg>导出 Excel</button></div>
+                  </div>
+                  <div class="message user"><div class="bubble">把超过 30 天未支付的订单标记为已取消。</div></div>
+                  <div class="assistant">
+                    <div class="write-card">
+                      <div class="write-head"><svg class="icon"><use href="#i-info" /></svg>等待确认 · 即将写入<span class="tag warn">完全访问模式</span></div>
+                      <div class="write-body">
+                        <p>将更新 <strong>orders</strong> 表中 <strong>12 行</strong>记录的 <span class="mono">status</span> 字段。删除与清空操作始终禁止执行。</p>
+                        <div class="write-sql">UPDATE orders
+SET status = 'cancelled'
+WHERE status = 'pending'
+  AND created_at &lt; DATE_SUB(NOW(), INTERVAL 30 DAY);</div>
+                        <div class="write-actions"><button class="btn">取消</button><button class="btn btn-warn"><svg class="icon"><use href="#i-check" /></svg>确认执行</button></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="composer">
+                <textarea placeholder="向数据库提问…（Enter 发送，Shift+Enter 换行）" aria-label="消息"></textarea>
+                <div class="composer-foot">
+                  <button class="mode-button"><svg class="icon"><use href="#i-lock" /></svg>只读模式<svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                  <button class="mini-btn" aria-label="模式说明" title="模式说明"><svg class="icon"><use href="#i-info" /></svg></button>
+                  <div class="composer-right"><button class="model-button"><img src="assets/deepseek.svg" alt="" />DeepSeek V3<svg class="icon chevron"><use href="#i-chevron-down" /></svg></button><button class="send-button" aria-label="发送消息"><svg class="icon"><use href="#i-arrow-up" /></svg></button></div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="monitor">
+          <div class="monitor-layout">
+            <div class="card monitor-toolbar">
+              <div class="monitor-title"><svg class="icon"><use href="#i-activity" /></svg>监控指标<span class="tag-live">实时</span></div>
+              <button class="scope-pill"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span class="value">本地开发库</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+              <button class="scope-pill"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">sql_studio_demo</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+              <span class="sample-time">采样于 22:43:54</span>
+              <div class="right">
+                <button class="scope-pill" style="width: 126px"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-clock" /></svg><span class="value">每 5 秒</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                <button class="btn"><svg class="icon"><use href="#i-refresh" /></svg>刷新</button>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div class="card stat-card">
+                <div class="stat-label"><svg class="icon"><use href="#i-users" /></svg>连接数</div>
+                <div class="stat-value">42<span>/ 500</span></div>
+                <div class="stat-trend up">↑ 3.2% 较上小时</div>
+                <svg class="sparkline" viewBox="0 0 90 24" preserveAspectRatio="none"><path d="M0 18 C10 16 16 20 24 15 S38 12 48 14 S64 8 72 11 S84 6 90 8" /></svg>
+              </div>
+              <div class="card stat-card">
+                <div class="stat-label"><svg class="icon"><use href="#i-activity" /></svg>QPS</div>
+                <div class="stat-value">1.28<span>k</span></div>
+                <div class="stat-trend up">↑ 8.4% 较上小时</div>
+                <svg class="sparkline" viewBox="0 0 90 24" preserveAspectRatio="none"><path d="M0 20 C10 18 16 10 24 13 S38 6 48 9 S64 3 72 6 S84 2 90 4" /></svg>
+              </div>
+              <div class="card stat-card">
+                <div class="stat-label"><svg class="icon"><use href="#i-gauge" /></svg>慢查询</div>
+                <div class="stat-value">3<span>条</span></div>
+                <div class="stat-trend">过去 5 分钟 <span class="up">↓ 2</span></div>
+                <svg class="sparkline amber" viewBox="0 0 90 24" preserveAspectRatio="none"><path d="M0 20 C10 21 16 17 24 19 S38 12 48 16 S64 8 72 14 S84 11 90 12" /></svg>
+              </div>
+              <div class="card stat-card">
+                <div class="stat-label"><svg class="icon"><use href="#i-cpu" /></svg>缓冲池命中率</div>
+                <div class="stat-value">99.2<span>%</span></div>
+                <div class="stat-trend">稳定 · 目标 ≥ 99%</div>
+                <svg class="sparkline" viewBox="0 0 90 24" preserveAspectRatio="none"><path d="M0 8 C10 7 16 10 24 8 S38 6 48 9 S64 6 72 7 S84 5 90 6" /></svg>
+              </div>
+            </div>
+
+            <div class="chart-grid">
+              <div class="card chart-card">
+                <div class="chart-head"><h4>吞吐量 QPS / TPS</h4><div class="legend"><span><i class="legend-dot"></i>QPS</span><span><i class="legend-dot gray"></i>TPS</span></div></div>
+                <div class="chart-area">
+                  <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+                    <defs><linearGradient id="watch-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2569df" stop-opacity=".18" /><stop offset="1" stop-color="#2569df" stop-opacity="0" /></linearGradient></defs>
+                    <line class="chart-gridline" x1="0" y1="20" x2="600" y2="20" /><line class="chart-gridline" x1="0" y1="60" x2="600" y2="60" /><line class="chart-gridline" x1="0" y1="100" x2="600" y2="100" /><line class="chart-gridline" x1="0" y1="140" x2="600" y2="140" />
+                    <path class="chart-fill" d="M0 118 C40 112 66 82 104 88 S164 58 206 68 S266 42 310 54 S372 30 416 44 S480 26 520 34 S572 20 600 28 L600 150 L0 150 Z" fill="url(#watch-fill)" />
+                    <path class="chart-line" d="M0 118 C40 112 66 82 104 88 S164 58 206 68 S266 42 310 54 S372 30 416 44 S480 26 520 34 S572 20 600 28" />
+                    <path class="chart-line gray" d="M0 138 C44 132 74 118 112 122 S172 102 214 110 S274 92 318 98 S380 84 424 92 S486 78 526 84 S576 72 600 76" />
+                    <g class="chart-legend-text"><text x="4" y="16">1.5k</text><text x="4" y="56">1.0k</text><text x="4" y="96">500</text><text x="4" y="146">0</text></g>
+                  </svg>
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="chart-head"><h4>连接数</h4><div class="legend"><span><i class="legend-dot"></i>活跃连接</span></div></div>
+                <div class="chart-area">
+                  <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+                    <defs><linearGradient id="conn-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2569df" stop-opacity=".22" /><stop offset="1" stop-color="#2569df" stop-opacity="0" /></linearGradient></defs>
+                    <line class="chart-gridline" x1="0" y1="20" x2="600" y2="20" /><line class="chart-gridline" x1="0" y1="60" x2="600" y2="60" /><line class="chart-gridline" x1="0" y1="100" x2="600" y2="100" /><line class="chart-gridline" x1="0" y1="140" x2="600" y2="140" />
+                    <path class="chart-fill" d="M0 74 C48 68 78 82 120 78 S180 60 224 66 S286 50 330 58 S392 44 436 52 S500 38 544 46 S582 40 600 44 L600 150 L0 150 Z" fill="url(#conn-fill)" />
+                    <path class="chart-line" d="M0 74 C48 68 78 82 120 78 S180 60 224 66 S286 50 330 58 S392 44 436 52 S500 38 544 46 S582 40 600 44" />
+                    <g class="chart-legend-text"><text x="4" y="16">60</text><text x="4" y="56">40</text><text x="4" y="96">20</text><text x="4" y="146">0</text></g>
+                  </svg>
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="chart-head"><h4>查询延迟</h4><div class="legend"><span><i class="legend-dot gray"></i>P95</span><span><i class="legend-dot amber"></i>P99</span></div></div>
+                <div class="chart-area">
+                  <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+                    <line class="chart-gridline" x1="0" y1="20" x2="600" y2="20" /><line class="chart-gridline" x1="0" y1="60" x2="600" y2="60" /><line class="chart-gridline" x1="0" y1="100" x2="600" y2="100" /><line class="chart-gridline" x1="0" y1="140" x2="600" y2="140" />
+                    <path class="chart-line gray" d="M0 70 C40 68 70 74 108 72 S168 64 210 68 S270 58 312 62 S372 52 414 58 S474 48 516 54 S570 44 600 48" />
+                    <path class="chart-line amber" d="M0 96 C42 92 72 104 110 98 S172 84 214 92 S274 76 318 86 S380 70 422 82 S484 64 526 74 S578 60 600 66" />
+                    <g class="chart-legend-text"><text x="4" y="16">120ms</text><text x="4" y="56">80</text><text x="4" y="96">40</text><text x="4" y="146">0</text></g>
+                  </svg>
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="chart-head"><h4>慢查询</h4><div class="legend"><span><i class="legend-dot amber"></i>条 / 分钟</span></div></div>
+                <div class="chart-area">
+                  <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+                    <line class="chart-gridline" x1="0" y1="20" x2="600" y2="20" /><line class="chart-gridline" x1="0" y1="60" x2="600" y2="60" /><line class="chart-gridline" x1="0" y1="100" x2="600" y2="100" /><line class="chart-gridline" x1="0" y1="140" x2="600" y2="140" />
+                    <rect class="chart-bar" x="20" y="120" width="20" height="20" rx="4" /><rect class="chart-bar" x="80" y="112" width="20" height="28" rx="4" /><rect class="chart-bar" x="140" y="126" width="20" height="14" rx="4" /><rect class="chart-bar" x="200" y="106" width="20" height="34" rx="4" /><rect class="chart-bar" x="260" y="118" width="20" height="22" rx="4" /><rect class="chart-bar" x="320" y="96" width="20" height="44" rx="4" /><rect class="chart-bar" x="380" y="116" width="20" height="24" rx="4" /><rect class="chart-bar" x="440" y="104" width="20" height="36" rx="4" /><rect class="chart-bar" x="500" y="126" width="20" height="14" rx="4" /><rect class="chart-bar" x="560" y="118" width="20" height="22" rx="4" />
+                    <g class="chart-legend-text"><text x="4" y="16">8</text><text x="4" y="56">6</text><text x="4" y="96">3</text><text x="4" y="146">0</text></g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="activity-grid">
+              <div class="card activity-card"><div class="activity-label"><svg class="icon"><use href="#i-arrow-down" /></svg>读取</div><div class="activity-value">820<span>/s</span></div><div class="activity-sub">Innodb rows read</div></div>
+              <div class="card activity-card"><div class="activity-label"><svg class="icon"><use href="#i-arrow-up" /></svg>写入</div><div class="activity-value">460<span>/s</span></div><div class="activity-sub">Innodb rows written</div></div>
+              <div class="card activity-card"><div class="activity-label"><svg class="icon"><use href="#i-cpu" /></svg>活跃线程</div><div class="activity-value">64<span>/ 96</span></div><div class="activity-sub">峰值 78 · 10:12</div></div>
+              <div class="card activity-card"><div class="activity-label"><svg class="icon"><use href="#i-globe" /></svg>网络出</div><div class="activity-value">12.4<span>MB/s</span></div><div class="activity-sub">网络入 4.8 MB/s</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="sync">
+          <div class="sync-layout">
+            <div class="card sync-stepper">
+              <div class="sync-title"><svg class="icon"><use href="#i-swap" /></svg>同步数据库</div>
+              <div class="steps">
+                <div class="step active"><span class="step-num">1</span>配置同步</div><span class="step-line"></span>
+                <div class="step"><span class="step-num">2</span>同步检查</div><span class="step-line"></span>
+                <div class="step"><span class="step-num">3</span>执行同步</div>
+              </div>
+              <div class="right">
+                <button class="scope-pill" style="width: 150px"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span class="value">MySQL</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                <span class="sync-status"><span class="dot"></span>未开始</span>
+              </div>
+            </div>
+
+            <div class="sync-main">
+              <div class="card sync-side">
+                <div class="sync-side-head"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span>源端</span><span class="tag ok">已连接</span></div>
+                <div class="sync-fields">
+                  <div class="sync-field"><label>连接</label><button class="scope-pill"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span class="value">本地开发库</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button></div>
+                  <div class="sync-field"><label>源数据库</label><button class="scope-pill"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">sql_studio_demo</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button></div>
+                </div>
+                <div class="sync-checks">
+                  <div class="sync-check"><svg class="icon"><use href="#i-check-circle" /></svg>连接正常，读取权限已校验</div>
+                  <div class="sync-check"><svg class="icon"><use href="#i-check-circle" /></svg>12 张表，2 个视图将自动跳过</div>
+                </div>
+                <div class="sync-preview"><div class="preview-title">对象预览<span>12 张表 · 2 个视图</span></div><div class="preview-tags"><span>users</span><span>orders</span><span>products</span><span>payments</span><span>order_items</span><span class="more">+ 7</span></div></div>
+              </div>
+              <button class="swap-card" aria-label="交换源端和目标端" title="交换源端和目标端"><svg class="icon"><use href="#i-swap" /></svg></button>
+              <div class="card sync-side">
+                <div class="sync-side-head"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span>目标端</span><span class="tag ok">已连接</span></div>
+                <div class="sync-fields">
+                  <div class="sync-field"><label>连接</label><button class="scope-pill"><span class="engine"><img src="assets/mysql.svg" alt="" /></span><span class="value">本地开发库</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button></div>
+                  <div class="sync-field"><label>目标数据库</label><div class="scope-pill"><span class="value">sql_studio_demo_copy</span></div></div>
+                </div>
+                <div class="sync-checks">
+                  <div class="sync-check"><svg class="icon"><use href="#i-check-circle" /></svg>连接正常，建库权限已校验</div>
+                  <div class="sync-check"><svg class="icon"><use href="#i-check-circle" /></svg>目标库不存在，可创建</div>
+                </div>
+                <div class="sync-preview"><div class="preview-title">目标状态<span>检查通过后新建</span></div><div class="preview-tags"><span>目标库不存在</span><span>自动跳过视图</span></div></div>
+              </div>
+            </div>
+
+            <div class="sync-detail">
+              <div class="card sync-options">
+                <div class="mini-head"><svg class="icon"><use href="#i-sliders" /></svg>同步选项</div>
+                <div class="check-row"><span class="checkbox checked"><svg class="icon"><use href="#i-check" /></svg></span><span><strong>表结构</strong><em>复制表、索引与约束</em></span></div>
+                <div class="check-row"><span class="checkbox"></span><span><strong>表数据</strong><em>逐表复制数据，开启后写入量较大</em></span></div>
+                <div class="check-row"><span class="checkbox checked"><svg class="icon"><use href="#i-check" /></svg></span><span><strong>目标库不存在时新建</strong><em>目标库已存在时立即停止</em></span></div>
+              </div>
+              <div class="card sync-plan">
+                <div class="plan-head"><svg class="icon"><use href="#i-check-circle" /></svg>检查通过<span class="tag ok">可以开始</span></div>
+                <p>将新建目标库 <strong class="mono">sql_studio_demo_copy</strong>，同步 12 张表，跳过 2 个视图。</p>
+                <div class="plan-tags"><span>结构</span><span>仅数据表</span><span>不覆盖已有库</span></div>
+              </div>
+            </div>
+
+            <div class="card sync-objects">
+              <div class="objects-preview-head"><div class="mini-head"><svg class="icon"><use href="#i-table" /></svg>同步对象</div><span>12 张表 · 2 个视图将被跳过</span></div>
+              <div class="object-list">
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">users</span><em>2.4k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">orders</span><em>18.2k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">products</span><em>860</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">payments</span><em>16.9k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">order_items</span><em>42.1k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">shipments</span><em>8.4k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">coupons</span><em>124</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">addresses</span><em>1.2k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">reviews</span><em>3.8k</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">categories</span><em>48</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">inventory</span><em>960</em></div>
+                <div class="object-row"><svg class="icon"><use href="#i-table" /></svg><span class="name">audit_logs</span><em>12.6k</em></div>
+                <div class="object-row skip"><svg class="icon"><use href="#i-eye" /></svg><span class="name">v_monthly_revenue</span><em>skip</em></div>
+                <div class="object-row skip"><svg class="icon"><use href="#i-eye" /></svg><span class="name">v_active_users</span><em>skip</em></div>
+              </div>
+            </div>
+
+            <div class="card sync-actions">
+              <div class="summary"><svg class="icon"><use href="#i-info" /></svg>将新建目标库并复制 12 张表<span class="muted">·</span>仅结构</div>
+              <div class="right"><button class="btn">取消</button><button class="btn-run"><svg class="icon"><use href="#i-play" /></svg>同步检查</button></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="modal-layer" id="connection-modal" role="dialog" aria-modal="true" aria-labelledby="connection-modal-title">
+        <div class="modal-card connection-modal">
+          <div class="modal-head">
+            <h2 id="connection-modal-title">新建连接</h2>
+            <button class="modal-close" aria-label="关闭新建连接" data-close-modal><svg class="icon"><use href="#i-close" /></svg></button>
+          </div>
+          <div class="connection-modal-body">
+            <aside class="engine-picker" aria-label="数据库类型">
+              <div class="picker-title">数据库类型</div>
+              <button class="engine-option active" data-engine="MySQL" data-port="3306" data-icon="assets/mysql.svg" data-desc="连接到 MySQL 数据库">
+                <span class="engine engine-picker-icon"><img src="assets/mysql.svg" alt="" /></span><span>MySQL</span>
+              </button>
+              <button class="engine-option" data-engine="MariaDB" data-port="3306" data-icon="assets/mariadb.png" data-desc="连接到 MariaDB 数据库">
+                <span class="engine engine-picker-icon"><img src="assets/mariadb.png" alt="" /></span><span>MariaDB</span>
+              </button>
+              <button class="engine-option" data-engine="PostgreSQL" data-port="5432" data-icon="assets/postgresql.svg" data-desc="连接到 PostgreSQL / PolarDB 数据库">
+                <span class="engine engine-picker-icon"><img src="assets/postgresql.svg" alt="" /></span><span>PostgreSQL</span>
+              </button>
+              <button class="engine-option" data-engine="GreptimeDB" data-port="4002" data-icon="assets/greptimedb.svg" data-desc="连接到 GreptimeDB 时序数据库">
+                <span class="engine engine-picker-icon"><img src="assets/greptimedb.svg" alt="" /></span><span>GreptimeDB</span>
+              </button>
+              <button class="engine-option" data-engine="Redis" data-port="6379" data-icon="assets/redis.png" data-desc="连接到 Redis 缓存">
+                <span class="engine engine-picker-icon"><img src="assets/redis.png" alt="" /></span><span>Redis</span>
+              </button>
+            </aside>
+            <div class="connection-settings">
+              <div class="modal-title-row">
+                <span class="engine engine-picker-large" id="connection-engine-icon"><img src="assets/mysql.svg" alt="" /></span>
+                <div class="modal-title-copy"><h3 id="connection-engine-name">MySQL</h3><p id="connection-engine-desc">连接到 MySQL 数据库</p></div>
+                <div class="modal-title-tags"><span class="tag" id="connection-port-tag">默认端口 3306</span><span class="tag ok"><svg class="icon" style="width: 10px; height: 10px"><use href="#i-lock" /></svg>本地加密</span></div>
+              </div>
+              <div class="modal-tabs"><button class="modal-tab active">常规</button><button class="modal-tab">SSL</button></div>
+              <div class="connection-form">
+                <div class="form-row"><label>连接名称</label><div class="form-control"><div class="form-input"><input type="text" value="本地开发库" placeholder="例如：本地开发库" /></div></div></div>
+                <div class="form-row"><label>连接分组</label><div class="form-control"><button class="form-select"><span class="value">默认分组</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button></div></div>
+                <div class="form-row"><label>主机地址</label><div class="form-control"><div class="form-input"><input type="text" value="127.0.0.1" /></div></div></div>
+                <div class="form-row"><label>端口</label><div class="form-control"><div class="form-input"><input type="text" value="3306" /></div></div></div>
+                <div class="form-row"><label>维护数据库</label><div class="form-control"><div class="form-input"><input type="text" value="sql_studio_demo" /></div><div class="form-hint">用于测试连接和读取数据库列表；查询时可在顶部切换数据库</div></div></div>
+                <div class="form-row"><label>用户名</label><div class="form-control"><div class="form-input"><input type="text" value="root" /></div></div></div>
+                <div class="form-row"><label>密码</label><div class="form-control"><div class="form-input"><input type="password" value="password" /><button class="mini-btn" aria-label="显示密码" title="显示密码"><svg class="icon"><use href="#i-eye-toggle" /></svg></button></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn"><svg class="icon"><use href="#i-link" /></svg>测试连接</button>
+            <div class="right"><button class="btn" data-close-modal>取消</button><button class="btn btn-primary" data-close-modal>保存连接</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-layer" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <div class="modal-card settings-modal">
+          <div class="modal-head">
+            <h2 id="settings-modal-title">系统设置</h2>
+            <button class="modal-close" aria-label="关闭系统设置" data-close-modal><svg class="icon"><use href="#i-close" /></svg></button>
+          </div>
+          <div class="settings-modal-body">
+            <nav class="settings-nav" aria-label="设置分类">
+              <div class="settings-group-label">AI</div>
+              <button class="settings-nav-item active" data-settings-panel="model"><svg class="icon"><use href="#i-bot" /></svg>模型配置</button>
+              <div class="settings-group-label">通用</div>
+              <button class="settings-nav-item" data-settings-panel="appearance"><svg class="icon"><use href="#i-sun" /></svg>外观设置</button>
+              <button class="settings-nav-item" data-settings-panel="language"><svg class="icon"><use href="#i-globe" /></svg>语言设置</button>
+              <button class="settings-nav-item" data-settings-panel="about"><svg class="icon"><use href="#i-info" /></svg>关于软件</button>
+            </nav>
+            <div class="settings-content">
+              <section class="settings-panel" data-panel="model">
+                <h3>模型配置</h3>
+                <p>模型用于 SQL 补全、优化和 AI 助手。API Key 仅保存在本机后端，并以加密方式存储。</p>
+                <div class="model-list">
+                  <div class="model-card default">
+                    <span class="model-logo"><img src="assets/deepseek.svg" alt="" /></span>
+                    <div class="model-info"><div class="model-name">DeepSeek V3 <span class="tag blue">默认</span></div><div class="model-id">deepseek-chat</div></div>
+                    <div class="model-actions"><span class="default-pill checked"><i class="radio-dot"></i>默认</span><button class="mini-btn" title="编辑模型" aria-label="编辑模型"><svg class="icon"><use href="#i-pencil" /></svg></button><button class="mini-btn" title="删除模型" aria-label="删除模型"><svg class="icon"><use href="#i-trash" /></svg></button></div>
+                  </div>
+                  <div class="model-card">
+                    <span class="model-logo"><img src="assets/deepseek.svg" alt="" /></span>
+                    <div class="model-info"><div class="model-name">DeepSeek R1</div><div class="model-id">deepseek-reasoner</div></div>
+                    <div class="model-actions"><span class="default-pill"><i class="radio-dot muted"></i>设为默认</span><button class="mini-btn" title="编辑模型" aria-label="编辑模型"><svg class="icon"><use href="#i-pencil" /></svg></button><button class="mini-btn" title="删除模型" aria-label="删除模型"><svg class="icon"><use href="#i-trash" /></svg></button></div>
+                  </div>
+                </div>
+                <button class="add-model"><svg class="icon"><use href="#i-plus" /></svg>添加模型</button>
+                <div class="api-note"><svg class="icon"><use href="#i-lock" /></svg>API Key 仅保存在本机后端，并以加密方式存储。</div>
+              </section>
+
+              <section class="settings-panel" data-panel="appearance" hidden>
+                <h3>外观设置</h3>
+                <p>主题和字号保存后应用到所有页面；SQL 和数据库内容保持原文和现有字体。</p>
+                <div class="settings-block">
+                  <h4>主题模式</h4>
+                  <div class="theme-options">
+                    <button class="theme-option"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span class="theme-thumb system"></span><span>跟随系统</span></button>
+                    <button class="theme-option active"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span class="theme-thumb light"><i class="rail"></i><i class="side"></i><i class="main"></i></span><span>亮色</span></button>
+                    <button class="theme-option"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span class="theme-thumb dark"><i class="rail"></i><i class="side"></i><i class="main"></i></span><span>暗色</span></button>
+                  </div>
+                </div>
+                <div class="settings-block">
+                  <h4>界面字号</h4>
+                  <div class="font-options">
+                    <button class="font-option"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span style="font-size: 12px">Aa</span><em>较小（12px）</em></button>
+                    <button class="font-option active"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span style="font-size: 14px">Aa</span><em>标准（14px）</em></button>
+                    <button class="font-option"><span class="check"><svg class="icon"><use href="#i-check" /></svg></span><span style="font-size: 16px">Aa</span><em>稍大（16px）</em></button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-panel" data-panel="language" hidden>
+                <h3>语言设置</h3>
+                <p>界面文案会切换到所选语言；SQL、数据库内容和用户命名保持原文。</p>
+                <div class="language-options">
+                  <button class="language-card active"><span class="language-mark">中</span><span><strong>简体中文</strong><em>默认界面语言</em></span></button>
+                  <button class="language-card"><span class="language-mark">EN</span><span><strong>English</strong><em>Switch the interface to English</em></span></button>
+                </div>
+              </section>
+
+              <section class="settings-panel" data-panel="about" hidden>
+                <h3>关于软件</h3>
+                <p>SQL Studio 是一个本地优先的多数据库查询工作区。</p>
+                <div class="about-panel">
+                  <img src="assets/studio.svg" alt="" width="52" height="52" />
+                  <strong>SQL Studio</strong>
+                  <span>版本 1.5.7 · Electron</span>
+                  <p>连接 MySQL、MariaDB、PostgreSQL / PolarDB、GreptimeDB 与 Redis，在一个工作区中完成查询、分析、监控和同步。</p>
+                  <button class="btn"><svg class="icon"><use href="#i-refresh" /></svg>检查更新</button>
+                </div>
+              </section>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <span class="modal-hint">偏好保存在当前设备，保存后立即生效</span>
+            <div class="right"><button class="btn" data-close-modal>取消</button><button class="btn btn-primary" data-close-modal>保存</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-bar" aria-label="设计预览工具条">
+      <span class="review-brand"><span class="dot"></span>Card + Dock · UI Preview</span>
+      <span class="divider"></span>
+      <button class="review-btn active" data-theme-choice="light"><svg class="icon"><use href="#i-sun" /></svg>亮色</button>
+      <button class="review-btn" data-theme-choice="dark"><svg class="icon"><use href="#i-moon" /></svg>暗色</button>
+      <span class="divider"></span>
+      <button class="review-btn" id="hide-review"><svg class="icon"><use href="#i-eye-toggle" /></svg>隐藏 (H)</button>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
