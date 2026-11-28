@@ -19,6 +19,7 @@
   - 控件高度 30px；普通界面沿用系统和 Ant Design 默认字体。
 - **每一块都是卡片**：Dock、对象栏、SQL 编辑、结果区、AI 会话、监控指标、同步步骤都使用独立圆角卡片和背景间隙，不再用连续边框切块。
 - **亮色轻投影**：页签、搜索框、范围选择器、工具栏按钮、AI 内容卡片和设置选项使用克制的分层阴影；暗色主题保持原有深邃对比。
+- **设置选中语义统一**：外观、字号、语言和默认模型只显示勾选状态，不改变卡片背景、边框、图标或文字颜色。设置内容使用更清晰的字号层级，弹窗左右保持统一底色。
 - **Dock 使用单色线性图标**：四个入口统一使用中性色线性图标；选中项切换为主题蓝实心底板 + 白色图标，并保留蓝色状态点，悬停使用中性灰。
 
 ## 页面
@@ -34,6 +35,7 @@
 | 新建连接 | [preview-connection-light.png](preview-connection-light.png) | [preview-connection-dark.png](preview-connection-dark.png) |
 | 系统设置 · 模型配置 | [preview-settings-model-light.png](preview-settings-model-light.png) | [preview-settings-model-dark.png](preview-settings-model-dark.png) |
 | 系统设置 · 外观设置 | [preview-settings-appearance-light.png](preview-settings-appearance-light.png) | [preview-settings-appearance-dark.png](preview-settings-appearance-dark.png) |
+| 系统设置 · 语言设置 | [preview-settings-language-light.png](preview-settings-language-light.png) | [preview-settings-language-dark.png](preview-settings-language-dark.png) |
 
 ### 工作台
 
@@ -41,15 +43,15 @@
 
 ### Redis · 键详情
 
-沿用工作台对象栏，主区由 Redis 工具栏、键浏览卡片和键详情卡片组成。键树按冒号命名空间分层；详情区展示类型、字节数和 TTL，支持编辑键名、过期秒数与键值，并保留刷新、删除、取消和保存操作。
+沿用工作台对象栏，主区保留查询页签、连接/数据库选择器和 Redis 工具页签；下方由键浏览卡片和键详情卡片组成。键树按冒号命名空间分层；详情区展示类型、字节数和 TTL，支持编辑键名、过期秒数与键值，并保留刷新、删除、取消和保存操作。
 
 ### Redis · 发布订阅
 
-主区由订阅栏、活跃频道卡片和消息流卡片组成。支持频道或模式输入、按模式订阅、开始/停止订阅、频道搜索、自动滚动、暂停消息和清空消息；消息按时间、频道和内容三列展示。
+主区保留与工作台一致的查询页签、范围选择器和 Redis 工具页签；下方由订阅栏、活跃频道卡片和消息流卡片组成。支持频道或模式输入、按模式订阅、开始/停止订阅、频道搜索、自动滚动、暂停消息和清空消息；消息按时间、频道和内容三列展示。
 
 ### AI 助手
 
-左侧为会话列表卡片，右侧为对话卡片；执行过程、SQL、结果表和写入确认都是对话卡片内的二级卡片；输入区固定在对话卡片底部。
+左侧为会话列表卡片，右侧为对话卡片；执行过程、SQL、结果表和写入确认都是对话卡片内的二级卡片；对话内容与输入区共同铺满卡片宽度，输入区使用明确边框和轻投影，底部工具按钮采用卡片式样式。
 
 ### 监控指标
 

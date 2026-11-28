@@ -285,9 +285,7 @@
                 <div class="toolbar-icons">
                   <button class="icon-btn" aria-label="导入" title="导入"><svg class="icon"><use href="#i-upload" /></svg></button>
                   <button class="icon-btn" aria-label="导出" title="导出"><svg class="icon"><use href="#i-download" /></svg></button>
-                  <button class="icon-btn" aria-label="收藏" title="收藏"><svg class="icon"><use href="#i-star" /></svg></button>
                   <button class="icon-btn" aria-label="执行历史" title="执行历史"><svg class="icon"><use href="#i-clock" /></svg></button>
-                  <button class="icon-btn" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
                 </div>
               </div>
 
@@ -418,20 +416,29 @@
             </aside>
 
             <div class="redis-workspace">
-              <div class="card redis-toolbar">
-                <button class="scope-pill scope-connection"><span class="engine"><img src="assets/redis.png" alt="" /></span><span class="value">Redis 缓存</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
-                <button class="scope-pill scope-database"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">DB 0</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
-                <div class="redis-tool-tabs" role="tablist" aria-label="Redis 工具">
-                  <button class="rt active" data-screen-link="redis-keys"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-key" /></svg>键详情</button>
-                  <button class="rt" data-screen-link="redis-pubsub"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-radio" /></svg>发布订阅</button>
+              <section class="card redis-query-card">
+                <div class="query-tabs" role="tablist">
+                  <button class="qt active" data-tab><span class="dot"></span><span class="label"><span class="ctx">Redis 缓存</span> · 查询 1</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="qt" data-tab><svg class="icon leading"><use href="#i-table" /></svg><span class="label">orders 数据</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="qt" data-tab><svg class="icon leading"><use href="#i-file" /></svg><span class="label">users 结构</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="tab-add" aria-label="新建查询" title="新建查询"><svg class="icon"><use href="#i-plus" /></svg></button>
                 </div>
-                <div class="toolbar-icons">
-                  <button class="icon-btn" aria-label="刷新" title="刷新"><svg class="icon"><use href="#i-refresh" /></svg></button>
-                  <button class="icon-btn" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
+                <div class="sql-toolbar">
+                  <button class="scope-pill scope-connection"><span class="engine"><img src="assets/redis.png" alt="" /></span><span class="value">Redis 缓存</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                  <button class="scope-pill scope-database"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">DB 0</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                  <span class="tag redis-mode">单机</span>
+                  <div class="redis-tool-tabs" role="tablist" aria-label="Redis 工具">
+                    <button class="rt active" data-screen-link="redis-keys"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-key" /></svg>键详情</button>
+                    <button class="rt" data-screen-link="redis-pubsub"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-radio" /></svg>发布订阅</button>
+                  </div>
+                  <div class="toolbar-icons">
+                    <button class="icon-btn" aria-label="导入" title="导入"><svg class="icon"><use href="#i-upload" /></svg></button>
+                    <button class="icon-btn" aria-label="导出" title="导出"><svg class="icon"><use href="#i-download" /></svg></button>
+                    <button class="icon-btn" aria-label="执行历史" title="执行历史"><svg class="icon"><use href="#i-clock" /></svg></button>
+                  </div>
                 </div>
-              </div>
 
-              <div class="redis-key-layout">
+                <div class="redis-key-layout">
                 <aside class="card redis-key-list" aria-label="键浏览">
                   <div class="side-head"><span class="side-title">键浏览</span><div class="right"><button class="mini-btn" aria-label="新增键" title="新增键"><svg class="icon"><use href="#i-plus" /></svg></button><button class="mini-btn" aria-label="刷新键列表" title="刷新键列表"><svg class="icon"><use href="#i-refresh" /></svg></button></div></div>
                   <label class="search"><svg class="icon"><use href="#i-search" /></svg><input type="text" placeholder="搜索键名" aria-label="搜索键名" /></label>
@@ -469,6 +476,7 @@
                   <div class="redis-detail-foot"><span class="redis-dirty"><span class="dot"></span>有未保存修改</span><div class="right"><button class="btn">取消</button><button class="btn btn-primary">保存</button></div></div>
                 </section>
               </div>
+              </section>
             </div>
           </div>
         </section>
@@ -500,20 +508,29 @@
             </aside>
 
             <div class="redis-workspace">
-              <div class="card redis-toolbar">
-                <button class="scope-pill scope-connection"><span class="engine"><img src="assets/redis.png" alt="" /></span><span class="value">Redis 缓存</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
-                <button class="scope-pill scope-database"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">DB 0</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
-                <div class="redis-tool-tabs" role="tablist" aria-label="Redis 工具">
-                  <button class="rt" data-screen-link="redis-keys"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-key" /></svg>键详情</button>
-                  <button class="rt active" data-screen-link="redis-pubsub"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-radio" /></svg>发布订阅</button>
+              <section class="card redis-query-card">
+                <div class="query-tabs" role="tablist">
+                  <button class="qt active" data-tab><span class="dot"></span><span class="label"><span class="ctx">Redis 缓存</span> · 查询 1</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="qt" data-tab><svg class="icon leading"><use href="#i-table" /></svg><span class="label">orders 数据</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="qt" data-tab><svg class="icon leading"><use href="#i-file" /></svg><span class="label">users 结构</span><span class="close" aria-hidden="true"><svg class="icon"><use href="#i-close" /></svg></span></button>
+                  <button class="tab-add" aria-label="新建查询" title="新建查询"><svg class="icon"><use href="#i-plus" /></svg></button>
                 </div>
-                <div class="toolbar-icons">
-                  <button class="icon-btn" aria-label="刷新" title="刷新"><svg class="icon"><use href="#i-refresh" /></svg></button>
-                  <button class="icon-btn" aria-label="更多" title="更多"><svg class="icon"><use href="#i-more" /></svg></button>
+                <div class="sql-toolbar">
+                  <button class="scope-pill scope-connection"><span class="engine"><img src="assets/redis.png" alt="" /></span><span class="value">Redis 缓存</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                  <button class="scope-pill scope-database"><svg class="icon" style="width: 13px; height: 13px; color: var(--text-3)"><use href="#i-database" /></svg><span class="value">DB 0</span><svg class="icon chevron"><use href="#i-chevron-down" /></svg></button>
+                  <span class="tag redis-mode">单机</span>
+                  <div class="redis-tool-tabs" role="tablist" aria-label="Redis 工具">
+                    <button class="rt" data-screen-link="redis-keys"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-key" /></svg>键详情</button>
+                    <button class="rt active" data-screen-link="redis-pubsub"><svg class="icon" style="width: 12px; height: 12px"><use href="#i-radio" /></svg>发布订阅</button>
+                  </div>
+                  <div class="toolbar-icons">
+                    <button class="icon-btn" aria-label="导入" title="导入"><svg class="icon"><use href="#i-upload" /></svg></button>
+                    <button class="icon-btn" aria-label="导出" title="导出"><svg class="icon"><use href="#i-download" /></svg></button>
+                    <button class="icon-btn" aria-label="执行历史" title="执行历史"><svg class="icon"><use href="#i-clock" /></svg></button>
+                  </div>
                 </div>
-              </div>
 
-              <div class="card redis-subscribe-bar">
+                <div class="card redis-subscribe-bar">
                 <span class="redis-subscribe-label">频道或模式</span>
                 <label class="form-input redis-subscribe-input"><svg class="icon"><use href="#i-radio" /></svg><input type="text" value="news:*" aria-label="频道或模式" /></label>
                 <label class="redis-check"><span class="checkbox checked"><svg class="icon"><use href="#i-check" /></svg></span>按模式订阅</label>
@@ -547,6 +564,7 @@
                   <div class="redis-message-foot"><span>已接收 24 条消息</span><span>最多保留 100 条</span></div>
                 </section>
               </div>
+              </section>
             </div>
           </div>
         </section>
@@ -949,7 +967,7 @@ WHERE status = 'pending'
                 <h3>语言设置</h3>
                 <p>界面文案会切换到所选语言；SQL、数据库内容和用户命名保持原文。</p>
                 <div class="language-options">
-                  <button class="language-card active"><span class="language-mark">中</span><span><strong>简体中文</strong><em>默认界面语言</em></span></button>
+                  <button class="language-card active"><span class="language-mark">中</span><span><strong>简体中文</strong><em>默认界面语言</em></span><span class="language-check"><svg class="icon"><use href="#i-check" /></svg></span></button>
                   <button class="language-card"><span class="language-mark">EN</span><span><strong>English</strong><em>Switch the interface to English</em></span></button>
                 </div>
               </section>

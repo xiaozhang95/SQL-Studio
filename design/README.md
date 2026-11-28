@@ -10,3 +10,4 @@
   - 新建连接：[亮色](card-dock/preview-connection-light.png) · [暗色](card-dock/preview-connection-dark.png)
   - 系统设置 · 模型配置：[亮色](card-dock/preview-settings-model-light.png) · [暗色](card-dock/preview-settings-model-dark.png)
   - 系统设置 · 外观设置：[亮色](card-dock/preview-settings-appearance-light.png) · [暗色](card-dock/preview-settings-appearance-dark.png)
+  - 系统设置 · 语言设置：[亮色](card-dock/preview-settings-language-light.png) · [暗色](card-dock/preview-settings-language-dark.png)
