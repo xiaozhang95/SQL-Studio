@@ -396,31 +396,6 @@ input::placeholder {
   margin-left: auto;
 }
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 999px;
-  background: var(--soft-fill);
-  color: var(--text-2);
-  font-size: 11.5px;
-  white-space: nowrap;
-}
-
-.status-pill .engine {
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
-}
-
-.status-pill .engine img {
-  width: 12px;
-  height: 12px;
-}
-
 .status-dot {
   width: 6px;
   height: 6px;
@@ -482,10 +457,6 @@ input::placeholder {
   justify-content: center;
   height: 17px;
   padding: 0 4px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.13);
-  color: inherit;
   font-size: 9.5px;
 }
 
@@ -759,9 +730,11 @@ input::placeholder {
   height: 30px;
   max-width: 240px;
   padding: 0 9px;
+  border: 1px solid transparent;
   border-radius: 9px;
+  background: var(--soft-fill);
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1;
   white-space: nowrap;
 }
@@ -772,9 +745,10 @@ input::placeholder {
 }
 
 .qt.active {
-  background: var(--card-strong);
-  box-shadow: 0 5px 14px -8px rgba(18, 40, 24, 0.28);
-  color: var(--text);
+  border-color: transparent;
+  background: var(--primary);
+  box-shadow: 0 9px 18px -9px rgba(37, 105, 223, 0.7);
+  color: #fff;
 }
 
 .qt .dot {
@@ -785,6 +759,10 @@ input::placeholder {
   background: var(--primary);
 }
 
+.qt.active .dot {
+  background: #fff;
+}
+
 .qt .label {
   min-width: 0;
   overflow: hidden;
@@ -793,6 +771,10 @@ input::placeholder {
 
 .qt .ctx {
   color: var(--text-3);
+}
+
+.qt.active .ctx {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .qt .close {
@@ -812,6 +794,19 @@ input::placeholder {
   opacity: 1;
 }
 
+.qt:hover .close {
+  color: var(--text);
+}
+
+.qt.active .close {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.qt.active .close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
 .qt .close:hover {
   background: var(--row-hover);
   color: var(--text);
@@ -829,7 +824,7 @@ input::placeholder {
 }
 
 .qt.active .icon.leading {
-  color: var(--primary);
+  color: #fff;
 }
 
 .tab-add {
@@ -905,13 +900,16 @@ input::placeholder {
   height: 32px;
   padding: 0 13px;
   border-radius: 10px;
-  background: linear-gradient(180deg, var(--primary-2), var(--primary));
-  color: var(--on-primary);
+  background: var(--card-strong);
+  color: var(--text);
   font-size: 11.5px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 9px 18px -9px rgba(37, 105, 223, 0.7);
+}
+
+.btn-run:hover {
+  background: var(--soft-fill);
 }
 
 .btn-run .icon {
@@ -1159,9 +1157,9 @@ body:not(.clean) .dock {
 }
 
 .rt.active {
-  background: var(--card-strong);
-  box-shadow: 0 5px 14px -8px rgba(18, 40, 24, 0.28);
-  color: var(--text);
+  background: var(--primary);
+  box-shadow: 0 9px 18px -9px rgba(37, 105, 223, 0.7);
+  color: #fff;
 }
 
 .rt .dot {
@@ -1171,12 +1169,8 @@ body:not(.clean) .dock {
   background: var(--primary);
 }
 
-.rt .count {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: var(--text-4);
-  font-size: 9px;
+.rt.active .dot {
+  background: #fff;
 }
 
 .result-status {
@@ -1367,61 +1361,6 @@ td.null {
 .checkbox .icon {
   width: 9px;
   height: 9px;
-}
-
-.pagination {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 10px;
-  height: 36px;
-  padding: 0 4px;
-  color: var(--text-3);
-  font-size: 10px;
-}
-
-.pagination .range {
-  font-variant-numeric: tabular-nums;
-}
-
-.pagination .pages {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-}
-
-.page-btn {
-  display: grid;
-  place-items: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 8px;
-  color: var(--text-2);
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.page-btn:hover {
-  background: var(--row-hover);
-  color: var(--text);
-}
-
-.page-btn.active {
-  background: var(--selected);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.page-btn .icon {
-  width: 11px;
-  height: 11px;
-}
-
-.page-size {
-  margin-left: 6px;
-  color: var(--text-4);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1733,13 +1672,6 @@ td.null {
 .chat-sub {
   color: var(--text-3);
   font-size: 10.5px;
-}
-
-.chat-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
 }
 
 .chat-scroll {
@@ -2702,7 +2634,7 @@ td.null {
 .sync-detail {
   display: grid;
   flex: none;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   height: 170px;
   min-height: 0;
