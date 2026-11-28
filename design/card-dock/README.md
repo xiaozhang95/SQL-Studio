@@ -6,7 +6,7 @@
 
 - 直接打开 [index.html](index.html)。
 - 或在当前目录运行 `python3 -m http.server 4174`，访问 `http://127.0.0.1:4174/`。
-- 页面参数：`?screen=workspace|agent|monitor|sync&theme=light|dark&modal=connection|settings&settings=model|appearance|language|about&clean=1`。
+- 页面参数：`?screen=workspace|agent|monitor|sync&theme=light|dark&modal=connection|settings&settings=model|appearance|language|about`。
 
 ## 设计变化
 
@@ -51,11 +51,10 @@
 ## 交互
 
 - 左侧 Dock 切换四个页面。
-- 亮/暗主题切换（Dock 底部和预览工具条）。
+- 亮/暗主题切换（Dock 底部）。
 - 工作台页签、结果页签、树节点展开/选中、AI 补全开关均可交互。
 - 对象栏顶部 `+` 打开新建连接；Dock 底部设置图标打开系统设置；Esc 或点击遮罩关闭。
 - 新建连接弹窗可切换数据库类型；系统设置左侧导航可切换模型配置、外观设置、语言设置和关于软件，主题卡片可预览亮暗。
-- `H` 隐藏预览工具条。
 
 ## 未包含
 

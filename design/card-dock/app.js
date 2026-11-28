@@ -7,9 +7,6 @@
     app.dataset.theme = theme
     document.documentElement.style.colorScheme = theme
     dockThemeIcon?.setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon')
-    document.querySelectorAll('[data-theme-choice]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.themeChoice === theme)
-    })
     document.querySelectorAll('.theme-option').forEach((option) => {
       const thumb = option.querySelector('.theme-thumb')
       option.classList.toggle('active', theme === 'dark' ? Boolean(thumb?.classList.contains('dark')) : Boolean(thumb?.classList.contains('light')))
@@ -35,9 +32,6 @@
 
   const toggleTheme = () => setTheme(app.dataset.theme === 'dark' ? 'light' : 'dark')
   document.getElementById('dock-theme')?.addEventListener('click', toggleTheme)
-  document.querySelectorAll('[data-theme-choice]').forEach((button) => {
-    button.addEventListener('click', () => setTheme(button.dataset.themeChoice === 'dark' ? 'dark' : 'light'))
-  })
 
   document.querySelectorAll('.dock-item[data-screen]').forEach((button) => {
     button.addEventListener('click', () => setScreen(button.dataset.screen))
@@ -176,12 +170,4 @@
       control.setAttribute('aria-checked', String(control.getAttribute('aria-checked') !== 'true'))
     })
   })
-
-  document.getElementById('hide-review')?.addEventListener('click', () => document.body.classList.add('clean'))
-  document.addEventListener('keydown', (event) => {
-    if (event.target.matches('input, textarea')) return
-    if (event.key.toLowerCase() === 'h') document.body.classList.toggle('clean')
-  })
-
-  if (params.get('clean') === '1') document.body.classList.add('clean')
 })()

@@ -468,7 +468,7 @@ input::placeholder {
   border-color: transparent;
   background: linear-gradient(180deg, var(--primary-2), var(--primary));
   color: var(--on-primary);
-  box-shadow: 0 9px 18px -9px rgba(21, 128, 61, 0.65);
+  box-shadow: 0 9px 18px -9px rgba(37, 105, 223, 0.65);
 }
 
 .btn-primary:hover {
@@ -739,29 +739,6 @@ input::placeholder {
   object-fit: contain;
 }
 
-.objects-foot {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  margin-top: 8px;
-  padding: 0 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  background: var(--soft-fill);
-  color: var(--text-3);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.objects-foot .right {
-  margin-left: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 9px;
-  color: var(--text-4);
-}
-
 /* ---------------------------------------------------------------------------
    SQL card
 --------------------------------------------------------------------------- */
@@ -776,6 +753,7 @@ input::placeholder {
 
 .qt {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 6px;
   height: 30px;
@@ -784,6 +762,7 @@ input::placeholder {
   border-radius: 9px;
   color: var(--text-2);
   font-size: 11.5px;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -819,12 +798,13 @@ input::placeholder {
 .qt .close {
   display: grid;
   place-items: center;
+  flex: none;
   width: 16px;
   height: 16px;
   margin-left: 2px;
   border-radius: 5px;
   color: var(--text-4);
-  opacity: 0;
+  opacity: 0.55;
 }
 
 .qt:hover .close,
@@ -917,6 +897,11 @@ input::placeholder {
 }
 
 .btn-run {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   height: 32px;
   padding: 0 13px;
   border-radius: 10px;
@@ -924,12 +909,19 @@ input::placeholder {
   color: var(--on-primary);
   font-size: 11.5px;
   font-weight: 600;
-  box-shadow: 0 9px 18px -9px rgba(21, 128, 61, 0.7);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 9px 18px -9px rgba(37, 105, 223, 0.7);
 }
 
 .btn-run .icon {
   width: 13px;
   height: 13px;
+  flex: none;
+}
+
+.btn-run .kbd {
+  flex: none;
 }
 
 .ai-group {
@@ -1433,86 +1425,6 @@ td.null {
 }
 
 /* ---------------------------------------------------------------------------
-   Review bar
---------------------------------------------------------------------------- */
-.review-bar {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 38px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: rgba(15, 20, 16, 0.88);
-  color: #e8efe9;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(16px);
-  transform: translateX(-50%);
-  user-select: none;
-}
-
-.review-brand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 9px;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.review-brand .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #42d47c;
-  box-shadow: 0 0 0 3px rgba(66, 212, 124, 0.16);
-}
-
-.review-bar .divider {
-  width: 1px;
-  height: 16px;
-  margin: 0 3px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.review-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 10.5px;
-  white-space: nowrap;
-}
-
-.review-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.review-btn.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-.review-btn .icon {
-  width: 12px;
-  height: 12px;
-}
-
-body.clean .review-bar {
-  display: none;
-}
-
-/* ---------------------------------------------------------------------------
    Scrollbars / responsive
 --------------------------------------------------------------------------- */
 ::-webkit-scrollbar {
@@ -1630,27 +1542,6 @@ body.clean .review-bar {
   display: flex;
   gap: 3px;
   margin-left: auto;
-}
-
-.side-foot {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  margin-top: 8px;
-  padding: 0 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  background: var(--soft-fill);
-  color: var(--text-3);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.side-foot .right {
-  margin-left: auto;
-  color: var(--text-4);
 }
 
 .muted {
